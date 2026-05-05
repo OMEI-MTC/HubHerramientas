@@ -243,10 +243,12 @@ function renderGroup(label, items, container) {
       return `<a class="mc-btn${primary?' primary':''}" href="${l.url}" target="_blank" rel="noopener">${l.herramienta} ↗</a>`;
     }).join('');
 
-    const pillsHtml = cfg.periodicidad !== 'No aplica' ? `
+    const showCorte = cfg.corte && cfg.corte !== '';
+    const showFreq  = cfg.periodicidad && cfg.periodicidad !== 'No aplica';
+    const pillsHtml = (showCorte || showFreq) ? `
       <div class="mc-pills">
-        <span class="pill-date"><span class="freshness f-${fresh}"></span>${cfg.corte||'Sin corte'}</span>
-        <span class="pill-freq ${freqCls}">${cfg.periodicidad}</span>
+        ${showCorte ? `<span class="pill-date"><span class="freshness f-${fresh}"></span>${cfg.corte}</span>` : ''}
+        ${showFreq  ? `<span class="pill-freq ${freqCls}">${cfg.periodicidad}</span>` : ''}
       </div>` : '';
 
     container.innerHTML += `
@@ -254,7 +256,8 @@ function renderGroup(label, items, container) {
         <div class="mc-head">
           <div>
             <div class="mc-title">${cfg.seccion}</div>
-            <div class="mc-resp">Resp: ${cfg.responsable} · ${cfg.correo}</div>
+            <div class="mc-resp">Responsable: ${cfg.responsable}</div>
+            <div class="mc-resp">${cfg.correo}</div>
           </div>
           ${pillsHtml}
         </div>
@@ -299,11 +302,11 @@ function fmtVal(val, unit) {
   if (isNaN(n)) return val;
   if ((unit||'').toLowerCase().includes('porcentaje')) {
     const pct = n > 1 ? n : n * 100;
-    return pct.toFixed(1).replace('.',',') + '%';
+    return pct.toFixed(1) + '%';
   }
-  if (n >= 1000000) return (n/1000000).toFixed(1).replace('.',',') + 'M';
-  if (n >= 1000) return n.toLocaleString('es-PE');
-  return n.toLocaleString('es-PE');
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return n.toLocaleString('en-US').replace(/,/g, ' ');
+  return n.toFixed(n % 1 === 0 ? 0 : 1);
 }
 
 function debug(msg) {
