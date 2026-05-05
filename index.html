@@ -298,8 +298,8 @@ function parseSheet(text) {
     const c3 = row[2];
     const c4 = row[3];
     const c5 = row[4];
+    const c6 = row[5];
 
-    // Detecta bloque superior: configuración general
     if (
       c1 === 'Sección' &&
       c2 === 'Descripción' &&
@@ -311,7 +311,6 @@ function parseSheet(text) {
       continue;
     }
 
-    // Detecta bloque inferior: enlaces de herramientas
     if (
       c1 === 'Sección' &&
       c2 === 'Herramientas' &&
@@ -321,7 +320,6 @@ function parseSheet(text) {
       continue;
     }
 
-    // Ignora filas vacías
     if (!c1) continue;
 
     if (mode === 'config') {
@@ -330,17 +328,29 @@ function parseSheet(text) {
         descripcion: c2 || 'Sin descripción',
         periodicidad: c3 || 'No aplica',
         responsable: c4 || 'No asignado',
-        correo: c5 || ''
+        correo: c5 || '',
+        corte: c6 || ''
       });
     }
 
     if (mode === 'links') {
-      DATA.links.push({
-        seccion: c1,
-        herramienta: c2 || 'Herramienta',
-        url: c3 || '',
-        corte: c4 || ''
-      });
+      const esUrl = c3 && /^https?:\/\//i.test(c3);
+
+      if (esUrl) {
+        DATA.links.push({
+          seccion: c1,
+          herramienta: c2 || 'Herramienta',
+          url: c3,
+          corte: c4 || ''
+        });
+      } else {
+        DATA.kpis.push({
+          seccion: c1,
+          variable: c2 || 'Indicador',
+          valor: c3 || '',
+          unidad: c4 || ''
+        });
+      }
     }
   }
 }
@@ -379,10 +389,15 @@ function buildUI() {
 
     let kpiHtml = '';
     if (hasKpis) {
-      const colors = ['','r','n','a'];
-      kpiHtml = `<div class="mc-kpis">` + kpis.slice(0,4).map((k,i) =>
-        `<div class="mc-kpi"><div class="mc-kpi-val">${formatVal(k.valor, k.unidad)}</div><div class="mc-kpi-lbl">${k.variable}</div></div>`
-      ).join('') + `</div>`;
+    kpiHtml = `
+    <div class="mc-kpis">
+      ${kpis.slice(0,4).map(k => `
+        <div class="mc-kpi">
+          <div class="mc-kpi-val">${formatVal(k.valor, k.unidad)}</div>
+          <div class="mc-kpi-lbl">${k.variable}</div>
+        </div>
+      `).join('')}
+    </div>`;
     }
 
     let linksHtml = links.map(l => {
@@ -398,7 +413,9 @@ function buildUI() {
             <div class="mc-resp">Resp: ${cfg.responsable}</div>
           </div>
           <div class="mc-date-wrap">
-            <span class="mc-date"><span class="freshness f-${fresh}"></span> ${cfg.periodicidad}</span>
+            <span class="mc-date">
+            <span class="freshness f-${fresh}"></span> ${cfg.corte || 'Sin corte'}
+            </span>
             <span class="freq-badge ${freqClass}">${cfg.periodicidad}</span>
           </div>
         </div>
