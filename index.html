@@ -3,28 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hub de Herramientas · OGAME · MTC</title>
+<title>Hub de Herramientas · OMEI · MTC</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+
 <style>
-/* ── Reset & tokens ── */
+/* =========================================================
+   01. VARIABLES, RESET Y ESTILOS BASE
+   ========================================================= */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 :root {
-  --navy:     #0D2B4E;
+  --navy: #0D2B4E;
   --navy-mid: #1A3A5C;
-  --teal:     #1D9E75;
-  --teal-dk:  #0F6E56;
-  --teal-lt:  #E1F5EE;
-  --red:      #C8102E;
-  --amber:    #BA7517;
+  --teal: #1D9E75;
+  --teal-dk: #0F6E56;
+  --red: #C8102E;
+  --amber: #BA7517;
   --blue-muted: #7FB3D3;
-  --blue-link:  #5A9FC0;
+  --blue-link: #5A9FC0;
   --white: #ffffff;
-  --bg:    #F4F6F9;
-  --card:  #ffffff;
+  --bg: #F4F6F9;
+  --card: #ffffff;
   --border: rgba(0,0,0,0.09);
-  --text:   #1a1a2e;
+  --text: #1a1a2e;
   --text-2: #4a5568;
   --text-3: #8a9ab0;
   --sans: 'DM Sans', system-ui, sans-serif;
@@ -33,155 +36,566 @@
   --radius-lg: 14px;
 }
 
-body { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.5; min-height: 100vh; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
 
-/* ── Layout ── */
-.layout { display: grid; grid-template-rows: 72px 1fr; grid-template-columns: 1fr 220px; min-height: 100vh; }
-.topbar { grid-column: 1/-1; background: var(--navy); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; border-bottom: 3px solid var(--teal); min-height: 72px; }
-.main { overflow-y: auto; padding: 20px; background: var(--bg); }
-.sidebar { background: var(--navy-mid); overflow-y: auto; border-left: 1px solid rgba(0,0,0,0.15); }
+/* =========================================================
+   02. LAYOUT GENERAL
+   ========================================================= */
+.layout {
+  display: grid;
+  grid-template-rows: 72px 1fr;
+  grid-template-columns: 1fr 240px;
+  min-height: 100vh;
+}
 
-/* ── Topbar ── */
-.topbar-brand { display: flex; align-items: center; gap: 12px; }
-.topbar-logo { width: 52px; height: 52px; background: var(--white); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
-.topbar-logo svg { width: 22px; height: 22px; }
-.topbar-name { font-size: 17px; font-weight: 500; color: var(--white); line-height: 1.2; letter-spacing: -0.01em; }
-.topbar-sub { font-size: 11px; color: var(--blue-muted); margin-top: 3px; }
-.topbar-date { text-align: right; font-size: 10px; color: var(--blue-muted); line-height: 1.6; }
-.topbar-date strong { display: block; color: var(--white); font-size: 12px; font-weight: 500; }
+.topbar {
+  grid-column: 1 / -1;
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  border-bottom: 3px solid var(--teal);
+  min-height: 72px;
+}
 
-/* ── Sidebar ── */
-.sb-search { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.07); }
-.sb-search input { width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); border-radius: 7px; padding: 6px 10px; font-size: 11px; color: var(--white); font-family: var(--sans); outline: none; transition: border-color .15s; }
+.main {
+  overflow-y: auto;
+  padding: 22px;
+  background: var(--bg);
+}
+
+.sidebar {
+  background: var(--navy-mid);
+  overflow-y: auto;
+  border-left: 1px solid rgba(0,0,0,0.15);
+}
+
+/* =========================================================
+   03. TOPBAR
+   ========================================================= */
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-logo {
+  width: 52px;
+  height: 52px;
+  background: var(--white);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  color: var(--red);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.topbar-name {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.2;
+}
+
+.topbar-sub {
+  font-size: 12px;
+  color: var(--blue-muted);
+  margin-top: 3px;
+}
+
+.topbar-date {
+  text-align: right;
+  font-size: 11px;
+  color: var(--blue-muted);
+  line-height: 1.6;
+}
+
+.topbar-date strong {
+  display: block;
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   04. SIDEBAR
+   ========================================================= */
+.sb-search {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.sb-search input {
+  width: 100%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--white);
+  font-family: var(--sans);
+  outline: none;
+}
+
 .sb-search input::placeholder { color: rgba(255,255,255,0.35); }
 .sb-search input:focus { border-color: var(--teal); }
+
 .sb-section { padding: 14px 12px 4px; }
-.sb-section-title { font-size: 10px; font-weight: 500; color: var(--teal); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.06); }
-.sb-item { display: flex; align-items: center; gap: 7px; padding: 5px 8px; border-radius: 6px; cursor: pointer; color: rgba(255,255,255,0.75); font-size: 11px; margin-bottom: 1px; transition: background .12s, color .12s; text-decoration: none; }
+
+.sb-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--teal);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: rgba(255,255,255,0.78);
+  font-size: 12px;
+  margin-bottom: 2px;
+  transition: background .12s, color .12s;
+  text-decoration: none;
+}
+
 .sb-item:hover { background: rgba(255,255,255,0.08); color: var(--white); }
 .sb-item.active { background: rgba(29,158,117,0.22); color: var(--white); }
-.sb-item.home-link { color: rgba(255,255,255,0.9); font-weight: 500; }
-.sb-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-.d-teal  { background: var(--teal); }
-.d-red   { background: var(--red); }
-.d-amber { background: var(--amber); }
-.d-gray  { background: rgba(255,255,255,0.3); }
-.d-blue  { background: var(--blue-link); }
+.sb-item.home-link { color: rgba(255,255,255,0.95); font-weight: 700; }
 
-/* ── Pages ── */
+.sb-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.d-teal { background: var(--teal); }
+.d-red { background: var(--red); }
+.d-amber { background: var(--amber); }
+.d-gray { background: rgba(255,255,255,0.3); }
+.d-blue { background: var(--blue-link); }
+
+/* =========================================================
+   05. PÁGINAS Y HOME
+   ========================================================= */
 .page { display: none; }
 .page.active { display: block; }
 
-/* ── Home ── */
-.home-greeting { font-family: var(--serif); font-size: 22px; color: var(--text); margin-bottom: 2px; }
-.home-sub { font-size: 12px; color: var(--text-2); margin-bottom: 20px; }
-.section-lbl { font-size: 10px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: var(--text-3); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-.section-lbl::after { content:''; flex:1; height: .5px; background: var(--border); }
-.module-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-.module-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; transition: border-color .15s, transform .1s; }
-.module-card:hover { border-color: rgba(29,158,117,0.4); transform: translateY(-1px); }
-.mc-head { background: var(--navy); padding: 10px 13px; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-.mc-title { font-size: 13px; font-weight: 500; color: var(--white); line-height: 1.3; }
-.mc-resp { font-size: 10px; color: var(--blue-muted); margin-top: 2px; }
-.mc-date-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
-.mc-date { font-size: 10px; color: var(--white); white-space: nowrap; display: flex; align-items: center; gap: 4px; }
-.freshness { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-.f-ok   { background: var(--teal); }
-.f-warn { background: var(--amber); }
-.f-na   { background: rgba(255,255,255,0.3); }
-.freq-badge { font-size: 9px; font-weight: 500; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
-.freq-Semanal   { background: var(--teal); color: var(--white); }
-.freq-Mensual   { background: rgba(255,255,255,0.12); color: var(--blue-muted); border: 1px solid rgba(127,179,211,0.3); }
-.freq-Quincenal { background: var(--amber); color: var(--white); }
-.freq-noapl     { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.45); }
-.mc-kpis { display: grid; grid-template-columns: 1fr 1fr; }
-.mc-kpi { padding: 8px 12px; border-right: 1px solid var(--border); }
+.home-greeting {
+  font-family: var(--serif);
+  font-size: 30px;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.home-sub {
+  font-size: 14px;
+  color: var(--text-2);
+  margin-bottom: 18px;
+}
+
+.section-lbl {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 8px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-lbl::after {
+  content: '';
+  flex: 1;
+  height: .5px;
+  background: var(--border);
+}
+
+.module-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+/* =========================================================
+   06. TARJETAS DE HERRAMIENTAS
+   ========================================================= */
+.module-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .15s, transform .1s;
+}
+
+.module-card:hover {
+  border-color: rgba(29,158,117,0.4);
+  transform: translateY(-1px);
+}
+
+.mc-head {
+  background: var(--navy);
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mc-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.25;
+}
+
+.mc-resp {
+  font-size: 12px;
+  color: var(--blue-muted);
+  margin-top: 3px;
+}
+
+.mc-date-wrap {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.mc-date-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.date-pill {
+  background: var(--teal);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 18px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.period-pill {
+  background: var(--white);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 18px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.mc-kpis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.mc-kpi {
+  padding: 14px 16px;
+  border-right: 1px solid var(--border);
+}
+
 .mc-kpi:nth-child(even) { border-right: none; }
 .mc-kpi:nth-child(n+3) { border-top: 1px solid var(--border); }
-.mc-kpi-val { font-size: 15px; font-weight: 500; color: var(--text); }
-.mc-kpi-lbl { font-size: 9px; color: var(--text-3); margin-top: 1px; }
-.mc-links { padding: 8px 10px; display: flex; flex-wrap: wrap; gap: 5px; border-top: 1px solid var(--border); }
-.mc-btn { font-size: 10px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); color: var(--text-2); cursor: pointer; background: var(--bg); font-family: var(--sans); text-decoration: none; display: inline-block; transition: background .12s, color .12s, border-color .12s; }
-.mc-btn:hover { background: var(--navy); color: var(--white); border-color: var(--navy); }
-.mc-btn.primary { background: var(--teal); color: var(--white); border-color: var(--teal); }
-.mc-btn.primary:hover { background: var(--teal-dk); border-color: var(--teal-dk); }
-.mc-body { padding: 10px 12px; }
-.mc-desc { font-size: 11px; color: var(--text-2); margin-bottom: 8px; }
 
-/* Loading skeleton */
-.skeleton { background: linear-gradient(90deg, #e8edf2 25%, #f0f4f7 50%, #e8edf2 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 4px; }
-@keyframes shimmer { to { background-position: -200% 0; } }
-.sk-line { height: 12px; margin-bottom: 6px; }
-.sk-val  { height: 18px; width: 60%; margin-bottom: 4px; }
+.mc-kpi-val {
+  font-size: 25px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.15;
+}
 
-/* ── Visor page ── */
-.visor-header { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.vh-title { font-size: 16px; font-weight: 500; color: var(--text); }
-.vh-meta  { font-size: 11px; color: var(--text-2); margin-top: 3px; }
-.vh-meta a { color: var(--teal-dk); }
-.btn-open { background: var(--navy); color: var(--white); border: none; font-size: 11px; font-weight: 500; padding: 7px 14px; border-radius: 7px; cursor: pointer; font-family: var(--sans); text-decoration: none; display: inline-block; white-space: nowrap; transition: background .12s; }
-.btn-open:hover { background: var(--navy-mid); }
-.kpi-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 8px; margin-bottom: 12px; }
-.kpi-s { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px; border-top: 3px solid var(--teal); }
+.mc-kpi-lbl {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 3px;
+}
+
+.mc-body { padding: 14px 16px; }
+
+.mc-desc {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.mc-links {
+  padding: 10px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.mc-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  cursor: pointer;
+  background: var(--bg);
+  font-family: var(--sans);
+  text-decoration: none;
+  display: inline-block;
+  transition: background .12s, color .12s, border-color .12s;
+}
+
+.mc-btn:hover {
+  background: var(--navy);
+  color: var(--white);
+  border-color: var(--navy);
+}
+
+.mc-btn.primary {
+  background: var(--teal);
+  color: var(--white);
+  border-color: var(--teal);
+}
+
+.mc-btn.primary:hover {
+  background: var(--teal-dk);
+  border-color: var(--teal-dk);
+}
+
+/* =========================================================
+   07. PÁGINAS INTERNAS DE CADA HERRAMIENTA
+   ========================================================= */
+.visor-header {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vh-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.vh-meta {
+  font-size: 13px;
+  color: var(--text-2);
+  margin-top: 3px;
+}
+
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.kpi-s {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  border-top: 3px solid var(--teal);
+}
+
 .kpi-s.r { border-top-color: var(--red); }
 .kpi-s.n { border-top-color: var(--navy); }
 .kpi-s.a { border-top-color: var(--amber); }
-.kpi-s-val { font-size: 17px; font-weight: 500; color: var(--text); }
-.kpi-s-lbl { font-size: 9px; color: var(--text-3); margin-top: 2px; line-height: 1.3; }
-.kpi-s-unit { font-size: 9px; color: var(--text-3); }
 
-/* Iframe area */
-.iframe-wrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px; }
-.iframe-bar { background: var(--navy); padding: 7px 14px; display: flex; align-items: center; justify-content: space-between; }
-.iframe-bar-title { font-size: 11px; color: var(--blue-muted); }
-.iframe-bar-dots { display: flex; gap: 5px; }
-.iframe-bar-dots span { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.18); }
-.iframe-bar-dots span:first-child { background: var(--red); opacity: .7; }
-.iframe-mock { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 36px 20px; background: #f8fafc; }
-.iframe-mock-label { font-size: 12px; color: var(--text-2); }
-.iframe-mock-sub   { font-size: 11px; color: var(--text-3); text-align: center; }
-iframe.pbi-frame { width: 100%; height: 480px; border: none; display: block; }
+.kpi-s-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
 
-/* Org strip */
-.org-strip { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 12px 16px; }
-.org-strip-title { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); margin-bottom: 10px; }
-.org-people { display: flex; flex-wrap: wrap; gap: 10px; }
-.org-person { display: flex; align-items: center; gap: 9px; background: var(--bg); border-radius: 8px; padding: 7px 11px; }
-.org-av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; color: var(--white); flex-shrink: 0; }
-.org-name { font-size: 11px; font-weight: 500; color: var(--text); }
-.org-cargo { font-size: 10px; color: var(--text-2); }
-.org-mail  { font-size: 10px; color: var(--teal-dk); }
+.kpi-s-lbl {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 2px;
+  line-height: 1.3;
+}
 
-/* Loading state */
-.hub-loading { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-3); padding: 20px 0; }
-.spin { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--teal); border-radius: 50%; animation: spin .7s linear infinite; }
+.kpi-s-unit {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.iframe-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.iframe-bar {
+  background: var(--navy);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.iframe-bar-title {
+  font-size: 12px;
+  color: var(--blue-muted);
+}
+
+.iframe-mock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 36px 20px;
+  background: #f8fafc;
+}
+
+.iframe-mock-label { font-size: 14px; color: var(--text-2); }
+.iframe-mock-sub { font-size: 12px; color: var(--text-3); text-align: center; }
+
+iframe.pbi-frame {
+  width: 100%;
+  height: 520px;
+  border: none;
+  display: block;
+}
+
+.btn-open {
+  background: var(--navy);
+  color: var(--white);
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 15px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: var(--sans);
+}
+
+/* =========================================================
+   08. DIRECTORIO / EQUIPO
+   ========================================================= */
+.org-strip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+}
+
+.org-strip-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-3);
+  margin-bottom: 10px;
+}
+
+.org-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.org-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 9px 12px;
+}
+
+.org-av {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--white);
+  flex-shrink: 0;
+}
+
+.org-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.org-cargo { font-size: 12px; color: var(--text-2); }
+.org-mail { font-size: 12px; color: var(--teal-dk); }
+
+/* =========================================================
+   09. ESTADOS DE CARGA Y RESPONSIVE
+   ========================================================= */
+.hub-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-3);
+  padding: 20px 0;
+}
+
+.spin {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Freshness legend */
-.legend { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
-.legend-item { font-size: 11px; color: var(--text-2); display: flex; align-items: center; gap: 5px; }
-
-/* No-data */
-.no-links { font-size: 11px; color: var(--text-3); font-style: italic; padding: 4px 0; }
-
-/* Responsive */
-@media (max-width: 700px) {
+@media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; grid-template-rows: 72px 1fr; }
   .sidebar { display: none; }
   .module-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
-<body>
 
+<body>
 <div class="layout">
 
-  <!-- ── TOPBAR ── -->
+  <!-- =====================================================
+       10. TOPBAR / ENCABEZADO
+       ===================================================== -->
   <header class="topbar">
     <div class="topbar-brand">
-      <div class="topbar-logo" style="background:transparent;padding:0;overflow:hidden;">
-        <img src="data:image/jpeg;base64,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" alt="Logo MTC" style="width:52px;height:52px;border-radius:8px;object-fit:cover;display:block;">
-      </div>
+      <div class="topbar-logo">MTC</div>
       <div>
         <div class="topbar-name">Hub de Herramientas · OMEI</div>
         <div class="topbar-sub">Ministerio de Transportes y Comunicaciones</div>
@@ -193,32 +607,27 @@ iframe.pbi-frame { width: 100%; height: 480px; border: none; display: block; }
     </div>
   </header>
 
-  <!-- ── MAIN ── -->
+  <!-- =====================================================
+       11. CONTENIDO PRINCIPAL
+       ===================================================== -->
   <main class="main" id="mainArea">
-
-    <!-- HOME -->
     <div class="page active" id="page-home">
       <div class="home-greeting">Bienvenida/o</div>
       <div class="home-sub" id="homeLoadingMsg">
         <span class="hub-loading"><span class="spin"></span> Cargando configuración desde Google Sheets…</span>
       </div>
       <div id="homeContent" style="display:none">
-        <div class="legend">
-          <span class="legend-item"><span class="freshness f-ok"></span> Actualizado dentro del período</span>
-          <span class="legend-item"><span class="freshness f-warn"></span> Pendiente de actualización</span>
-          <span class="legend-item"><span class="freshness f-na"></span> Sin periodicidad definida</span>
-        </div>
-        <div class="section-lbl">Herramientas</div>
+        <div class="home-sub">Selecciona una herramienta del menú o explora las secciones.</div>
         <div class="module-grid" id="moduleGrid"></div>
       </div>
     </div>
 
-    <!-- VISOR PAGES (generated dynamically) -->
     <div id="dynamicPages"></div>
-
   </main>
 
-  <!-- ── SIDEBAR ── -->
+  <!-- =====================================================
+       12. MENÚ LATERAL
+       ===================================================== -->
   <aside class="sidebar">
     <div class="sb-search">
       <input type="text" placeholder="Buscar herramienta…" id="sbSearch" oninput="filterSidebar(this.value)">
@@ -238,50 +647,68 @@ iframe.pbi-frame { width: 100%; height: 480px; border: none; display: block; }
 </div>
 
 <script>
-// ── Config ──
-const SHEET_URL_DIRECT =   'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkXT9qu8x5JInu81VZ3BDkQ338o6gix4h4CBRTL7q6UeL7NsWn0MvvRlMA474WwH4xIy0LSlPQT-A7/pub?gid=766760814&single=true&output=tsv';
-// Proxies CORS — se intenta en orden hasta que uno funcione
+/* =========================================================
+   13. CONFIGURACIÓN GENERAL
+   ========================================================= */
+const SHEET_URL_DIRECT = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkXT9qu8x5JInu81VZ3BDkQ338o6gix4h4CBRTL7q6UeL7NsWn0MvvRlMA474WwH4xIy0LSlPQT-A7/pub?gid=766760814&single=true&output=tsv';
+
 const CORS_PROXIES = [
   url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
   url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => url  // intento directo como fallback
+  url => url
 ];
 
-const AVATAR_COLORS = ['#0D2B4E','#1D9E75','#C8102E','#0F6E56','#BA7517','#185FA5'];
+const AVATAR_COLORS = ['#0D2B4E', '#1D9E75', '#C8102E', '#0F6E56', '#BA7517', '#185FA5'];
 
-// ── State ──
 let DATA = { config: [], links: [], kpis: [] };
 let currentPage = 'page-home';
 
-// ── Init ──
-document.getElementById('topDate').textContent = new Date().toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'});
+document.getElementById('topDate').textContent = new Date().toLocaleDateString('es-PE', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric'
+});
 
 loadSheet();
 
-// ── Load & parse TSV ──
+/* =========================================================
+   14. CARGA DE DATOS DESDE GOOGLE SHEETS
+   ========================================================= */
 async function loadSheet() {
   let lastError = null;
+
   for (const proxyFn of CORS_PROXIES) {
     try {
       const url = proxyFn(SHEET_URL_DIRECT);
       const res = await fetch(url, { cache: 'no-cache' });
+
       if (!res.ok) throw new Error('HTTP ' + res.status);
+
       const text = await res.text();
-      if (!text || text.length < 10) throw new Error('Empty response');
+      if (!text || text.length < 10) throw new Error('Respuesta vacía');
+
       parseSheet(text);
       buildUI();
       return;
-    } catch(e) {
+    } catch (e) {
       lastError = e;
-      continue;
     }
   }
-  document.getElementById('homeLoadingMsg').innerHTML =
-    `<span style="color:#C8102E;font-size:12px;">⚠ No se pudo cargar la configuración desde Google Sheets.<br>
-    <small>Verifica que el Sheet esté publicado en la web (Archivo → Publicar en la web → TSV).<br>
-    Error: ${lastError?.message || 'desconocido'}</small></span>`;
+
+  document.getElementById('homeLoadingMsg').innerHTML = `
+    <span style="color:#C8102E;font-size:13px;">
+      ⚠ No se pudo cargar la configuración desde Google Sheets.<br>
+      <small>Verifica que el Sheet esté publicado en la web como TSV.<br>
+      Error: ${lastError?.message || 'desconocido'}</small>
+    </span>`;
 }
 
+/* =========================================================
+   15. LECTURA DE LAS 3 TABLAS DEL EXCEL PUBLICADO
+   Primera tabla: configuración general
+   Segunda tabla: botones / enlaces
+   Tercera tabla: KPIs
+   ========================================================= */
 function parseSheet(text) {
   DATA = { config: [], links: [], kpis: [] };
 
@@ -300,35 +727,17 @@ function parseSheet(text) {
     const c5 = row[4];
     const c6 = row[5];
 
-    // PRIMERA TABLA: configuración general
-    if (
-      c1 === 'Sección' &&
-      c2 === 'Descripción' &&
-      c3 === 'Periodicidad' &&
-      c4 === 'Responsable' &&
-      c5 === 'Correo'
-    ) {
+    if (c1 === 'Sección' && c2 === 'Descripción' && c3 === 'Periodicidad' && c4 === 'Responsable' && c5 === 'Correo') {
       mode = 'config';
       continue;
     }
 
-    // SEGUNDA TABLA: botones / enlaces
-    if (
-      c1 === 'Sección' &&
-      c2 === 'Herramientas' &&
-      c3 === 'Enlaces'
-    ) {
+    if (c1 === 'Sección' && c2 === 'Herramientas' && c3 === 'Enlaces') {
       mode = 'links';
       continue;
     }
 
-    // TERCERA TABLA: KPIs
-    if (
-      c1 === 'Sección' &&
-      c2 === 'Variable' &&
-      c3 === 'Valor' &&
-      c4 === 'Unidad'
-    ) {
+    if (c1 === 'Sección' && c2 === 'Variable' && c3 === 'Valor' && c4 === 'Unidad') {
       mode = 'kpis';
       continue;
     }
@@ -365,241 +774,330 @@ function parseSheet(text) {
   }
 }
 
-// ── Freshness ──
-const FREQ_DAYS = { 'Semanal': 7, 'Mensual': 31, 'Quincenal': 15 };
-function getFreshness(cfg) {
-  if (!cfg.periodicidad || cfg.periodicidad === 'No aplica') return 'na';
-  // We don't have a fecha_corte in this sheet, so we show the badge only
-  return 'ok';
-}
-
-// ── Build UI ──
+/* =========================================================
+   16. CONSTRUCCIÓN DE TODA LA INTERFAZ
+   ========================================================= */
 function buildUI() {
   document.getElementById('homeLoadingMsg').style.display = 'none';
   document.getElementById('homeContent').style.display = 'block';
 
   const grid = document.getElementById('moduleGrid');
-  grid.innerHTML = '';
   const dynPages = document.getElementById('dynamicPages');
-  dynPages.innerHTML = '';
   const sbContent = document.getElementById('sbContent');
 
-  let sbHtml = `<div class="sb-section"><div class="sb-item home-link" onclick="goPage('page-home')"><span class="sb-dot d-teal"></span> Inicio / Portada</div></div>`;
+  grid.innerHTML = '';
+  dynPages.innerHTML = '';
+
+  let sbHtml = `
+    <div class="sb-section">
+      <div class="sb-item home-link" onclick="goPage('page-home')">
+        <span class="sb-dot d-teal"></span> Inicio / Portada
+      </div>
+    </div>`;
+
+  const herramientas = DATA.config.filter(cfg => cfg.seccion !== 'Publicaciones');
+  const otros = DATA.config.filter(cfg => cfg.seccion === 'Publicaciones');
+
+  renderHomeGroup('Herramientas', herramientas, grid);
+  renderHomeGroup('Otros', otros, grid);
 
   DATA.config.forEach((cfg, idx) => {
+    renderInternalPage(cfg, idx, dynPages);
+    sbHtml += renderSidebarSection(cfg, idx);
+  });
+
+  sbHtml += `
+    <div class="sb-section">
+      <div class="sb-section-title">Equipo</div>
+      <div class="sb-item" onclick="goPage('page-equipo')">
+        <span class="sb-dot d-blue"></span> Directorio
+      </div>
+    </div>`;
+
+  sbContent.innerHTML = sbHtml;
+  buildEquipoPage();
+}
+
+/* =========================================================
+   17. TARJETAS DEL HOME POR GRUPOS: HERRAMIENTAS / OTROS
+   ========================================================= */
+function renderHomeGroup(title, items, container) {
+  if (!items || items.length === 0) return;
+
+  container.innerHTML += `<div class="section-lbl">${title}</div>`;
+
+  items.forEach(cfg => {
     const pageId = 'page-' + slug(cfg.seccion);
     const kpis = DATA.kpis.filter(k => k.seccion === cfg.seccion);
     const links = DATA.links.filter(l => l.seccion === cfg.seccion);
-    const fresh = getFreshness(cfg);
-    const freqClass = 'freq-' + (cfg.periodicidad === 'No aplica' ? 'noapl' : cfg.periodicidad.replace(' ',''));
-
-    // ── Module card (home) ──
-    const visorLink = links.find(l => l.herramienta === 'Tablero' || l.herramienta === 'Tablero Power BI');
     const hasKpis = kpis.length > 0;
 
-    let kpiHtml = '';
-    if (hasKpis) {
-    kpiHtml = `
-    <div class="mc-kpis">
-      ${kpis.slice(0,4).map(k => `
-        <div class="mc-kpi">
-          <div class="mc-kpi-val">${formatVal(k.valor, k.unidad)}</div>
-          <div class="mc-kpi-lbl">${k.variable}</div>
-        </div>
-      `).join('')}
-    </div>`;
-    }
+    const kpiHtml = hasKpis ? `
+      <div class="mc-kpis">
+        ${kpis.slice(0, 4).map(k => `
+          <div class="mc-kpi">
+            <div class="mc-kpi-val">${formatVal(k.valor, k.unidad)}</div>
+            <div class="mc-kpi-lbl">${k.variable}</div>
+          </div>
+        `).join('')}
+      </div>` : '';
 
-    let linksHtml = links.map(l => {
-    if (!l.url || l.url.toLowerCase() === 'pendiente') {
-    return `<span class="mc-btn" title="Próximamente">${l.herramienta}</span>`;
-    }
+    const linksHtml = renderLinksButtons(links, false);
 
-  return `<a class="mc-btn${l.herramienta.toLowerCase().includes('tablero') ? ' primary' : ''}" 
-            href="${l.url}" 
-            target="_blank" 
-            rel="noopener">
-            ${l.herramienta} ↗
-          </a>`;
-}).join('');
+    const corteHtml = cfg.seccion !== 'Publicaciones' ? `
+      <div class="mc-date-pills">
+        <span class="date-pill">${cfg.corte || 'Sin corte'}</span>
+        <span class="period-pill">${cfg.periodicidad || 'No aplica'}</span>
+      </div>` : '';
 
-    grid.innerHTML += `
+    container.innerHTML += `
       <div class="module-card" onclick="goPage('${pageId}')">
         <div class="mc-head">
           <div>
             <div class="mc-title">${cfg.seccion}</div>
             <div class="mc-resp">Resp: ${cfg.responsable}</div>
           </div>
-          <div class="mc-date-wrap">
-            <span class="mc-date">
-            <span class="freshness f-${fresh}"></span> ${cfg.corte || 'Sin corte'}
-            </span>
-            <span class="freq-badge ${freqClass}">${cfg.periodicidad}</span>
-          </div>
+          <div class="mc-date-wrap">${corteHtml}</div>
         </div>
         ${hasKpis ? kpiHtml : `<div class="mc-body"><div class="mc-desc">${cfg.descripcion}</div></div>`}
         <div class="mc-links">${linksHtml}</div>
       </div>`;
+  });
+}
 
-    // ── Dynamic visor page ──
-    const kpiStripHtml = kpis.slice(0,6).map((k,i) => {
-      const accent = ['','r','n','a','','r'][i];
-      return `<div class="kpi-s ${accent}"><div class="kpi-s-val">${formatVal(k.valor,k.unidad)}</div><div class="kpi-s-lbl">${k.variable}</div><div class="kpi-s-unit">${k.unidad}</div></div>`;
-    }).join('');
+/* =========================================================
+   18. BOTONES DE ENLACES
+   ========================================================= */
+function renderLinksButtons(links, forcePrimary = false) {
+  return links.map(l => {
+    const isPending = !l.url || l.url.toLowerCase() === 'pendiente';
+    const isPrimary = forcePrimary || l.herramienta.toLowerCase().includes('tablero') || l.herramienta.toLowerCase().includes('visor');
 
-    const allLinksHtml = links.map(l => {
-      if (!l.url || l.url.toLowerCase() === 'pendiente')
-        return `<span class="mc-btn" style="opacity:.5;cursor:default;" title="Próximamente">${l.herramienta} (pendiente)</span>`;
-      return `<a class="mc-btn primary" href="${l.url}" target="_blank" rel="noopener">${l.herramienta} ↗</a>`;
-    }).join('');
-
-    // Iframe for Tablero
-    const tableroLink = links.find(l => l.herramienta === 'Tablero' && l.url && l.url.toLowerCase() !== 'pendiente');
-    let iframeHtml = '';
-    if (tableroLink) {
-      iframeHtml = `
-        <div class="iframe-wrap">
-          <div class="iframe-bar">
-            <span class="iframe-bar-title">Visor Power BI — ${cfg.seccion}</span>
-            <div class="iframe-bar-dots"><span></span><span></span><span></span></div>
-          </div>
-          <div class="iframe-mock" id="mock-${slug(cfg.seccion)}">
-            <div class="iframe-mock-label">Vista previa del tablero</div>
-            <div class="iframe-mock-sub">Si el visor no carga aquí, usa el botón "Abrir en pestaña" de arriba.</div>
-            <button class="btn-open" style="margin-top:6px" onclick="loadIframe('${slug(cfg.seccion)}','${tableroLink.url}')">Intentar cargar aquí</button>
-            <iframe id="iframe-${slug(cfg.seccion)}" class="pbi-frame" style="display:none" allowfullscreen></iframe>
-          </div>
-        </div>`;
+    if (isPending) {
+      return `<span class="mc-btn" title="Próximamente">${l.herramienta}</span>`;
     }
 
-    // Org strip
-    const avColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
-    const initials = cfg.responsable.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-    const orgHtml = `
-      <div class="org-strip">
-        <div class="org-strip-title">Responsable</div>
-        <div class="org-people">
-          <div class="org-person">
-            <div class="org-av" style="background:${avColor}">${initials}</div>
-            <div>
-              <div class="org-name">${cfg.responsable}</div>
-              <div class="org-cargo">${cfg.seccion}</div>
-              <div class="org-mail"><a href="mailto:${cfg.correo}" style="color:inherit;text-decoration:none">${cfg.correo}</a></div>
-            </div>
-          </div>
-        </div>
-      </div>`;
+    return `
+      <a class="mc-btn${isPrimary ? ' primary' : ''}"
+         href="${l.url}"
+         target="_blank"
+         rel="noopener"
+         onclick="event.stopPropagation()">
+        ${l.herramienta} ↗
+      </a>`;
+  }).join('');
+}
 
-    dynPages.innerHTML += `
-      <div class="page" id="${pageId}">
-        <div class="visor-header">
+/* =========================================================
+   19. PÁGINAS INTERNAS DE CADA HERRAMIENTA
+   ========================================================= */
+function renderInternalPage(cfg, idx, container) {
+  const pageId = 'page-' + slug(cfg.seccion);
+  const kpis = DATA.kpis.filter(k => k.seccion === cfg.seccion);
+  const links = DATA.links.filter(l => l.seccion === cfg.seccion);
+
+  const kpiStripHtml = kpis.slice(0, 6).map((k, i) => {
+    const accent = ['', 'r', 'n', 'a', '', 'r'][i];
+    return `
+      <div class="kpi-s ${accent}">
+        <div class="kpi-s-val">${formatVal(k.valor, k.unidad)}</div>
+        <div class="kpi-s-lbl">${k.variable}</div>
+        <div class="kpi-s-unit">${k.unidad}</div>
+      </div>`;
+  }).join('');
+
+  const allLinksHtml = renderLinksButtons(links, true);
+  const tableroLink = links.find(l =>
+    l.url &&
+    l.url.toLowerCase() !== 'pendiente' &&
+    (l.herramienta.toLowerCase().includes('tablero') || l.url.toLowerCase().includes('powerbi'))
+  );
+
+  const iframeHtml = tableroLink ? `
+    <div class="iframe-wrap">
+      <div class="iframe-bar">
+        <span class="iframe-bar-title">Visor Power BI — ${cfg.seccion}</span>
+      </div>
+      <div class="iframe-mock" id="mock-${slug(cfg.seccion)}">
+        <div class="iframe-mock-label">Vista previa del tablero</div>
+        <div class="iframe-mock-sub">Si el visor no carga aquí, usa el botón para abrirlo en una nueva pestaña.</div>
+        <button class="btn-open" style="margin-top:6px" onclick="loadIframe('${slug(cfg.seccion)}','${tableroLink.url}')">Intentar cargar aquí</button>
+        <iframe id="iframe-${slug(cfg.seccion)}" class="pbi-frame" style="display:none" allowfullscreen></iframe>
+      </div>
+    </div>` : '';
+
+  const orgHtml = renderResponsibleCard(cfg, idx);
+
+  container.innerHTML += `
+    <div class="page" id="${pageId}">
+      <div class="visor-header">
+        <div>
+          <div class="vh-title">${cfg.seccion}</div>
+          <div class="vh-meta">Resp: ${cfg.responsable} · ${cfg.periodicidad} · ${cfg.descripcion}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${allLinksHtml}</div>
+      </div>
+      ${kpis.length > 0 ? `<div class="kpi-strip">${kpiStripHtml}</div>` : ''}
+      ${iframeHtml}
+      ${orgHtml}
+    </div>`;
+}
+
+/* =========================================================
+   20. MENÚ LATERAL DINÁMICO
+   ========================================================= */
+function renderSidebarSection(cfg, idx) {
+  const pageId = 'page-' + slug(cfg.seccion);
+  const links = DATA.links.filter(l => l.seccion === cfg.seccion);
+  const dotClass = idx === 0 ? 'd-teal' : idx === 1 ? 'd-blue' : idx === 2 ? 'd-amber' : 'd-red';
+
+  const sbLinks = links.map(l => `
+    <div class="sb-item" onclick="goPage('${pageId}')" data-label="${l.herramienta.toLowerCase()}">
+      <span class="sb-dot ${l.url && l.url !== 'Pendiente' ? dotClass : 'd-gray'}"></span> ${l.herramienta}
+    </div>`).join('');
+
+  return `
+    <div class="sb-section">
+      <div class="sb-section-title">${cfg.seccion}</div>
+      <div class="sb-item${currentPage === pageId ? ' active' : ''}" onclick="goPage('${pageId}')" data-label="${cfg.seccion.toLowerCase()}">
+        <span class="sb-dot ${dotClass}"></span> Ver sección
+      </div>
+      ${sbLinks}
+    </div>`;
+}
+
+/* =========================================================
+   21. DIRECTORIO / RESPONSABLES
+   ========================================================= */
+function renderResponsibleCard(cfg, idx) {
+  const avColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+  const initials = getInitials(cfg.responsable);
+
+  return `
+    <div class="org-strip">
+      <div class="org-strip-title">Responsable</div>
+      <div class="org-people">
+        <div class="org-person">
+          <div class="org-av" style="background:${avColor}">${initials}</div>
           <div>
-            <div class="vh-title">${cfg.seccion}</div>
-            <div class="vh-meta">Resp: ${cfg.responsable} &nbsp;·&nbsp; ${cfg.periodicidad} &nbsp;·&nbsp; ${cfg.descripcion}</div>
+            <div class="org-name">${cfg.responsable}</div>
+            <div class="org-cargo">${cfg.seccion}</div>
+            <div class="org-mail"><a href="mailto:${cfg.correo}" style="color:inherit;text-decoration:none">${cfg.correo}</a></div>
           </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">${allLinksHtml}</div>
         </div>
-        ${kpis.length > 0 ? `<div class="kpi-strip">${kpiStripHtml}</div>` : ''}
-        ${iframeHtml}
-        ${orgHtml}
-      </div>`;
-
-    // ── Sidebar section ──
-    const dotClass = idx === 0 ? 'd-teal' : idx === 1 ? 'd-blue' : idx === 2 ? 'd-amber' : 'd-red';
-    let sbLinks = links.map(l =>
-      `<div class="sb-item" onclick="goPage('${pageId}')" data-label="${l.herramienta.toLowerCase()}">
-        <span class="sb-dot ${l.url && l.url !== 'Pendiente' ? dotClass : 'd-gray'}"></span> ${l.herramienta}
-      </div>`
-    ).join('');
-
-    sbHtml += `
-      <div class="sb-section">
-        <div class="sb-section-title">${cfg.seccion}</div>
-        <div class="sb-item${currentPage===pageId?' active':''}" onclick="goPage('${pageId}')" data-label="${cfg.seccion.toLowerCase()}">
-          <span class="sb-dot ${dotClass}"></span> Ver sección
-        </div>
-        ${sbLinks}
-      </div>`;
-  });
-
-  // Equipo
-  sbHtml += `<div class="sb-section"><div class="sb-section-title">Equipo</div>
-    <div class="sb-item" onclick="goPage('page-equipo')"><span class="sb-dot d-blue"></span> Directorio</div>
-  </div>`;
-
-  sbContent.innerHTML = sbHtml;
-
-  // Build equipo page
-  buildEquipoPage();
+      </div>
+    </div>`;
 }
 
 function buildEquipoPage() {
   const dp = document.getElementById('dynamicPages');
-  let cards = DATA.config.map((cfg,i) => {
+
+  const cards = DATA.config.map((cfg, i) => {
     const av = AVATAR_COLORS[i % AVATAR_COLORS.length];
-    const ini = cfg.responsable.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-    return `<div class="org-person" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;gap:12px;">
-      <div class="org-av" style="background:${av};width:38px;height:38px;font-size:14px;">${ini}</div>
-      <div>
-        <div class="org-name" style="font-size:13px;">${cfg.responsable}</div>
-        <div class="org-cargo" style="font-size:11px;">${cfg.seccion}</div>
-        <div class="org-mail"><a href="mailto:${cfg.correo}" style="color:var(--teal-dk);font-size:11px;">${cfg.correo}</a></div>
-      </div>
-    </div>`;
+    const ini = getInitials(cfg.responsable);
+
+    return `
+      <div class="org-person" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 18px;gap:12px;">
+        <div class="org-av" style="background:${av};width:40px;height:40px;font-size:14px;">${ini}</div>
+        <div>
+          <div class="org-name">${cfg.responsable}</div>
+          <div class="org-cargo">${cfg.seccion}</div>
+          <div class="org-mail"><a href="mailto:${cfg.correo}" style="color:var(--teal-dk);font-size:12px;">${cfg.correo}</a></div>
+        </div>
+      </div>`;
   }).join('');
 
   dp.innerHTML += `
     <div class="page" id="page-equipo">
-      <div class="visor-header"><div><div class="vh-title">Equipo OGAME</div><div class="vh-meta">Directorio de responsables por herramienta</div></div></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-top:4px;">${cards}</div>
+      <div class="visor-header">
+        <div>
+          <div class="vh-title">Equipo OMEI</div>
+          <div class="vh-meta">Directorio de responsables por herramienta</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:4px;">${cards}</div>
     </div>`;
 }
 
-// ── Navigation ──
+/* =========================================================
+   22. NAVEGACIÓN E IFRAME
+   ========================================================= */
 function goPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
   const target = document.getElementById(id);
   if (target) target.classList.add('active');
+
   currentPage = id;
+
   document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
   document.querySelectorAll(`.sb-item[onclick*="${id}"]`).forEach(i => i.classList.add('active'));
-  document.getElementById('mainArea').scrollTo(0,0);
+  document.getElementById('mainArea').scrollTo(0, 0);
 }
 
-// ── Iframe loader ──
 function loadIframe(key, url) {
   const mock = document.getElementById('mock-' + key);
   const frame = document.getElementById('iframe-' + key);
+
   if (!frame) return;
+
   frame.src = url;
   frame.style.display = 'block';
-  mock.querySelectorAll('div, button').forEach(el => { if (el !== frame) el.style.display = 'none'; });
+
+  mock.querySelectorAll('div, button').forEach(el => {
+    if (el !== frame) el.style.display = 'none';
+  });
+
   mock.style.padding = '0';
   mock.style.background = 'transparent';
 }
 
-// ── Sidebar search ──
 function filterSidebar(q) {
   const ql = q.toLowerCase();
+
   document.querySelectorAll('.sb-item').forEach(item => {
     const label = (item.dataset.label || item.textContent).toLowerCase();
     item.style.display = !ql || label.includes(ql) ? '' : 'none';
   });
 }
 
-// ── Helpers ──
+/* =========================================================
+   23. FUNCIONES AUXILIARES
+   ========================================================= */
 function slug(str) {
-  return str.toLowerCase().replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+  return str
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function getInitials(name) {
+  return (name || '')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0])
+    .join('')
+    .toUpperCase();
 }
 
 function formatVal(val, unit) {
   if (!val) return '—';
-  const v = val.toString().replace(',','.');
-  const n = parseFloat(v);
+
+  const clean = val.toString().replace(/,/g, '.');
+  const n = parseFloat(clean);
+
   if (isNaN(n)) return val;
-  if (unit && unit.toLowerCase().includes('porcentaje')) return (n*100 > 1 ? n : n*100).toFixed(1).replace('.',',') + '%';
-  if (n >= 1000000) return (n/1000000).toFixed(1).replace('.',',') + ' M';
+
+  if (unit && unit.toLowerCase().includes('porcentaje')) {
+    return (n > 1 ? n : n * 100).toFixed(1).replace('.', ',') + '%';
+  }
+
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.', ',') + ' M';
   if (n >= 1000) return n.toLocaleString('es-PE');
+
   return n.toLocaleString('es-PE');
 }
 </script>
