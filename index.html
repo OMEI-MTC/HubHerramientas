@@ -239,7 +239,14 @@ iframe.pbi-frame { width: 100%; height: 480px; border: none; display: block; }
 
 <script>
 // ── Config ──
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRvz_-tAPj4EVa3WHvnM8y9O4kTdo9WikfA9G6xVRvEfj_j-ZghB_rd2qAU2ZFE19QEFc0HVmyVDDzg/pub?gid=0&single=true&output=tsv';
+const SHEET_ID_PUB = '2PACX-1vRvz_-tAPj4EVa3WHvnM8y9O4kTdo9WikfA9G6xVRvEfj_j-ZghB_rd2qAU2ZFE19QEFc0HVmyVDDzg';
+const SHEET_URL_DIRECT = `https://docs.google.com/spreadsheets/d/e/${SHEET_ID_PUB}/pub?gid=0&single=true&output=tsv`;
+// Proxies CORS — se intenta en orden hasta que uno funcione
+const CORS_PROXIES = [
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => url  // intento directo como fallback
+];
 
 const AVATAR_COLORS = ['#0D2B4E','#1D9E75','#C8102E','#0F6E56','#BA7517','#185FA5'];
 
@@ -254,15 +261,26 @@ loadSheet();
 
 // ── Load & parse TSV ──
 async function loadSheet() {
-  try {
-    const res = await fetch(SHEET_URL);
-    const text = await res.text();
-    parseSheet(text);
-    buildUI();
-  } catch(e) {
-    document.getElementById('homeLoadingMsg').innerHTML =
-      '<span style="color:#C8102E;font-size:12px;">⚠ No se pudo cargar la configuración. Verifica que el Sheet esté publicado.</span>';
+  let lastError = null;
+  for (const proxyFn of CORS_PROXIES) {
+    try {
+      const url = proxyFn(SHEET_URL_DIRECT);
+      const res = await fetch(url, { cache: 'no-cache' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      if (!text || text.length < 10) throw new Error('Empty response');
+      parseSheet(text);
+      buildUI();
+      return;
+    } catch(e) {
+      lastError = e;
+      continue;
+    }
   }
+  document.getElementById('homeLoadingMsg').innerHTML =
+    `<span style="color:#C8102E;font-size:12px;">⚠ No se pudo cargar la configuración desde Google Sheets.<br>
+    <small>Verifica que el Sheet esté publicado en la web (Archivo → Publicar en la web → TSV).<br>
+    Error: ${lastError?.message || 'desconocido'}</small></span>`;
 }
 
 function parseSheet(text) {
