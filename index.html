@@ -10,29 +10,24 @@
 
 <style>
 /* =========================================================
-   01. VARIABLES, RESET Y ESTILOS BASE
+   01. VARIABLES, RESET Y BASE
    ========================================================= */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   --navy: #0D2B4E;
-  --navy-mid: #1A3A5C;
   --teal: #1D9E75;
   --teal-dk: #0F6E56;
-  --red: #C8102E;
-  --amber: #BA7517;
-  --blue-muted: #7FB3D3;
-  --blue-link: #5A9FC0;
   --white: #ffffff;
   --bg: #F4F6F9;
   --card: #ffffff;
-  --border: rgba(0,0,0,0.09);
+  --border: rgba(0,0,0,0.10);
   --text: #1a1a2e;
   --text-2: #4a5568;
   --text-3: #8a9ab0;
+  --blue-muted: #7FB3D3;
   --sans: 'DM Sans', system-ui, sans-serif;
   --serif: 'DM Serif Display', serif;
-  --radius: 10px;
   --radius-lg: 14px;
 }
 
@@ -46,53 +41,44 @@ body {
 }
 
 /* =========================================================
-   02. LAYOUT GENERAL
+   02. LAYOUT GENERAL SIN MENÚ LATERAL
    ========================================================= */
 .layout {
-  display: grid;
-  grid-template-rows: 72px 1fr;
-  grid-template-columns: 1fr 240px;
   min-height: 100vh;
-}
-
-.topbar {
-  grid-column: 1 / -1;
-  background: var(--navy);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 28px;
-  border-bottom: 3px solid var(--teal);
-  min-height: 72px;
+  display: grid;
+  grid-template-rows: 88px 1fr;
 }
 
 .main {
-  overflow-y: auto;
-  padding: 22px;
+  padding: 28px;
   background: var(--bg);
-}
-
-.sidebar {
-  background: var(--navy-mid);
-  overflow-y: auto;
-  border-left: 1px solid rgba(0,0,0,0.15);
 }
 
 /* =========================================================
    03. TOPBAR
    ========================================================= */
+.topbar {
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  border-bottom: 4px solid var(--teal);
+  min-height: 88px;
+}
+
 .topbar-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .topbar-logo {
-  width: 52px;
-  height: 52px;
+  width: 58px;
+  height: 58px;
   background: var(--white);
   border: none;
-  border-radius: 8px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -110,121 +96,56 @@ body {
   display: block;
 }
 
-.topbar-logo:hover {
-  transform: translateY(-1px);
-}
-
 .topbar-name {
-  font-size: 19px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--white);
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .topbar-sub {
-  font-size: 12px;
-  color: var(--blue-muted);
-  margin-top: 3px;
+  font-size: 14px;
+  color: var(--white);
+  margin-top: 5px;
+  line-height: 1.35;
+  font-weight: 500;
 }
 
 .topbar-date {
   text-align: right;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--blue-muted);
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .topbar-date strong {
   display: block;
   color: var(--white);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 
 /* =========================================================
-   04. SIDEBAR
+   04. HOME Y SECCIONES
    ========================================================= */
-.sb-search {
-  padding: 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-}
-
-.sb-search input {
-  width: 100%;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.14);
-  border-radius: 7px;
-  padding: 8px 10px;
-  font-size: 12px;
-  color: var(--white);
-  font-family: var(--sans);
-  outline: none;
-}
-
-.sb-search input::placeholder { color: rgba(255,255,255,0.35); }
-.sb-search input:focus { border-color: var(--teal); }
-
-.sb-section { padding: 14px 12px 4px; }
-
-.sb-section-title {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--teal);
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  margin-bottom: 6px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-.sb-item {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  color: rgba(255,255,255,0.78);
-  font-size: 12px;
-  margin-bottom: 2px;
-  transition: background .12s, color .12s;
-  text-decoration: none;
-}
-
-.sb-item:hover { background: rgba(255,255,255,0.08); color: var(--white); }
-.sb-item.active { background: rgba(29,158,117,0.22); color: var(--white); }
-.sb-item.home-link { color: rgba(255,255,255,0.95); font-weight: 700; }
-
-.sb-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.d-teal { background: var(--teal); }
-.d-red { background: var(--red); }
-.d-amber { background: var(--amber); }
-.d-gray { background: rgba(255,255,255,0.3); }
-.d-blue { background: var(--blue-link); }
-
-/* =========================================================
-   05. PÁGINAS Y HOME
-   ========================================================= */
-.page { display: none; }
-.page.active { display: block; }
-
 .home-greeting {
   font-family: var(--serif);
-  font-size: 30px;
+  font-size: 32px;
   color: var(--text);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .home-sub {
   font-size: 14px;
   color: var(--text-2);
-  margin-bottom: 18px;
+  margin-bottom: 22px;
+}
+
+.module-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 22px;
 }
 
 .section-lbl {
@@ -234,7 +155,7 @@ body {
   letter-spacing: .07em;
   text-transform: uppercase;
   color: var(--text-3);
-  margin: 8px 0 8px;
+  margin: 10px 0 4px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -247,28 +168,14 @@ body {
   background: var(--border);
 }
 
-.module-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 20px;
-}
-
 /* =========================================================
-   06. TARJETAS DE HERRAMIENTAS
+   05. TARJETAS
    ========================================================= */
 .module-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  cursor: pointer;
-  transition: border-color .15s, transform .1s;
-}
-
-.module-card:hover {
-  border-color: rgba(29,158,117,0.4);
-  transform: translateY(-1px);
 }
 
 .mc-head {
@@ -277,7 +184,7 @@ body {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
 }
 
 .mc-title {
@@ -291,13 +198,6 @@ body {
   font-size: 12px;
   color: var(--blue-muted);
   margin-top: 3px;
-}
-
-.mc-date-wrap {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  flex-shrink: 0;
 }
 
 .mc-date-pills {
@@ -341,15 +241,15 @@ body {
   gap: 12px;
 }
 
+.mc-kpi:nth-child(even) { border-right: none; }
+.mc-kpi:nth-child(n+3) { border-top: 1px solid var(--border); }
+
 .mc-kpi-icon {
   width: 44px;
   height: 44px;
   object-fit: contain;
   display: block;
 }
-
-.mc-kpi:nth-child(even) { border-right: none; }
-.mc-kpi:nth-child(n+3) { border-top: 1px solid var(--border); }
 
 .mc-kpi-val {
   font-size: 25px;
@@ -364,12 +264,8 @@ body {
   margin-top: 3px;
 }
 
-.mc-body { padding: 14px 16px; }
-
-.mc-desc {
-  font-size: 13px;
-  color: var(--text-2);
-}
+.mc-body { padding: 16px; }
+.mc-desc { font-size: 13px; color: var(--text-2); }
 
 .mc-links {
   padding: 10px 14px;
@@ -379,9 +275,6 @@ body {
   border-top: 1px solid var(--border);
 }
 
-.
-.
-.
 .mc-btn {
   font-size: 12px;
   font-weight: 600;
@@ -415,181 +308,13 @@ body {
 }
 
 /* =========================================================
-   07. PÁGINAS INTERNAS DE CADA HERRAMIENTA
-   ========================================================= */
-.visor-header {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 14px 18px;
-  margin-bottom: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.vh-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.vh-meta {
-  font-size: 13px;
-  color: var(--text-2);
-  margin-top: 3px;
-}
-
-.kpi-strip {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.kpi-s {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  border-top: 3px solid var(--teal);
-}
-
-.kpi-s.r { border-top-color: var(--red); }
-.kpi-s.n { border-top-color: var(--navy); }
-.kpi-s.a { border-top-color: var(--amber); }
-
-.kpi-s-val {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.kpi-s-lbl {
-  font-size: 12px;
-  color: var(--text-3);
-  margin-top: 2px;
-  line-height: 1.3;
-}
-
-.kpi-s-unit {
-  font-size: 11px;
-  color: var(--text-3);
-}
-
-.iframe-wrap {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  margin-bottom: 14px;
-}
-
-.iframe-bar {
-  background: var(--navy);
-  padding: 8px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.iframe-bar-title {
-  font-size: 12px;
-  color: var(--blue-muted);
-}
-
-.iframe-mock {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 36px 20px;
-  background: #f8fafc;
-}
-
-.iframe-mock-label { font-size: 14px; color: var(--text-2); }
-.iframe-mock-sub { font-size: 12px; color: var(--text-3); text-align: center; }
-
-iframe.pbi-frame {
-  width: 100%;
-  height: 520px;
-  border: none;
-  display: block;
-}
-
-.btn-open {
-  background: var(--navy);
-  color: var(--white);
-  border: none;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 8px 15px;
-  border-radius: 7px;
-  cursor: pointer;
-  font-family: var(--sans);
-}
-
-/* =========================================================
-   08. DIRECTORIO / EQUIPO
-   ========================================================= */
-.org-strip {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 14px 18px;
-}
-
-.org-strip-title {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--text-3);
-  margin-bottom: 10px;
-}
-
-.org-people {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.org-person {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--bg);
-  border-radius: 8px;
-  padding: 9px 12px;
-}
-
-.org-av {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--white);
-  flex-shrink: 0;
-}
-
-.org-name { font-size: 13px; font-weight: 700; color: var(--text); }
-.org-cargo { font-size: 12px; color: var(--text-2); }
-.org-mail { font-size: 12px; color: var(--teal-dk); }
-
-/* =========================================================
-   09. ESTADOS DE CARGA Y RESPONSIVE
+   06. CARGA Y RESPONSIVE
    ========================================================= */
 .hub-loading {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-3);
   padding: 20px 0;
 }
@@ -606,9 +331,12 @@ iframe.pbi-frame {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 900px) {
-  .layout { grid-template-columns: 1fr; grid-template-rows: 72px 1fr; }
-  .sidebar { display: none; }
   .module-grid { grid-template-columns: 1fr; }
+  .topbar { align-items: flex-start; padding: 14px 18px; height: auto; gap: 12px; }
+  .topbar-date { display: none; }
+  .topbar-name { font-size: 19px; }
+  .topbar-sub { font-size: 12px; }
+  .main { padding: 20px; }
 }
 </style>
 </head>
@@ -617,16 +345,19 @@ iframe.pbi-frame {
 <div class="layout">
 
   <!-- =====================================================
-       10. TOPBAR / ENCABEZADO
+       07. TOPBAR / ENCABEZADO
        ===================================================== -->
   <header class="topbar">
     <div class="topbar-brand">
-      <button class="topbar-logo" onclick="goPage('page-home')" title="Volver a la portada">
+      <button class="topbar-logo" onclick="goHome()" title="Volver a la portada">
         <img src="mtc.jpg" alt="Logo MTC">
       </button>
       <div>
         <div class="topbar-name">Hub de Herramientas · OMEI</div>
-        <div class="topbar-sub">Ministerio de Transportes y Comunicaciones</div>
+        <div class="topbar-sub">
+          Oficina General de Articulación, Monitoreo, y Evaluación de Impacto (OGAME)<br>
+          Ministerio de Transporte y Comunicaciones
+        </div>
       </div>
     </div>
     <div class="topbar-date">
@@ -636,60 +367,35 @@ iframe.pbi-frame {
   </header>
 
   <!-- =====================================================
-       11. CONTENIDO PRINCIPAL
+       08. CONTENIDO PRINCIPAL
        ===================================================== -->
   <main class="main" id="mainArea">
-    <div class="page active" id="page-home">
-      <div class="home-greeting">Bienvenida/o</div>
-      <div class="home-sub" id="homeLoadingMsg">
-        <span class="hub-loading"><span class="spin"></span> Cargando configuración desde Google Sheets…</span>
-      </div>
-      <div id="homeContent" style="display:none">
-        <div class="home-sub">Selecciona una herramienta del menú o explora las secciones.</div>
-        <div class="module-grid" id="moduleGrid"></div>
-      </div>
+    <div class="home-greeting">Bienvenida/o</div>
+    <div class="home-sub" id="homeLoadingMsg">
+      <span class="hub-loading"><span class="spin"></span> Cargando configuración desde Google Sheets…</span>
     </div>
 
-    <div id="dynamicPages"></div>
+    <div id="homeContent" style="display:none">
+      <div class="home-sub">Selecciona una herramienta o repositorio para acceder a la información.</div>
+      <div class="module-grid" id="moduleGrid"></div>
+    </div>
   </main>
-
-  <!-- =====================================================
-       12. MENÚ LATERAL
-       ===================================================== -->
-  <aside class="sidebar">
-    <div class="sb-search">
-      <input type="text" placeholder="Buscar herramienta…" id="sbSearch" oninput="filterSidebar(this.value)">
-    </div>
-    <div id="sbContent">
-      <div class="sb-section">
-        <div class="sb-item home-link" onclick="goPage('page-home')">
-          <span class="sb-dot d-teal"></span> Inicio / Portada
-        </div>
-      </div>
-      <div class="sb-section">
-        <div class="sb-section-title">Cargando…</div>
-      </div>
-    </div>
-  </aside>
 
 </div>
 
 <script>
 /* =========================================================
-   13. CONFIGURACIÓN GENERAL
+   09. CONFIGURACIÓN GENERAL
    ========================================================= */
 const SHEET_URL_DIRECT = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkXT9qu8x5JInu81VZ3BDkQ338o6gix4h4CBRTL7q6UeL7NsWn0MvvRlMA474WwH4xIy0LSlPQT-A7/pub?gid=766760814&single=true&output=tsv';
 
 const CORS_PROXIES = [
-  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => url,
   url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => url
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`
 ];
 
-const AVATAR_COLORS = ['#0D2B4E', '#1D9E75', '#C8102E', '#0F6E56', '#BA7517', '#185FA5'];
-
 let DATA = { config: [], links: [], kpis: [] };
-let currentPage = 'page-home';
 
 document.getElementById('topDate').textContent = new Date().toLocaleDateString('es-PE', {
   day: '2-digit',
@@ -700,7 +406,7 @@ document.getElementById('topDate').textContent = new Date().toLocaleDateString('
 loadSheet();
 
 /* =========================================================
-   14. CARGA DE DATOS DESDE GOOGLE SHEETS
+   10. CARGA DE DATOS DESDE GOOGLE SHEETS
    ========================================================= */
 async function loadSheet() {
   let lastError = null;
@@ -708,7 +414,7 @@ async function loadSheet() {
   for (const proxyFn of CORS_PROXIES) {
     try {
       const url = proxyFn(SHEET_URL_DIRECT);
-      const res = await fetch(url, { cache: 'no-cache' });
+      const res = await fetchWithTimeout(url, 9000);
 
       if (!res.ok) throw new Error('HTTP ' + res.status);
 
@@ -731,19 +437,26 @@ async function loadSheet() {
     </span>`;
 }
 
+function fetchWithTimeout(url, timeoutMs) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(url, { cache: 'no-store', signal: controller.signal })
+    .finally(() => clearTimeout(timeout));
+}
+
 /* =========================================================
-   15. LECTURA DE LAS 3 TABLAS DEL EXCEL PUBLICADO
-   Primera tabla: configuración general
-   Segunda tabla: botones / enlaces
-   Tercera tabla: KPIs
+   11. LECTURA DE LAS 3 TABLAS DEL EXCEL PUBLICADO
    ========================================================= */
 function parseSheet(text) {
   DATA = { config: [], links: [], kpis: [] };
 
   const rows = text
-    .replace(/\r/g, '')
-    .split('\n')
-    .map(r => r.split('\t').map(c => (c || '').trim()));
+    .replace(/
+/g, '')
+    .split('
+')
+    .map(r => r.split('	').map(c => (c || '').trim()));
 
   let mode = null;
 
@@ -803,59 +516,28 @@ function parseSheet(text) {
 }
 
 /* =========================================================
-   16. CONSTRUCCIÓN DE TODA LA INTERFAZ
+   12. CONSTRUCCIÓN DEL HOME
    ========================================================= */
 function buildUI() {
   document.getElementById('homeLoadingMsg').style.display = 'none';
   document.getElementById('homeContent').style.display = 'block';
 
   const grid = document.getElementById('moduleGrid');
-  const dynPages = document.getElementById('dynamicPages');
-  const sbContent = document.getElementById('sbContent');
-
   grid.innerHTML = '';
-  dynPages.innerHTML = '';
-
-  let sbHtml = `
-    <div class="sb-section">
-      <div class="sb-item home-link" onclick="goPage('page-home')">
-        <span class="sb-dot d-teal"></span> Inicio / Portada
-      </div>
-    </div>`;
 
   const herramientas = DATA.config.filter(cfg => cfg.seccion !== 'Publicaciones');
   const otros = DATA.config.filter(cfg => cfg.seccion === 'Publicaciones');
 
   renderHomeGroup('Herramientas', herramientas, grid);
   renderHomeGroup('Otros', otros, grid);
-
-  DATA.config.forEach((cfg, idx) => {
-    
-    sbHtml += renderSidebarSection(cfg, idx);
-  });
-
-  sbHtml += `
-    <div class="sb-section">
-      <div class="sb-section-title">Equipo</div>
-      <div class="sb-item" onclick="goPage('page-equipo')">
-        <span class="sb-dot d-blue"></span> Directorio
-      </div>
-    </div>`;
-
-  sbContent.innerHTML = sbHtml;
-  buildEquipoPage();
 }
 
-/* =========================================================
-   17. TARJETAS DEL HOME POR GRUPOS: HERRAMIENTAS / OTROS
-   ========================================================= */
 function renderHomeGroup(title, items, container) {
   if (!items || items.length === 0) return;
 
   container.innerHTML += `<div class="section-lbl">${title}</div>`;
 
   items.forEach(cfg => {
-    const pageId = 'page-' + slug(cfg.seccion);
     const kpis = DATA.kpis.filter(k => k.seccion === cfg.seccion);
     const links = DATA.links.filter(l => l.seccion === cfg.seccion);
     const hasKpis = kpis.length > 0;
@@ -873,8 +555,7 @@ function renderHomeGroup(title, items, container) {
         `).join('')}
       </div>` : '';
 
-    const linksHtml = renderLinksButtons(links, false);
-    const previewHtml = renderPreview(links);
+    const linksHtml = renderLinksButtons(links);
 
     const corteHtml = cfg.seccion !== 'Publicaciones' ? `
       <div class="mc-date-pills">
@@ -883,28 +564,27 @@ function renderHomeGroup(title, items, container) {
       </div>` : '';
 
     container.innerHTML += `
-      <div class="module-card" onclick="goPage('${pageId}')">
+      <div class="module-card">
         <div class="mc-head">
           <div>
             <div class="mc-title">${cfg.seccion}</div>
-            <div class="mc-resp">Resp: ${cfg.responsable}</div>
+            <div class="mc-resp">Responsable: ${cfg.responsable}<br>Correo: ${cfg.correo}</div>
           </div>
-          <div class="mc-date-wrap">${corteHtml}</div>
+          <div>${corteHtml}</div>
         </div>
         ${hasKpis ? kpiHtml : `<div class="mc-body"><div class="mc-desc">${cfg.descripcion}</div></div>`}
         <div class="mc-links">${linksHtml}</div>
-        ${previewHtml}
       </div>`;
   });
 }
 
 /* =========================================================
-   18. BOTONES DE ENLACES Y VISTA PREVIA
+   13. BOTONES / ENLACES
    ========================================================= */
-function renderLinksButtons(links, forcePrimary = false) {
+function renderLinksButtons(links) {
   return links.map(l => {
     const isPending = !l.url || l.url.toLowerCase() === 'pendiente';
-    const isPrimary = forcePrimary || l.herramienta.toLowerCase().includes('tablero') || l.herramienta.toLowerCase().includes('visor');
+    const isPrimary = l.herramienta.toLowerCase().includes('tablero') || l.herramienta.toLowerCase().includes('visor');
 
     if (isPending) {
       return `<span class="mc-btn" title="Próximamente">${l.herramienta}</span>`;
@@ -914,160 +594,17 @@ function renderLinksButtons(links, forcePrimary = false) {
       <a class="mc-btn${isPrimary ? ' primary' : ''}"
          href="${l.url}"
          target="_blank"
-         rel="noopener"
-         onclick="event.stopPropagation()">
+         rel="noopener">
         ${l.herramienta} ↗
       </a>`;
   }).join('');
 }
 
-
 /* =========================================================
-   19. PÁGINAS INTERNAS DE CADA HERRAMIENTA
+   14. FUNCIONES AUXILIARES
    ========================================================= */
-      ${iframeHtml}
-      ${orgHtml}
-    </div>`;
-}
-
-/* =========================================================
-   20. MENÚ LATERAL DINÁMICO
-   ========================================================= */
-function renderSidebarSection(cfg, idx) {
-  const pageId = 'page-' + slug(cfg.seccion);
-  const links = DATA.links.filter(l => l.seccion === cfg.seccion);
-  const dotClass = idx === 0 ? 'd-teal' : idx === 1 ? 'd-blue' : idx === 2 ? 'd-amber' : 'd-red';
-
-  const sbLinks = links.map(l => `
-    <div class="sb-item" onclick="goPage('${pageId}')" data-label="${l.herramienta.toLowerCase()}">
-      <span class="sb-dot ${l.url && l.url !== 'Pendiente' ? dotClass : 'd-gray'}"></span> ${l.herramienta}
-    </div>`).join('');
-
-  return `
-    <div class="sb-section">
-      <div class="sb-section-title">${cfg.seccion}</div>
-      <div class="sb-item${currentPage === pageId ? ' active' : ''}" onclick="goPage('${pageId}')" data-label="${cfg.seccion.toLowerCase()}">
-        <span class="sb-dot ${dotClass}"></span> Ver sección
-      </div>
-      ${sbLinks}
-    </div>`;
-}
-
-/* =========================================================
-   21. DIRECTORIO / RESPONSABLES
-   ========================================================= */
-function renderResponsibleCard(cfg, idx) {
-  const avColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
-  const initials = getInitials(cfg.responsable);
-
-  return `
-    <div class="org-strip">
-      <div class="org-strip-title">Responsable</div>
-      <div class="org-people">
-        <div class="org-person">
-          <div class="org-av" style="background:${avColor}">${initials}</div>
-          <div>
-            <div class="org-name">${cfg.responsable}</div>
-            <div class="org-cargo">${cfg.seccion}</div>
-            <div class="org-mail"><a href="mailto:${cfg.correo}" style="color:inherit;text-decoration:none">${cfg.correo}</a></div>
-          </div>
-        </div>
-      </div>
-    </div>`;
-}
-
-function buildEquipoPage() {
-  const dp = document.getElementById('dynamicPages');
-
-  const cards = DATA.config.map((cfg, i) => {
-    const av = AVATAR_COLORS[i % AVATAR_COLORS.length];
-    const ini = getInitials(cfg.responsable);
-
-    return `
-      <div class="org-person" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 18px;gap:12px;">
-        <div class="org-av" style="background:${av};width:40px;height:40px;font-size:14px;">${ini}</div>
-        <div>
-          <div class="org-name">${cfg.responsable}</div>
-          <div class="org-cargo">${cfg.seccion}</div>
-          <div class="org-mail"><a href="mailto:${cfg.correo}" style="color:var(--teal-dk);font-size:12px;">${cfg.correo}</a></div>
-        </div>
-      </div>`;
-  }).join('');
-
-  dp.innerHTML += `
-    <div class="page" id="page-equipo">
-      <div class="visor-header">
-        <div>
-          <div class="vh-title">Equipo OMEI</div>
-          <div class="vh-meta">Directorio de responsables por herramienta</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:4px;">${cards}</div>
-    </div>`;
-}
-
-/* =========================================================
-   22. NAVEGACIÓN E IFRAME
-   ========================================================= */
-function goPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-
-  const target = document.getElementById(id);
-  if (target) target.classList.add('active');
-
-  currentPage = id;
-
-  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
-  document.querySelectorAll(`.sb-item[onclick*="${id}"]`).forEach(i => i.classList.add('active'));
-  document.getElementById('mainArea').scrollTo(0, 0);
-}
-
-function loadIframe(key, url) {
-  const mock = document.getElementById('mock-' + key);
-  const frame = document.getElementById('iframe-' + key);
-
-  if (!frame) return;
-
-  frame.src = url;
-  frame.style.display = 'block';
-
-  mock.querySelectorAll('div, button').forEach(el => {
-    if (el !== frame) el.style.display = 'none';
-  });
-
-  mock.style.padding = '0';
-  mock.style.background = 'transparent';
-}
-
-function filterSidebar(q) {
-  const ql = q.toLowerCase();
-
-  document.querySelectorAll('.sb-item').forEach(item => {
-    const label = (item.dataset.label || item.textContent).toLowerCase();
-    item.style.display = !ql || label.includes(ql) ? '' : 'none';
-  });
-}
-
-/* =========================================================
-   23. FUNCIONES AUXILIARES
-   ========================================================= */
-function slug(str) {
-  return str
-    .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-function getInitials(name) {
-  return (name || '')
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(w => w[0])
-    .join('')
-    .toUpperCase();
+function goHome() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function getKpiIcon(variable) {
