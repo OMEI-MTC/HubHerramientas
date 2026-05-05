@@ -379,28 +379,9 @@ body {
   border-top: 1px solid var(--border);
 }
 
-.mc-preview {
-  padding: 0 14px 14px;
-  border-top: 1px solid var(--border);
-}
-
-.mc-preview-frame {
-  width: 100%;
-  height: 190px;
-  border: none;
-  border-radius: 8px;
-  background: #eef3f7;
-  display: block;
-}
-
-.mc-preview-empty {
-  font-size: 12px;
-  color: var(--text-3);
-  padding: 16px;
-  background: #f8fafc;
-  border-radius: 8px;
-}
-
+.
+.
+.
 .mc-btn {
   font-size: 12px;
   font-weight: 600;
@@ -849,7 +830,7 @@ function buildUI() {
   renderHomeGroup('Otros', otros, grid);
 
   DATA.config.forEach((cfg, idx) => {
-    renderInternalPage(cfg, idx, dynPages);
+    
     sbHtml += renderSidebarSection(cfg, idx);
   });
 
@@ -940,71 +921,10 @@ function renderLinksButtons(links, forcePrimary = false) {
   }).join('');
 }
 
-function renderPreview(links) {
-  const tablero = links.find(l =>
-    l.url &&
-    l.url.toLowerCase() !== 'pendiente' &&
-    (l.herramienta.toLowerCase().includes('tablero') || l.url.toLowerCase().includes('powerbi'))
-  );
-
-  if (!tablero) return '';
-
-  return `
-    <div class="mc-preview">
-      <iframe class="mc-preview-frame" src="${tablero.url}" loading="lazy" allowfullscreen></iframe>
-    </div>`;
-}
 
 /* =========================================================
    19. PÁGINAS INTERNAS DE CADA HERRAMIENTA
    ========================================================= */
-function renderInternalPage(cfg, idx, container) {
-  const pageId = 'page-' + slug(cfg.seccion);
-  const kpis = DATA.kpis.filter(k => k.seccion === cfg.seccion);
-  const links = DATA.links.filter(l => l.seccion === cfg.seccion);
-
-  const kpiStripHtml = kpis.slice(0, 6).map((k, i) => {
-    const accent = ['', 'r', 'n', 'a', '', 'r'][i];
-    return `
-      <div class="kpi-s ${accent}">
-        <div class="kpi-s-val">${formatVal(k.valor, k.unidad)}</div>
-        <div class="kpi-s-lbl">${k.variable}</div>
-        <div class="kpi-s-unit">${k.unidad}</div>
-      </div>`;
-  }).join('');
-
-  const allLinksHtml = renderLinksButtons(links, true);
-  const tableroLink = links.find(l =>
-    l.url &&
-    l.url.toLowerCase() !== 'pendiente' &&
-    (l.herramienta.toLowerCase().includes('tablero') || l.url.toLowerCase().includes('powerbi'))
-  );
-
-  const iframeHtml = tableroLink ? `
-    <div class="iframe-wrap">
-      <div class="iframe-bar">
-        <span class="iframe-bar-title">Visor Power BI — ${cfg.seccion}</span>
-      </div>
-      <div class="iframe-mock" id="mock-${slug(cfg.seccion)}">
-        <div class="iframe-mock-label">Vista previa del tablero</div>
-        <div class="iframe-mock-sub">Si el visor no carga aquí, usa el botón para abrirlo en una nueva pestaña.</div>
-        <button class="btn-open" style="margin-top:6px" onclick="loadIframe('${slug(cfg.seccion)}','${tableroLink.url}')">Intentar cargar aquí</button>
-        <iframe id="iframe-${slug(cfg.seccion)}" class="pbi-frame" style="display:none" allowfullscreen></iframe>
-      </div>
-    </div>` : '';
-
-  const orgHtml = renderResponsibleCard(cfg, idx);
-
-  container.innerHTML += `
-    <div class="page" id="${pageId}">
-      <div class="visor-header">
-        <div>
-          <div class="vh-title">${cfg.seccion}</div>
-          <div class="vh-meta">Resp: ${cfg.responsable} · ${cfg.periodicidad} · ${cfg.descripcion}</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">${allLinksHtml}</div>
-      </div>
-      ${kpis.length > 0 ? `<div class="kpi-strip">${kpiStripHtml}</div>` : ''}
       ${iframeHtml}
       ${orgHtml}
     </div>`;
