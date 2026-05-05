@@ -300,6 +300,7 @@ function parseSheet(text) {
     const c5 = row[4];
     const c6 = row[5];
 
+    // PRIMERA TABLA: configuración general
     if (
       c1 === 'Sección' &&
       c2 === 'Descripción' &&
@@ -311,12 +312,24 @@ function parseSheet(text) {
       continue;
     }
 
+    // SEGUNDA TABLA: botones / enlaces
     if (
       c1 === 'Sección' &&
       c2 === 'Herramientas' &&
       c3 === 'Enlaces'
     ) {
       mode = 'links';
+      continue;
+    }
+
+    // TERCERA TABLA: KPIs
+    if (
+      c1 === 'Sección' &&
+      c2 === 'Variable' &&
+      c3 === 'Valor' &&
+      c4 === 'Unidad'
+    ) {
+      mode = 'kpis';
       continue;
     }
 
@@ -334,23 +347,20 @@ function parseSheet(text) {
     }
 
     if (mode === 'links') {
-      const esUrl = c3 && /^https?:\/\//i.test(c3);
+      DATA.links.push({
+        seccion: c1,
+        herramienta: c2 || 'Herramienta',
+        url: c3 || ''
+      });
+    }
 
-      if (esUrl) {
-        DATA.links.push({
-          seccion: c1,
-          herramienta: c2 || 'Herramienta',
-          url: c3,
-          corte: c4 || ''
-        });
-      } else {
-        DATA.kpis.push({
-          seccion: c1,
-          variable: c2 || 'Indicador',
-          valor: c3 || '',
-          unidad: c4 || ''
-        });
-      }
+    if (mode === 'kpis') {
+      DATA.kpis.push({
+        seccion: c1,
+        variable: c2 || 'Indicador',
+        valor: c3 || '',
+        unidad: c4 || ''
+      });
     }
   }
 }
@@ -401,9 +411,17 @@ function buildUI() {
     }
 
     let linksHtml = links.map(l => {
-      if (!l.url || l.url.toLowerCase() === 'pendiente') return `<span class="mc-btn" title="Próximamente">${l.herramienta}</span>`;
-      return `<a class="mc-btn${l.herramienta==='Tablero'?' primary':''}" href="${l.url}" target="_blank" rel="noopener">${l.herramienta} ↗</a>`;
-    }).join('');
+    if (!l.url || l.url.toLowerCase() === 'pendiente') {
+    return `<span class="mc-btn" title="Próximamente">${l.herramienta}</span>`;
+    }
+
+  return `<a class="mc-btn${l.herramienta.toLowerCase().includes('tablero') ? ' primary' : ''}" 
+            href="${l.url}" 
+            target="_blank" 
+            rel="noopener">
+            ${l.herramienta} ↗
+          </a>`;
+}).join('');
 
     grid.innerHTML += `
       <div class="module-card" onclick="goPage('${pageId}')">
