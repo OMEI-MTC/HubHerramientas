@@ -91,15 +91,27 @@ body {
   width: 52px;
   height: 52px;
   background: var(--white);
+  border: none;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  color: var(--red);
-  font-weight: 700;
-  font-size: 14px;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+}
+
+.topbar-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.topbar-logo:hover {
+  transform: translateY(-1px);
 }
 
 .topbar-name {
@@ -323,6 +335,17 @@ body {
 .mc-kpi {
   padding: 14px 16px;
   border-right: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.mc-kpi-icon {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  display: block;
 }
 
 .mc-kpi:nth-child(even) { border-right: none; }
@@ -354,6 +377,28 @@ body {
   flex-wrap: wrap;
   gap: 8px;
   border-top: 1px solid var(--border);
+}
+
+.mc-preview {
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.mc-preview-frame {
+  width: 100%;
+  height: 190px;
+  border: none;
+  border-radius: 8px;
+  background: #eef3f7;
+  display: block;
+}
+
+.mc-preview-empty {
+  font-size: 12px;
+  color: var(--text-3);
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
 }
 
 .mc-btn {
@@ -595,7 +640,9 @@ iframe.pbi-frame {
        ===================================================== -->
   <header class="topbar">
     <div class="topbar-brand">
-      <div class="topbar-logo">MTC</div>
+      <button class="topbar-logo" onclick="goPage('page-home')" title="Volver a la portada">
+        <img src="mtc.jpg" alt="Logo MTC">
+      </button>
       <div>
         <div class="topbar-name">Hub de Herramientas · OMEI</div>
         <div class="topbar-sub">Ministerio de Transportes y Comunicaciones</div>
@@ -836,13 +883,17 @@ function renderHomeGroup(title, items, container) {
       <div class="mc-kpis">
         ${kpis.slice(0, 4).map(k => `
           <div class="mc-kpi">
-            <div class="mc-kpi-val">${formatVal(k.valor, k.unidad)}</div>
-            <div class="mc-kpi-lbl">${k.variable}</div>
+            <img class="mc-kpi-icon" src="${getKpiIcon(k.variable)}" alt="${k.variable}" onerror="this.style.display='none'">
+            <div>
+              <div class="mc-kpi-val">${formatVal(k.valor, k.unidad)}</div>
+              <div class="mc-kpi-lbl">${k.variable}</div>
+            </div>
           </div>
         `).join('')}
       </div>` : '';
 
     const linksHtml = renderLinksButtons(links, false);
+    const previewHtml = renderPreview(links);
 
     const corteHtml = cfg.seccion !== 'Publicaciones' ? `
       <div class="mc-date-pills">
@@ -861,12 +912,13 @@ function renderHomeGroup(title, items, container) {
         </div>
         ${hasKpis ? kpiHtml : `<div class="mc-body"><div class="mc-desc">${cfg.descripcion}</div></div>`}
         <div class="mc-links">${linksHtml}</div>
+        ${previewHtml}
       </div>`;
   });
 }
 
 /* =========================================================
-   18. BOTONES DE ENLACES
+   18. BOTONES DE ENLACES Y VISTA PREVIA
    ========================================================= */
 function renderLinksButtons(links, forcePrimary = false) {
   return links.map(l => {
@@ -886,6 +938,21 @@ function renderLinksButtons(links, forcePrimary = false) {
         ${l.herramienta} ↗
       </a>`;
   }).join('');
+}
+
+function renderPreview(links) {
+  const tablero = links.find(l =>
+    l.url &&
+    l.url.toLowerCase() !== 'pendiente' &&
+    (l.herramienta.toLowerCase().includes('tablero') || l.url.toLowerCase().includes('powerbi'))
+  );
+
+  if (!tablero) return '';
+
+  return `
+    <div class="mc-preview">
+      <iframe class="mc-preview-frame" src="${tablero.url}" loading="lazy" allowfullscreen></iframe>
+    </div>`;
 }
 
 /* =========================================================
@@ -1081,6 +1148,17 @@ function getInitials(name) {
     .map(w => w[0])
     .join('')
     .toUpperCase();
+}
+
+function getKpiIcon(variable) {
+  const v = (variable || '').toLowerCase();
+
+  if (v.includes('intervencion')) return 'intervenciones.png';
+  if (v.includes('hito')) return 'hito.png';
+  if (v.includes('invers')) return 'inversion.png';
+  if (v.includes('avance')) return 'avance.png';
+
+  return 'avance.png';
 }
 
 function formatVal(val, unit) {
