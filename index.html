@@ -46,7 +46,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .module-card:hover { border-color:rgba(29,158,117,0.4); transform:translateY(-1px); }
 .mc-head { background:var(--navy); padding:12px 15px; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
 .mc-title { font-size:18px; font-weight:700; color:var(--white); line-height:1.25; }
-.mc-resp { font-size:11px; color:var(--blue-muted); margin-top:3px; }
+.mc-resp { font-size:12px; color:var(--blue-muted); margin-top:3px; }
 .mc-pills { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
 .pill-date { background:var(--teal); color:var(--white); font-size:15px; font-weight:600; padding:6px 14px; border-radius:20px; white-space:nowrap; display:flex; align-items:center; gap:5px; }
 .pill-freq { font-size:10px; font-weight:500; padding:2px 9px; border-radius:20px; white-space:nowrap; color:var(--white); background:rgba(255,255,255,0.15); }
@@ -229,12 +229,15 @@ function renderGroup(label, items, container) {
     const fresh = getFreshness(cfg);
     const freqCls = cfg.periodicidad.replace(/\s/g,'');
 
-    const kpiHtml = kpis.length ? `<div class="mc-kpis">${kpis.slice(0,4).map(k=>`
+    const kpiHtml = kpis.length ? `
+    <div class="mc-kpis">${kpis.slice(0,4).map(k=>`
       <div class="mc-kpi">
         <img class="mc-kpi-icon" src="${kpiIcon(k.variable)}" alt="" onerror="this.style.display='none'">
         <div><div class="mc-kpi-val">${fmtVal(k.valor,k.unidad)}</div><div class="mc-kpi-lbl">${k.variable}</div></div>
-      </div>`).join('')}</div>` :
-      `<div class="mc-body"><div class="mc-desc">${cfg.descripcion}</div></div>`;
+      </div>`).join('')}
+      </div>
+    <div class="mc-body"><div class="mc-desc">${cfg.descripcion}</div></div>` :
+    `<div class="mc-body"><div class="mc-desc">${cfg.descripcion}</div></div>`;
 
     const linksHtml = links.map(l => {
       const pending = !l.url || l.url.toLowerCase() === 'pendiente';
@@ -289,16 +292,17 @@ function getFreshness(cfg) {
 // Iconos!
 function kpiIcon(v) { 
   const s = (v||'').toLowerCase();
-  if (s.includes('intervencion')) return 'intervenciones.png';
-  if (s.includes('hito'))         return 'hito.png';
-  if (s.includes('invers'))       return 'inversion.png';
-  if (s.includes('avance'))       return 'avance.png';
-  if (s.includes('proyecto'))     return 'proyectos1.png';
-  if (s.includes('servicio'))     return 'servicios1.png';
-  if (s.includes('acuerdos'))     return 'acuerdos.png';   
-  if (s.includes('culminados'))     return 'vigentes cumplidos.png';
-  if (s.includes('hitos vigentes'))  return 'Total.png';
-  if (s.includes('hitos culminados'))  return 'culminados.png';
+  if (s.includes('hitos vigentes'))   return 'Total1.png';           // primero las específicas
+  if (s.includes('hitos culminados')) return 'culminados.png';       // 
+  if (s.includes('a/c vigentes'))     return 'vigentes cumplidos.png'; // 
+  if (s.includes('culminados'))       return 'vigentes cumplidos.png';
+  if (s.includes('hito'))             return 'hito.png';             // genérico al final
+  if (s.includes('intervencion'))     return 'intervenciones.png';
+  if (s.includes('invers'))           return 'inversion.png';
+  if (s.includes('avance'))           return 'avance.png';
+  if (s.includes('proyecto'))         return 'proyectos1.png';
+  if (s.includes('servicio'))         return 'servicios1.png';
+  if (s.includes('acuerdos'))         return 'acuerdos.png';
   return 'avance.png';
 }
 
