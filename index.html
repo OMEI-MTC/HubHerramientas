@@ -30,8 +30,8 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .topbar-logo { width:54px; height:54px; background:var(--white); border-radius:8px; overflow:hidden; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.25); }
 .topbar-logo img { width:100%; height:100%; object-fit:cover; display:block; }
 .topbar-name { font-size:20px; font-weight:700; color:var(--white); line-height:1.2; }
-.topbar-sub { font-size:12px; color:var(--blue-muted); margin-top:3px; }
-.topbar-date { text-align:right; font-size:11px; color:var(--blue-muted); }
+.topbar-sub { font-size:12px; color:var(--white); margin-top:3px; opacity:0.85; }
+.topbar-date { text-align:right; font-size:11px; color:var(--white); opacity:0.85; }
 .topbar-date strong { display:block; color:var(--white); font-size:13px; font-weight:600; }
 
 /* Home */
@@ -46,7 +46,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .module-card:hover { border-color:rgba(29,158,117,0.4); transform:translateY(-1px); }
 .mc-head { background:var(--navy); padding:12px 15px; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
 .mc-title { font-size:18px; font-weight:700; color:var(--white); line-height:1.25; }
-.mc-resp { font-size:12px; color:var(--blue-muted); margin-top:3px; }
+.mc-resp { font-size:12px; color:rgba(255,255,255,0.85); margin-top:3px; }
 .mc-pills { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
 .pill-date { background:var(--teal); color:var(--white); font-size:15px; font-weight:600; padding:6px 14px; border-radius:20px; white-space:nowrap; display:flex; align-items:center; gap:5px; }
 .pill-freq { font-size:10px; font-weight:500; padding:2px 9px; border-radius:20px; white-space:nowrap; color:var(--white); background:rgba(255,255,255,0.15); }
@@ -116,7 +116,19 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
       <span class="hub-loading"><span class="spin"></span> Cargando configuración desde Google Sheets…</span>
     </div>
     <div id="homeContent" style="display:none">
-      <div class="home-sub">Selecciona una herramienta para acceder a la información.</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:24px;padding:7px 16px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input id="searchInput" type="text" placeholder="Buscar herramienta, responsable…" oninput="filterCards(this.value)"
+            style="border:none;outline:none;font-family:var(--sans);font-size:13px;color:var(--text);background:transparent;width:100%;">
+        </div>
+        <button onclick="shareHub()" title="Copiar enlace del hub"
+          style="display:flex;align-items:center;gap:6px;background:var(--navy);color:#fff;border:none;border-radius:24px;padding:8px 16px;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .12s;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span id="shareLabel">Compartir enlace</span>
+        </button>
+      </div>
+      <div class="home-sub" id="noResults" style="display:none;color:var(--text-3);">No se encontraron herramientas para esa búsqueda.</div>
       <div class="module-grid" id="moduleGrid"></div>
     </div>
     <div class="debug-box" id="debugBox"></div>
@@ -250,7 +262,7 @@ function renderGroup(label, items, container) {
     const showFreq  = cfg.periodicidad && cfg.periodicidad !== 'No aplica';
     const pillsHtml = (showCorte || showFreq) ? `
       <div class="mc-pills">
-        ${showCorte ? `<span class="pill-date"><span class="freshness f-${fresh}"></span>${cfg.corte}</span>` : ''}
+        ${showCorte ? `<span class="pill-date"><span class="freshness f-${fresh}"></span>${formatCorte(cfg.corte)}</span>` : ''}
         ${showFreq  ? `<span class="pill-freq ${freqCls}">${cfg.periodicidad}</span>` : ''}
       </div>` : '';
 
@@ -322,6 +334,51 @@ function fmtVal(val, unit) {
 function debug(msg) {
   const box = document.getElementById('debugBox');
   box.textContent += msg + '\n';
+}
+
+// ── Fecha de corte formateada ──
+function formatCorte(corte) {
+  if (!corte) return '';
+  // Si ya viene como "13-May" o "13-may" lo expandimos con el año actual
+  const shortMatch = corte.match(/^(\d{1,2})[-\/](\w{3,})$/);
+  if (shortMatch) {
+    return shortMatch[1] + '-' + shortMatch[2].toLowerCase() + '-' + new Date().getFullYear();
+  }
+  // Si viene "13-may-26" o "13-may-2026" lo normalizamos
+  const fullMatch = corte.match(/^(\d{1,2})[-\/](\w+)[-\/](\d{2,4})$/);
+  if (fullMatch) {
+    let y = parseInt(fullMatch[3]);
+    if (y < 100) y += 2000;
+    return fullMatch[1] + '-' + fullMatch[2].toLowerCase() + '-' + y;
+  }
+  return corte;
+}
+
+// ── Buscador ──
+function filterCards(q) {
+  const ql = q.toLowerCase().trim();
+  const cards = document.querySelectorAll('.module-card');
+  let visible = 0;
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    const show = !ql || text.includes(ql);
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  const noRes = document.getElementById('noResults');
+  if (noRes) noRes.style.display = (visible === 0 && ql) ? 'block' : 'none';
+}
+
+// ── Compartir enlace ──
+function shareHub() {
+  const url = window.location.href;
+  const label = document.getElementById('shareLabel');
+  navigator.clipboard.writeText(url).then(() => {
+    label.textContent = '¡Enlace copiado!';
+    setTimeout(() => { label.textContent = 'Compartir enlace'; }, 2500);
+  }).catch(() => {
+    prompt('Copia este enlace:', url);
+  });
 }
 
 loadSheet();
