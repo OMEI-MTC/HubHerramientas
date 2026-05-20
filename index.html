@@ -53,7 +53,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
   display:flex; align-items:center; gap:7px;
   background:transparent;
   color:#fff;
-  border:2px solid rgba(255,255,255,0.7);
+  border: 2px solid #003F7D;
   border-radius:24px;
   padding:8px 18px;
   font-family:var(--sans); font-size:13px; font-weight:600;
@@ -101,8 +101,8 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
   padding: 22px 20px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 14px;
+  justify-content: flex-start;
+  gap: 10px;
 }
 .mc-title {
   font-size: 36px;
@@ -114,9 +114,8 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 }
 .mc-pills { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
 .pill-date {
-  display: inline-flex; align-items:center; gap:5px;
-  background: var(--red-lt);
-  color: #1a1a1a;
+  background: var(--blue-lt);  /* ← cambia #FBC9D1 por esto */
+  color: var(--blue);           /* ← letra azul */
   font-size: 13px; font-weight:700;
   padding: 4px 12px; border-radius:20px;
 }
@@ -343,7 +342,7 @@ function renderCards() {
     const showFreq  = cfg.periodicidad && cfg.periodicidad !== 'No aplica';
     const pillsHtml = `
       <div class="mc-pills">
-        ${showCorte ? `<span class="pill-date"><span class="freshness f-${fresh}"></span>${formatCorte(cfg.corte)}</span>` : ''}
+        ${showCorte ? `<span class="pill-date">${formatCorte(cfg.corte)}</span>` : ''}
         ${showFreq  ? `<span class="pill-freq">${cfg.periodicidad}</span>` : ''}
       </div>`;
 
