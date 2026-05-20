@@ -204,7 +204,7 @@ function parseSheet(raw) {
 
     if (!c1 || !mode) continue;
 
-    if (mode === 'config') DATA.config.push({ seccion:c1, descripcion:c2||'', periodicidad:c3||'No aplica', responsable:c4||'', correo:c5||'', corte:c6||'' });
+    if (mode === 'config') DATA.config.push({ seccion:c1, descripcion:c2||'', periodicidad:c3||'No aplica', responsable:'', correo:'', corte:c4||'' });
     if (mode === 'links')  DATA.links.push({ seccion:c1, herramienta:c2||'', url:c3||'' });
     if (mode === 'kpis')   DATA.kpis.push({ seccion:c1, variable:c2||'', valor:c3||'', unidad:c4||'' });
   }
@@ -271,8 +271,6 @@ function renderGroup(label, items, container) {
         <div class="mc-head">
           <div>
             <div class="mc-title">${cfg.seccion}</div>
-            <div class="mc-resp">Responsable: ${cfg.responsable}</div>
-            <div class="mc-resp">${cfg.correo}</div>
           </div>
           ${pillsHtml}
         </div>
