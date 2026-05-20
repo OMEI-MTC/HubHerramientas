@@ -51,16 +51,16 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 /* Compartir en topbar */
 .btn-share {
   display:flex; align-items:center; gap:7px;
-  background:transparent;
+  background:#003F7D;
   color:#fff;
-  border: 2px solid #003F7D;
+  border:2px solid #003F7D;
   border-radius:24px;
   padding:8px 18px;
   font-family:var(--sans); font-size:13px; font-weight:600;
   cursor:pointer; white-space:nowrap;
   transition:background .12s, border-color .12s;
 }
-.btn-share:hover { background:rgba(255,255,255,0.15); border-color:#fff; }
+.btn-share:hover { background:#002D5C; border-color:#002D5C; }
 
 /* ── Bienvenida ── */
 .home-greeting { font-family:var(--serif); font-size:26px; color:var(--text); margin-bottom:2px; }
@@ -89,7 +89,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
   border-radius: var(--r);
   overflow: hidden;
   display: grid;
-  grid-template-columns: 500px 1fr;
+  grid-template-columns: 260px 1fr;
   transition: border-color .15s, box-shadow .15s;
 }
 .module-card:hover { border-color:rgba(200,16,46,0.25); box-shadow:0 3px 12px rgba(0,0,0,0.07); }
@@ -105,7 +105,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
   gap: 10px;
 }
 .mc-title {
-  font-size: 36px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--red);
   text-transform: uppercase;
@@ -114,8 +114,9 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 }
 .mc-pills { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
 .pill-date {
-  background: var(--blue-lt);  /* ← cambia #FBC9D1 por esto */
-  color: var(--blue);           /* ← letra azul */
+  display: inline-flex; align-items:center; gap:5px;
+  background: var(--blue-lt);
+  color: var(--blue);
   font-size: 13px; font-weight:700;
   padding: 4px 12px; border-radius:20px;
 }
