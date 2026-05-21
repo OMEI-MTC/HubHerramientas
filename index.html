@@ -605,7 +605,7 @@ function formatCorte(corte) {
 function kpiIcon(v) {
   const s=(v||'').toLowerCase();
   if (s.includes('hitos vigentes'))   return 'Total.png';
-  if (s.includes('hitos culminados')) return 'culminados.png';
+  if (s.includes('hitos vigentes culminados')) return 'culminados.png';
   if (s.includes('a/c vigentes'))     return 'vigentes cumplidos.png';
   if (s.includes('culminados'))       return 'vigentes cumplidos.png';
   if (s.includes('hito'))             return 'hito.png';
