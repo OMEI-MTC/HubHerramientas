@@ -378,7 +378,7 @@ function parseSheet(raw) {
     if (!c1||!mode) continue;
     if (mode==='config') DATA.config.push({ seccion:c1, descripcion:c2||'', periodicidad:c3||'No aplica', corte:c4||'', equipo:c5||'', etiqueta:c6||'' });
     if (mode==='links')  DATA.links.push({ seccion:c1, herramienta:c2||'', url:c3||'' });
-    if (mode==='kpis')   DATA.kpis.push({ seccion:c1, variable:c2||'', valor:c3||'', unidad:c4||'' });
+    if (mode==='kpis')   DATA.kpis.push({ seccion:c1, variable:c2||'', valor:c3||'', unidad:c4||'', icono:c5||''});
   }
   debug(`Parsed → config:${DATA.config.length} links:${DATA.links.length} kpis:${DATA.kpis.length}`);
 }
@@ -498,7 +498,7 @@ function renderCards() {
       <div class="mc-kpis">
         ${kpis.slice(0,5).map(k=>`
           <div class="mc-kpi">
-            <img class="mc-kpi-icon" src="${kpiIcon(k.variable)}" alt="" onerror="this.style.display='none'">
+            <img class="mc-kpi-icon" src="${k.icono || kpiIcon(k.variable)}" alt="" onerror="this.style.display='none'">
             <div><div class="mc-kpi-val">${fmtVal(k.valor,k.unidad)}</div><div class="mc-kpi-lbl">${k.variable}</div></div>
           </div>`).join('')}
       </div>` : '';
