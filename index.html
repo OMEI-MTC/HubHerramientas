@@ -105,7 +105,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
   gap: 10px;
 }
 .mc-title {
-  font-size: 36px;
+  font-size: 32px;
   font-weight: 700;
   color: var(--red);
   text-transform: uppercase;
@@ -284,7 +284,7 @@ const PROXIES = [
 ];
 
 let DATA = { config:[], links:[], kpis:[], publicaciones:[] };
-const PUB_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkXT9qu8x5JInu81VZ3BDkQ338o6gix4h4CBRTL7q6UeL7NsWn0MvvRlMA474WwH4xIy0LSlPQT-A7/pub?gid=505119670&single=true&output=csv';
+const PUB_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkXT9qu8x5JInu81VZ3BDkQ338o6gix4h4CBRTL7q6UeL7NsWn0MvvRlMA474WwH4xIy0LSlPQT-A7/pub?gid=505119670&single=true&output=tsv';
 let activeFilter = 'TODAS';
 
 async function loadSheet() {
@@ -369,7 +369,7 @@ function parsePublicaciones(raw) {
     const line = lines[i].trim();
     if (!line) continue;
     // CSV parse (simple — handles quoted fields)
-    const cols = parseCSVLine(line);
+    const cols = line.split('\t').map(c=>(c||'').trim());
     const [num, nombre, tipo, estado, enlace] = cols;
     if (!nombre) continue;
     DATA.publicaciones.push({ num:num||'', nombre:nombre||'', tipo:tipo||'', estado:estado||'', enlace:enlace||'' });
