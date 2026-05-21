@@ -595,11 +595,7 @@ function getFreshness(cfg) {
 
 function formatCorte(corte) {
   if (!corte) return '';
-  const s = corte.match(/^(\d{1,2})[-\/](\w{3,})$/);
-  if (s) return s[1]+'-'+s[2].toLowerCase()+'-'+String(new Date().getFullYear()).slice(-2);
-  const f = corte.match(/^(\d{1,2})[-\/](\w+)[-\/](\d{2,4})$/);
-  if (f) { let y=parseInt(f[3]); if(y<100)y+=2000; return f[1]+'-'+f[2].toLowerCase()+'-'+String(y).slice(-2); }
-  return corte;
+  return corte;  // muestra exactamente lo que está en el Sheet
 }
 
 function kpiIcon(v) {
