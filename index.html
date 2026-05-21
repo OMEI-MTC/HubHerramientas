@@ -82,7 +82,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .filter-count { margin-left:auto; font-size:15px; color:var(--text-3); font-weight:500; white-space:nowrap; }
 
 /* ── Cards ── */
-.module-list { display:flex; flex-direction:column; gap:12px; margin-bottom:20px; }
+.module-list { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
 .module-card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -132,17 +132,14 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .f-warn { background:#fb923c; }
 .f-na   { background:rgba(255,255,255,0.4); }
 
-/* Body: descripción izq + KPIs der */
+/* Body vertical */
 .mc-body-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
 }
 .mc-desc-col {
-  padding: 14px 16px;
-  border-right: 1px solid var(--border);
-  display: flex;
-  align-items: flex-start;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
 }
 .mc-desc {
   font-size: 15px; color: var(--text-2);
@@ -153,6 +150,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .mc-kpis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  border-bottom: 1px solid var(--border);
 }
 .mc-kpi {
   padding: 12px 10px;
@@ -174,6 +172,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 
 
 /* ── Publicaciones ── */
+.module-card.pub-module { grid-column: 1 / -1; }
 .pub-card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -267,6 +266,10 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .no-results { font-size:13px; color:var(--text-3); padding:16px 0; display:none; }
 
 /* ── Responsive ── */
+@media (max-width:700px) {
+  .module-list { grid-template-columns: 1fr; }
+  .module-card.pub-module { grid-column: 1; }
+}
 @media (max-width:900px) {
   .module-card { grid-template-columns:1fr; }
   .mc-left { border-right:none; border-bottom:1px solid var(--border); }
