@@ -329,7 +329,7 @@ function parseSheet(raw) {
   debug(`Parsed → config:${DATA.config.length} links:${DATA.links.length} kpis:${DATA.kpis.length}`);
 }
 
-function buildUI() {
+async function buildUI() {
   document.getElementById('homeLoadingMsg').style.display = 'none';
   document.getElementById('homeContent').style.display = 'block';
   if (DATA.config.length === 0) {
