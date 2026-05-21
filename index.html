@@ -413,9 +413,9 @@ function parsePublicaciones(raw) {
     if (!line) continue;
     // CSV parse (simple — handles quoted fields)
     const cols = line.split('\t').map(c=>(c||'').trim());
-    const [num, nombre, tipo, estado, enlace] = cols;
+    const [nombre, tipo, estado, enlace] = cols;
     if (!nombre) continue;
-    DATA.publicaciones.push({ num:num||'', nombre:nombre||'', tipo:tipo||'', estado:estado||'', enlace:enlace||'' });
+    DATA.publicaciones.push({ nombre:nombre||'', tipo:tipo||'', estado:estado||'', enlace:enlace||'' });
   }
   debug('Publicaciones cargadas: ' + DATA.publicaciones.length);
 }
