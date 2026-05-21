@@ -64,7 +64,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 
 /* ── Bienvenida ── */
 .home-greeting { font-family:var(--serif); font-size:35px; color:var(--text); margin-bottom:2px; }
-.home-sub-txt  { font-size:18px; color:var(--text-2); margin-bottom:16px; }
+.home-sub-txt  { font-size:28px; color:var(--text-2); margin-bottom:16px; }
 
 /* ── Toolbar buscador ── */
 .toolbar { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
@@ -407,14 +407,13 @@ async function loadPublicaciones() {
 function parsePublicaciones(raw) {
   DATA.publicaciones = [];
   const lines = raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
-  // Skip header row
-  for (let i = 1; i < lines.length; i++) {
+  for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
-    // CSV parse (simple — handles quoted fields)
     const cols = line.split('\t').map(c=>(c||'').trim());
     const [nombre, tipo, estado, enlace] = cols;
-    if (!nombre) continue;
+    // Skip header row
+    if (!nombre || nombre === 'Nombre') continue;
     DATA.publicaciones.push({ nombre:nombre||'', tipo:tipo||'', estado:estado||'', enlace:enlace||'' });
   }
   debug('Publicaciones cargadas: ' + DATA.publicaciones.length);
