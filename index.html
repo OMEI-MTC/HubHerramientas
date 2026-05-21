@@ -56,7 +56,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
   border:2px solid #003F7D;
   border-radius:24px;
   padding:8px 18px;
-  font-family:var(--sans); font-size:13px; font-weight:600;
+  font-family:var(--sans); font-size:15px; font-weight:700;
   cursor:pointer; white-space:nowrap;
   transition:background .12s, border-color .12s;
 }
@@ -64,17 +64,17 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 
 /* ── Bienvenida ── */
 .home-greeting { font-family:var(--serif); font-size:35px; color:var(--text); margin-bottom:2px; }
-.home-sub-txt  { font-size:28px; color:var(--text-2); margin-bottom:16px; }
+.home-sub-txt  { font-size:18px; color:var(--text-2); margin-bottom:30px; }
 
 /* ── Toolbar buscador ── */
-.toolbar { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.toolbar { display:flex; align-items:center; gap:10px; margin-bottom:30px; }
 .search-wrap { flex:1; display:flex; align-items:center; gap:8px; background:var(--white); border:1px solid var(--border); border-radius:24px; padding:7px 16px; }
 .search-wrap svg { flex-shrink:0; }
-.search-wrap input { border:none; outline:none; font-family:var(--sans); font-size:13px; color:var(--text); background:transparent; width:100%; }
+.search-wrap input { border:none; outline:none; font-family:var(--sans); font-size:15px; color:var(--text); background:transparent; width:100%; }
 .search-wrap input::placeholder { color:var(--text-3); }
 
 /* ── Filtros ── */
-.filters-bar { display:flex; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+.filters-bar { display:flex; align-items:center; gap:8px; margin-bottom:30px; flex-wrap:wrap; }
 .filter-label { font-size:14px; font-weight:900; color:var(--text-3); letter-spacing:.05em; text-transform:uppercase; }
 .filter-btn { font-size:14px; font-weight:800; padding:5px 14px; border-radius:20px; border:1px solid var(--border); background:var(--white); color:var(--text-2); cursor:pointer; transition:all .12s; font-family:var(--sans); }
 .filter-btn:hover { border-color:var(--red); color:var(--red); }
@@ -149,7 +149,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 /* KPIs en fila */
 .mc-kpis {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   border-bottom: 1px solid var(--border);
 }
 .mc-kpi { padding:12px 12px; border-right:1px solid var(--border); display:flex; align-items:center; gap:9px; }
@@ -485,7 +485,7 @@ function renderCards() {
 
     const kpiHtml = kpis.length ? `
       <div class="mc-kpis">
-        ${kpis.slice(0,4).map(k=>`
+        ${kpis.slice(0,5).map(k=>`
           <div class="mc-kpi">
             <img class="mc-kpi-icon" src="${kpiIcon(k.variable)}" alt="" onerror="this.style.display='none'">
             <div><div class="mc-kpi-val">${fmtVal(k.valor,k.unidad)}</div><div class="mc-kpi-lbl">${k.variable}</div></div>
@@ -547,14 +547,14 @@ function renderCards() {
     } else {
       card.className = 'module-card';
       card.innerHTML = `
-        <div class="mc-left">
-          <div class="mc-title">${cfg.seccion}</div>
-          ${pillsHtml}
-        </div>
-        <div class="mc-right">
-          ${cfg.descripcion ? `<div class="mc-desc-wrap"><div class="mc-desc">${cfg.descripcion}</div></div>` : ''}
-          ${kpiHtml}
-          <div class="mc-links">${linksHtml||'<span style="font-size:11px;color:var(--text-3)">Sin enlaces configurados</span>'}</div>
+    <div class="mc-left">
+      <div class="mc-title">${cfg.seccion}</div>
+      ${pillsHtml}
+      ${cfg.descripcion ? `<div class="mc-desc-wrap"><div class="mc-desc">${cfg.descripcion}</div></div>` : ''}
+    </div>
+    <div class="mc-right">
+      ${kpiHtml}
+      <div class="mc-links">${linksHtml||'<span style="font-size:11px;color:var(--text-3)">Sin enlaces configurados</span>'}</div>
         </div>`;
     }
     list.appendChild(card);
