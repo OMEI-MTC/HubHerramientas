@@ -248,15 +248,15 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
   gap: 8px;
 }
 .eval-item-tipo-badge {
-  font-size: 11px; font-weight: 600;
-  background: #E5E5E5; color: var(--text-2);
+  font-size: 13px; font-weight: 700;
+  background: #DBEAFE; color: #1E40AF;
   padding: 3px 10px; border-radius: 20px;
   white-space: nowrap;
 }
 .eval-item:hover { background: #245A92; }
 .eval-item-left { display:flex; align-items:center; gap:12px; flex:1; min-width:0; }
 .eval-item-icon { font-size:18px; flex-shrink:0; }
-.eval-item-nombre {  font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; }
+.eval-item-nombre {  font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.3; }
 .eval-item-tipo   { font-size:14px; color:rgba(255,255,255,0.6); margin-top:2px; }
 .eval-item-link {
   background: transparent; color: #fff;
@@ -543,7 +543,7 @@ function renderCards() {
                <div class="eval-item">
                  <div class="eval-item-top">
                    <span class="eval-item-tipo-badge">${p.tipo}</span>
-                   ${p.enlace ? `<a class="eval-item-link" style="color:var(--text-2);border-color:var(--border);background:var(--white);" href="${p.enlace}" target="_blank" rel="noopener">Ver publicación ↗</a>` : ''}
+                   ${p.enlace ? `<a class="eval-item-link" style="color:#fff;border-color:#1D9E75;background:#1D9E75;" href="${p.enlace}" target="_blank" rel="noopener">Ver publicación ↗</a>` : ''}
                  </div>
                  <div class="eval-item-nombre">${p.nombre}</div>
                </div>`).join('')}
