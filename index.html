@@ -280,6 +280,8 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 /* ── Responsive ── */
 @media (max-width: 700px) {
   .pub-grid { grid-template-columns: 1fr; }
+  .module-list { grid-template-columns: 1fr; }
+  .module-card.pub-module { grid-column: 1; }
 }
 @media (max-width:900px) {
   .module-card { grid-template-columns:1fr; }
@@ -287,6 +289,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
   .mc-kpis { grid-template-columns:1fr 1fr; }
   .topbar { padding:12px 18px; min-height:auto; gap:10px; flex-wrap:wrap; }
   .main { padding:16px; }
+  .module-list { grid-template-columns: 1fr; }
 }
 </style>
 </head>
