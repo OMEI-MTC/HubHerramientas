@@ -170,6 +170,20 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 }
 .eval-item-link:hover { background:#0F6E56; }
 
+
+/* ── Evaluaciones flat (sin card) ── */
+.eval-section { grid-column:1/-1; padding:0; }
+.eval-section-desc { font-size:15px; color:var(--text-2); line-height:1.6; margin-bottom:24px; }
+.eval-group-flat { margin-bottom:28px; }
+.eval-group-flat-title {
+  font-size:16px; font-weight:800; color:var(--text);
+  text-transform:uppercase; letter-spacing:.04em;
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:14px;
+}
+.eval-group-flat-title .dot { width:14px; height:14px; border-radius:50%; background:var(--blue); flex-shrink:0; }
+.eval-group-flat-title .dot.amber { background:#BA7517; }
+
 /* ── Loading ── */
 .hub-loading { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-3); padding:20px 0; }
 .spin { width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--red); border-radius:50%; animation:spin .7s linear infinite; }
@@ -399,7 +413,8 @@ function renderCards() {
       card.dataset.equipo   = cfg.equipo   || '';
 
       if (cfg.seccion === 'Evaluaciones' || cfg.seccion === 'Publicaciones') {
-        card.className = 'module-card pub-module';
+        // Flat layout — no card wrapper
+        card.className = 'eval-section';
         const grupos2 = {};
         DATA.publicaciones.forEach(p => {
           const key = p.estado || 'Otro';
@@ -407,8 +422,11 @@ function renderCards() {
           grupos2[key].push(p);
         });
         const gruposHtml = Object.keys(grupos2).map(estado => `
-          <div class="eval-group">
-            <div class="eval-group-title ${estado.toLowerCase().includes('pre') ? 'preprint' : ''}">${estado}</div>
+          <div class="eval-group-flat">
+            <div class="eval-group-flat-title">
+              <span class="dot${estado.toLowerCase().includes('pre') ? ' amber' : ''}"></span>
+              ${estado}
+            </div>
             <div class="pub-grid">
               ${grupos2[estado].map(p => `
                 <div class="eval-item">
@@ -422,13 +440,8 @@ function renderCards() {
           </div>`).join('');
 
         card.innerHTML = `
-          <div style="padding:20px 20px 0;">
-            <div style="font-size:28px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:-0.01em;margin-bottom:6px;">${cfg.seccion === 'Publicaciones' ? 'Evaluaciones' : cfg.seccion}</div>
-            ${cfg.descripcion ? `<div style="font-size:14px;color:var(--text-2);line-height:1.55;margin-bottom:20px;">${cfg.descripcion}</div>` : ''}
-          </div>
-          <div style="padding:0 20px 20px;">
-            ${DATA.publicaciones.length ? gruposHtml : '<p style="font-size:12px;color:var(--text-3)">Cargando evaluaciones…</p>'}
-          </div>`;
+          ${cfg.descripcion ? `<p class="eval-section-desc">${cfg.descripcion}</p>` : ''}
+          ${DATA.publicaciones.length ? gruposHtml : '<p style="font-size:12px;color:var(--text-3)">Cargando evaluaciones…</p>'}`;
       } else {
         card.className = 'module-card';
         card.innerHTML = `
