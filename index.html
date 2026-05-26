@@ -142,14 +142,15 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 /* ── Evaluaciones ── */
 .module-card.pub-module { grid-column:1/-1; }
 .pub-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.eval-group { margin-bottom:20px; }
+.eval-group { margin-bottom:28px; margin-top:8px; }
 .eval-group-title {
-  font-size:14px; font-weight:600; color:var(--text-2);
-  margin-bottom:10px; padding-bottom:6px;
-  border-bottom:1px solid var(--border);
-  display:flex; align-items:center; gap:8px;
+  font-size:18px; font-weight:800; color:var(--text);
+  margin-bottom:12px; padding-bottom:0;
+  border-bottom:none;
+  display:flex; align-items:center; gap:10px;
+  text-transform:uppercase; letter-spacing:.02em;
 }
-.eval-group-title::before { content:''; width:8px; height:8px; border-radius:50%; background:var(--blue); display:inline-block; }
+.eval-group-title::before { content:''; width:14px; height:14px; border-radius:50%; background:var(--blue); display:inline-block; flex-shrink:0; }
 .eval-group-title.preprint::before { background:#BA7517; }
 .eval-item {
   background:#F8F9FA; border:1px solid var(--border); border-radius:8px;
@@ -421,12 +422,11 @@ function renderCards() {
           </div>`).join('');
 
         card.innerHTML = `
-          <div class="mc-head">
-            <div class="mc-title">${cfg.seccion === 'Publicaciones' ? 'Evaluaciones' : cfg.seccion}</div>
-            ${pillsHtml}
+          <div style="padding:20px 20px 0;">
+            <div style="font-size:28px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:-0.01em;margin-bottom:6px;">${cfg.seccion === 'Publicaciones' ? 'Evaluaciones' : cfg.seccion}</div>
+            ${cfg.descripcion ? `<div style="font-size:14px;color:var(--text-2);line-height:1.55;margin-bottom:20px;">${cfg.descripcion}</div>` : ''}
           </div>
-          <div style="padding:16px;">
-            ${cfg.descripcion ? `<div class="mc-desc" style="margin-bottom:16px;">${cfg.descripcion}</div>` : ''}
+          <div style="padding:0 20px 20px;">
             ${DATA.publicaciones.length ? gruposHtml : '<p style="font-size:12px;color:var(--text-3)">Cargando evaluaciones…</p>'}
           </div>`;
       } else {
