@@ -499,7 +499,9 @@ function kpiIcon(v) {
 
 function fmtVal(val,unit) {
   if (!val) return '—';
-  const n = parseFloat(val.toString().replace(',','.'));
+  const clean = val.toString().trim();
+    if (clean.includes(' ') || clean.includes('/')) return clean;
+    const n = parseFloat(clean.replace(',','.'));
   if (isNaN(n)) return val;
   if ((unit||'').toLowerCase().includes('porcentaje')) { const p=n>1?n:n*100; return p.toFixed(1)+'%'; }
   if (n>=1000000) return (n/1000000).toFixed(1)+'M';
