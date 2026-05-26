@@ -284,7 +284,7 @@ function parseSheet(raw) {
   let mode = null;
   for (const line of lines) {
     if (!line.trim()) continue;
-    const cols = line.split('\t').map(c=>(c||'').trim());
+    const cols = line.split('\t').map(c=>(c||'').trim().replace(/^"|"$/g,''));
     const [c1,c2,c3,c4,c5,c6] = cols;
     if (c1==='Configuración'||c1==='Enlaces'||c1==='KPIs') { mode=null; continue; }
     if (c1==='Sección'&&c2==='Descripción')  { mode='config'; continue; }
