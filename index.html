@@ -269,7 +269,7 @@ const PROXIES = [
   u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`
 ];
 
-let DATA = { herramientas:[], kpis:[], publicaciones:[] };
+let DATA = { herramientas:[], kpis:[], meta:{}, publicaciones:[] };
 let activeFilter = 'TODAS';
 
 async function loadSheet() {
@@ -308,32 +308,35 @@ async function loadKpis() {
 }
 
 function parseHerramientas(raw) {
-  // New format: each row = one tool entry
-  // Columns: Sección | Descripción | Periodicidad | Corte | Etiqueta | Herramientas | Enlaces
+  // Columns: Sección | Descripción | Etiqueta | Herramientas | Enlaces
   DATA.herramientas = [];
   const lines = raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
   for (const line of lines) {
     if (!line.trim()) continue;
     const cols = line.split('\t').map(c=>(c||'').trim().replace(/^"|"$/g,''));
-    const [seccion, descripcion, periodicidad, corte, etiqueta, herramienta, enlace] = cols;
-    // Skip header row
+    const [seccion, descripcion, etiqueta, herramienta, enlace] = cols;
     if (!seccion || seccion === 'Sección') continue;
-    DATA.herramientas.push({ seccion, descripcion:descripcion||'', periodicidad:periodicidad||'No aplica', corte:corte||'', etiqueta:etiqueta||'', herramienta:herramienta||'', enlace:enlace||'' });
+    DATA.herramientas.push({ seccion, descripcion:descripcion||'', etiqueta:etiqueta||'', herramienta:herramienta||'', enlace:enlace||'' });
   }
   debug(`Parsed herramientas: ${DATA.herramientas.length} filas`);
 }
 
 function parseKpis(raw) {
+  // Columns: Sección | Periodicidad | Corte | Variable | Valor | Unidad | Icono
   DATA.kpis = [];
+  DATA.meta = {}; // periodicidad y corte por sección
   const lines = raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
   for (const line of lines) {
     if (!line.trim()) continue;
     const cols = line.split('\t').map(c=>(c||'').trim().replace(/^"|"$/g,''));
-    const [seccion, variable, valor, unidad, icono] = cols;
+    const [seccion, periodicidad, corte, variable, valor, unidad, icono] = cols;
     if (!seccion || seccion === 'Sección') continue;
-    DATA.kpis.push({ seccion, variable:variable||'', valor:valor||'', unidad:unidad||'', icono:icono||'' });
+    // Store meta (periodicidad/corte) per section — first occurrence wins
+    if (!DATA.meta[seccion]) DATA.meta[seccion] = { periodicidad:periodicidad||'No aplica', corte:corte||'' };
+    // Only push KPI if variable exists
+    if (variable) DATA.kpis.push({ seccion, variable, valor:valor||'', unidad:unidad||'', icono:icono||'' });
   }
-  debug(`Parsed kpis: ${DATA.kpis.length} filas`);
+  debug(`Parsed kpis: ${DATA.kpis.length} filas, meta: ${Object.keys(DATA.meta).length} secciones`);
 }
 
 async function buildUI() {
@@ -431,11 +434,12 @@ function renderCards() {
       const kpis  = DATA.kpis.filter(k=>k.seccion===cfg.seccion);
       const links = cfg.links;
 
-      const showCorte = cfg.corte && cfg.corte !== '';
-      const showFreq  = cfg.periodicidad && cfg.periodicidad !== 'No aplica';
+      const meta = DATA.meta[cfg.seccion] || {};
+      const showCorte = meta.corte && meta.corte !== '';
+      const showFreq  = meta.periodicidad && meta.periodicidad !== 'No aplica';
       const pillsHtml = `<div class="mc-pills">
-        ${showCorte ? `<span class="pill-date">${cfg.corte}</span>` : ''}
-        ${showFreq  ? `<span class="pill-freq">${cfg.periodicidad}</span>` : ''}
+        ${showCorte ? `<span class="pill-date">${meta.corte}</span>` : ''}
+        ${showFreq  ? `<span class="pill-freq">${meta.periodicidad}</span>` : ''}
       </div>`;
 
       const kpiHtml = kpis.length ? `<div class="mc-kpis">
