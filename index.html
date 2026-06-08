@@ -323,18 +323,28 @@ function parseHerramientas(raw) {
 
 function parseKpis(raw) {
   // Columns: Sección | Periodicidad | Corte | Variable | Valor | Unidad | Icono
+  // Sección, Periodicidad y Corte pueden tener celdas combinadas → recordamos el último valor válido
   DATA.kpis = [];
-  DATA.meta = {}; // periodicidad y corte por sección
+  DATA.meta = {};
   const lines = raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  let lastSeccion = '';
+  let lastPeriodicidad = 'No aplica';
+  let lastCorte = '';
   for (const line of lines) {
     if (!line.trim()) continue;
     const cols = line.split('\t').map(c=>(c||'').trim().replace(/^"|"$/g,''));
     const [seccion, periodicidad, corte, variable, valor, unidad, icono] = cols;
-    if (!seccion || seccion === 'Sección') continue;
-    // Store meta (periodicidad/corte) per section — first occurrence wins
-    if (!DATA.meta[seccion]) DATA.meta[seccion] = { periodicidad:periodicidad||'No aplica', corte:corte||'' };
+    // Skip header
+    if (seccion === 'Sección') continue;
+    // Update last known values if non-empty
+    if (seccion) lastSeccion = seccion;
+    if (periodicidad) lastPeriodicidad = periodicidad;
+    if (corte) lastCorte = corte;
+    if (!lastSeccion) continue;
+    // Store meta per section — first occurrence wins
+    if (!DATA.meta[lastSeccion]) DATA.meta[lastSeccion] = { periodicidad:lastPeriodicidad, corte:lastCorte };
     // Only push KPI if variable exists
-    if (variable) DATA.kpis.push({ seccion, variable, valor:valor||'', unidad:unidad||'', icono:icono||'' });
+    if (variable) DATA.kpis.push({ seccion:lastSeccion, variable, valor:valor||'', unidad:unidad||'', icono:icono||'' });
   }
   debug(`Parsed kpis: ${DATA.kpis.length} filas, meta: ${Object.keys(DATA.meta).length} secciones`);
 }
