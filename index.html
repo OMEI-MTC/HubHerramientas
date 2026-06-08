@@ -260,7 +260,8 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 </div>
 
 <script>
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkXT9qu8x5JInu81VZ3BDkQ338o6gix4h4CBRTL7q6UeL7NsWn0MvvRlMA474WwH4xIy0LSlPQT-A7/pub?gid=766760814&single=true&output=tsv';
+const SHEET_URL     = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkXT9qu8x5JInu81VZ3BDkQ338o6gix4h4CBRTL7q6UeL7NsWn0MvvRlMA474WwH4xIy0LSlPQT-A7/pub?gid=288707313&single=true&output=tsv';
+const KPIS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkXT9qu8x5JInu81VZ3BDkQ338o6gix4h4CBRTL7q6UeL7NsWn0MvvRlMA474WwH4xIy0LSlPQT-A7/pub?gid=1386310491&single=true&output=tsv';
 const PUB_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkXT9qu8x5JInu81VZ3BDkQ338o6gix4h4CBRTL7q6UeL7NsWn0MvvRlMA474WwH4xIy0LSlPQT-A7/pub?gid=505119670&single=true&output=tsv';
 const PROXIES = [
   u => u,
@@ -268,7 +269,7 @@ const PROXIES = [
   u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`
 ];
 
-let DATA = { config:[], links:[], kpis:[], publicaciones:[] };
+let DATA = { herramientas:[], kpis:[], publicaciones:[] };
 let activeFilter = 'TODAS';
 
 async function loadSheet() {
@@ -283,8 +284,8 @@ async function loadSheet() {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const text = await res.text();
       if (!text || text.length < 20) throw new Error('Respuesta vacía');
-      debug('RAW:\n' + text.substring(0,300));
-      parseSheet(text);
+      debug('RAW herramientas:\n' + text.substring(0,300));
+      parseHerramientas(text);
       buildUI();
       return;
     } catch(e) { lastErr = e; debug('Proxy falló: ' + e.message); }
@@ -293,35 +294,57 @@ async function loadSheet() {
     `<span style="color:#C8102E;font-size:13px;">⚠ No se pudo cargar el Sheet.<br><small>Error: ${lastErr?.message}</small></span>`;
 }
 
-function parseSheet(raw) {
-  DATA = { config:[], links:[], kpis:[], publicaciones:[] };
+async function loadKpis() {
+  for (const proxyFn of PROXIES) {
+    try {
+      const res = await fetch(proxyFn(KPIS_SHEET_URL), { cache:'no-store' });
+      if (!res.ok) continue;
+      const text = await res.text();
+      parseKpis(text);
+      return;
+    } catch(e) { continue; }
+  }
+  debug('KPIs no cargados');
+}
+
+function parseHerramientas(raw) {
+  // New format: each row = one tool entry
+  // Columns: Sección | Descripción | Periodicidad | Corte | Etiqueta | Herramientas | Enlaces
+  DATA.herramientas = [];
   const lines = raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
-  let mode = null;
   for (const line of lines) {
     if (!line.trim()) continue;
     const cols = line.split('\t').map(c=>(c||'').trim().replace(/^"|"$/g,''));
-    const [c1,c2,c3,c4,c5,c6] = cols;
-    if (c1==='Configuración'||c1==='Enlaces'||c1==='KPIs') { mode=null; continue; }
-    if (c1==='Sección'&&c2==='Descripción')  { mode='config'; continue; }
-    if (c1==='Sección'&&c2==='Herramientas') { mode='links';  continue; }
-    if (c1==='Sección'&&c2==='Variable')     { mode='kpis';   continue; }
-    if (!c1||!mode) continue;
-    if (mode==='config') DATA.config.push({ seccion:c1, descripcion:c2||'', periodicidad:c3||'No aplica', corte:c4||'', equipo:c5||'', etiqueta:c6||'' });
-    if (mode==='links')  DATA.links.push({ seccion:c1, herramienta:c2||'', url:c3||'' });
-    if (mode==='kpis')   DATA.kpis.push({ seccion:c1, variable:c2||'', valor:c3||'', unidad:c4||'', icono:c5||'' });
+    const [seccion, descripcion, periodicidad, corte, etiqueta, herramienta, enlace] = cols;
+    // Skip header row
+    if (!seccion || seccion === 'Sección') continue;
+    DATA.herramientas.push({ seccion, descripcion:descripcion||'', periodicidad:periodicidad||'No aplica', corte:corte||'', etiqueta:etiqueta||'', herramienta:herramienta||'', enlace:enlace||'' });
   }
-  debug(`Parsed → config:${DATA.config.length} links:${DATA.links.length} kpis:${DATA.kpis.length}`);
+  debug(`Parsed herramientas: ${DATA.herramientas.length} filas`);
+}
+
+function parseKpis(raw) {
+  DATA.kpis = [];
+  const lines = raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const cols = line.split('\t').map(c=>(c||'').trim().replace(/^"|"$/g,''));
+    const [seccion, variable, valor, unidad, icono] = cols;
+    if (!seccion || seccion === 'Sección') continue;
+    DATA.kpis.push({ seccion, variable:variable||'', valor:valor||'', unidad:unidad||'', icono:icono||'' });
+  }
+  debug(`Parsed kpis: ${DATA.kpis.length} filas`);
 }
 
 async function buildUI() {
   document.getElementById('homeLoadingMsg').style.display = 'none';
   document.getElementById('homeContent').style.display = 'block';
-  if (DATA.config.length === 0) {
+  if (DATA.herramientas.length === 0) {
     document.getElementById('moduleList').innerHTML = '<p style="color:#C8102E;font-size:13px;">⚠ Se cargó el Sheet pero no se encontraron datos.</p>';
     document.getElementById('debugBox').style.display = 'block';
     return;
   }
-  await loadPublicaciones();
+  await Promise.all([loadKpis(), loadPublicaciones()]);
   buildFilterBtns();
   renderCards();
 }
@@ -355,10 +378,8 @@ function parsePublicaciones(raw) {
 }
 
 function buildFilterBtns() {
-  const etiquetas = [...new Set(DATA.config.map(c=>c.etiqueta).filter(Boolean))];
-  const equipos   = [...new Set(DATA.config.map(c=>c.equipo).filter(Boolean))];
-  const all = [...new Set([...etiquetas, ...equipos])];
-  document.getElementById('filterBtns').innerHTML = all.map(f =>
+  const etiquetas = [...new Set(DATA.herramientas.map(h=>h.etiqueta).filter(Boolean))];
+  document.getElementById('filterBtns').innerHTML = etiquetas.map(f =>
     `<button class="filter-btn" onclick="setFilter('${f}',this)">${f}</button>`
   ).join('');
 }
@@ -374,24 +395,33 @@ function renderCards() {
   const list = document.getElementById('moduleList');
   list.innerHTML = '';
 
-  // Filtrar según etiqueta/equipo activo
-  const filtered = DATA.config.filter(cfg => {
+  // Agrupar herramientas por sección (unique) manteniendo orden de aparición
+  const seccionesMap = {};
+  const seccionesOrden = [];
+  DATA.herramientas.forEach(h => {
+    if (!seccionesMap[h.seccion]) {
+      seccionesMap[h.seccion] = { seccion:h.seccion, descripcion:h.descripcion, periodicidad:h.periodicidad, corte:h.corte, etiqueta:h.etiqueta, links:[] };
+      seccionesOrden.push(h.seccion);
+    }
+    if (h.herramienta) seccionesMap[h.seccion].links.push({ herramienta:h.herramienta, url:h.enlace });
+  });
+
+  // Filtrar por etiqueta activa
+  const filteredSecciones = seccionesOrden.filter(s => {
     if (activeFilter === 'TODAS') return true;
-    return (cfg.etiqueta||'').toUpperCase() === activeFilter.toUpperCase() ||
-           (cfg.equipo||'').toUpperCase()   === activeFilter.toUpperCase();
+    return (seccionesMap[s].etiqueta||'').toUpperCase() === activeFilter.toUpperCase();
   });
 
   // Agrupar por etiqueta
   const grupos = {};
   const orden  = [];
-  filtered.forEach(cfg => {
-    const key = cfg.etiqueta || cfg.equipo || 'Otros';
+  filteredSecciones.forEach(s => {
+    const key = seccionesMap[s].etiqueta || 'Otros';
     if (!grupos[key]) { grupos[key] = []; orden.push(key); }
-    grupos[key].push(cfg);
+    grupos[key].push(seccionesMap[s]);
   });
 
   orden.forEach(grupo => {
-    // Separador de grupo
     const sep = document.createElement('div');
     sep.className = 'group-separator';
     sep.innerHTML = `<span class="group-separator-title">${grupo}</span><span class="group-separator-line"></span>`;
@@ -399,7 +429,7 @@ function renderCards() {
 
     grupos[grupo].forEach(cfg => {
       const kpis  = DATA.kpis.filter(k=>k.seccion===cfg.seccion);
-      const links = DATA.links.filter(l=>l.seccion===cfg.seccion);
+      const links = cfg.links;
 
       const showCorte = cfg.corte && cfg.corte !== '';
       const showFreq  = cfg.periodicidad && cfg.periodicidad !== 'No aplica';
@@ -425,9 +455,8 @@ function renderCards() {
 
       const card = document.createElement('div');
       card.dataset.etiqueta = cfg.etiqueta || '';
-      card.dataset.equipo   = cfg.equipo   || '';
 
-      if (cfg.seccion === 'Evaluaciones' || cfg.seccion === 'Publicaciones') {
+      if (cfg.seccion === 'Evaluaciones' || cfg.seccion === 'Publicaciones' || cfg.seccion === 'Evaluaciones ') {
         // Flat layout — no card wrapper
         card.className = 'eval-section';
         const grupos2 = {};
@@ -479,7 +508,7 @@ function renderCards() {
     });
   });
 
-  const total = filtered.length;
+  const total = filteredSecciones.length;
   document.getElementById('filterCount').textContent = `${total} herramienta${total!==1?'s':''}`;
 }
 
