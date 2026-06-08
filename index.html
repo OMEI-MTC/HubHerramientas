@@ -202,7 +202,12 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .eval-card:hover { box-shadow:0 3px 12px rgba(0,0,0,0.07); }
 .eval-card-badges { display:flex; gap:6px; padding:12px 14px 8px; flex-wrap:wrap; }
 .eval-badge-entidad { font-size:11px; font-weight:600; background:#EEF4FF; color:var(--blue); padding:3px 10px; border-radius:20px; border:1px solid rgba(0,85,165,0.2); }
-.eval-badge-tipo    { font-size:11px; font-weight:600; background:#DBEAFE; color:#1E40AF; padding:3px 10px; border-radius:20px; }
+.eval-badge-tipo    { font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; }
+.eval-badge-impacto   { background:#DCFCE7; color:#166534; }
+.eval-badge-exante    { background:#FEF9C3; color:#854D0E; }
+.eval-badge-resultado { background:#EDE9FE; color:#5B21B6; }
+.eval-badge-proceso   { background:#DBEAFE; color:#1E40AF; }
+.eval-badge-default   { background:#F3F4F6; color:#374151; }
 .eval-card-nombre { font-size:15px; font-weight:700; color:var(--blue); padding:0 14px 10px; line-height:1.35; }
 .eval-card-desc { font-size:13px; color:var(--text-2); padding:0 14px 12px; line-height:1.55; border-bottom:1px solid var(--border); }
 .eval-card-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); border-bottom:1px solid var(--border); }
@@ -530,7 +535,7 @@ function renderCards() {
                 <div class="eval-card">
                   <div class="eval-card-badges">
                     ${p.entidad ? `<span class="eval-badge-entidad">${p.entidad}</span>` : ''}
-                    ${p.tipo    ? `<span class="eval-badge-tipo">${p.tipo}</span>`       : ''}
+                    ${p.tipo    ? `<span class="eval-badge-tipo ${tipoBadgeClass(p.tipo)}">${p.tipo}</span>` : ''}
                   </div>
                   <div class="eval-card-nombre">${p.nombre}</div>
                   ${p.descripcion ? `<div class="eval-card-desc">${p.descripcion}</div>` : ''}
@@ -538,6 +543,7 @@ function renderCards() {
                     <div class="eval-card-kpis">
                       ${p.kpis.slice(0,4).map(k=>`
                         <div class="eval-card-kpi">
+                          <img src="${k.icono || 'avance.png'}" style="width:24px;height:24px;object-fit:contain;margin-bottom:4px;display:block;" onerror="this.style.display='none'">
                           <div class="eval-card-kpi-val">${fmtVal(k.valor,k.unidad)}</div>
                           <div class="eval-card-kpi-lbl">${k.variable}</div>
                         </div>`).join('')}
@@ -605,6 +611,15 @@ function kpiIcon(v) {
   if (s.includes('servicio'))         return 'servicios1.png';
   if (s.includes('acuerdos'))         return 'acuerdos.png';
   return 'avance.png';
+}
+
+function tipoBadgeClass(tipo) {
+  const t = (tipo||'').toLowerCase();
+  if (t.includes('impacto'))                        return 'eval-badge-impacto';
+  if (t.includes('ex-ante') || t.includes('exante')) return 'eval-badge-exante';
+  if (t.includes('resultado'))                      return 'eval-badge-resultado';
+  if (t.includes('proceso'))                        return 'eval-badge-proceso';
+  return 'eval-badge-default';
 }
 
 function fmtVal(val,unit) {
