@@ -189,6 +189,28 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 /* ── Evaluaciones flat (sin card) ── */
 .eval-section { grid-column:1/-1; padding:0; }
 .eval-section-desc { font-size:15px; color:var(--text-2); line-height:1.6; margin-bottom:24px; }
+
+/* Eval card nuevo estilo */
+.eval-card {
+  background: var(--card);
+  border: 1px solid #8FAADC;
+  border-radius: var(--r);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  transition: border-color .15s, box-shadow .15s;
+}
+.eval-card:hover { box-shadow:0 3px 12px rgba(0,0,0,0.07); }
+.eval-card-badges { display:flex; gap:6px; padding:12px 14px 8px; flex-wrap:wrap; }
+.eval-badge-entidad { font-size:11px; font-weight:600; background:#EEF4FF; color:var(--blue); padding:3px 10px; border-radius:20px; border:1px solid rgba(0,85,165,0.2); }
+.eval-badge-tipo    { font-size:11px; font-weight:600; background:#DBEAFE; color:#1E40AF; padding:3px 10px; border-radius:20px; }
+.eval-card-nombre { font-size:15px; font-weight:700; color:var(--blue); padding:0 14px 10px; line-height:1.35; }
+.eval-card-desc { font-size:13px; color:var(--text-2); padding:0 14px 12px; line-height:1.55; border-bottom:1px solid var(--border); }
+.eval-card-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); border-bottom:1px solid var(--border); }
+.eval-card-kpi { padding:10px 12px; border-right:1px solid var(--border); }
+.eval-card-kpi:last-child { border-right:none; }
+.eval-card-kpi-val { font-size:16px; font-weight:700; color:var(--text); line-height:1.1; }
+.eval-card-kpi-lbl { font-size:10px; color:var(--text-3); margin-top:2px; line-height:1.3; }
+.eval-card-footer { padding:10px 14px; }
 .eval-group-flat { margin-bottom:28px; }
 .eval-group-flat-title {
   font-size:16px; font-weight:800; color:var(--text);
@@ -377,15 +399,33 @@ async function loadPublicaciones() {
 }
 
 function parsePublicaciones(raw) {
+  // Columns: Nombre | Entidad | Tipo | Estado | Enlace | Descripción | Variable | Valor | Unidad | Icono
+  // Merged cells: Nombre, Entidad, Tipo, Estado, Enlace, Descripción repeat per KPI row
   DATA.publicaciones = [];
   const lines = raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    const cols = line.split('\t').map(c=>(c||'').trim());
-    const [nombre, tipo, estado, enlace, descripcion] = cols;
-    if (!nombre || nombre === 'Nombre') continue;
-    DATA.publicaciones.push({ nombre, tipo:tipo||'', estado:estado||'', enlace:enlace||'', descripcion:descripcion||'' });
+  let lastNombre='', lastEntidad='', lastTipo='', lastEstado='', lastEnlace='', lastDesc='';
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const cols = line.split('\t').map(c=>(c||'').trim().replace(/^"|"$/g,''));
+    const [nombre, entidad, tipo, estado, enlace, descripcion, variable, valor, unidad, icono] = cols;
+    // Skip header
+    if (nombre === 'Nombre') continue;
+    // Update last known values if non-empty
+    if (nombre)      lastNombre  = nombre;
+    if (entidad)     lastEntidad = entidad;
+    if (tipo)        lastTipo    = tipo;
+    if (estado)      lastEstado  = estado;
+    if (enlace)      lastEnlace  = enlace;
+    if (descripcion) lastDesc    = descripcion;
+    if (!lastNombre) continue;
+    // Find or create publicacion entry
+    let pub = DATA.publicaciones.find(p => p.nombre === lastNombre);
+    if (!pub) {
+      pub = { nombre:lastNombre, entidad:lastEntidad, tipo:lastTipo, estado:lastEstado, enlace:lastEnlace, descripcion:lastDesc, kpis:[] };
+      DATA.publicaciones.push(pub);
+    }
+    // Add KPI if variable exists
+    if (variable) pub.kpis.push({ variable, valor:valor||'', unidad:unidad||'', icono:icono||'' });
   }
   debug('Publicaciones: ' + DATA.publicaciones.length);
 }
@@ -487,13 +527,22 @@ function renderCards() {
             </div>
             <div class="pub-grid">
               ${grupos2[estado].map(p => `
-                <div class="eval-item">
-                  <div class="eval-item-head">
-                    <div class="eval-item-nombre">${p.nombre}</div>
-                    <span class="eval-item-tipo-badge">${p.tipo}</span>
+                <div class="eval-card">
+                  <div class="eval-card-badges">
+                    ${p.entidad ? `<span class="eval-badge-entidad">${p.entidad}</span>` : ''}
+                    ${p.tipo    ? `<span class="eval-badge-tipo">${p.tipo}</span>`       : ''}
                   </div>
-                  ${p.descripcion ? `<div class="eval-item-body">${p.descripcion}</div>` : ''}
-                  <div class="eval-item-footer">
+                  <div class="eval-card-nombre">${p.nombre}</div>
+                  ${p.descripcion ? `<div class="eval-card-desc">${p.descripcion}</div>` : ''}
+                  ${p.kpis && p.kpis.length ? `
+                    <div class="eval-card-kpis">
+                      ${p.kpis.slice(0,4).map(k=>`
+                        <div class="eval-card-kpi">
+                          <div class="eval-card-kpi-val">${fmtVal(k.valor,k.unidad)}</div>
+                          <div class="eval-card-kpi-lbl">${k.variable}</div>
+                        </div>`).join('')}
+                    </div>` : ''}
+                  <div class="eval-card-footer">
                     ${p.enlace ? `<a class="eval-item-link" href="${p.enlace}" target="_blank" rel="noopener">Ver publicación ↗</a>` : '<span style="font-size:11px;color:var(--text-3)">Sin enlace</span>'}
                   </div>
                 </div>`).join('')}
