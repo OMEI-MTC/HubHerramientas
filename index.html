@@ -210,8 +210,11 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .eval-badge-default   { background:#F3F4F6; color:#374151; }
 .eval-card-nombre { font-size:15px; font-weight:700; color:var(--blue); padding:0 14px 10px; line-height:1.35; }
 .eval-card-desc { font-size:13px; color:var(--text-2); padding:0 14px 12px; line-height:1.55; border-bottom:1px solid var(--border); }
-.eval-card-kpis { display:flex; flex-direction:column; border-bottom:1px solid var(--border); }
+.eval-card-kpis { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--border); }
 .eval-card-kpi { padding:10px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.eval-card-kpi:nth-child(even) { border-right:none; }
+.eval-card-kpi:last-child { border-bottom:none; }
+.eval-card-kpi:nth-last-child(2):nth-child(odd) { border-bottom:none; }
 .eval-card-kpi:last-child { border-bottom:none; }
 .eval-card-kpi-val { font-size:20px; font-weight:800; color:var(--text); line-height:1.1; }
 .eval-card-kpi-lbl { font-size:13px; color:var(--text-2); line-height:1.4; flex:1; }
@@ -221,7 +224,8 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
   border-radius: 8px;
   padding: 8px 12px;
   text-align: center;
-  min-width: 100px;
+  width: 110px;
+  min-width: 110px;
   flex-shrink: 0;
 }
 .eval-kpi-box-val  { font-size: 20px; font-weight: 800; color: var(--text); line-height: 1.1; }
