@@ -365,6 +365,9 @@ function parseHerramientas(raw) {
     if (!lastSeccion) continue;
     if (herramienta) {
       DATA.herramientas.push({ seccion:lastSeccion, descripcion:lastDescripcion, etiqueta:lastEtiqueta, herramienta, enlace:enlace||'' });
+    } else if (seccion) {
+      // Sección sin herramientas (ej: Evaluaciones) — agregar entrada vacía para que aparezca
+      DATA.herramientas.push({ seccion:lastSeccion, descripcion:lastDescripcion, etiqueta:lastEtiqueta, herramienta:'', enlace:'' });
     }
   }
   debug(`Parsed herramientas: ${DATA.herramientas.length} filas`);
