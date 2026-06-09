@@ -350,14 +350,22 @@ async function loadKpis() {
 
 function parseHerramientas(raw) {
   // Columns: Sección | Descripción | Etiqueta | Herramientas | Enlaces
+  // Merged cells: Sección, Descripción, Etiqueta repeat per link row
   DATA.herramientas = [];
   const lines = raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  let lastSeccion='', lastDescripcion='', lastEtiqueta='';
   for (const line of lines) {
     if (!line.trim()) continue;
     const cols = line.split('\t').map(c=>(c||'').trim().replace(/^"|"$/g,''));
     const [seccion, descripcion, etiqueta, herramienta, enlace] = cols;
-    if (!seccion || seccion === 'Sección') continue;
-    DATA.herramientas.push({ seccion, descripcion:descripcion||'', etiqueta:etiqueta||'', herramienta:herramienta||'', enlace:enlace||'' });
+    if (seccion === 'Sección') continue;
+    if (seccion)     lastSeccion     = seccion;
+    if (descripcion) lastDescripcion = descripcion;
+    if (etiqueta)    lastEtiqueta    = etiqueta;
+    if (!lastSeccion) continue;
+    if (herramienta) {
+      DATA.herramientas.push({ seccion:lastSeccion, descripcion:lastDescripcion, etiqueta:lastEtiqueta, herramienta, enlace:enlace||'' });
+    }
   }
   debug(`Parsed herramientas: ${DATA.herramientas.length} filas`);
 }
