@@ -137,6 +137,8 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .mc-btn:hover { background:#1a1a1a; color:#fff; border-color:#1a1a1a; }
 .mc-btn.primary { background:#1D9E75; color:#fff; border-color:#1D9E75; }
 .mc-btn.primary:hover { background:#0F6E56; border-color:#0F6E56; }
+.mc-btn.registro { background:#0055A5; color:#fff; border-color:#0055A5; }
+.mc-btn.registro:hover { background:#002D5C; border-color:#002D5C; }
 .mc-btn.disabled { opacity:.4; cursor:default; pointer-events:none; }
 
 /* ── Evaluaciones ── */
@@ -533,7 +535,9 @@ function renderCards() {
       const linksHtml = links.map(l => {
         const pending = !l.url || l.url.toLowerCase()==='pendiente';
         const primary = /tablero|visor/i.test(l.herramienta);
+        const registro = /registr/i.test(l.herramienta);
         if (pending) return `<span class="mc-btn disabled">${l.herramienta}</span>`;
+        if (registro) return `<a class="mc-btn registro" href="${l.url}" target="_blank" rel="noopener">${l.herramienta}</a>`;
         return `<a class="mc-btn${primary?' primary':''}" href="${l.url}" target="_blank" rel="noopener">${l.herramienta} ↗</a>`;
       }).join('');
 
