@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de avance de hitos — OGAME / MTC</title>
+<style>
+  :root {
+    --rojo: #C8102E;
+    --azul: #0055A5;
+    --azul-claro: #4A90D9;
+    --borde: #8FAADC;
+    --verde: #1D9E75;
+    --gris-bg: #F0F2F5;
+    --texto: #1a2332;
+    --texto-suave: #5a6575;
+    --ambar-bg: #FFF8E6;
+    --ambar-borde: #E6A817;
+    --ambar-texto: #8a6200;
+    --rojo-bg: #FDECEE;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    background: var(--gris-bg);
+    color: var(--texto);
+    line-height: 1.5;
+  }
+  .topbar {
+    background: var(--rojo);
+    color: #fff;
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .topbar h1 { font-size: 17px; font-weight: 600; margin: 0; }
+  .topbar span { font-size: 13px; opacity: 0.9; }
+  .wrap { max-width: 640px; margin: 24px auto; padding: 0 16px; }
+  .card {
+    background: #fff;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    padding: 22px 24px;
+  }
+  .card h2 {
+    font-size: 15px; color: var(--rojo); margin: 0 0 4px;
+  }
+  .semana {
+    font-size: 13px; color: var(--texto-suave); margin: 0 0 18px;
+    padding-bottom: 14px; border-bottom: 1px solid #e8ecf2;
+  }
+  label {
+    display: block; font-size: 13px; font-weight: 600; margin: 0 0 5px;
+  }
+  .hint { font-size: 12px; color: var(--texto-suave); margin: 4px 0 0; font-weight: 400; }
+  select, input[type=text], input[type=date], input[type=number], textarea {
+    width: 100%; padding: 9px 11px; font-size: 14px;
+    border: 1px solid var(--borde); border-radius: 7px;
+    font-family: inherit; color: var(--texto); background: #fff;
+  }
+  select:disabled { background: #f4f6f9; color: #aab; cursor: not-allowed; }
+  textarea { min-height: 72px; resize: vertical; }
+  .field { margin-bottom: 16px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .filtros {
+    background: #f7f9fc; border: 1px solid #e3e9f2; border-radius: 8px;
+    padding: 16px 16px 4px; margin-bottom: 20px;
+  }
+  .filtros .field { margin-bottom: 12px; }
+  .filtros-tit {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--azul); font-weight: 700; margin: 0 0 12px;
+  }
+  .btn {
+    width: 100%; background: var(--verde); color: #fff; border: none;
+    padding: 12px; font-size: 15px; font-weight: 600; border-radius: 8px;
+    cursor: pointer; font-family: inherit;
+  }
+  .btn:disabled { background: #b8c4d0; cursor: not-allowed; }
+  .btn:hover:not(:disabled) { filter: brightness(0.96); }
+  .msg { border-radius: 8px; padding: 12px 15px; margin-top: 16px; font-size: 13.5px; display: none; }
+  .msg.ok { background: #E8F7F0; border: 1px solid var(--verde); color: #0c6647; display: block; }
+  .msg.err { background: var(--rojo-bg); border: 1px solid var(--rojo); color: #9c1322; display: block; }
+  .msg.warn { background: var(--ambar-bg); border: 1px solid var(--ambar-borde); color: var(--ambar-texto); display: block; }
+  .msg b { display: block; margin-bottom: 3px; }
+  .ult {
+    font-size: 12px; color: var(--azul); background: #eef4fb;
+    border-radius: 6px; padding: 6px 10px; margin-top: 6px; display: none;
+  }
+  .ult.show { display: block; }
+  .retro-box {
+    background: var(--ambar-bg); border: 1px solid var(--ambar-borde);
+    border-radius: 8px; padding: 14px; margin-top: 14px; display: none;
+  }
+  .retro-box.show { display: block; }
+  .retro-box p { margin: 0 0 10px; font-size: 13.5px; color: var(--ambar-texto); }
+  .check-row { display: flex; align-items: flex-start; gap: 9px; margin: 18px 0 4px; }
+  .check-row input { margin-top: 3px; width: auto; }
+  .check-row label { font-weight: 400; font-size: 13.5px; margin: 0; }
+  .loading { text-align: center; color: var(--texto-suave); font-size: 14px; padding: 30px; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>Registro de avance de hitos</h1>
+    <span>OGAME · Cartera Priorizada</span>
+  </div>
+
+  <div class="wrap">
+    <div id="loading" class="card loading">Cargando catálogo de hitos…</div>
+
+    <div id="form" class="card" style="display:none;">
+      <h2>Actualización semanal</h2>
+      <p class="semana" id="semanaLabel">—</p>
+
+      <!-- Filtros en cascada -->
+      <div class="filtros">
+        <p class="filtros-tit">Encuentra tu hito</p>
+        <div class="field">
+          <label>Viceministerio</label>
+          <select id="fVicem"><option value="">Todos</option></select>
+        </div>
+        <div class="field">
+          <label>Unidad ejecutora</label>
+          <select id="fUei"><option value="">Todas</option></select>
+        </div>
+        <div class="field">
+          <label>Tipo de infraestructura</label>
+          <select id="fTipo"><option value="">Todos</option></select>
+        </div>
+        <div class="field">
+          <label>Departamento</label>
+          <select id="fDpto"><option value="">Todos</option></select>
+        </div>
+        <div class="field">
+          <label>Hito</label>
+          <select id="fHito"><option value="">Selecciona un hito…</option></select>
+          <p class="hint" id="hitoCount">—</p>
+        </div>
+      </div>
+
+      <!-- Datos del registro -->
+      <div class="row">
+        <div class="field">
+          <label>Estado</label>
+          <select id="estado">
+            <option value="EN PROCESO">EN PROCESO</option>
+            <option value="REPROGRAMADO">REPROGRAMADO</option>
+            <option value="CUMPLIDO">CUMPLIDO</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Fecha de cumplimiento</label>
+          <input type="date" id="fechaCump">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>% de avance</label>
+        <input type="number" id="avance" min="0" max="100" step="1" placeholder="Ej. 75">
+        <div class="ult" id="ultAvance">—</div>
+      </div>
+
+      <div class="field">
+        <label>Detalle del estado</label>
+        <textarea id="situacional" placeholder="Describe el avance real de esta semana…"></textarea>
+      </div>
+
+      <!-- Diálogo de retroceso (aparece solo si el script lo pide) -->
+      <div class="retro-box" id="retroBox">
+        <p id="retroMsg">Esto es un retroceso respecto al avance anterior. ¿Es correcto?</p>
+        <label>Justificación del retroceso</label>
+        <textarea id="justificacion" placeholder="Explica por qué el avance disminuyó…"></textarea>
+        <div class="check-row">
+          <input type="checkbox" id="confirmaRetro">
+          <label for="confirmaRetro">Confirmo que el retroceso es correcto.</label>
+        </div>
+      </div>
+
+      <!-- Check de validación obligatorio -->
+      <div class="check-row">
+        <input type="checkbox" id="validado">
+        <label for="validado">He revisado la información y confirmo que es correcta.</label>
+      </div>
+
+      <button class="btn" id="btnEnviar" onclick="enviar()">Registrar avance</button>
+
+      <div class="msg" id="msg"></div>
+    </div>
+  </div>
+
+<script>
+// ====== CONFIGURACIÓN ======
+const ENDPOINT = 'https://script.google.com/macros/s/AKfycbxSgvtxdB2Y4VTaFOBzIkmscjhpVwJHdgw22hWBMEYhwACmhUdYZEjQm4laGJDo4k6d/exec';
+const TOKEN = 'CAMBIA_ESTO_POR_EL_MISMO_TOKEN_DEL_SCRIPT';
+
+// URL del Maestro de Hitos publicado como TSV. Reemplaza con la tuya:
+// Archivo → Compartir → Publicar en la web → Hoja "Maestro de Hitos" → TSV
+const MAESTRO_TSV = 'PEGA_AQUI_LA_URL_TSV_DEL_MAESTRO';
+
+const CORS_PROXIES = [
+  url => url,
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+];
+
+// Índices de columnas del Maestro (orden real de tu hoja)
+const COL = {
+  codInterno: 0, nombre: 1, codHito: 2, hito: 3, categoria: 4,
+  dpto: 5, estatus: 6, modalidad: 7, uei: 8, vicem: 9, tipoInfra: 10
+};
+
+let HITOS = []; // catálogo en memoria
+
+// ====== CARGA DEL MAESTRO ======
+async function cargarMaestro() {
+  let lastError = null;
+  for (const proxyFn of CORS_PROXIES) {
+    try {
+      const res = await fetch(proxyFn(MAESTRO_TSV), { cache: 'no-cache' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      if (!text || text.length < 10) throw new Error('Respuesta vacía');
+      parseMaestro(text);
+      iniciarUI();
+      return;
+    } catch (e) { lastError = e; continue; }
+  }
+  document.getElementById('loading').innerHTML =
+    '<span style="color:#C8102E;">No se pudo cargar el catálogo de hitos.<br><small>Verifica que el Maestro esté publicado como TSV. Error: ' +
+    (lastError ? lastError.message : 'desconocido') + '</small></span>';
+}
+
+function parseMaestro(tsv) {
+  const lineas = tsv.split('\n').filter(l => l.trim());
+  HITOS = [];
+  for (let i = 1; i < lineas.length; i++) { // saltar cabecera
+    const c = lineas[i].split('\t');
+    const estatus = (c[COL.estatus] || '').trim();
+    if (estatus.toUpperCase() !== 'VIGENTE') continue; // solo hitos vigentes
+    HITOS.push({
+      codHito: (c[COL.codHito] || '').trim(),
+      hito: (c[COL.hito] || '').trim(),
+      vicem: (c[COL.vicem] || '').trim(),
+      uei: (c[COL.uei] || '').trim(),
+      tipoInfra: (c[COL.tipoInfra] || '').trim(),
+      dpto: (c[COL.dpto] || '').trim()
+    });
+  }
+}
+
+// ====== INICIALIZACIÓN DE LA UI ======
+function iniciarUI() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('form').style.display = 'block';
+  document.getElementById('semanaLabel').textContent = 'Semana de reporte: ' + semanaReporteTexto();
+  poblarFiltros();
+  ['fVicem','fUei','fTipo','fDpto'].forEach(id =>
+    document.getElementById(id).addEventListener('change', actualizarCascada));
+  document.getElementById('fHito').addEventListener('change', mostrarUltimoAvance);
+  document.getElementById('avance').addEventListener('input', limpiarRetro);
+}
+
+// Opciones únicas y ordenadas de un campo, respetando filtros previos
+function opcionesDe(campo, filtroFn) {
+  const set = new Set();
+  HITOS.filter(filtroFn).forEach(h => { if (h[campo]) set.add(h[campo]); });
+  return [...set].sort((a,b) => a.localeCompare(b,'es'));
+}
+
+function filtroActual(excluir) {
+  const v = document.getElementById('fVicem').value;
+  const u = document.getElementById('fUei').value;
+  const t = document.getElementById('fTipo').value;
+  const d = document.getElementById('fDpto').value;
+  return h =>
+    (excluir==='vicem' || !v || h.vicem===v) &&
+    (excluir==='uei'   || !u || h.uei===u) &&
+    (excluir==='tipo'  || !t || h.tipoInfra===t) &&
+    (excluir==='dpto'  || !d || h.dpto===d);
+}
+
+function poblarSelect(id, valores, etiqueta) {
+  const sel = document.getElementById(id);
+  const actual = sel.value;
+  sel.innerHTML = '<option value="">'+etiqueta+'</option>';
+  valores.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    sel.appendChild(o);
+  });
+  if (valores.includes(actual)) sel.value = actual;
+}
+
+function poblarFiltros() {
+  poblarSelect('fVicem', opcionesDe('vicem', ()=>true), 'Todos');
+  actualizarCascada();
+}
+
+function actualizarCascada() {
+  poblarSelect('fUei',  opcionesDe('uei',  filtroActual('uei')),  'Todas');
+  poblarSelect('fTipo', opcionesDe('tipoInfra', filtroActual('tipo')), 'Todos');
+  poblarSelect('fDpto', opcionesDe('dpto', filtroActual('dpto')), 'Todos');
+  poblarHitos();
+}
+
+function poblarHitos() {
+  const lista = HITOS.filter(filtroActual(null));
+  const sel = document.getElementById('fHito');
+  const actual = sel.value;
+  sel.innerHTML = '<option value="">Selecciona un hito…</option>';
+  lista.sort((a,b)=>a.hito.localeCompare(b.hito,'es')).forEach(h => {
+    const o = document.createElement('option');
+    o.value = h.codHito;
+    o.textContent = h.hito.length > 70 ? h.hito.slice(0,70)+'…' : h.hito;
+    sel.appendChild(o);
+  });
+  if (lista.some(h=>h.codHito===actual)) sel.value = actual;
+  document.getElementById('hitoCount').textContent =
+    lista.length + (lista.length===1 ? ' hito disponible' : ' hitos disponibles');
+  mostrarUltimoAvance();
+}
+
+function mostrarUltimoAvance() {
+  // El último avance real lo conoce el script; aquí solo limpiamos.
+  // (Se podría exponer vía GET, pero lo mantenemos simple por ahora.)
+  document.getElementById('ultAvance').classList.remove('show');
+  limpiarRetro();
+}
+
+function limpiarRetro() {
+  document.getElementById('retroBox').classList.remove('show');
+  document.getElementById('confirmaRetro').checked = false;
+  document.getElementById('justificacion').value = '';
+}
+
+// ====== SEMANA DE REPORTE (jueves a miércoles) ======
+function inicioSemana(fecha) {
+  const f = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+  const diff = (f.getDay() - 4 + 7) % 7; // 4 = jueves
+  f.setDate(f.getDate() - diff);
+  return f;
+}
+function semanaReporteTexto() {
+  const ini = inicioSemana(new Date());
+  const fin = new Date(ini); fin.setDate(fin.getDate() + 6);
+  const fmt = d => d.toLocaleDateString('es-PE',{day:'2-digit',month:'short'});
+  return fmt(ini) + ' – ' + fmt(fin);
+}
+
+// ====== ENVÍO ======
+async function enviar() {
+  const msg = document.getElementById('msg');
+  msg.className = 'msg'; msg.style.display = 'none';
+
+  const codHito = document.getElementById('fHito').value;
+  if (!codHito) return mostrar('err', 'Selecciona un hito antes de registrar.');
+  if (!document.getElementById('validado').checked)
+    return mostrar('err', 'Debes marcar la casilla de validación antes de guardar.');
+
+  const retroVisible = document.getElementById('retroBox').classList.contains('show');
+
+  const payload = {
+    token: TOKEN,
+    codHito: codHito,
+    estado: document.getElementById('estado').value,
+    avance: document.getElementById('avance').value,
+    fechaCumplimiento: document.getElementById('fechaCump').value,
+    situacional: document.getElementById('situacional').value,
+    validado: true,
+    confirmaRetroceso: retroVisible ? document.getElementById('confirmaRetro').checked : false,
+    justificacion: retroVisible ? document.getElementById('justificacion').value : ''
+  };
+
+  const btn = document.getElementById('btnEnviar');
+  btn.disabled = true; btn.textContent = 'Registrando…';
+
+  try {
+    // Content-Type text/plain evita el preflight CORS con Apps Script
+    const res = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      mostrar('ok', '<b>Avance registrado</b>' + escapeHtml(data.mensaje));
+      document.getElementById('avance').value = '';
+      document.getElementById('situacional').value = '';
+      document.getElementById('validado').checked = false;
+      limpiarRetro();
+    } else if (data.tipo === 'retroceso') {
+      // El script pide confirmar el retroceso
+      document.getElementById('retroBox').classList.add('show');
+      document.getElementById('retroMsg').textContent =
+        'Esto es un retroceso respecto al ' + data.avanceAnterior + '% anterior. ¿Es correcto? Confirma y justifica para continuar.';
+      mostrar('warn', '<b>Confirmación requerida</b>Revisa el aviso de retroceso abajo, justifica y vuelve a enviar.');
+    } else {
+      mostrar('err', '<b>No se pudo registrar</b>' + escapeHtml(data.mensaje));
+    }
+  } catch (e) {
+    mostrar('err', '<b>Error de conexión</b>No se pudo contactar el servidor. Intenta de nuevo. (' + escapeHtml(e.message) + ')');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Registrar avance';
+  }
+}
+
+function mostrar(tipo, html) {
+  const msg = document.getElementById('msg');
+  msg.className = 'msg ' + tipo;
+  msg.innerHTML = html;
+  msg.style.display = 'block';
+}
+function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// Arrancar
+cargarMaestro();
+</script>
+</body>
+</html>
