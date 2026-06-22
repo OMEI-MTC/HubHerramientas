@@ -198,7 +198,7 @@ const TOKEN = 'CAMBIA_ESTO_POR_EL_MISMO_TOKEN_DEL_SCRIPT';
 
 // URL del Maestro de Hitos publicado como TSV. Reemplaza con la tuya:
 // Archivo → Compartir → Publicar en la web → Hoja "Maestro de Hitos" → TSV
-const MAESTRO_TSV = 'PEGA_AQUI_LA_URL_TSV_DEL_MAESTRO';
+const MAESTRO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=279418764&single=true&output=tsv';
 
 const CORS_PROXIES = [
   url => url,
