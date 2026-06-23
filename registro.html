@@ -29,7 +29,7 @@
   .btn-back:hover { background:#002D5C; border-color:#002D5C; }
   .main { padding:28px; }
   .panel { max-width:1080px; margin:0 auto; background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:30px 34px; }
-  .panel-title { font-family:var(--serif); font-size:30px; color:var(--blue); line-height:1.1; }
+  .panel-title { font-family:var(--sans); font-weight:700; font-size:30px; color:var(--blue); line-height:1.1; letter-spacing:-0.01em; }
   .panel-sub { font-size:15px; color:var(--text-2); margin-top:4px; }
   .panel-week { font-size:13px; color:var(--text-3); margin-top:2px; padding-bottom:20px; border-bottom:1px solid var(--border); margin-bottom:22px; }
   label { display:block; font-size:13px; font-weight:600; margin:0 0 5px; color:var(--text); }
@@ -105,6 +105,11 @@
             <input type="text" id="fCui" list="cuiList" placeholder="Escribe o elige…" autocomplete="off">
             <datalist id="cuiList"></datalist>
           </div>
+        </div>
+        <div class="field">
+          <label>Nombre de la Intervención</label>
+          <input type="text" id="fNombre" list="nombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off">
+          <datalist id="nombreList"></datalist>
         </div>
         <div class="field">
           <label>Hito</label>
@@ -205,6 +210,7 @@ function parseMaestro(tsv) {
     HITOS.push({
       codHito:(c[COL.codHito]||'').trim(),
       hito:(c[COL.hito]||'').trim(),
+      nombre:(c[COL.nombre]||'').trim(),
       vicem:(c[COL.vicem]||'').trim(),
       uei:(c[COL.uei]||'').trim(),
       tipoInfra:(c[COL.tipoInfra]||'').trim(),
@@ -221,6 +227,7 @@ function iniciarUI() {
   poblarFiltros();
   ['fVicem','fUei','fTipo'].forEach(id => document.getElementById(id).addEventListener('change', actualizarCascada));
   document.getElementById('fCui').addEventListener('input', actualizarCascada);
+  document.getElementById('fNombre').addEventListener('input', actualizarCascada);
   document.getElementById('fHito').addEventListener('input', limpiarRetro);
   document.getElementById('avance').addEventListener('input', limpiarRetro);
 }
@@ -236,11 +243,13 @@ function filtroActual(excluir) {
   const u = document.getElementById('fUei').value;
   const t = document.getElementById('fTipo').value;
   const cu = document.getElementById('fCui').value.trim();
+  const no = document.getElementById('fNombre').value.trim();
   return h =>
     (excluir==='vicem'|| !v || h.vicem===v) &&
     (excluir==='uei'  || !u || h.uei===u) &&
     (excluir==='tipo' || !t || h.tipoInfra===t) &&
-    (excluir==='cui'  || !cu || h.cui===cu);
+    (excluir==='cui'  || !cu || h.cui===cu) &&
+    (excluir==='nombre'|| !no || h.nombre===no);
 }
 
 function poblarSelect(id, valores, etiqueta) {
@@ -266,6 +275,7 @@ function actualizarCascada() {
   poblarSelect('fUei',  opcionesDe('uei',  filtroActual('uei')),  'Todas');
   poblarSelect('fTipo', opcionesDe('tipoInfra', filtroActual('tipo')), 'Todos');
   poblarDatalist('cuiList', opcionesDe('cui', filtroActual('cui')));
+  poblarDatalist('nombreList', opcionesDe('nombre', filtroActual('nombre')));
   poblarHitos();
 }
 
