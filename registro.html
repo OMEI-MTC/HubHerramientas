@@ -32,28 +32,26 @@
   .panel-title { font-family:var(--sans); font-weight:700; font-size:30px; color:var(--blue); line-height:1.1; letter-spacing:-0.01em; }
   .panel-sub { font-size:15px; color:var(--text-2); margin-top:4px; }
   .panel-week { font-size:13px; color:var(--text-3); margin-top:2px; padding-bottom:18px; border-bottom:1px solid var(--border); margin-bottom:20px; }
-
   label { display:block; font-size:13px; font-weight:600; margin:0 0 5px; color:var(--text); }
   select, input[type=text], input[type=date], input[type=number], textarea {
     width:100%; padding:9px 11px; font-size:14px; font-family:inherit; color:var(--text);
     border:1px solid var(--border); border-radius:8px; background:#fff;
   }
   textarea { min-height:70px; resize:vertical; }
-
   .filtros { background:#f7f9fc; border:1px solid #e3e9f2; border-radius:10px; padding:16px 18px 4px; margin-bottom:22px; }
   .filtros-tit { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--blue); font-weight:700; margin:0 0 12px; }
   .filtros-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
   .filtros-row .field { margin-bottom:12px; }
   .filtros-row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:2px; }
-
   .tabla-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:13px; color:var(--text-2); }
   .tabla-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
   thead th { background:#f4f6f9; text-align:left; padding:10px 12px; font-weight:700; color:var(--text-2); border-bottom:1px solid var(--border); white-space:nowrap; }
-  tbody td { padding:10px 12px; border-bottom:1px solid #eef0f3; vertical-align:top; }
-  tbody tr:hover { background:#fafbfc; }
-  .td-hito-nombre { font-weight:600; color:var(--text); }
-  .td-hito-sub { font-size:12px; color:var(--text-2); margin-top:2px; }
+  tbody td { padding:10px 12px; border-bottom:1px solid #eef0f3; vertical-align:middle; }
+  tbody tr.hito-row:hover { background:#fafbfc; }
+  .grupo-row td { background:var(--blue-lt); border-bottom:1px solid #d8e4f3; padding:9px 12px; }
+  .grupo-nombre { font-weight:700; color:var(--blue-dk); font-size:12.5px; letter-spacing:.01em; }
+  .td-hito { font-weight:600; color:var(--text); padding-left:22px; }
   .badge { display:inline-block; padding:3px 9px; border-radius:12px; font-size:11px; font-weight:700; white-space:nowrap; }
   .b-proc { background:#FFF3D6; color:#8a6200; }
   .b-repr { background:#FDE2E4; color:#9c1322; }
@@ -63,15 +61,11 @@
   .btn-edit { background:none; border:none; cursor:pointer; color:var(--blue); padding:5px; border-radius:6px; }
   .btn-edit:hover { background:var(--blue-lt); }
   .avance-cell { font-weight:700; }
-
   .pager { display:flex; justify-content:center; align-items:center; gap:10px; margin-top:14px; }
   .pager button { padding:6px 12px; border:1px solid var(--border); background:#fff; border-radius:7px; cursor:pointer; font-family:inherit; font-size:13px; }
   .pager button:disabled { opacity:.4; cursor:default; }
   .pager span { font-size:13px; color:var(--text-2); }
-
   .loading { text-align:center; color:var(--text-2); padding:40px; }
-
-  /* Modal */
   .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:50; align-items:center; justify-content:center; padding:20px; }
   .overlay.show { display:flex; }
   .modal { background:#fff; border-radius:var(--r); width:100%; max-width:520px; padding:24px 26px; max-height:90vh; overflow-y:auto; }
@@ -116,7 +110,6 @@
 
   <main class="main">
     <div id="loading" class="panel loading">Cargando estado actual de los hitos…</div>
-
     <div id="app" class="panel" style="display:none;">
       <div class="panel-title">CARTERA PRIORIZADA MTC</div>
       <div class="panel-sub">Actualización semanal de avance de hitos</div>
@@ -125,48 +118,26 @@
       <div class="filtros">
         <p class="filtros-tit">Filtrar hitos</p>
         <div class="filtros-row">
-          <div class="field">
-            <label>Viceministerio</label>
-            <select id="fVicem"><option value="">Todos</option></select>
-          </div>
-          <div class="field">
-            <label>Unidad ejecutora</label>
-            <select id="fUei"><option value="">Todas</option></select>
-          </div>
-          <div class="field">
-            <label>Tipo de infraestructura</label>
-            <select id="fTipo"><option value="">Todos</option></select>
-          </div>
+          <div class="field"><label>Viceministerio</label><select id="fVicem"><option value="">Todos</option></select></div>
+          <div class="field"><label>Unidad ejecutora</label><select id="fUei"><option value="">Todas</option></select></div>
+          <div class="field"><label>Tipo de infraestructura</label><select id="fTipo"><option value="">Todos</option></select></div>
         </div>
         <div class="filtros-row2">
-          <div class="field">
-            <label>CUI</label>
-            <input type="text" id="fCui" list="cuiList" placeholder="Escribe o elige…" autocomplete="off">
-            <datalist id="cuiList"></datalist>
-          </div>
-          <div class="field">
-            <label>Nombre de la Intervención</label>
-            <input type="text" id="fNombre" list="nombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off">
-            <datalist id="nombreList"></datalist>
-          </div>
+          <div class="field"><label>CUI</label><input type="text" id="fCui" list="cuiList" placeholder="Escribe o elige…" autocomplete="off"><datalist id="cuiList"></datalist></div>
+          <div class="field"><label>Nombre de la Intervención</label><input type="text" id="fNombre" list="nombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="nombreList"></datalist></div>
         </div>
       </div>
 
       <div class="tabla-meta">
         <span id="contadorHitos">—</span>
-        <button class="btn-cancel" id="btnLimpiar" onclick="limpiarFiltros()" style="padding:6px 14px; font-size:13px;">Limpiar filtros</button>
+        <button class="btn-cancel" onclick="limpiarFiltros()" style="padding:6px 14px; font-size:13px;">Limpiar filtros</button>
       </div>
 
       <div class="tabla-wrap">
         <table>
           <thead>
             <tr>
-              <th>Intervención / Hito</th>
-              <th>Avance</th>
-              <th>Estado</th>
-              <th>Fecha cumpl.</th>
-              <th>Detalle del estado</th>
-              <th></th>
+              <th>Hito</th><th>Avance</th><th>Estado</th><th>Fecha cumpl.</th><th>Detalle del estado</th><th></th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
@@ -182,60 +153,26 @@
   </main>
 </div>
 
-<!-- MODAL -->
 <div class="overlay" id="overlay">
   <div class="modal">
     <div class="modal-head">
-      <div>
-        <div class="modal-title">Editar avance del hito</div>
-        <div class="modal-sub" id="mSub">—</div>
-      </div>
+      <div><div class="modal-title">Editar avance del hito</div><div class="modal-sub" id="mSub">—</div></div>
       <button class="modal-x" onclick="cerrarModal()" aria-label="Cerrar">&times;</button>
     </div>
-
     <div class="m-row3">
-      <div>
-        <label>Estado</label>
-        <select id="mEstado">
-          <option value="EN PROCESO">EN PROCESO</option>
-          <option value="REPROGRAMADO">REPROGRAMADO</option>
-          <option value="CUMPLIDO">CUMPLIDO</option>
-        </select>
-      </div>
-      <div>
-        <label>Fecha de cumplimiento</label>
-        <input type="date" id="mFecha">
-      </div>
+      <div><label>Estado</label><select id="mEstado"><option value="EN PROCESO">EN PROCESO</option><option value="REPROGRAMADO">REPROGRAMADO</option><option value="CUMPLIDO">CUMPLIDO</option></select></div>
+      <div><label>Fecha de cumplimiento</label><input type="date" id="mFecha"></div>
     </div>
-
-    <div class="field">
-      <label>% de avance</label>
-      <input type="number" id="mAvance" min="0" max="100" step="1" placeholder="Ej. 75">
-      <span class="ult-avance" id="mUlt">—</span>
-    </div>
-
-    <div class="field">
-      <label>Detalle del estado</label>
-      <textarea id="mSituacional" placeholder="Describe el avance real de esta semana…"></textarea>
-    </div>
-
+    <div class="field"><label>% de avance</label><input type="number" id="mAvance" min="0" max="100" step="1" placeholder="Ej. 75"><span class="ult-avance" id="mUlt">—</span></div>
+    <div class="field"><label>Detalle del estado</label><textarea id="mSituacional" placeholder="Describe el avance real de esta semana…"></textarea></div>
     <div class="retro-box" id="mRetro">
       <p id="mRetroMsg">Esto es un retroceso respecto al avance anterior. ¿Es correcto?</p>
       <label>Justificación del retroceso</label>
       <textarea id="mJustif" placeholder="Explica por qué el avance disminuyó…"></textarea>
-      <div class="check-row">
-        <input type="checkbox" id="mConfirmaRetro">
-        <label for="mConfirmaRetro">Confirmo que el retroceso es correcto.</label>
-      </div>
+      <div class="check-row"><input type="checkbox" id="mConfirmaRetro"><label for="mConfirmaRetro">Confirmo que el retroceso es correcto.</label></div>
     </div>
-
-    <div class="check-row">
-      <input type="checkbox" id="mValidado">
-      <label for="mValidado">He revisado la información y confirmo que es correcta.</label>
-    </div>
-
+    <div class="check-row"><input type="checkbox" id="mValidado"><label for="mValidado">He revisado la información y confirmo que es correcta.</label></div>
     <div class="modal-msg" id="mMsg"></div>
-
     <div class="modal-actions">
       <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
       <button class="btn-save" id="mGuardar" onclick="guardar()">Guardar</button>
@@ -250,319 +187,183 @@ const TOKEN = 'ogame_2026';
 const ESTADO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=734960726&single=true&output=tsv';
 const MAESTRO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=279418764&single=true&output=tsv';
 
-const CORS_PROXIES = [
-  url => url,
-  url => 'https://corsproxy.io/?' + encodeURIComponent(url),
-  url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url)
-];
+const CORS_PROXIES = [ url=>url, url=>'https://corsproxy.io/?'+encodeURIComponent(url), url=>'https://api.allorigins.win/raw?url='+encodeURIComponent(url) ];
 
-// Columnas de ESTADO ACTUAL (= Histórico): Corte|CodHito|Hito|Categoria|CodInterno|CUI|Nombre|FechaCump|Estado|Avance|Situacional
 const E = { corte:0, codHito:1, hito:2, categoria:3, codInterno:4, cui:5, nombre:6, fechaCump:7, estado:8, avance:9, situacional:10 };
-// Columnas del MAESTRO (para clasificación de filtros): ...|UEI(8)|Viceministerio(9)|TipoInfra(10)|CUI(11)
 const M = { codHito:2, dpto:5, estatus:6, uei:8, vicem:9, tipoInfra:10, cui:11 };
 
 const PAGE_SIZE = 20;
-let HITOS = [];       // estado actual de cada hito
-let CLASIF = {};      // codHito -> {vicem, uei, tipoInfra, dpto, cui, nombre}
-let filtrados = [];
-let pagina = 1;
-let editando = null;  // codHito en edición
+let HITOS = [], CLASIF = {}, filtrados = [], pagina = 1, editando = null;
 
 async function cargar() {
   try {
-    const [estadoTxt, maestroTxt] = await Promise.all([
-      fetchProxy(ESTADO_TSV),
-      fetchProxy(MAESTRO_TSV)
-    ]);
+    const [estadoTxt, maestroTxt] = await Promise.all([ fetchProxy(ESTADO_TSV), fetchProxy(MAESTRO_TSV) ]);
     parseMaestro(maestroTxt);
     parseEstado(estadoTxt);
     iniciar();
   } catch (e) {
-    document.getElementById('loading').innerHTML =
-      '<span style="color:#C8102E;">No se pudo cargar la información.<br><small>Verifica que las hojas estén publicadas como TSV. Error: ' + e.message + '</small></span>';
+    document.getElementById('loading').innerHTML = '<span style="color:#C8102E;">No se pudo cargar la información.<br><small>Verifica que las hojas estén publicadas como TSV. Error: '+e.message+'</small></span>';
   }
 }
-
 async function fetchProxy(url) {
-  let lastErr = null;
+  let lastErr=null;
   for (const fn of CORS_PROXIES) {
-    try {
-      const res = await fetch(fn(url), { cache:'no-cache' });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const t = await res.text();
-      if (!t || t.length < 10) throw new Error('Respuesta vacía');
-      return t;
-    } catch (e) { lastErr = e; }
+    try { const res=await fetch(fn(url),{cache:'no-cache'}); if(!res.ok) throw new Error('HTTP '+res.status); const t=await res.text(); if(!t||t.length<10) throw new Error('Respuesta vacía'); return t; }
+    catch(e){ lastErr=e; }
   }
   throw lastErr || new Error('Sin respuesta');
 }
-
 function parseMaestro(tsv) {
-  const lineas = tsv.split('\n').filter(l => l.trim());
-  CLASIF = {};
-  for (let i = 1; i < lineas.length; i++) {
-    const c = lineas[i].split('\t');
-    const cod = (c[M.codHito]||'').trim();
-    if (!cod) continue;
-    if ((c[M.estatus]||'').trim().toUpperCase() !== 'VIGENTE') continue;
-    CLASIF[cod] = {
-      vicem:(c[M.vicem]||'').trim(),
-      uei:(c[M.uei]||'').trim(),
-      tipoInfra:(c[M.tipoInfra]||'').trim(),
-      dpto:(c[M.dpto]||'').trim(),
-      cui:(c[M.cui]||'').trim()
-    };
-  }
+  const lineas = tsv.split('\n').filter(l=>l.trim()); CLASIF={};
+  for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const cod=(c[M.codHito]||'').trim(); if(!cod) continue; if((c[M.estatus]||'').trim().toUpperCase()!=='VIGENTE') continue;
+    CLASIF[cod]={ vicem:(c[M.vicem]||'').trim(), uei:(c[M.uei]||'').trim(), tipoInfra:(c[M.tipoInfra]||'').trim(), dpto:(c[M.dpto]||'').trim(), cui:(c[M.cui]||'').trim() }; }
+}
+function parseEstado(tsv) {
+  const lineas = tsv.split('\n').filter(l=>l.trim()); HITOS=[];
+  for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const cod=(c[E.codHito]||'').trim(); if(!cod) continue; if(!CLASIF[cod]) continue;
+    HITOS.push({ codHito:cod, hito:(c[E.hito]||'').trim(), nombre:(c[E.nombre]||'').trim(), cui:(c[E.cui]||'').trim(), categoria:(c[E.categoria]||'').trim(),
+      fechaCump:(c[E.fechaCump]||'').trim(), estado:(c[E.estado]||'').trim().toUpperCase(), avance:(c[E.avance]||'').trim(), situacional:(c[E.situacional]||'').trim() }); }
 }
 
-function parseEstado(tsv) {
-  const lineas = tsv.split('\n').filter(l => l.trim());
-  HITOS = [];
-  for (let i = 1; i < lineas.length; i++) {
-    const c = lineas[i].split('\t');
-    const cod = (c[E.codHito]||'').trim();
-    if (!cod) continue;
-    if (!CLASIF[cod]) continue; // solo hitos vigentes del maestro
-    HITOS.push({
-      codHito: cod,
-      hito:(c[E.hito]||'').trim(),
-      nombre:(c[E.nombre]||'').trim(),
-      cui:(c[E.cui]||'').trim(),
-      categoria:(c[E.categoria]||'').trim(),
-      fechaCump:(c[E.fechaCump]||'').trim(),
-      estado:(c[E.estado]||'').trim().toUpperCase(),
-      avance:(c[E.avance]||'').trim(),
-      situacional:(c[E.situacional]||'').trim()
-    });
-  }
+// Lee el avance de forma robusta y devuelve SIEMPRE un porcentaje 0-100.
+// Acepta "93%", "93", "0.93" y los normaliza correctamente.
+function avancePct(raw) {
+  if (raw===null||raw===undefined) return NaN;
+  let s = String(raw).trim();
+  const tienePct = s.includes('%');
+  s = s.replace('%','').replace(',','.').trim();
+  let n = parseFloat(s);
+  if (isNaN(n)) return NaN;
+  if (tienePct) return n;          // "93%" -> 93
+  if (n <= 1) return n*100;        // 0.93 -> 93
+  return n;                         // 93 -> 93
 }
 
 function iniciar() {
   document.getElementById('loading').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('semanaLabel').textContent='Semana de reporte: '+semanaReporteTexto();
-  poblarFiltros();
-  ['fVicem','fUei','fTipo'].forEach(id=>document.getElementById(id).addEventListener('change',aplicarFiltros));
-  document.getElementById('fCui').addEventListener('input',aplicarFiltros);
-  document.getElementById('fNombre').addEventListener('input',aplicarFiltros);
+  poblarVicem();
+  ['fVicem','fUei','fTipo'].forEach(id=>document.getElementById(id).addEventListener('change',onFiltroChange));
+  document.getElementById('fCui').addEventListener('input',onFiltroChange);
+  document.getElementById('fNombre').addEventListener('input',onFiltroChange);
   aplicarFiltros();
 }
 
-function clasifDe(h){ return CLASIF[h.codHito] || {}; }
+function clasifDe(h){ return CLASIF[h.codHito]||{}; }
+function opcionesDe(getter, base){ const set=new Set(); base.forEach(h=>{const v=getter(h); if(v) set.add(v);}); return [...set].sort((a,b)=>a.localeCompare(b,'es',{numeric:true})); }
+function poblarSelect(id, valores, etiqueta){ const sel=document.getElementById(id); const actual=sel.value; sel.innerHTML='<option value="">'+etiqueta+'</option>'; valores.forEach(v=>{const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o);}); if(valores.includes(actual)) sel.value=actual; }
+function poblarDatalist(id, valores){ const dl=document.getElementById(id); dl.innerHTML=''; valores.forEach(v=>{const o=document.createElement('option'); o.value=v; dl.appendChild(o);}); }
 
-function opcionesDe(getter, base) {
-  const set = new Set();
-  base.forEach(h => { const v = getter(h); if (v) set.add(v); });
-  return [...set].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
+function poblarVicem(){ poblarSelect('fVicem', opcionesDe(h=>clasifDe(h).vicem, HITOS), 'Todos'); }
+
+// Filtros encadenados: cada cambio recalcula las opciones de los demás según la selección actual.
+function onFiltroChange(){ recalcularOpciones(); aplicarFiltros(); }
+
+function baseFiltrada(excluir){
+  const v=document.getElementById('fVicem').value;
+  const u=document.getElementById('fUei').value;
+  const t=document.getElementById('fTipo').value;
+  const cu=document.getElementById('fCui').value.trim();
+  const no=document.getElementById('fNombre').value.trim();
+  return HITOS.filter(h=>{ const cl=clasifDe(h);
+    return (excluir==='vicem'||!v||cl.vicem===v) && (excluir==='uei'||!u||cl.uei===u) && (excluir==='tipo'||!t||cl.tipoInfra===t) &&
+           (excluir==='cui'||!cu||cl.cui===cu) && (excluir==='nombre'||!no||h.nombre===no); });
+}
+function recalcularOpciones(){
+  poblarSelect('fUei',  opcionesDe(h=>clasifDe(h).uei, baseFiltrada('uei')), 'Todas');
+  poblarSelect('fTipo', opcionesDe(h=>clasifDe(h).tipoInfra, baseFiltrada('tipo')), 'Todos');
+  poblarDatalist('cuiList', opcionesDe(h=>clasifDe(h).cui, baseFiltrada('cui')));
+  poblarDatalist('nombreList', opcionesDe(h=>h.nombre, baseFiltrada('nombre')));
 }
 
-function poblarSelect(id, valores, etiqueta) {
-  const sel = document.getElementById(id);
-  const actual = sel.value;
-  sel.innerHTML = '<option value="">'+etiqueta+'</option>';
-  valores.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
-  if (valores.includes(actual)) sel.value=actual;
-}
-function poblarDatalist(id, valores) {
-  const dl = document.getElementById(id);
-  dl.innerHTML='';
-  valores.forEach(v=>{ const o=document.createElement('option'); o.value=v; dl.appendChild(o); });
-}
+function aplicarFiltros(){ filtrados = baseFiltrada(null); pagina=1; render(); }
+function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre'].forEach(id=>document.getElementById(id).value=''); poblarVicem(); recalcularOpciones(); aplicarFiltros(); }
 
-function poblarFiltros() {
-  poblarSelect('fVicem', opcionesDe(h=>clasifDe(h).vicem, HITOS), 'Todos');
-  poblarSelect('fUei',   opcionesDe(h=>clasifDe(h).uei, HITOS), 'Todas');
-  poblarSelect('fTipo',  opcionesDe(h=>clasifDe(h).tipoInfra, HITOS), 'Todos');
-  poblarDatalist('cuiList', opcionesDe(h=>clasifDe(h).cui, HITOS));
-  poblarDatalist('nombreList', opcionesDe(h=>h.nombre, HITOS));
-}
+function badgeEstado(est){ if(est==='EN PROCESO') return '<span class="badge b-proc">EN PROCESO</span>'; if(est==='REPROGRAMADO') return '<span class="badge b-repr">REPROGRAMADO</span>'; if(est==='CUMPLIDO') return '<span class="badge b-cump">CUMPLIDO</span>'; return '<span class="badge">'+escapeHtml(est)+'</span>'; }
+function fmtAvance(raw){ const n=avancePct(raw); return isNaN(n)?'—':Math.round(n)+'%'; }
 
-function aplicarFiltros() {
-  const v = document.getElementById('fVicem').value;
-  const u = document.getElementById('fUei').value;
-  const t = document.getElementById('fTipo').value;
-  const cu = document.getElementById('fCui').value.trim();
-  const no = document.getElementById('fNombre').value.trim();
-  filtrados = HITOS.filter(h => {
-    const cl = clasifDe(h);
-    return (!v || cl.vicem===v) && (!u || cl.uei===u) && (!t || cl.tipoInfra===t) &&
-           (!cu || cl.cui===cu) && (!no || h.nombre===no);
-  });
-  pagina = 1;
-  render();
-}
-
-function limpiarFiltros() {
-  ['fVicem','fUei','fTipo','fCui','fNombre'].forEach(id=>document.getElementById(id).value='');
-  aplicarFiltros();
-}
-
-function badgeEstado(est) {
-  if (est==='EN PROCESO') return '<span class="badge b-proc">EN PROCESO</span>';
-  if (est==='REPROGRAMADO') return '<span class="badge b-repr">REPROGRAMADO</span>';
-  if (est==='CUMPLIDO') return '<span class="badge b-cump">CUMPLIDO</span>';
-  return '<span class="badge">'+escapeHtml(est)+'</span>';
-}
-
-function fmtAvance(a) {
-  const n = parseFloat(a);
-  if (isNaN(n)) return '—';
-  return Math.round(n*100)+'%';
-}
-
-function render() {
+function render(){
   const tot = filtrados.length;
   const paginas = Math.max(1, Math.ceil(tot/PAGE_SIZE));
   if (pagina>paginas) pagina=paginas;
-  const ini = (pagina-1)*PAGE_SIZE;
-  const slice = filtrados.slice(ini, ini+PAGE_SIZE);
+  const slice = filtrados.slice((pagina-1)*PAGE_SIZE, (pagina-1)*PAGE_SIZE+PAGE_SIZE);
 
+  // Agrupar el slice por nombre de intervención, preservando orden
   const tbody = document.getElementById('tbody');
-  tbody.innerHTML = slice.map(h => `
-    <tr>
-      <td>
-        <div class="td-hito-nombre">${escapeHtml(h.nombre)||'—'}</div>
-        <div class="td-hito-sub">${escapeHtml(h.hito)||'—'}</div>
-      </td>
-      <td class="avance-cell">${fmtAvance(h.avance)}</td>
-      <td>${badgeEstado(h.estado)}</td>
-      <td>${escapeHtml(h.fechaCump)||'—'}</td>
-      <td class="td-sit"><div class="td-sit-clip" title="${escapeHtml(h.situacional)}">${escapeHtml(h.situacional)||'—'}</div></td>
-      <td><button class="btn-edit" onclick="abrirModal('${h.codHito}')" aria-label="Editar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-      </button></td>
-    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center; padding:30px; color:#8a9ab0;">No hay hitos con estos filtros.</td></tr>';
-
-  document.getElementById('contadorHitos').textContent =
-    tot + (tot===1?' hito':' hitos') + (tot>PAGE_SIZE ? ' · página '+pagina+' de '+paginas : '');
-  document.getElementById('pageInfo').textContent = 'Página '+pagina+' de '+paginas;
-  document.getElementById('prevBtn').disabled = pagina<=1;
-  document.getElementById('nextBtn').disabled = pagina>=paginas;
-}
-
-function cambiarPagina(d) {
-  pagina += d;
-  render();
-  window.scrollTo({top:0, behavior:'smooth'});
-}
-
-// ====== MODAL ======
-function abrirModal(codHito) {
-  const h = HITOS.find(x=>x.codHito===codHito);
-  if (!h) return;
-  editando = codHito;
-  document.getElementById('mSub').textContent = h.nombre + ' · ' + h.hito;
-  document.getElementById('mEstado').value = ['EN PROCESO','REPROGRAMADO','CUMPLIDO'].includes(h.estado)?h.estado:'EN PROCESO';
-  document.getElementById('mFecha').value = toISODate(h.fechaCump);
-  document.getElementById('mAvance').value = (parseFloat(h.avance)*100)||0;
-  document.getElementById('mSituacional').value = h.situacional;
-  document.getElementById('mUlt').textContent = 'Último registrado: ' + fmtAvance(h.avance);
-  document.getElementById('mValidado').checked = false;
-  limpiarRetro();
-  document.getElementById('mMsg').className='modal-msg';
-  document.getElementById('mMsg').style.display='none';
-  document.getElementById('overlay').classList.add('show');
-  document.body.style.overflow='hidden';
-}
-
-function cerrarModal() {
-  document.getElementById('overlay').classList.remove('show');
-  document.body.style.overflow='';
-  editando = null;
-}
-
-function limpiarRetro() {
-  document.getElementById('mRetro').classList.remove('show');
-  document.getElementById('mConfirmaRetro').checked=false;
-  document.getElementById('mJustif').value='';
-}
-
-async function guardar() {
-  const msg = document.getElementById('mMsg');
-  msg.className='modal-msg'; msg.style.display='none';
-  if (!document.getElementById('mValidado').checked)
-    return modalMsg('err','Debes marcar la casilla de validación antes de guardar.');
-
-  const retroVisible = document.getElementById('mRetro').classList.contains('show');
-  const payload = {
-    token: TOKEN, codHito: editando,
-    estado: document.getElementById('mEstado').value,
-    avance: document.getElementById('mAvance').value,
-    fechaCumplimiento: document.getElementById('mFecha').value,
-    situacional: document.getElementById('mSituacional').value,
-    validado: true,
-    confirmaRetroceso: retroVisible ? document.getElementById('mConfirmaRetro').checked : false,
-    justificacion: retroVisible ? document.getElementById('mJustif').value : ''
-  };
-
-  const btn = document.getElementById('mGuardar');
-  btn.disabled=true; btn.textContent='Guardando…';
-  try {
-    const res = await fetch(ENDPOINT, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload) });
-    const data = await res.json();
-    if (data.ok) {
-      actualizarFilaLocal(editando, payload);
-      modalMsg('ok', data.mensaje);
-      setTimeout(cerrarModal, 1200);
-    } else if (data.tipo==='retroceso') {
-      document.getElementById('mRetro').classList.add('show');
-      document.getElementById('mRetroMsg').textContent =
-        'Esto es un retroceso respecto al '+data.avanceAnterior+'% anterior. ¿Es correcto? Confirma y justifica para continuar.';
-      modalMsg('warn','Revisa el aviso de retroceso, justifica y vuelve a guardar.');
-    } else {
-      modalMsg('err', data.mensaje);
-    }
-  } catch (e) {
-    modalMsg('err','Error de conexión: '+e.message);
-  } finally {
-    btn.disabled=false; btn.textContent='Guardar';
+  if (slice.length===0){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center; padding:30px; color:#8a9ab0;">No hay hitos con estos filtros.</td></tr>'; }
+  else {
+    let html='', grupoActual=null;
+    slice.forEach(h=>{
+      if (h.nombre!==grupoActual){
+        grupoActual=h.nombre;
+        html += '<tr class="grupo-row"><td colspan="6"><span class="grupo-nombre">'+(escapeHtml(h.nombre)||'(sin intervención)')+'</span></td></tr>';
+      }
+      html += `<tr class="hito-row">
+        <td class="td-hito">${escapeHtml(h.hito)||'—'}</td>
+        <td class="avance-cell">${fmtAvance(h.avance)}</td>
+        <td>${badgeEstado(h.estado)}</td>
+        <td>${escapeHtml(h.fechaCump)||'—'}</td>
+        <td class="td-sit"><div class="td-sit-clip" title="${escapeHtml(h.situacional)}">${escapeHtml(h.situacional)||'—'}</div></td>
+        <td><button class="btn-edit" onclick="abrirModal('${h.codHito}')" aria-label="Editar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </button></td>
+      </tr>`;
+    });
+    tbody.innerHTML = html;
   }
+  document.getElementById('contadorHitos').textContent = tot+(tot===1?' hito':' hitos')+(tot>PAGE_SIZE?' · página '+pagina+' de '+paginas:'');
+  document.getElementById('pageInfo').textContent='Página '+pagina+' de '+paginas;
+  document.getElementById('prevBtn').disabled=pagina<=1;
+  document.getElementById('nextBtn').disabled=pagina>=paginas;
 }
+function cambiarPagina(d){ pagina+=d; render(); window.scrollTo({top:0,behavior:'smooth'}); }
 
-// Actualiza la fila en memoria para reflejar el cambio sin esperar al TSV
-function actualizarFilaLocal(codHito, p) {
-  const h = HITOS.find(x=>x.codHito===codHito);
-  if (!h) return;
-  h.estado = p.estado.toUpperCase();
-  h.avance = String(Number(p.avance)/100);
-  h.fechaCump = p.fechaCumplimiento || h.fechaCump;
-  h.situacional = p.situacional;
+function abrirModal(codHito){
+  const h=HITOS.find(x=>x.codHito===codHito); if(!h) return; editando=codHito;
+  document.getElementById('mSub').textContent=h.nombre+' · '+h.hito;
+  document.getElementById('mEstado').value=['EN PROCESO','REPROGRAMADO','CUMPLIDO'].includes(h.estado)?h.estado:'EN PROCESO';
+  document.getElementById('mFecha').value=toISODate(h.fechaCump);
+  const pct=avancePct(h.avance);
+  document.getElementById('mAvance').value=isNaN(pct)?0:Math.round(pct);
+  document.getElementById('mSituacional').value=h.situacional;
+  document.getElementById('mUlt').textContent='Último registrado: '+fmtAvance(h.avance);
+  document.getElementById('mValidado').checked=false;
+  limpiarRetro();
+  document.getElementById('mMsg').className='modal-msg'; document.getElementById('mMsg').style.display='none';
+  document.getElementById('overlay').classList.add('show'); document.body.style.overflow='hidden';
+}
+function cerrarModal(){ document.getElementById('overlay').classList.remove('show'); document.body.style.overflow=''; editando=null; }
+function limpiarRetro(){ document.getElementById('mRetro').classList.remove('show'); document.getElementById('mConfirmaRetro').checked=false; document.getElementById('mJustif').value=''; }
+
+async function guardar(){
+  const msg=document.getElementById('mMsg'); msg.className='modal-msg'; msg.style.display='none';
+  if(!document.getElementById('mValidado').checked) return modalMsg('err','Debes marcar la casilla de validación antes de guardar.');
+  const retroVisible=document.getElementById('mRetro').classList.contains('show');
+  const payload={ token:TOKEN, codHito:editando, estado:document.getElementById('mEstado').value, avance:document.getElementById('mAvance').value,
+    fechaCumplimiento:document.getElementById('mFecha').value, situacional:document.getElementById('mSituacional').value, validado:true,
+    confirmaRetroceso: retroVisible?document.getElementById('mConfirmaRetro').checked:false, justificacion: retroVisible?document.getElementById('mJustif').value:'' };
+  const btn=document.getElementById('mGuardar'); btn.disabled=true; btn.textContent='Guardando…';
+  try {
+    const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+    const data=await res.json();
+    if(data.ok){ actualizarFilaLocal(editando,payload); modalMsg('ok',data.mensaje); setTimeout(cerrarModal,1200); }
+    else if(data.tipo==='retroceso'){ document.getElementById('mRetro').classList.add('show'); document.getElementById('mRetroMsg').textContent='Esto es un retroceso respecto al '+data.avanceAnterior+'% anterior. ¿Es correcto? Confirma y justifica para continuar.'; modalMsg('warn','Revisa el aviso de retroceso, justifica y vuelve a guardar.'); }
+    else { modalMsg('err',data.mensaje); }
+  } catch(e){ modalMsg('err','Error de conexión: '+e.message); }
+  finally { btn.disabled=false; btn.textContent='Guardar'; }
+}
+function actualizarFilaLocal(codHito,p){
+  const h=HITOS.find(x=>x.codHito===codHito); if(!h) return;
+  h.estado=p.estado.toUpperCase(); h.avance=String(p.avance); h.fechaCump=p.fechaCumplimiento||h.fechaCump; h.situacional=p.situacional;
   render();
 }
+function modalMsg(tipo,texto){ const msg=document.getElementById('mMsg'); msg.className='modal-msg '+tipo; msg.textContent=texto; msg.style.display='block'; }
+document.getElementById('overlay').addEventListener('click',function(e){ if(e.target===this) cerrarModal(); });
 
-function modalMsg(tipo, texto) {
-  const msg = document.getElementById('mMsg');
-  msg.className='modal-msg '+tipo; msg.textContent=texto; msg.style.display='block';
-}
-
-document.getElementById('overlay').addEventListener('click', function(e){
-  if (e.target===this) cerrarModal();
-});
-
-// ====== SEMANA (jueves a miércoles) ======
-function inicioSemana(fecha) {
-  const f = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
-  const diff = (f.getDay()-4+7)%7;
-  f.setDate(f.getDate()-diff);
-  return f;
-}
-function semanaReporteTexto() {
-  const ini = inicioSemana(new Date());
-  const fin = new Date(ini); fin.setDate(fin.getDate()+6);
-  const fmt = d => d.toLocaleDateString('es-PE',{day:'2-digit',month:'short'});
-  return fmt(ini)+' – '+fmt(fin);
-}
-
-// Convierte "1/7/2026" o "2026-07-01" a formato ISO yyyy-mm-dd para el input date
-function toISODate(s) {
-  if (!s) return '';
-  s = s.trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
-  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (m) { const d=m[1].padStart(2,'0'), mo=m[2].padStart(2,'0'); return m[3]+'-'+mo+'-'+d; }
-  return '';
-}
-
+function inicioSemana(fecha){ const f=new Date(fecha.getFullYear(),fecha.getMonth(),fecha.getDate()); const diff=(f.getDay()-4+7)%7; f.setDate(f.getDate()-diff); return f; }
+function semanaReporteTexto(){ const ini=inicioSemana(new Date()); const fin=new Date(ini); fin.setDate(fin.getDate()+6); const fmt=d=>d.toLocaleDateString('es-PE',{day:'2-digit',month:'short'}); return fmt(ini)+' – '+fmt(fin); }
+function toISODate(s){ if(!s) return ''; s=s.trim(); if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10); const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m){ return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'); } return ''; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 cargar();
