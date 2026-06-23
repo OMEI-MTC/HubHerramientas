@@ -316,6 +316,19 @@ function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito'].fo
 function badgeEstado(est){ if(est==='EN PROCESO') return '<span class="badge b-proc">EN PROCESO</span>'; if(est==='REPROGRAMADO') return '<span class="badge b-repr">REPROGRAMADO</span>'; if(est==='CUMPLIDO') return '<span class="badge b-cump">CUMPLIDO</span>'; return '<span class="badge">'+escapeHtml(est)+'</span>'; }
 function fmtAvance(raw){ const n=avancePct(raw); return isNaN(n)?'—':Math.round(n)+'%'; }
 
+// Convierte "1/7/2026" o "2026-07-01" a "jul-26" (mes abreviado en español + año de 2 dígitos)
+function fmtMesAnio(s){
+  if(!s) return '—';
+  s=String(s).trim();
+  const meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  let mes, anio;
+  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);          // d/m/aaaa
+  if(m){ mes=parseInt(m[2],10); anio=m[3]; }
+  else { m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m){ mes=parseInt(m[2],10); anio=m[1]; } }
+  if(!mes||mes<1||mes>12||!anio) return escapeHtml(s); // si no se reconoce, mostrar tal cual
+  return meses[mes-1]+'-'+String(anio).slice(-2);
+}
+
 function render(){
   const tot=filtrados.length, paginas=Math.max(1,Math.ceil(tot/PAGE_SIZE));
   if(pagina>paginas) pagina=paginas;
@@ -331,7 +344,7 @@ function render(){
         <td style="white-space:nowrap; color:var(--text-2);">${escapeHtml(h.corte)||'—'}</td>
         <td class="avance-cell">${fmtAvance(h.avance)}</td>
         <td>${badgeEstado(h.estado)}</td>
-        <td>${escapeHtml(h.fechaCump)||'—'}</td>
+        <td style="white-space:nowrap;">${fmtMesAnio(h.fechaCump)}</td>
         <td class="td-sit"><div class="td-sit-clip" title="${escapeHtml(h.situacional)}">${escapeHtml(h.situacional)||'—'}</div></td>
         <td><div class="acciones">
           <button class="btn-ico" onclick="abrirHist('${h.codHito}')" aria-label="Ver histórico" title="Ver histórico">
