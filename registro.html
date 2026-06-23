@@ -8,10 +8,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   :root {
-    --red:#C8102E; --blue:#0055A5; --blue-dk:#003F7D; --blue-lt:#EEF4FF; --blue-pill:#4A90D9;
-    --white:#ffffff; --bg:#F2F2F2; --card:#ffffff; --border:rgba(0,0,0,0.09);
+    --red:#C8102E; --blue:#0055A5; --blue-dk:#003F7D; --blue-lt:#EEF4FF;
+    --white:#fff; --bg:#F2F2F2; --card:#fff; --border:rgba(0,0,0,0.09);
     --text:#1a1a1a; --text-2:#4a5568; --text-3:#8a9ab0;
     --green:#1D9E75; --green-dk:#0F6E56;
     --amber-bg:#FFF8E6; --amber-bd:#E6A817; --amber-tx:#8a6200; --red-bg:#FDECEE;
@@ -24,42 +24,78 @@
   .topbar-logo { width:52px; height:52px; border-radius:8px; overflow:hidden; flex-shrink:0; box-shadow:0 1px 6px rgba(0,0,0,0.25); }
   .topbar-logo img { width:100%; height:100%; object-fit:cover; display:block; }
   .topbar-name { font-size:28px; font-weight:700; color:var(--white); line-height:1.2; letter-spacing:-0.01em; }
-  .topbar-sub { font-size:14px; color:rgba(255,255,255,0.85); margin-top:3px; font-weight:400; }
-  .btn-back { display:flex; align-items:center; gap:7px; background:#003F7D; color:#fff; border:2px solid #003F7D; border-radius:24px; padding:8px 18px; font-family:var(--sans); font-size:15px; font-weight:700; cursor:pointer; white-space:nowrap; transition:background .12s; text-decoration:none; }
+  .topbar-sub { font-size:14px; color:rgba(255,255,255,0.85); margin-top:3px; }
+  .btn-back { display:flex; align-items:center; gap:7px; background:#003F7D; color:#fff; border:2px solid #003F7D; border-radius:24px; padding:8px 18px; font-family:var(--sans); font-size:15px; font-weight:700; cursor:pointer; white-space:nowrap; text-decoration:none; transition:background .12s; }
   .btn-back:hover { background:#002D5C; border-color:#002D5C; }
   .main { padding:28px; }
-  .panel { max-width:1080px; margin:0 auto; background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:30px 34px; }
+  .panel { max-width:1240px; margin:0 auto; background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:28px 32px; }
   .panel-title { font-family:var(--sans); font-weight:700; font-size:30px; color:var(--blue); line-height:1.1; letter-spacing:-0.01em; }
   .panel-sub { font-size:15px; color:var(--text-2); margin-top:4px; }
-  .panel-week { font-size:13px; color:var(--text-3); margin-top:2px; padding-bottom:20px; border-bottom:1px solid var(--border); margin-bottom:22px; }
+  .panel-week { font-size:13px; color:var(--text-3); margin-top:2px; padding-bottom:18px; border-bottom:1px solid var(--border); margin-bottom:20px; }
+
   label { display:block; font-size:13px; font-weight:600; margin:0 0 5px; color:var(--text); }
-  .hint { font-size:12px; color:var(--text-3); margin:5px 0 0; font-weight:400; }
   select, input[type=text], input[type=date], input[type=number], textarea {
     width:100%; padding:9px 11px; font-size:14px; font-family:inherit; color:var(--text);
     border:1px solid var(--border); border-radius:8px; background:#fff;
   }
-  textarea { min-height:80px; resize:vertical; }
-  .field { margin-bottom:18px; }
-  .filtros { background:#f7f9fc; border:1px solid #e3e9f2; border-radius:10px; padding:18px 20px 6px; margin-bottom:24px; }
-  .filtros-tit { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--blue); font-weight:700; margin:0 0 14px; }
-  .filtros-row4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
-  .filtros-row4 .field { margin-bottom:14px; }
-  .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; }
-  .btn-go { width:100%; background:var(--green); color:#fff; border:none; padding:13px; font-size:15px; font-weight:700; border-radius:9px; cursor:pointer; font-family:inherit; }
-  .btn-go:disabled { background:#b8c4d0; cursor:not-allowed; }
-  .btn-go:hover:not(:disabled) { background:var(--green-dk); }
-  .msg { border-radius:9px; padding:13px 16px; margin-top:18px; font-size:14px; display:none; }
-  .msg.ok { background:#E8F7F0; border:1px solid var(--green); color:#0c6647; display:block; }
-  .msg.err { background:var(--red-bg); border:1px solid var(--red); color:#9c1322; display:block; }
-  .msg.warn { background:var(--amber-bg); border:1px solid var(--amber-bd); color:var(--amber-tx); display:block; }
-  .msg b { display:block; margin-bottom:3px; }
-  .retro-box { background:var(--amber-bg); border:1px solid var(--amber-bd); border-radius:9px; padding:16px; margin-top:16px; display:none; }
-  .retro-box.show { display:block; }
-  .retro-box p { margin:0 0 10px; font-size:14px; color:var(--amber-tx); }
-  .check-row { display:flex; align-items:flex-start; gap:9px; margin:20px 0 6px; }
-  .check-row input { margin-top:3px; width:auto; }
-  .check-row label { font-weight:400; font-size:14px; margin:0; }
+  textarea { min-height:70px; resize:vertical; }
+
+  .filtros { background:#f7f9fc; border:1px solid #e3e9f2; border-radius:10px; padding:16px 18px 4px; margin-bottom:22px; }
+  .filtros-tit { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--blue); font-weight:700; margin:0 0 12px; }
+  .filtros-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .filtros-row .field { margin-bottom:12px; }
+  .filtros-row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:2px; }
+
+  .tabla-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:13px; color:var(--text-2); }
+  .tabla-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  thead th { background:#f4f6f9; text-align:left; padding:10px 12px; font-weight:700; color:var(--text-2); border-bottom:1px solid var(--border); white-space:nowrap; }
+  tbody td { padding:10px 12px; border-bottom:1px solid #eef0f3; vertical-align:top; }
+  tbody tr:hover { background:#fafbfc; }
+  .td-hito-nombre { font-weight:600; color:var(--text); }
+  .td-hito-sub { font-size:12px; color:var(--text-2); margin-top:2px; }
+  .badge { display:inline-block; padding:3px 9px; border-radius:12px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .b-proc { background:#FFF3D6; color:#8a6200; }
+  .b-repr { background:#FDE2E4; color:#9c1322; }
+  .b-cump { background:#E0F3EA; color:#0c6647; }
+  .td-sit { max-width:280px; color:var(--text-2); font-size:12px; }
+  .td-sit-clip { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .btn-edit { background:none; border:none; cursor:pointer; color:var(--blue); padding:5px; border-radius:6px; }
+  .btn-edit:hover { background:var(--blue-lt); }
+  .avance-cell { font-weight:700; }
+
+  .pager { display:flex; justify-content:center; align-items:center; gap:10px; margin-top:14px; }
+  .pager button { padding:6px 12px; border:1px solid var(--border); background:#fff; border-radius:7px; cursor:pointer; font-family:inherit; font-size:13px; }
+  .pager button:disabled { opacity:.4; cursor:default; }
+  .pager span { font-size:13px; color:var(--text-2); }
+
   .loading { text-align:center; color:var(--text-2); padding:40px; }
+
+  /* Modal */
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:50; align-items:center; justify-content:center; padding:20px; }
+  .overlay.show { display:flex; }
+  .modal { background:#fff; border-radius:var(--r); width:100%; max-width:520px; padding:24px 26px; max-height:90vh; overflow-y:auto; }
+  .modal-head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:18px; }
+  .modal-title { font-size:17px; font-weight:700; color:var(--blue); }
+  .modal-sub { font-size:13px; color:var(--text-2); margin-top:3px; }
+  .modal-x { background:none; border:none; font-size:22px; line-height:1; color:var(--text-3); cursor:pointer; }
+  .m-row3 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+  .field { margin-bottom:14px; }
+  .ult-avance { font-size:12px; color:var(--blue); background:var(--blue-lt); border-radius:6px; padding:5px 9px; margin-top:5px; display:inline-block; }
+  .retro-box { background:var(--amber-bg); border:1px solid var(--amber-bd); border-radius:9px; padding:14px; margin-top:6px; margin-bottom:6px; display:none; }
+  .retro-box.show { display:block; }
+  .retro-box p { margin:0 0 9px; font-size:13px; color:var(--amber-tx); }
+  .check-row { display:flex; align-items:flex-start; gap:9px; margin:14px 0 4px; }
+  .check-row input { margin-top:3px; width:auto; }
+  .check-row label { font-weight:400; font-size:13.5px; margin:0; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
+  .btn-cancel { padding:10px 18px; border:1px solid var(--border); background:#fff; border-radius:8px; cursor:pointer; font-family:inherit; font-size:14px; font-weight:600; }
+  .btn-save { padding:10px 20px; border:none; background:var(--green); color:#fff; border-radius:8px; cursor:pointer; font-family:inherit; font-size:14px; font-weight:700; }
+  .btn-save:disabled { background:#b8c4d0; cursor:not-allowed; }
+  .modal-msg { border-radius:8px; padding:11px 14px; margin-top:14px; font-size:13.5px; display:none; }
+  .modal-msg.ok { background:#E8F7F0; border:1px solid var(--green); color:#0c6647; display:block; }
+  .modal-msg.err { background:var(--red-bg); border:1px solid var(--red); color:#9c1322; display:block; }
+  .modal-msg.warn { background:var(--amber-bg); border:1px solid var(--amber-bd); color:var(--amber-tx); display:block; }
 </style>
 </head>
 <body>
@@ -79,15 +115,16 @@
   </header>
 
   <main class="main">
-    <div id="loading" class="panel loading">Cargando catálogo de hitos…</div>
-    <div id="form" class="panel" style="display:none;">
+    <div id="loading" class="panel loading">Cargando estado actual de los hitos…</div>
+
+    <div id="app" class="panel" style="display:none;">
       <div class="panel-title">CARTERA PRIORIZADA MTC</div>
       <div class="panel-sub">Actualización semanal de avance de hitos</div>
       <div class="panel-week" id="semanaLabel">—</div>
 
       <div class="filtros">
-        <p class="filtros-tit">Encuentra tu hito</p>
-        <div class="filtros-row4">
+        <p class="filtros-tit">Filtrar hitos</p>
+        <div class="filtros-row">
           <div class="field">
             <label>Viceministerio</label>
             <select id="fVicem"><option value="">Todos</option></select>
@@ -100,75 +137,118 @@
             <label>Tipo de infraestructura</label>
             <select id="fTipo"><option value="">Todos</option></select>
           </div>
+        </div>
+        <div class="filtros-row2">
           <div class="field">
             <label>CUI</label>
             <input type="text" id="fCui" list="cuiList" placeholder="Escribe o elige…" autocomplete="off">
             <datalist id="cuiList"></datalist>
           </div>
-        </div>
-        <div class="field">
-          <label>Nombre de la Intervención</label>
-          <input type="text" id="fNombre" list="nombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off">
-          <datalist id="nombreList"></datalist>
-        </div>
-        <div class="field">
-          <label>Hito</label>
-          <input type="text" id="fHito" list="hitoList" placeholder="Escribe parte del nombre o elige…" autocomplete="off">
-          <datalist id="hitoList"></datalist>
-          <p class="hint" id="hitoCount">—</p>
+          <div class="field">
+            <label>Nombre de la Intervención</label>
+            <input type="text" id="fNombre" list="nombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off">
+            <datalist id="nombreList"></datalist>
+          </div>
         </div>
       </div>
 
-      <div class="row3">
-        <div class="field">
-          <label>Estado</label>
-          <select id="estado">
-            <option value="EN PROCESO">EN PROCESO</option>
-            <option value="REPROGRAMADO">REPROGRAMADO</option>
-            <option value="CUMPLIDO">CUMPLIDO</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Fecha de cumplimiento</label>
-          <input type="date" id="fechaCump">
-        </div>
-        <div class="field">
-          <label>% de avance</label>
-          <input type="number" id="avance" min="0" max="100" step="1" placeholder="Ej. 75">
-        </div>
+      <div class="tabla-meta">
+        <span id="contadorHitos">—</span>
+        <button class="btn-cancel" id="btnLimpiar" onclick="limpiarFiltros()" style="padding:6px 14px; font-size:13px;">Limpiar filtros</button>
       </div>
 
-      <div class="field">
-        <label>Detalle del estado</label>
-        <textarea id="situacional" placeholder="Describe el avance real de esta semana…"></textarea>
+      <div class="tabla-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Intervención / Hito</th>
+              <th>Avance</th>
+              <th>Estado</th>
+              <th>Fecha cumpl.</th>
+              <th>Detalle del estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
       </div>
 
-      <div class="retro-box" id="retroBox">
-        <p id="retroMsg">Esto es un retroceso respecto al avance anterior. ¿Es correcto?</p>
-        <label>Justificación del retroceso</label>
-        <textarea id="justificacion" placeholder="Explica por qué el avance disminuyó…"></textarea>
-        <div class="check-row">
-          <input type="checkbox" id="confirmaRetro">
-          <label for="confirmaRetro">Confirmo que el retroceso es correcto.</label>
-        </div>
+      <div class="pager">
+        <button id="prevBtn" onclick="cambiarPagina(-1)">‹ Anterior</button>
+        <span id="pageInfo">—</span>
+        <button id="nextBtn" onclick="cambiarPagina(1)">Siguiente ›</button>
       </div>
-
-      <div class="check-row">
-        <input type="checkbox" id="validado">
-        <label for="validado">He revisado la información y confirmo que es correcta.</label>
-      </div>
-
-      <button class="btn-go" id="btnEnviar" onclick="enviar()">Registrar avance</button>
-      <div class="msg" id="msg"></div>
     </div>
   </main>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">Editar avance del hito</div>
+        <div class="modal-sub" id="mSub">—</div>
+      </div>
+      <button class="modal-x" onclick="cerrarModal()" aria-label="Cerrar">&times;</button>
+    </div>
+
+    <div class="m-row3">
+      <div>
+        <label>Estado</label>
+        <select id="mEstado">
+          <option value="EN PROCESO">EN PROCESO</option>
+          <option value="REPROGRAMADO">REPROGRAMADO</option>
+          <option value="CUMPLIDO">CUMPLIDO</option>
+        </select>
+      </div>
+      <div>
+        <label>Fecha de cumplimiento</label>
+        <input type="date" id="mFecha">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>% de avance</label>
+      <input type="number" id="mAvance" min="0" max="100" step="1" placeholder="Ej. 75">
+      <span class="ult-avance" id="mUlt">—</span>
+    </div>
+
+    <div class="field">
+      <label>Detalle del estado</label>
+      <textarea id="mSituacional" placeholder="Describe el avance real de esta semana…"></textarea>
+    </div>
+
+    <div class="retro-box" id="mRetro">
+      <p id="mRetroMsg">Esto es un retroceso respecto al avance anterior. ¿Es correcto?</p>
+      <label>Justificación del retroceso</label>
+      <textarea id="mJustif" placeholder="Explica por qué el avance disminuyó…"></textarea>
+      <div class="check-row">
+        <input type="checkbox" id="mConfirmaRetro">
+        <label for="mConfirmaRetro">Confirmo que el retroceso es correcto.</label>
+      </div>
+    </div>
+
+    <div class="check-row">
+      <input type="checkbox" id="mValidado">
+      <label for="mValidado">He revisado la información y confirmo que es correcta.</label>
+    </div>
+
+    <div class="modal-msg" id="mMsg"></div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-save" id="mGuardar" onclick="guardar()">Guardar</button>
+    </div>
+  </div>
 </div>
 
 <script>
 // ====== CONFIGURACIÓN ======
 const ENDPOINT = 'https://script.google.com/macros/s/AKfycbxSgvtxdB2Y4VTaFOBzIkmscjhpVwJHdgw22hWBMEYhwACmhUdYZEjQm4laGJDo4k6d/exec';
 const TOKEN = 'ogame_2026';
-const MAESTRO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=279418764&single=true&output=tsv';
+const ESTADO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=734960726&single=true&output=tsv';
+const MAESTRO_TSV = 'PEGA_AQUI_LA_URL_TSV_DEL_MAESTRO';
 
 const CORS_PROXIES = [
   url => url,
@@ -176,132 +256,294 @@ const CORS_PROXIES = [
   url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url)
 ];
 
-// Orden esperado del Maestro:
-// COD INTERNO|NOMBRE|COD HITOS|Hitos|CategoríaHito|Dpto|Estatus|Modalidad|UEI|Viceministerio|Tipo Infra|CUI
-const COL = { codInterno:0, nombre:1, codHito:2, hito:3, categoria:4, dpto:5, estatus:6, modalidad:7, uei:8, vicem:9, tipoInfra:10, cui:11 };
+// Columnas de ESTADO ACTUAL (= Histórico): Corte|CodHito|Hito|Categoria|CodInterno|CUI|Nombre|FechaCump|Estado|Avance|Situacional
+const E = { corte:0, codHito:1, hito:2, categoria:3, codInterno:4, cui:5, nombre:6, fechaCump:7, estado:8, avance:9, situacional:10 };
+// Columnas del MAESTRO (para clasificación de filtros): ...|UEI(8)|Viceministerio(9)|TipoInfra(10)|CUI(11)
+const M = { codHito:2, dpto:5, estatus:6, uei:8, vicem:9, tipoInfra:10, cui:11 };
 
-let HITOS = [];
-let MAP_HITO = {}; // nombre del hito -> código
+const PAGE_SIZE = 20;
+let HITOS = [];       // estado actual de cada hito
+let CLASIF = {};      // codHito -> {vicem, uei, tipoInfra, dpto, cui, nombre}
+let filtrados = [];
+let pagina = 1;
+let editando = null;  // codHito en edición
 
-async function cargarMaestro() {
-  let lastError = null;
-  for (const proxyFn of CORS_PROXIES) {
-    try {
-      const res = await fetch(proxyFn(MAESTRO_TSV), { cache:'no-cache' });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const text = await res.text();
-      if (!text || text.length < 10) throw new Error('Respuesta vacía');
-      parseMaestro(text);
-      iniciarUI();
-      return;
-    } catch (e) { lastError = e; continue; }
+async function cargar() {
+  try {
+    const [estadoTxt, maestroTxt] = await Promise.all([
+      fetchProxy(ESTADO_TSV),
+      fetchProxy(MAESTRO_TSV)
+    ]);
+    parseMaestro(maestroTxt);
+    parseEstado(estadoTxt);
+    iniciar();
+  } catch (e) {
+    document.getElementById('loading').innerHTML =
+      '<span style="color:#C8102E;">No se pudo cargar la información.<br><small>Verifica que las hojas estén publicadas como TSV. Error: ' + e.message + '</small></span>';
   }
-  document.getElementById('loading').innerHTML =
-    '<span style="color:#C8102E;">No se pudo cargar el catálogo de hitos.<br><small>Verifica que el Maestro esté publicado como TSV. Error: ' +
-    (lastError ? lastError.message : 'desconocido') + '</small></span>';
+}
+
+async function fetchProxy(url) {
+  let lastErr = null;
+  for (const fn of CORS_PROXIES) {
+    try {
+      const res = await fetch(fn(url), { cache:'no-cache' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const t = await res.text();
+      if (!t || t.length < 10) throw new Error('Respuesta vacía');
+      return t;
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('Sin respuesta');
 }
 
 function parseMaestro(tsv) {
   const lineas = tsv.split('\n').filter(l => l.trim());
+  CLASIF = {};
+  for (let i = 1; i < lineas.length; i++) {
+    const c = lineas[i].split('\t');
+    const cod = (c[M.codHito]||'').trim();
+    if (!cod) continue;
+    if ((c[M.estatus]||'').trim().toUpperCase() !== 'VIGENTE') continue;
+    CLASIF[cod] = {
+      vicem:(c[M.vicem]||'').trim(),
+      uei:(c[M.uei]||'').trim(),
+      tipoInfra:(c[M.tipoInfra]||'').trim(),
+      dpto:(c[M.dpto]||'').trim(),
+      cui:(c[M.cui]||'').trim()
+    };
+  }
+}
+
+function parseEstado(tsv) {
+  const lineas = tsv.split('\n').filter(l => l.trim());
   HITOS = [];
   for (let i = 1; i < lineas.length; i++) {
     const c = lineas[i].split('\t');
-    if ((c[COL.estatus]||'').trim().toUpperCase() !== 'VIGENTE') continue;
+    const cod = (c[E.codHito]||'').trim();
+    if (!cod) continue;
+    if (!CLASIF[cod]) continue; // solo hitos vigentes del maestro
     HITOS.push({
-      codHito:(c[COL.codHito]||'').trim(),
-      hito:(c[COL.hito]||'').trim(),
-      nombre:(c[COL.nombre]||'').trim(),
-      vicem:(c[COL.vicem]||'').trim(),
-      uei:(c[COL.uei]||'').trim(),
-      tipoInfra:(c[COL.tipoInfra]||'').trim(),
-      dpto:(c[COL.dpto]||'').trim(),
-      cui:(c[COL.cui]||'').trim()
+      codHito: cod,
+      hito:(c[E.hito]||'').trim(),
+      nombre:(c[E.nombre]||'').trim(),
+      cui:(c[E.cui]||'').trim(),
+      categoria:(c[E.categoria]||'').trim(),
+      fechaCump:(c[E.fechaCump]||'').trim(),
+      estado:(c[E.estado]||'').trim().toUpperCase(),
+      avance:(c[E.avance]||'').trim(),
+      situacional:(c[E.situacional]||'').trim()
     });
   }
 }
 
-function iniciarUI() {
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('form').style.display = 'block';
-  document.getElementById('semanaLabel').textContent = 'Semana de reporte: ' + semanaReporteTexto();
+function iniciar() {
+  document.getElementById('loading').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('semanaLabel').textContent='Semana de reporte: '+semanaReporteTexto();
   poblarFiltros();
-  ['fVicem','fUei','fTipo'].forEach(id => document.getElementById(id).addEventListener('change', actualizarCascada));
-  document.getElementById('fCui').addEventListener('input', actualizarCascada);
-  document.getElementById('fNombre').addEventListener('input', actualizarCascada);
-  document.getElementById('fHito').addEventListener('input', limpiarRetro);
-  document.getElementById('avance').addEventListener('input', limpiarRetro);
+  ['fVicem','fUei','fTipo'].forEach(id=>document.getElementById(id).addEventListener('change',aplicarFiltros));
+  document.getElementById('fCui').addEventListener('input',aplicarFiltros);
+  document.getElementById('fNombre').addEventListener('input',aplicarFiltros);
+  aplicarFiltros();
 }
 
-function opcionesDe(campo, filtroFn) {
+function clasifDe(h){ return CLASIF[h.codHito] || {}; }
+
+function opcionesDe(getter, base) {
   const set = new Set();
-  HITOS.filter(filtroFn).forEach(h => { if (h[campo]) set.add(h[campo]); });
+  base.forEach(h => { const v = getter(h); if (v) set.add(v); });
   return [...set].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
-}
-
-function filtroActual(excluir) {
-  const v = document.getElementById('fVicem').value;
-  const u = document.getElementById('fUei').value;
-  const t = document.getElementById('fTipo').value;
-  const cu = document.getElementById('fCui').value.trim();
-  const no = document.getElementById('fNombre').value.trim();
-  return h =>
-    (excluir==='vicem'|| !v || h.vicem===v) &&
-    (excluir==='uei'  || !u || h.uei===u) &&
-    (excluir==='tipo' || !t || h.tipoInfra===t) &&
-    (excluir==='cui'  || !cu || h.cui===cu) &&
-    (excluir==='nombre'|| !no || h.nombre===no);
 }
 
 function poblarSelect(id, valores, etiqueta) {
   const sel = document.getElementById(id);
   const actual = sel.value;
   sel.innerHTML = '<option value="">'+etiqueta+'</option>';
-  valores.forEach(v => { const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
-  if (valores.includes(actual)) sel.value = actual;
+  valores.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
+  if (valores.includes(actual)) sel.value=actual;
 }
-
 function poblarDatalist(id, valores) {
   const dl = document.getElementById(id);
-  dl.innerHTML = '';
-  valores.forEach(v => { const o=document.createElement('option'); o.value=v; dl.appendChild(o); });
+  dl.innerHTML='';
+  valores.forEach(v=>{ const o=document.createElement('option'); o.value=v; dl.appendChild(o); });
 }
 
 function poblarFiltros() {
-  poblarSelect('fVicem', opcionesDe('vicem', ()=>true), 'Todos');
-  actualizarCascada();
+  poblarSelect('fVicem', opcionesDe(h=>clasifDe(h).vicem, HITOS), 'Todos');
+  poblarSelect('fUei',   opcionesDe(h=>clasifDe(h).uei, HITOS), 'Todas');
+  poblarSelect('fTipo',  opcionesDe(h=>clasifDe(h).tipoInfra, HITOS), 'Todos');
+  poblarDatalist('cuiList', opcionesDe(h=>clasifDe(h).cui, HITOS));
+  poblarDatalist('nombreList', opcionesDe(h=>h.nombre, HITOS));
 }
 
-function actualizarCascada() {
-  poblarSelect('fUei',  opcionesDe('uei',  filtroActual('uei')),  'Todas');
-  poblarSelect('fTipo', opcionesDe('tipoInfra', filtroActual('tipo')), 'Todos');
-  poblarDatalist('cuiList', opcionesDe('cui', filtroActual('cui')));
-  poblarDatalist('nombreList', opcionesDe('nombre', filtroActual('nombre')));
-  poblarHitos();
+function aplicarFiltros() {
+  const v = document.getElementById('fVicem').value;
+  const u = document.getElementById('fUei').value;
+  const t = document.getElementById('fTipo').value;
+  const cu = document.getElementById('fCui').value.trim();
+  const no = document.getElementById('fNombre').value.trim();
+  filtrados = HITOS.filter(h => {
+    const cl = clasifDe(h);
+    return (!v || cl.vicem===v) && (!u || cl.uei===u) && (!t || cl.tipoInfra===t) &&
+           (!cu || cl.cui===cu) && (!no || h.nombre===no);
+  });
+  pagina = 1;
+  render();
 }
 
-function poblarHitos() {
-  const lista = HITOS.filter(filtroActual(null));
-  MAP_HITO = {};
-  lista.forEach(h => { MAP_HITO[h.hito] = h.codHito; });
-  poblarDatalist('hitoList', lista.map(h=>h.hito).sort((a,b)=>a.localeCompare(b,'es')));
-  // Si el texto actual del hito ya no está en la lista filtrada, limpiarlo
-  const fh = document.getElementById('fHito');
-  if (fh.value && !MAP_HITO[fh.value]) fh.value = '';
-  document.getElementById('hitoCount').textContent =
-    lista.length + (lista.length===1?' hito disponible':' hitos disponibles');
+function limpiarFiltros() {
+  ['fVicem','fUei','fTipo','fCui','fNombre'].forEach(id=>document.getElementById(id).value='');
+  aplicarFiltros();
+}
+
+function badgeEstado(est) {
+  if (est==='EN PROCESO') return '<span class="badge b-proc">EN PROCESO</span>';
+  if (est==='REPROGRAMADO') return '<span class="badge b-repr">REPROGRAMADO</span>';
+  if (est==='CUMPLIDO') return '<span class="badge b-cump">CUMPLIDO</span>';
+  return '<span class="badge">'+escapeHtml(est)+'</span>';
+}
+
+function fmtAvance(a) {
+  const n = parseFloat(a);
+  if (isNaN(n)) return '—';
+  return Math.round(n*100)+'%';
+}
+
+function render() {
+  const tot = filtrados.length;
+  const paginas = Math.max(1, Math.ceil(tot/PAGE_SIZE));
+  if (pagina>paginas) pagina=paginas;
+  const ini = (pagina-1)*PAGE_SIZE;
+  const slice = filtrados.slice(ini, ini+PAGE_SIZE);
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = slice.map(h => `
+    <tr>
+      <td>
+        <div class="td-hito-nombre">${escapeHtml(h.nombre)||'—'}</div>
+        <div class="td-hito-sub">${escapeHtml(h.hito)||'—'}</div>
+      </td>
+      <td class="avance-cell">${fmtAvance(h.avance)}</td>
+      <td>${badgeEstado(h.estado)}</td>
+      <td>${escapeHtml(h.fechaCump)||'—'}</td>
+      <td class="td-sit"><div class="td-sit-clip" title="${escapeHtml(h.situacional)}">${escapeHtml(h.situacional)||'—'}</div></td>
+      <td><button class="btn-edit" onclick="abrirModal('${h.codHito}')" aria-label="Editar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button></td>
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center; padding:30px; color:#8a9ab0;">No hay hitos con estos filtros.</td></tr>';
+
+  document.getElementById('contadorHitos').textContent =
+    tot + (tot===1?' hito':' hitos') + (tot>PAGE_SIZE ? ' · página '+pagina+' de '+paginas : '');
+  document.getElementById('pageInfo').textContent = 'Página '+pagina+' de '+paginas;
+  document.getElementById('prevBtn').disabled = pagina<=1;
+  document.getElementById('nextBtn').disabled = pagina>=paginas;
+}
+
+function cambiarPagina(d) {
+  pagina += d;
+  render();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ====== MODAL ======
+function abrirModal(codHito) {
+  const h = HITOS.find(x=>x.codHito===codHito);
+  if (!h) return;
+  editando = codHito;
+  document.getElementById('mSub').textContent = h.nombre + ' · ' + h.hito;
+  document.getElementById('mEstado').value = ['EN PROCESO','REPROGRAMADO','CUMPLIDO'].includes(h.estado)?h.estado:'EN PROCESO';
+  document.getElementById('mFecha').value = toISODate(h.fechaCump);
+  document.getElementById('mAvance').value = (parseFloat(h.avance)*100)||0;
+  document.getElementById('mSituacional').value = h.situacional;
+  document.getElementById('mUlt').textContent = 'Último registrado: ' + fmtAvance(h.avance);
+  document.getElementById('mValidado').checked = false;
   limpiarRetro();
+  document.getElementById('mMsg').className='modal-msg';
+  document.getElementById('mMsg').style.display='none';
+  document.getElementById('overlay').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+
+function cerrarModal() {
+  document.getElementById('overlay').classList.remove('show');
+  document.body.style.overflow='';
+  editando = null;
 }
 
 function limpiarRetro() {
-  document.getElementById('retroBox').classList.remove('show');
-  document.getElementById('confirmaRetro').checked = false;
-  document.getElementById('justificacion').value = '';
+  document.getElementById('mRetro').classList.remove('show');
+  document.getElementById('mConfirmaRetro').checked=false;
+  document.getElementById('mJustif').value='';
 }
 
+async function guardar() {
+  const msg = document.getElementById('mMsg');
+  msg.className='modal-msg'; msg.style.display='none';
+  if (!document.getElementById('mValidado').checked)
+    return modalMsg('err','Debes marcar la casilla de validación antes de guardar.');
+
+  const retroVisible = document.getElementById('mRetro').classList.contains('show');
+  const payload = {
+    token: TOKEN, codHito: editando,
+    estado: document.getElementById('mEstado').value,
+    avance: document.getElementById('mAvance').value,
+    fechaCumplimiento: document.getElementById('mFecha').value,
+    situacional: document.getElementById('mSituacional').value,
+    validado: true,
+    confirmaRetroceso: retroVisible ? document.getElementById('mConfirmaRetro').checked : false,
+    justificacion: retroVisible ? document.getElementById('mJustif').value : ''
+  };
+
+  const btn = document.getElementById('mGuardar');
+  btn.disabled=true; btn.textContent='Guardando…';
+  try {
+    const res = await fetch(ENDPOINT, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload) });
+    const data = await res.json();
+    if (data.ok) {
+      actualizarFilaLocal(editando, payload);
+      modalMsg('ok', data.mensaje);
+      setTimeout(cerrarModal, 1200);
+    } else if (data.tipo==='retroceso') {
+      document.getElementById('mRetro').classList.add('show');
+      document.getElementById('mRetroMsg').textContent =
+        'Esto es un retroceso respecto al '+data.avanceAnterior+'% anterior. ¿Es correcto? Confirma y justifica para continuar.';
+      modalMsg('warn','Revisa el aviso de retroceso, justifica y vuelve a guardar.');
+    } else {
+      modalMsg('err', data.mensaje);
+    }
+  } catch (e) {
+    modalMsg('err','Error de conexión: '+e.message);
+  } finally {
+    btn.disabled=false; btn.textContent='Guardar';
+  }
+}
+
+// Actualiza la fila en memoria para reflejar el cambio sin esperar al TSV
+function actualizarFilaLocal(codHito, p) {
+  const h = HITOS.find(x=>x.codHito===codHito);
+  if (!h) return;
+  h.estado = p.estado.toUpperCase();
+  h.avance = String(Number(p.avance)/100);
+  h.fechaCump = p.fechaCumplimiento || h.fechaCump;
+  h.situacional = p.situacional;
+  render();
+}
+
+function modalMsg(tipo, texto) {
+  const msg = document.getElementById('mMsg');
+  msg.className='modal-msg '+tipo; msg.textContent=texto; msg.style.display='block';
+}
+
+document.getElementById('overlay').addEventListener('click', function(e){
+  if (e.target===this) cerrarModal();
+});
+
+// ====== SEMANA (jueves a miércoles) ======
 function inicioSemana(fecha) {
   const f = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
-  const diff = (f.getDay() - 4 + 7) % 7;
-  f.setDate(f.getDate() - diff);
+  const diff = (f.getDay()-4+7)%7;
+  f.setDate(f.getDate()-diff);
   return f;
 }
 function semanaReporteTexto() {
@@ -311,61 +553,19 @@ function semanaReporteTexto() {
   return fmt(ini)+' – '+fmt(fin);
 }
 
-async function enviar() {
-  const msg = document.getElementById('msg');
-  msg.className='msg'; msg.style.display='none';
-
-  const nombreHito = document.getElementById('fHito').value.trim();
-  const codHito = MAP_HITO[nombreHito];
-  if (!codHito) return mostrar('err','Selecciona un hito válido de la lista antes de registrar.');
-  if (!document.getElementById('validado').checked)
-    return mostrar('err','Debes marcar la casilla de validación antes de guardar.');
-
-  const retroVisible = document.getElementById('retroBox').classList.contains('show');
-  const payload = {
-    token: TOKEN, codHito: codHito,
-    estado: document.getElementById('estado').value,
-    avance: document.getElementById('avance').value,
-    fechaCumplimiento: document.getElementById('fechaCump').value,
-    situacional: document.getElementById('situacional').value,
-    validado: true,
-    confirmaRetroceso: retroVisible ? document.getElementById('confirmaRetro').checked : false,
-    justificacion: retroVisible ? document.getElementById('justificacion').value : ''
-  };
-
-  const btn = document.getElementById('btnEnviar');
-  btn.disabled = true; btn.textContent = 'Registrando…';
-  try {
-    const res = await fetch(ENDPOINT, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
-    const data = await res.json();
-    if (data.ok) {
-      mostrar('ok','<b>Avance registrado</b>'+escapeHtml(data.mensaje));
-      document.getElementById('avance').value='';
-      document.getElementById('situacional').value='';
-      document.getElementById('validado').checked=false;
-      limpiarRetro();
-    } else if (data.tipo === 'retroceso') {
-      document.getElementById('retroBox').classList.add('show');
-      document.getElementById('retroMsg').textContent =
-        'Esto es un retroceso respecto al '+data.avanceAnterior+'% anterior. ¿Es correcto? Confirma y justifica para continuar.';
-      mostrar('warn','<b>Confirmación requerida</b>Revisa el aviso de retroceso abajo, justifica y vuelve a enviar.');
-    } else {
-      mostrar('err','<b>No se pudo registrar</b>'+escapeHtml(data.mensaje));
-    }
-  } catch (e) {
-    mostrar('err','<b>Error de conexión</b>No se pudo contactar el servidor. Intenta de nuevo. ('+escapeHtml(e.message)+')');
-  } finally {
-    btn.disabled=false; btn.textContent='Registrar avance';
-  }
+// Convierte "1/7/2026" o "2026-07-01" a formato ISO yyyy-mm-dd para el input date
+function toISODate(s) {
+  if (!s) return '';
+  s = s.trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) { const d=m[1].padStart(2,'0'), mo=m[2].padStart(2,'0'); return m[3]+'-'+mo+'-'+d; }
+  return '';
 }
 
-function mostrar(tipo, html) {
-  const msg = document.getElementById('msg');
-  msg.className='msg '+tipo; msg.innerHTML=html; msg.style.display='block';
-}
 function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-cargarMaestro();
+cargar();
 </script>
 </body>
 </html>
