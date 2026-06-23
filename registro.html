@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   :root {
@@ -38,12 +39,17 @@
     border:1px solid var(--border); border-radius:8px; background:#fff;
   }
   textarea { min-height:70px; resize:vertical; }
-  .filtros { background:#f7f9fc; border:1px solid #e3e9f2; border-radius:10px; padding:16px 18px 4px; margin-bottom:22px; }
+  .filtros { background:#f7f9fc; border:1px solid #e3e9f2; border-radius:10px; padding:16px 18px 16px; margin-bottom:22px; }
   .filtros-tit { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--blue); font-weight:700; margin:0 0 12px; }
-  .filtros-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
-  .filtros-row .field { margin-bottom:12px; }
-  .filtros-row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:2px; }
+  .filtros-row4 { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .filtros-row4 .field { margin-bottom:12px; }
+  .filtros-nombre { margin-bottom:14px; }
+  .filtros-foot { display:flex; justify-content:flex-end; }
+  .btn-limpiar { padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:8px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:600; color:var(--text-2); }
+  .btn-limpiar:hover { background:#eef0f3; }
   .tabla-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:13px; color:var(--text-2); }
+  .btn-export { display:flex; align-items:center; gap:7px; padding:8px 16px; border:none; background:var(--green); color:#fff; border-radius:8px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:700; }
+  .btn-export:hover { background:var(--green-dk); }
   .tabla-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
   thead th { background:#f4f6f9; text-align:left; padding:10px 12px; font-weight:700; color:var(--text-2); border-bottom:1px solid var(--border); white-space:nowrap; }
@@ -56,10 +62,11 @@
   .b-proc { background:#FFF3D6; color:#8a6200; }
   .b-repr { background:#FDE2E4; color:#9c1322; }
   .b-cump { background:#E0F3EA; color:#0c6647; }
-  .td-sit { max-width:280px; color:var(--text-2); font-size:12px; }
+  .td-sit { max-width:260px; color:var(--text-2); font-size:12px; }
   .td-sit-clip { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  .btn-edit { background:none; border:none; cursor:pointer; color:var(--blue); padding:5px; border-radius:6px; }
-  .btn-edit:hover { background:var(--blue-lt); }
+  .acciones { display:flex; gap:4px; }
+  .btn-ico { background:none; border:none; cursor:pointer; color:var(--blue); padding:5px; border-radius:6px; }
+  .btn-ico:hover { background:var(--blue-lt); }
   .avance-cell { font-weight:700; }
   .pager { display:flex; justify-content:center; align-items:center; gap:10px; margin-top:14px; }
   .pager button { padding:6px 12px; border:1px solid var(--border); background:#fff; border-radius:7px; cursor:pointer; font-family:inherit; font-size:13px; }
@@ -69,6 +76,7 @@
   .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:50; align-items:center; justify-content:center; padding:20px; }
   .overlay.show { display:flex; }
   .modal { background:#fff; border-radius:var(--r); width:100%; max-width:520px; padding:24px 26px; max-height:90vh; overflow-y:auto; }
+  .modal-lg { max-width:680px; }
   .modal-head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:18px; }
   .modal-title { font-size:17px; font-weight:700; color:var(--blue); }
   .modal-sub { font-size:13px; color:var(--text-2); margin-top:3px; }
@@ -90,6 +98,10 @@
   .modal-msg.ok { background:#E8F7F0; border:1px solid var(--green); color:#0c6647; display:block; }
   .modal-msg.err { background:var(--red-bg); border:1px solid var(--red); color:#9c1322; display:block; }
   .modal-msg.warn { background:var(--amber-bg); border:1px solid var(--amber-bd); color:var(--amber-tx); display:block; }
+  .hist-tabla { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; }
+  .hist-tabla th { background:#f4f6f9; text-align:left; padding:8px 10px; font-weight:700; color:var(--text-2); border-bottom:1px solid var(--border); position:sticky; top:0; }
+  .hist-tabla td { padding:8px 10px; border-bottom:1px solid #eef0f3; vertical-align:top; }
+  .hist-load { text-align:center; padding:30px; color:var(--text-2); }
 </style>
 </head>
 <body>
@@ -117,29 +129,27 @@
 
       <div class="filtros">
         <p class="filtros-tit">Filtrar hitos</p>
-        <div class="filtros-row">
+        <div class="filtros-row4">
           <div class="field"><label>Viceministerio</label><select id="fVicem"><option value="">Todos</option></select></div>
           <div class="field"><label>Unidad ejecutora</label><select id="fUei"><option value="">Todas</option></select></div>
           <div class="field"><label>Tipo de infraestructura</label><select id="fTipo"><option value="">Todos</option></select></div>
-        </div>
-        <div class="filtros-row2">
           <div class="field"><label>CUI</label><input type="text" id="fCui" list="cuiList" placeholder="Escribe o elige…" autocomplete="off"><datalist id="cuiList"></datalist></div>
-          <div class="field"><label>Nombre de la Intervención</label><input type="text" id="fNombre" list="nombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="nombreList"></datalist></div>
         </div>
+        <div class="field filtros-nombre"><label>Nombre de la Intervención</label><input type="text" id="fNombre" list="nombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="nombreList"></datalist></div>
+        <div class="filtros-foot"><button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar filtros</button></div>
       </div>
 
       <div class="tabla-meta">
         <span id="contadorHitos">—</span>
-        <button class="btn-cancel" onclick="limpiarFiltros()" style="padding:6px 14px; font-size:13px;">Limpiar filtros</button>
+        <button class="btn-export" onclick="exportarXLSX()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar Excel
+        </button>
       </div>
 
       <div class="tabla-wrap">
         <table>
-          <thead>
-            <tr>
-              <th>Hito</th><th>Avance</th><th>Estado</th><th>Fecha cumpl.</th><th>Detalle del estado</th><th></th>
-            </tr>
-          </thead>
+          <thead><tr><th>Hito</th><th>Avance</th><th>Estado</th><th>Fecha cumpl.</th><th>Detalle del estado</th><th></th></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>
@@ -153,6 +163,7 @@
   </main>
 </div>
 
+<!-- MODAL EDICIÓN -->
 <div class="overlay" id="overlay">
   <div class="modal">
     <div class="modal-head">
@@ -180,12 +191,24 @@
   </div>
 </div>
 
+<!-- MODAL HISTÓRICO -->
+<div class="overlay" id="overlayHist">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <div><div class="modal-title">Histórico del hito</div><div class="modal-sub" id="hSub">—</div></div>
+      <button class="modal-x" onclick="cerrarHist()" aria-label="Cerrar">&times;</button>
+    </div>
+    <div id="hBody"><div class="hist-load">Cargando histórico…</div></div>
+  </div>
+</div>
+
 <script>
 // ====== CONFIGURACIÓN ======
 const ENDPOINT = 'https://script.google.com/macros/s/AKfycbxSgvtxdB2Y4VTaFOBzIkmscjhpVwJHdgw22hWBMEYhwACmhUdYZEjQm4laGJDo4k6d/exec';
 const TOKEN = 'ogame_2026';
 const ESTADO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=734960726&single=true&output=tsv';
 const MAESTRO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=279418764&single=true&output=tsv';
+const HIST_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=913605508&single=true&output=tsv';
 
 const CORS_PROXIES = [ url=>url, url=>'https://corsproxy.io/?'+encodeURIComponent(url), url=>'https://api.allorigins.win/raw?url='+encodeURIComponent(url) ];
 
@@ -193,7 +216,10 @@ const E = { corte:0, codHito:1, hito:2, categoria:3, codInterno:4, cui:5, nombre
 const M = { codHito:2, dpto:5, estatus:6, uei:8, vicem:9, tipoInfra:10, cui:11 };
 
 const PAGE_SIZE = 20;
+const HIST_MAX = 10;
 let HITOS = [], CLASIF = {}, filtrados = [], pagina = 1, editando = null;
+let HIST_TODOS = null;       // histórico completo cacheado tras la primera descarga
+const HIST_CACHE = {};       // codHito -> registros (caché de sesión)
 
 async function cargar() {
   try {
@@ -225,19 +251,7 @@ function parseEstado(tsv) {
       fechaCump:(c[E.fechaCump]||'').trim(), estado:(c[E.estado]||'').trim().toUpperCase(), avance:(c[E.avance]||'').trim(), situacional:(c[E.situacional]||'').trim() }); }
 }
 
-// Lee el avance de forma robusta y devuelve SIEMPRE un porcentaje 0-100.
-// Acepta "93%", "93", "0.93" y los normaliza correctamente.
-function avancePct(raw) {
-  if (raw===null||raw===undefined) return NaN;
-  let s = String(raw).trim();
-  const tienePct = s.includes('%');
-  s = s.replace('%','').replace(',','.').trim();
-  let n = parseFloat(s);
-  if (isNaN(n)) return NaN;
-  if (tienePct) return n;          // "93%" -> 93
-  if (n <= 1) return n*100;        // 0.93 -> 93
-  return n;                         // 93 -> 93
-}
+function avancePct(raw){ if(raw===null||raw===undefined) return NaN; let s=String(raw).trim(); const t=s.includes('%'); s=s.replace('%','').replace(',','.').trim(); let n=parseFloat(s); if(isNaN(n)) return NaN; if(t) return n; if(n<=1) return n*100; return n; }
 
 function iniciar() {
   document.getElementById('loading').style.display='none';
@@ -254,18 +268,11 @@ function clasifDe(h){ return CLASIF[h.codHito]||{}; }
 function opcionesDe(getter, base){ const set=new Set(); base.forEach(h=>{const v=getter(h); if(v) set.add(v);}); return [...set].sort((a,b)=>a.localeCompare(b,'es',{numeric:true})); }
 function poblarSelect(id, valores, etiqueta){ const sel=document.getElementById(id); const actual=sel.value; sel.innerHTML='<option value="">'+etiqueta+'</option>'; valores.forEach(v=>{const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o);}); if(valores.includes(actual)) sel.value=actual; }
 function poblarDatalist(id, valores){ const dl=document.getElementById(id); dl.innerHTML=''; valores.forEach(v=>{const o=document.createElement('option'); o.value=v; dl.appendChild(o);}); }
-
 function poblarVicem(){ poblarSelect('fVicem', opcionesDe(h=>clasifDe(h).vicem, HITOS), 'Todos'); }
-
-// Filtros encadenados: cada cambio recalcula las opciones de los demás según la selección actual.
 function onFiltroChange(){ recalcularOpciones(); aplicarFiltros(); }
-
 function baseFiltrada(excluir){
-  const v=document.getElementById('fVicem').value;
-  const u=document.getElementById('fUei').value;
-  const t=document.getElementById('fTipo').value;
-  const cu=document.getElementById('fCui').value.trim();
-  const no=document.getElementById('fNombre').value.trim();
+  const v=document.getElementById('fVicem').value, u=document.getElementById('fUei').value, t=document.getElementById('fTipo').value;
+  const cu=document.getElementById('fCui').value.trim(), no=document.getElementById('fNombre').value.trim();
   return HITOS.filter(h=>{ const cl=clasifDe(h);
     return (excluir==='vicem'||!v||cl.vicem===v) && (excluir==='uei'||!u||cl.uei===u) && (excluir==='tipo'||!t||cl.tipoInfra===t) &&
            (excluir==='cui'||!cu||cl.cui===cu) && (excluir==='nombre'||!no||h.nombre===no); });
@@ -276,7 +283,6 @@ function recalcularOpciones(){
   poblarDatalist('cuiList', opcionesDe(h=>clasifDe(h).cui, baseFiltrada('cui')));
   poblarDatalist('nombreList', opcionesDe(h=>h.nombre, baseFiltrada('nombre')));
 }
-
 function aplicarFiltros(){ filtrados = baseFiltrada(null); pagina=1; render(); }
 function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre'].forEach(id=>document.getElementById(id).value=''); poblarVicem(); recalcularOpciones(); aplicarFiltros(); }
 
@@ -284,52 +290,50 @@ function badgeEstado(est){ if(est==='EN PROCESO') return '<span class="badge b-p
 function fmtAvance(raw){ const n=avancePct(raw); return isNaN(n)?'—':Math.round(n)+'%'; }
 
 function render(){
-  const tot = filtrados.length;
-  const paginas = Math.max(1, Math.ceil(tot/PAGE_SIZE));
-  if (pagina>paginas) pagina=paginas;
-  const slice = filtrados.slice((pagina-1)*PAGE_SIZE, (pagina-1)*PAGE_SIZE+PAGE_SIZE);
-
-  // Agrupar el slice por nombre de intervención, preservando orden
-  const tbody = document.getElementById('tbody');
-  if (slice.length===0){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center; padding:30px; color:#8a9ab0;">No hay hitos con estos filtros.</td></tr>'; }
+  const tot=filtrados.length, paginas=Math.max(1,Math.ceil(tot/PAGE_SIZE));
+  if(pagina>paginas) pagina=paginas;
+  const slice=filtrados.slice((pagina-1)*PAGE_SIZE,(pagina-1)*PAGE_SIZE+PAGE_SIZE);
+  const tbody=document.getElementById('tbody');
+  if(slice.length===0){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center; padding:30px; color:#8a9ab0;">No hay hitos con estos filtros.</td></tr>'; }
   else {
     let html='', grupoActual=null;
     slice.forEach(h=>{
-      if (h.nombre!==grupoActual){
-        grupoActual=h.nombre;
-        html += '<tr class="grupo-row"><td colspan="6"><span class="grupo-nombre">'+(escapeHtml(h.nombre)||'(sin intervención)')+'</span></td></tr>';
-      }
-      html += `<tr class="hito-row">
+      if(h.nombre!==grupoActual){ grupoActual=h.nombre; html+='<tr class="grupo-row"><td colspan="6"><span class="grupo-nombre">'+(escapeHtml(h.nombre)||'(sin intervención)')+'</span></td></tr>'; }
+      html+=`<tr class="hito-row">
         <td class="td-hito">${escapeHtml(h.hito)||'—'}</td>
         <td class="avance-cell">${fmtAvance(h.avance)}</td>
         <td>${badgeEstado(h.estado)}</td>
         <td>${escapeHtml(h.fechaCump)||'—'}</td>
         <td class="td-sit"><div class="td-sit-clip" title="${escapeHtml(h.situacional)}">${escapeHtml(h.situacional)||'—'}</div></td>
-        <td><button class="btn-edit" onclick="abrirModal('${h.codHito}')" aria-label="Editar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-        </button></td>
+        <td><div class="acciones">
+          <button class="btn-ico" onclick="abrirHist('${h.codHito}')" aria-label="Ver histórico" title="Ver histórico">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+          <button class="btn-ico" onclick="abrirModal('${h.codHito}')" aria-label="Editar" title="Editar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+        </div></td>
       </tr>`;
     });
-    tbody.innerHTML = html;
+    tbody.innerHTML=html;
   }
-  document.getElementById('contadorHitos').textContent = tot+(tot===1?' hito':' hitos')+(tot>PAGE_SIZE?' · página '+pagina+' de '+paginas:'');
+  document.getElementById('contadorHitos').textContent=tot+(tot===1?' hito':' hitos')+(tot>PAGE_SIZE?' · página '+pagina+' de '+paginas:'');
   document.getElementById('pageInfo').textContent='Página '+pagina+' de '+paginas;
   document.getElementById('prevBtn').disabled=pagina<=1;
   document.getElementById('nextBtn').disabled=pagina>=paginas;
 }
 function cambiarPagina(d){ pagina+=d; render(); window.scrollTo({top:0,behavior:'smooth'}); }
 
+// ====== MODAL EDICIÓN ======
 function abrirModal(codHito){
   const h=HITOS.find(x=>x.codHito===codHito); if(!h) return; editando=codHito;
   document.getElementById('mSub').textContent=h.nombre+' · '+h.hito;
   document.getElementById('mEstado').value=['EN PROCESO','REPROGRAMADO','CUMPLIDO'].includes(h.estado)?h.estado:'EN PROCESO';
   document.getElementById('mFecha').value=toISODate(h.fechaCump);
-  const pct=avancePct(h.avance);
-  document.getElementById('mAvance').value=isNaN(pct)?0:Math.round(pct);
+  const pct=avancePct(h.avance); document.getElementById('mAvance').value=isNaN(pct)?0:Math.round(pct);
   document.getElementById('mSituacional').value=h.situacional;
   document.getElementById('mUlt').textContent='Último registrado: '+fmtAvance(h.avance);
-  document.getElementById('mValidado').checked=false;
-  limpiarRetro();
+  document.getElementById('mValidado').checked=false; limpiarRetro();
   document.getElementById('mMsg').className='modal-msg'; document.getElementById('mMsg').style.display='none';
   document.getElementById('overlay').classList.add('show'); document.body.style.overflow='hidden';
 }
@@ -342,24 +346,83 @@ async function guardar(){
   const retroVisible=document.getElementById('mRetro').classList.contains('show');
   const payload={ token:TOKEN, codHito:editando, estado:document.getElementById('mEstado').value, avance:document.getElementById('mAvance').value,
     fechaCumplimiento:document.getElementById('mFecha').value, situacional:document.getElementById('mSituacional').value, validado:true,
-    confirmaRetroceso: retroVisible?document.getElementById('mConfirmaRetro').checked:false, justificacion: retroVisible?document.getElementById('mJustif').value:'' };
+    confirmaRetroceso:retroVisible?document.getElementById('mConfirmaRetro').checked:false, justificacion:retroVisible?document.getElementById('mJustif').value:'' };
   const btn=document.getElementById('mGuardar'); btn.disabled=true; btn.textContent='Guardando…';
   try {
     const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const data=await res.json();
-    if(data.ok){ actualizarFilaLocal(editando,payload); modalMsg('ok',data.mensaje); setTimeout(cerrarModal,1200); }
+    if(data.ok){ actualizarFilaLocal(editando,payload); delete HIST_CACHE[editando]; HIST_TODOS=null; modalMsg('ok',data.mensaje); setTimeout(cerrarModal,1200); }
     else if(data.tipo==='retroceso'){ document.getElementById('mRetro').classList.add('show'); document.getElementById('mRetroMsg').textContent='Esto es un retroceso respecto al '+data.avanceAnterior+'% anterior. ¿Es correcto? Confirma y justifica para continuar.'; modalMsg('warn','Revisa el aviso de retroceso, justifica y vuelve a guardar.'); }
     else { modalMsg('err',data.mensaje); }
   } catch(e){ modalMsg('err','Error de conexión: '+e.message); }
   finally { btn.disabled=false; btn.textContent='Guardar'; }
 }
-function actualizarFilaLocal(codHito,p){
-  const h=HITOS.find(x=>x.codHito===codHito); if(!h) return;
-  h.estado=p.estado.toUpperCase(); h.avance=String(p.avance); h.fechaCump=p.fechaCumplimiento||h.fechaCump; h.situacional=p.situacional;
-  render();
-}
+function actualizarFilaLocal(codHito,p){ const h=HITOS.find(x=>x.codHito===codHito); if(!h) return; h.estado=p.estado.toUpperCase(); h.avance=String(p.avance); h.fechaCump=p.fechaCumplimiento||h.fechaCump; h.situacional=p.situacional; render(); }
 function modalMsg(tipo,texto){ const msg=document.getElementById('mMsg'); msg.className='modal-msg '+tipo; msg.textContent=texto; msg.style.display='block'; }
 document.getElementById('overlay').addEventListener('click',function(e){ if(e.target===this) cerrarModal(); });
+
+// ====== MODAL HISTÓRICO ======
+async function abrirHist(codHito){
+  const h=HITOS.find(x=>x.codHito===codHito); if(!h) return;
+  document.getElementById('hSub').textContent=h.nombre+' · '+h.hito;
+  document.getElementById('hBody').innerHTML='<div class="hist-load">Cargando histórico…</div>';
+  document.getElementById('overlayHist').classList.add('show'); document.body.style.overflow='hidden';
+  try {
+    const registros = await obtenerHistorico(codHito);
+    renderHist(registros);
+  } catch(e){
+    document.getElementById('hBody').innerHTML='<div class="hist-load" style="color:#C8102E;">No se pudo cargar el histórico.<br><small>'+e.message+'</small></div>';
+  }
+}
+function cerrarHist(){ document.getElementById('overlayHist').classList.remove('show'); document.body.style.overflow=''; }
+document.getElementById('overlayHist').addEventListener('click',function(e){ if(e.target===this) cerrarHist(); });
+
+// Descarga el histórico (una vez por sesión) y filtra los registros de un hito.
+async function obtenerHistorico(codHito){
+  if (HIST_CACHE[codHito]) return HIST_CACHE[codHito];
+  if (!HIST_TODOS){
+    const txt = await fetchProxy(HIST_TSV);
+    HIST_TODOS = txt.split('\n').filter(l=>l.trim());
+  }
+  const registros=[];
+  for (let i=1;i<HIST_TODOS.length;i++){
+    const c=HIST_TODOS[i].split('\t');
+    if((c[E.codHito]||'').trim()===codHito){
+      registros.push({ corte:(c[E.corte]||'').trim(), estado:(c[E.estado]||'').trim().toUpperCase(), fechaCump:(c[E.fechaCump]||'').trim(), situacional:(c[E.situacional]||'').trim() });
+    }
+  }
+  HIST_CACHE[codHito]=registros;
+  return registros;
+}
+function renderHist(registros){
+  if(!registros.length){ document.getElementById('hBody').innerHTML='<div class="hist-load">Este hito aún no tiene registros históricos.</div>'; return; }
+  // Tomar los últimos HIST_MAX (los más recientes están al final del histórico) y mostrarlos del más reciente al más antiguo
+  const ultimos = registros.slice(-HIST_MAX).reverse();
+  let html='<div style="max-height:50vh; overflow-y:auto;"><table class="hist-tabla"><thead><tr><th>Corte</th><th>Estado</th><th>Fecha cumpl.</th><th>Detalle del estado</th></tr></thead><tbody>';
+  ultimos.forEach(r=>{
+    html+='<tr><td style="white-space:nowrap;">'+escapeHtml(r.corte)+'</td><td>'+badgeEstado(r.estado)+'</td><td style="white-space:nowrap;">'+escapeHtml(r.fechaCump)+'</td><td>'+escapeHtml(r.situacional)+'</td></tr>';
+  });
+  html+='</tbody></table></div>';
+  if(registros.length>HIST_MAX) html+='<p style="font-size:12px; color:#8a9ab0; margin-top:10px;">Mostrando los '+HIST_MAX+' registros más recientes de '+registros.length+' en total.</p>';
+  document.getElementById('hBody').innerHTML=html;
+}
+
+// ====== EXPORTAR XLSX ======
+function exportarXLSX(){
+  if (typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación. Verifica tu conexión e intenta de nuevo.'); return; }
+  if (!filtrados.length){ alert('No hay hitos para exportar con los filtros actuales.'); return; }
+  const datos = filtrados.map(h=>({
+    'Intervención': h.nombre, 'Hito': h.hito, 'CUI': h.cui,
+    'Avance (%)': isNaN(avancePct(h.avance))?'':Math.round(avancePct(h.avance)),
+    'Estado': h.estado, 'Fecha de cumplimiento': h.fechaCump, 'Detalle del estado': h.situacional
+  }));
+  const ws = XLSX.utils.json_to_sheet(datos);
+  ws['!cols']=[{wch:40},{wch:40},{wch:12},{wch:10},{wch:14},{wch:16},{wch:60}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Hitos');
+  const fecha = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, 'cartera_priorizada_'+fecha+'.xlsx');
+}
 
 function inicioSemana(fecha){ const f=new Date(fecha.getFullYear(),fecha.getMonth(),fecha.getDate()); const diff=(f.getDay()-4+7)%7; f.setDate(f.getDate()-diff); return f; }
 function semanaReporteTexto(){ const ini=inicioSemana(new Date()); const fin=new Date(ini); fin.setDate(fin.getDate()+6); const fmt=d=>d.toLocaleDateString('es-PE',{day:'2-digit',month:'short'}); return fmt(ini)+' – '+fmt(fin); }
