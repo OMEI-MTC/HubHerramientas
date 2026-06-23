@@ -44,6 +44,11 @@
   .filtros-row4 { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
   .filtros-row4 .field { margin-bottom:12px; }
   .filtros-nombre { margin-bottom:14px; }
+  .filtros-row3 { display:grid; grid-template-columns:2fr 1.4fr; gap:14px; margin-bottom:14px; align-items:start; }
+  .chips { display:flex; gap:8px; flex-wrap:wrap; }
+  .chip { padding:8px 14px; border:1px solid var(--border); background:#fff; border-radius:20px; cursor:pointer; font-size:12.5px; font-weight:600; color:var(--text-2); user-select:none; transition:all .12s; }
+  .chip:hover { border-color:#b9c5d6; }
+  .chip.on { background:var(--blue); border-color:var(--blue); color:#fff; }
   .filtros-foot { display:flex; justify-content:flex-end; }
   .btn-limpiar { padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:8px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:600; color:var(--text-2); }
   .btn-limpiar:hover { background:#eef0f3; }
@@ -75,11 +80,12 @@
   .loading { text-align:center; color:var(--text-2); padding:40px; }
   .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:50; align-items:center; justify-content:center; padding:20px; }
   .overlay.show { display:flex; }
-  .modal { background:#fff; border-radius:var(--r); width:100%; max-width:520px; padding:24px 26px; max-height:90vh; overflow-y:auto; }
-  .modal-lg { max-width:680px; }
+  .modal { background:#fff; border-radius:var(--r); width:100%; max-width:640px; padding:24px 26px; max-height:90vh; overflow-y:auto; }
+  .modal-lg { max-width:860px; }
   .modal-head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:18px; }
   .modal-title { font-size:17px; font-weight:700; color:var(--blue); }
-  .modal-sub { font-size:13px; color:var(--text-2); margin-top:3px; }
+  .modal-interv { font-size:13px; color:var(--text-2); margin-top:4px; line-height:1.4; }
+  .modal-hito { font-size:13.5px; color:var(--text); font-weight:600; margin-top:3px; }
   .modal-x { background:none; border:none; font-size:22px; line-height:1; color:var(--text-3); cursor:pointer; }
   .m-row3 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
   .field { margin-bottom:14px; }
@@ -136,6 +142,16 @@
           <div class="field"><label>CUI</label><input type="text" id="fCui" list="cuiList" placeholder="Escribe o elige…" autocomplete="off"><datalist id="cuiList"></datalist></div>
         </div>
         <div class="field filtros-nombre"><label>Nombre de la Intervención</label><input type="text" id="fNombre" list="nombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="nombreList"></datalist></div>
+        <div class="filtros-row3">
+          <div class="field" style="margin:0;"><label>Hito</label><input type="text" id="fHito" list="hitoList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="hitoList"></datalist></div>
+          <div class="field" style="margin:0;"><label>Estado del hito</label>
+            <div class="chips">
+              <span class="chip" data-estado="EN PROCESO" onclick="toggleChip(this)">EN PROCESO</span>
+              <span class="chip" data-estado="REPROGRAMADO" onclick="toggleChip(this)">REPROGRAMADO</span>
+              <span class="chip" data-estado="CUMPLIDO" onclick="toggleChip(this)">CUMPLIDO</span>
+            </div>
+          </div>
+        </div>
         <div class="filtros-foot"><button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar filtros</button></div>
       </div>
 
@@ -149,7 +165,7 @@
 
       <div class="tabla-wrap">
         <table>
-          <thead><tr><th>Hito</th><th>Avance</th><th>Estado</th><th>Fecha cumpl.</th><th>Detalle del estado</th><th></th></tr></thead>
+          <thead><tr><th>Hito</th><th>Corte</th><th>Avance</th><th>Estado</th><th>Fecha cumpl.</th><th>Detalle del estado</th><th></th></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>
@@ -167,7 +183,7 @@
 <div class="overlay" id="overlay">
   <div class="modal">
     <div class="modal-head">
-      <div><div class="modal-title">Editar avance del hito</div><div class="modal-sub" id="mSub">—</div></div>
+      <div><div class="modal-title">Editar avance del hito</div><div class="modal-interv" id="mInterv">—</div><div class="modal-hito" id="mHito">—</div></div>
       <button class="modal-x" onclick="cerrarModal()" aria-label="Cerrar">&times;</button>
     </div>
     <div class="m-row3">
@@ -195,7 +211,7 @@
 <div class="overlay" id="overlayHist">
   <div class="modal modal-lg">
     <div class="modal-head">
-      <div><div class="modal-title">Histórico del hito</div><div class="modal-sub" id="hSub">—</div></div>
+      <div><div class="modal-title">Histórico del hito</div><div class="modal-interv" id="hInterv">—</div><div class="modal-hito" id="hHito">—</div></div>
       <button class="modal-x" onclick="cerrarHist()" aria-label="Cerrar">&times;</button>
     </div>
     <div id="hBody"><div class="hist-load">Cargando histórico…</div></div>
@@ -218,6 +234,7 @@ const M = { codHito:2, dpto:5, estatus:6, uei:8, vicem:9, tipoInfra:10, cui:11 }
 const PAGE_SIZE = 20;
 const HIST_MAX = 10;
 let HITOS = [], CLASIF = {}, filtrados = [], pagina = 1, editando = null;
+let estadosActivos = new Set();  // estados seleccionados en los chips
 let HIST_TODOS = null;       // histórico completo cacheado tras la primera descarga
 const HIST_CACHE = {};       // codHito -> registros (caché de sesión)
 
@@ -248,7 +265,7 @@ function parseEstado(tsv) {
   const lineas = tsv.split('\n').filter(l=>l.trim()); HITOS=[];
   for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const cod=(c[E.codHito]||'').trim(); if(!cod) continue; if(!CLASIF[cod]) continue;
     HITOS.push({ codHito:cod, hito:(c[E.hito]||'').trim(), nombre:(c[E.nombre]||'').trim(), cui:(c[E.cui]||'').trim(), categoria:(c[E.categoria]||'').trim(),
-      fechaCump:(c[E.fechaCump]||'').trim(), estado:(c[E.estado]||'').trim().toUpperCase(), avance:(c[E.avance]||'').trim(), situacional:(c[E.situacional]||'').trim() }); }
+      corte:(c[E.corte]||'').trim(), fechaCump:(c[E.fechaCump]||'').trim(), estado:(c[E.estado]||'').trim().toUpperCase(), avance:(c[E.avance]||'').trim(), situacional:(c[E.situacional]||'').trim() }); }
 }
 
 function avancePct(raw){ if(raw===null||raw===undefined) return NaN; let s=String(raw).trim(); const t=s.includes('%'); s=s.replace('%','').replace(',','.').trim(); let n=parseFloat(s); if(isNaN(n)) return NaN; if(t) return n; if(n<=1) return n*100; return n; }
@@ -261,6 +278,7 @@ function iniciar() {
   ['fVicem','fUei','fTipo'].forEach(id=>document.getElementById(id).addEventListener('change',onFiltroChange));
   document.getElementById('fCui').addEventListener('input',onFiltroChange);
   document.getElementById('fNombre').addEventListener('input',onFiltroChange);
+  document.getElementById('fHito').addEventListener('input',onFiltroChange);
   aplicarFiltros();
 }
 
@@ -272,19 +290,28 @@ function poblarVicem(){ poblarSelect('fVicem', opcionesDe(h=>clasifDe(h).vicem, 
 function onFiltroChange(){ recalcularOpciones(); aplicarFiltros(); }
 function baseFiltrada(excluir){
   const v=document.getElementById('fVicem').value, u=document.getElementById('fUei').value, t=document.getElementById('fTipo').value;
-  const cu=document.getElementById('fCui').value.trim(), no=document.getElementById('fNombre').value.trim();
+  const cu=document.getElementById('fCui').value.trim(), no=document.getElementById('fNombre').value.trim(), hi=document.getElementById('fHito').value.trim();
   return HITOS.filter(h=>{ const cl=clasifDe(h);
     return (excluir==='vicem'||!v||cl.vicem===v) && (excluir==='uei'||!u||cl.uei===u) && (excluir==='tipo'||!t||cl.tipoInfra===t) &&
-           (excluir==='cui'||!cu||cl.cui===cu) && (excluir==='nombre'||!no||h.nombre===no); });
+           (excluir==='cui'||!cu||cl.cui===cu) && (excluir==='nombre'||!no||h.nombre===no) &&
+           (excluir==='hito'||!hi||h.hito===hi) &&
+           (excluir==='estado'||estadosActivos.size===0||estadosActivos.has(h.estado)); });
+}
+function toggleChip(el){
+  const est=el.getAttribute('data-estado');
+  if(estadosActivos.has(est)){ estadosActivos.delete(est); el.classList.remove('on'); }
+  else { estadosActivos.add(est); el.classList.add('on'); }
+  recalcularOpciones(); aplicarFiltros();
 }
 function recalcularOpciones(){
   poblarSelect('fUei',  opcionesDe(h=>clasifDe(h).uei, baseFiltrada('uei')), 'Todas');
   poblarSelect('fTipo', opcionesDe(h=>clasifDe(h).tipoInfra, baseFiltrada('tipo')), 'Todos');
   poblarDatalist('cuiList', opcionesDe(h=>clasifDe(h).cui, baseFiltrada('cui')));
   poblarDatalist('nombreList', opcionesDe(h=>h.nombre, baseFiltrada('nombre')));
+  poblarDatalist('hitoList', opcionesDe(h=>h.hito, baseFiltrada('hito')));
 }
 function aplicarFiltros(){ filtrados = baseFiltrada(null); pagina=1; render(); }
-function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre'].forEach(id=>document.getElementById(id).value=''); poblarVicem(); recalcularOpciones(); aplicarFiltros(); }
+function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); recalcularOpciones(); aplicarFiltros(); }
 
 function badgeEstado(est){ if(est==='EN PROCESO') return '<span class="badge b-proc">EN PROCESO</span>'; if(est==='REPROGRAMADO') return '<span class="badge b-repr">REPROGRAMADO</span>'; if(est==='CUMPLIDO') return '<span class="badge b-cump">CUMPLIDO</span>'; return '<span class="badge">'+escapeHtml(est)+'</span>'; }
 function fmtAvance(raw){ const n=avancePct(raw); return isNaN(n)?'—':Math.round(n)+'%'; }
@@ -294,13 +321,14 @@ function render(){
   if(pagina>paginas) pagina=paginas;
   const slice=filtrados.slice((pagina-1)*PAGE_SIZE,(pagina-1)*PAGE_SIZE+PAGE_SIZE);
   const tbody=document.getElementById('tbody');
-  if(slice.length===0){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center; padding:30px; color:#8a9ab0;">No hay hitos con estos filtros.</td></tr>'; }
+  if(slice.length===0){ tbody.innerHTML='<tr><td colspan="7" style="text-align:center; padding:30px; color:#8a9ab0;">No hay hitos con estos filtros.</td></tr>'; }
   else {
     let html='', grupoActual=null;
     slice.forEach(h=>{
-      if(h.nombre!==grupoActual){ grupoActual=h.nombre; html+='<tr class="grupo-row"><td colspan="6"><span class="grupo-nombre">'+(escapeHtml(h.nombre)||'(sin intervención)')+'</span></td></tr>'; }
+      if(h.nombre!==grupoActual){ grupoActual=h.nombre; html+='<tr class="grupo-row"><td colspan="7"><span class="grupo-nombre">'+(escapeHtml(h.nombre)||'(sin intervención)')+'</span></td></tr>'; }
       html+=`<tr class="hito-row">
         <td class="td-hito">${escapeHtml(h.hito)||'—'}</td>
+        <td style="white-space:nowrap; color:var(--text-2);">${escapeHtml(h.corte)||'—'}</td>
         <td class="avance-cell">${fmtAvance(h.avance)}</td>
         <td>${badgeEstado(h.estado)}</td>
         <td>${escapeHtml(h.fechaCump)||'—'}</td>
@@ -327,7 +355,8 @@ function cambiarPagina(d){ pagina+=d; render(); window.scrollTo({top:0,behavior:
 // ====== MODAL EDICIÓN ======
 function abrirModal(codHito){
   const h=HITOS.find(x=>x.codHito===codHito); if(!h) return; editando=codHito;
-  document.getElementById('mSub').textContent=h.nombre+' · '+h.hito;
+  document.getElementById('mInterv').textContent=h.nombre;
+  document.getElementById('mHito').textContent=h.hito;
   document.getElementById('mEstado').value=['EN PROCESO','REPROGRAMADO','CUMPLIDO'].includes(h.estado)?h.estado:'EN PROCESO';
   document.getElementById('mFecha').value=toISODate(h.fechaCump);
   const pct=avancePct(h.avance); document.getElementById('mAvance').value=isNaN(pct)?0:Math.round(pct);
@@ -357,14 +386,16 @@ async function guardar(){
   } catch(e){ modalMsg('err','Error de conexión: '+e.message); }
   finally { btn.disabled=false; btn.textContent='Guardar'; }
 }
-function actualizarFilaLocal(codHito,p){ const h=HITOS.find(x=>x.codHito===codHito); if(!h) return; h.estado=p.estado.toUpperCase(); h.avance=String(p.avance); h.fechaCump=p.fechaCumplimiento||h.fechaCump; h.situacional=p.situacional; render(); }
+function actualizarFilaLocal(codHito,p){ const h=HITOS.find(x=>x.codHito===codHito); if(!h) return; h.estado=p.estado.toUpperCase(); h.avance=String(p.avance); h.fechaCump=p.fechaCumplimiento||h.fechaCump; h.situacional=p.situacional; h.corte=hoyCorteTexto(); render(); }
+function hoyCorteTexto(){ const d=new Date(); return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear(); }
 function modalMsg(tipo,texto){ const msg=document.getElementById('mMsg'); msg.className='modal-msg '+tipo; msg.textContent=texto; msg.style.display='block'; }
 document.getElementById('overlay').addEventListener('click',function(e){ if(e.target===this) cerrarModal(); });
 
 // ====== MODAL HISTÓRICO ======
 async function abrirHist(codHito){
   const h=HITOS.find(x=>x.codHito===codHito); if(!h) return;
-  document.getElementById('hSub').textContent=h.nombre+' · '+h.hito;
+  document.getElementById('hInterv').textContent=h.nombre;
+  document.getElementById('hHito').textContent=h.hito;
   document.getElementById('hBody').innerHTML='<div class="hist-load">Cargando histórico…</div>';
   document.getElementById('overlayHist').classList.add('show'); document.body.style.overflow='hidden';
   try {
@@ -412,12 +443,12 @@ function exportarXLSX(){
   if (typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación. Verifica tu conexión e intenta de nuevo.'); return; }
   if (!filtrados.length){ alert('No hay hitos para exportar con los filtros actuales.'); return; }
   const datos = filtrados.map(h=>({
-    'Intervención': h.nombre, 'Hito': h.hito, 'CUI': h.cui,
+    'Intervención': h.nombre, 'Hito': h.hito, 'CUI': h.cui, 'Corte': h.corte,
     'Avance (%)': isNaN(avancePct(h.avance))?'':Math.round(avancePct(h.avance)),
     'Estado': h.estado, 'Fecha de cumplimiento': h.fechaCump, 'Detalle del estado': h.situacional
   }));
   const ws = XLSX.utils.json_to_sheet(datos);
-  ws['!cols']=[{wch:40},{wch:40},{wch:12},{wch:10},{wch:14},{wch:16},{wch:60}];
+  ws['!cols']=[{wch:40},{wch:40},{wch:12},{wch:12},{wch:10},{wch:14},{wch:16},{wch:60}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Hitos');
   const fecha = new Date().toISOString().slice(0,10);
