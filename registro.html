@@ -198,6 +198,11 @@
       <textarea id="mJustif" placeholder="Explica por qué el avance disminuyó…"></textarea>
       <div class="check-row"><input type="checkbox" id="mConfirmaRetro"><label for="mConfirmaRetro">Confirmo que el retroceso es correcto.</label></div>
     </div>
+    <div class="retro-box" id="mEspecial" style="background:#EEF4FF; border-color:#8FAADC;">
+      <p style="color:#0055A5;">Este hito ya tiene un registro esta semana. Solo un especialista puede corregirlo. Introduce la clave de especialista para continuar.</p>
+      <label>Clave de especialista</label>
+      <input type="password" id="mClaveEsp" placeholder="Clave de especialista" autocomplete="off">
+    </div>
     <div class="check-row"><input type="checkbox" id="mValidado"><label for="mValidado">He revisado la información y confirmo que es correcta.</label></div>
     <div class="modal-msg" id="mMsg"></div>
     <div class="modal-actions">
@@ -380,21 +385,24 @@ function abrirModal(codHito){
   document.getElementById('overlay').classList.add('show'); document.body.style.overflow='hidden';
 }
 function cerrarModal(){ document.getElementById('overlay').classList.remove('show'); document.body.style.overflow=''; editando=null; }
-function limpiarRetro(){ document.getElementById('mRetro').classList.remove('show'); document.getElementById('mConfirmaRetro').checked=false; document.getElementById('mJustif').value=''; }
+function limpiarRetro(){ document.getElementById('mRetro').classList.remove('show'); document.getElementById('mConfirmaRetro').checked=false; document.getElementById('mJustif').value=''; document.getElementById('mEspecial').classList.remove('show'); document.getElementById('mClaveEsp').value=''; }
 
 async function guardar(){
   const msg=document.getElementById('mMsg'); msg.className='modal-msg'; msg.style.display='none';
   if(!document.getElementById('mValidado').checked) return modalMsg('err','Debes marcar la casilla de validación antes de guardar.');
   const retroVisible=document.getElementById('mRetro').classList.contains('show');
+  const espVisible=document.getElementById('mEspecial').classList.contains('show');
   const payload={ token:TOKEN, codHito:editando, estado:document.getElementById('mEstado').value, avance:document.getElementById('mAvance').value,
     fechaCumplimiento:document.getElementById('mFecha').value, situacional:document.getElementById('mSituacional').value, validado:true,
-    confirmaRetroceso:retroVisible?document.getElementById('mConfirmaRetro').checked:false, justificacion:retroVisible?document.getElementById('mJustif').value:'' };
+    confirmaRetroceso:retroVisible?document.getElementById('mConfirmaRetro').checked:false, justificacion:retroVisible?document.getElementById('mJustif').value:'',
+    claveEspecialista: espVisible?document.getElementById('mClaveEsp').value:'' };
   const btn=document.getElementById('mGuardar'); btn.disabled=true; btn.textContent='Guardando…';
   try {
     const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const data=await res.json();
     if(data.ok){ actualizarFilaLocal(editando,payload); delete HIST_CACHE[editando]; HIST_TODOS=null; modalMsg('ok',data.mensaje); setTimeout(cerrarModal,1200); }
     else if(data.tipo==='retroceso'){ document.getElementById('mRetro').classList.add('show'); document.getElementById('mRetroMsg').textContent='Esto es un retroceso respecto al '+data.avanceAnterior+'% anterior. ¿Es correcto? Confirma y justifica para continuar.'; modalMsg('warn','Revisa el aviso de retroceso, justifica y vuelve a guardar.'); }
+    else if(data.tipo==='duplicado'){ document.getElementById('mEspecial').classList.add('show'); modalMsg('warn','Este hito ya tiene registro esta semana. Introduce la clave de especialista para corregirlo.'); }
     else { modalMsg('err',data.mensaje); }
   } catch(e){ modalMsg('err','Error de conexión: '+e.message); }
   finally { btn.disabled=false; btn.textContent='Guardar'; }
@@ -440,15 +448,33 @@ async function obtenerHistorico(codHito){
 }
 function renderHist(registros){
   if(!registros.length){ document.getElementById('hBody').innerHTML='<div class="hist-load">Este hito aún no tiene registros históricos.</div>'; return; }
-  // Tomar los últimos HIST_MAX (los más recientes están al final del histórico) y mostrarlos del más reciente al más antiguo
-  const ultimos = registros.slice(-HIST_MAX).reverse();
+  // Quedarse con la versión final de cada SEMANA de reporte (jueves–miércoles).
+  // Como el histórico está en orden cronológico, la última fila de cada semana es la final.
+  const porSemana = {};
+  registros.forEach(r=>{
+    const f = parseFechaCorte(r.corte);
+    const clave = f ? inicioSemana(f).getTime() : r.corte; // agrupa por inicio de semana
+    porSemana[clave] = r; // la última de esa semana sobrescribe → versión final
+  });
+  let unicos = Object.values(porSemana);
+  // ordenar por corte descendente (más reciente primero)
+  unicos.sort((a,b)=>{ const fa=parseFechaCorte(a.corte), fb=parseFechaCorte(b.corte); return (fb?fb.getTime():0)-(fa?fa.getTime():0); });
+  const totalSemanas = unicos.length;
+  const ultimos = unicos.slice(0, HIST_MAX);
   let html='<div style="max-height:50vh; overflow-y:auto;"><table class="hist-tabla"><thead><tr><th>Corte</th><th>Estado</th><th>Fecha cumpl.</th><th>Detalle del estado</th></tr></thead><tbody>';
   ultimos.forEach(r=>{
     html+='<tr><td style="white-space:nowrap;">'+escapeHtml(r.corte)+'</td><td>'+badgeEstado(r.estado)+'</td><td style="white-space:nowrap;">'+escapeHtml(r.fechaCump)+'</td><td>'+escapeHtml(r.situacional)+'</td></tr>';
   });
   html+='</tbody></table></div>';
-  if(registros.length>HIST_MAX) html+='<p style="font-size:12px; color:#8a9ab0; margin-top:10px;">Mostrando los '+HIST_MAX+' registros más recientes de '+registros.length+' en total.</p>';
+  if(totalSemanas>HIST_MAX) html+='<p style="font-size:12px; color:#8a9ab0; margin-top:10px;">Mostrando las '+HIST_MAX+' semanas más recientes de '+totalSemanas+' en total.</p>';
   document.getElementById('hBody').innerHTML=html;
+}
+// Parsea el corte ("17/6/2026" o "2026-06-17" o fecha ISO larga) a Date, o null.
+function parseFechaCorte(s){
+  if(!s) return null; s=String(s).trim();
+  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return new Date(+m[3], +m[2]-1, +m[1]);
+  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return new Date(+m[1], +m[2]-1, +m[3]);
+  const d=new Date(s); return isNaN(d.getTime())?null:d;
 }
 
 // ====== EXPORTAR XLSX ======
