@@ -291,7 +291,7 @@ const DEPTO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxk
 const CORS_PROXIES = [ url=>url, url=>'https://corsproxy.io/?'+encodeURIComponent(url), url=>'https://api.allorigins.win/raw?url='+encodeURIComponent(url) ];
 
 const E = { corte:0, codHito:1, hito:2, categoria:3, codInterno:4, cui:5, nombre:6, fechaCump:7, estado:8, avance:9, situacional:10, validadoOgame:11 };
-const M = { codHito:2, dpto:5, estatus:6, uei:8, vicem:9, tipoInfra:10, cui:11, responsable:12 };
+const M = { codInterno:0, codHito:2, dpto:5, estatus:6, uei:8, vicem:9, tipoInfra:10, cui:11, responsable:12 };
 
 const PAGE_SIZE = 20;
 const HIST_MAX = 10;
@@ -322,18 +322,24 @@ async function fetchProxy(url) {
   }
   throw lastErr || new Error('Sin respuesta');
 }
+let INTERNO_A_HITOS = {};  // COD INTERNO -> [COD HITOS] (un proyecto tiene varios hitos)
 function parseMaestro(tsv) {
-  const lineas = tsv.split('\n').filter(l=>l.trim()); CLASIF={};
+  const lineas = tsv.split('\n').filter(l=>l.trim()); CLASIF={}; INTERNO_A_HITOS={};
   for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const cod=(c[M.codHito]||'').trim(); if(!cod) continue; if((c[M.estatus]||'').trim().toUpperCase()!=='VIGENTE') continue;
-    CLASIF[cod]={ vicem:(c[M.vicem]||'').trim(), uei:(c[M.uei]||'').trim(), tipoInfra:(c[M.tipoInfra]||'').trim(), dpto:(c[M.dpto]||'').trim(), cui:(c[M.cui]||'').trim(), responsable:(c[M.responsable]||'').trim() }; }
+    CLASIF[cod]={ vicem:(c[M.vicem]||'').trim(), uei:(c[M.uei]||'').trim(), tipoInfra:(c[M.tipoInfra]||'').trim(), dpto:(c[M.dpto]||'').trim(), cui:(c[M.cui]||'').trim(), responsable:(c[M.responsable]||'').trim() };
+    const interno=(c[M.codInterno]||'').trim();
+    if(interno){ if(!INTERNO_A_HITOS[interno]) INTERNO_A_HITOS[interno]=[]; INTERNO_A_HITOS[interno].push(cod); } }
 }
-// Tabla de relación: COD HITOS (col 0) -> Departamento (col 1). Un hito puede tener varios.
+// Tabla de relación: Departamento (col A=0) -> COD INTERNO (col B=1).
+// Como el formulario usa COD HITOS, se traduce vía el Maestro (INTERNO_A_HITOS).
 function parseDeptos(tsv){
   const lineas = tsv.split('\n').filter(l=>l.trim()); DEPTOS={}; const set=new Set();
-  for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const cod=(c[0]||'').trim(); const dep=(c[1]||'').trim();
-    if(!cod||!dep) continue;
-    if(!DEPTOS[cod]) DEPTOS[cod]=[];
-    DEPTOS[cod].push(dep); set.add(dep); }
+  for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const dep=(c[0]||'').trim(); const interno=(c[1]||'').trim();
+    if(!dep||!interno) continue;
+    set.add(dep);
+    const hitos = INTERNO_A_HITOS[interno] || [];
+    hitos.forEach(codHito=>{ if(!DEPTOS[codHito]) DEPTOS[codHito]=[]; if(!DEPTOS[codHito].includes(dep)) DEPTOS[codHito].push(dep); });
+  }
   DEPTOS_LISTA=[...set].sort((a,b)=>a.localeCompare(b,'es'));
 }
 function deptosDe(codHito){ return DEPTOS[codHito]||[]; }
