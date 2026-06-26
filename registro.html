@@ -79,6 +79,10 @@
   .sem-gris { background:#b9c2cf; }
   .val-si { color:#1D9E75; font-weight:700; }
   .val-no { color:#b9c2cf; }
+  .pass-wrap { position:relative; }
+  .pass-wrap input { padding-right:40px; }
+  .pass-eye { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-3); padding:4px; display:flex; }
+  .pass-eye:hover { color:var(--text-2); }
   .pager { display:flex; justify-content:center; align-items:center; gap:10px; margin-top:14px; }
   .pager button { padding:6px 12px; border:1px solid var(--border); background:#fff; border-radius:7px; cursor:pointer; font-family:inherit; font-size:13px; }
   .pager button:disabled { opacity:.4; cursor:default; }
@@ -208,7 +212,12 @@
     <div class="retro-box" id="mEspecial" style="background:#EEF4FF; border-color:#8FAADC;">
       <p style="color:#0055A5;">Este hito ya tiene un registro esta semana. Solo un especialista puede corregirlo. Introduce la clave de especialista para continuar.</p>
       <label>Clave de especialista</label>
-      <input type="password" id="mClaveEsp" placeholder="Clave de especialista" autocomplete="off">
+      <div class="pass-wrap">
+        <input type="password" id="mClaveEsp" placeholder="Clave de especialista" autocomplete="off">
+        <button type="button" class="pass-eye" onclick="toggleVer('mClaveEsp', this)" aria-label="Mostrar clave">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
     </div>
     <div class="check-row"><input type="checkbox" id="mValidado"><label for="mValidado">He revisado la información y confirmo que es correcta.</label></div>
     <div class="modal-msg" id="mMsg"></div>
@@ -222,7 +231,14 @@
       <div style="font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--blue); font-weight:700; margin-bottom:8px;">Solo Responsables OGAME</div>
       <div id="mValOgameEstado" style="font-size:13px; margin-bottom:10px; color:var(--text-2);">—</div>
       <div class="m-row3" style="grid-template-columns:1fr auto; align-items:end; gap:12px;">
-        <div style="margin:0;"><label>Clave OGAME</label><input type="password" id="mClaveOgame" placeholder="Clave de validación OGAME" autocomplete="off"></div>
+        <div style="margin:0;"><label>Clave OGAME</label>
+          <div class="pass-wrap">
+            <input type="password" id="mClaveOgame" placeholder="Clave de validación OGAME" autocomplete="off">
+            <button type="button" class="pass-eye" onclick="toggleVer('mClaveOgame', this)" aria-label="Mostrar clave">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
         <button class="btn-save" id="mBtnValidar" style="background:var(--blue);" onclick="validarOgame()">Validar OGAME</button>
       </div>
       <div class="modal-msg" id="mMsgOgame"></div>
@@ -561,6 +577,13 @@ function inicioSemana(fecha){ const f=new Date(fecha.getFullYear(),fecha.getMont
 function semanaReporteTexto(){ const ini=inicioSemana(new Date()); const fin=new Date(ini); fin.setDate(fin.getDate()+6); const fmt=d=>d.toLocaleDateString('es-PE',{day:'2-digit',month:'short'}); return fmt(ini)+' – '+fmt(fin); }
 function toISODate(s){ if(!s) return ''; s=s.trim(); if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10); const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m){ return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'); } return ''; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// Muestra u oculta el texto de un campo de clave
+function toggleVer(id, btn){
+  const inp=document.getElementById(id);
+  if(inp.type==='password'){ inp.type='text'; btn.style.color='#0055A5'; }
+  else { inp.type='password'; btn.style.color=''; }
+}
 
 cargar();
 </script>
