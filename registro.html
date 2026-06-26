@@ -522,7 +522,9 @@ async function validarOgame(){
   finally { btn.disabled=false; btn.textContent='Validar OGAME'; }
 }
 function ogameMsg(tipo,texto){ const msg=document.getElementById('mMsgOgame'); msg.className='modal-msg '+tipo; msg.textContent=texto; msg.style.display='block'; }
-document.getElementById('overlay').addEventListener('click',function(e){ if(e.target===this) cerrarModal(); });
+let _downEnOverlay=false;
+document.getElementById('overlay').addEventListener('mousedown',function(e){ _downEnOverlay=(e.target===this); });
+document.getElementById('overlay').addEventListener('click',function(e){ if(e.target===this && _downEnOverlay) cerrarModal(); _downEnOverlay=false; });
 
 // ====== MODAL HISTÓRICO ======
 async function abrirHist(codHito){
@@ -539,7 +541,9 @@ async function abrirHist(codHito){
   }
 }
 function cerrarHist(){ document.getElementById('overlayHist').classList.remove('show'); document.body.style.overflow=''; }
-document.getElementById('overlayHist').addEventListener('click',function(e){ if(e.target===this) cerrarHist(); });
+let _downEnHist=false;
+document.getElementById('overlayHist').addEventListener('mousedown',function(e){ _downEnHist=(e.target===this); });
+document.getElementById('overlayHist').addEventListener('click',function(e){ if(e.target===this && _downEnHist) cerrarHist(); _downEnHist=false; });
 
 // Descarga el histórico (una vez por sesión) y filtra los registros de un hito.
 async function obtenerHistorico(codHito){
