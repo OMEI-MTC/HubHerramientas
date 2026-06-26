@@ -157,7 +157,8 @@
           <div class="field"><label>Tipo de infraestructura</label><select id="fTipo"><option value="">Todos</option></select></div>
         </div>
         <!-- Fila 2 -->
-        <div class="filtros-f2">
+        <div class="filtros-f2" style="grid-template-columns:1fr 1fr 2fr;">
+          <div class="field"><label>Departamento</label><select id="fDepto"><option value="">Todos</option></select></div>
           <div class="field"><label>CUI</label><input type="text" id="fCui" list="cuiList" placeholder="Escribe o elige…" autocomplete="off"><datalist id="cuiList"></datalist></div>
           <div class="field"><label>Nombre de la Intervención</label><input type="text" id="fNombre" list="nombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="nombreList"></datalist></div>
         </div>
@@ -285,6 +286,7 @@ const TOKEN = 'ogame_2026';
 const ESTADO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=734960726&single=true&output=tsv';
 const MAESTRO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=279418764&single=true&output=tsv';
 const HIST_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=913605508&single=true&output=tsv';
+const DEPTO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=1441170985&single=true&output=tsv';
 
 const CORS_PROXIES = [ url=>url, url=>'https://corsproxy.io/?'+encodeURIComponent(url), url=>'https://api.allorigins.win/raw?url='+encodeURIComponent(url) ];
 
@@ -294,6 +296,8 @@ const M = { codHito:2, dpto:5, estatus:6, uei:8, vicem:9, tipoInfra:10, cui:11, 
 const PAGE_SIZE = 20;
 const HIST_MAX = 10;
 let HITOS = [], CLASIF = {}, filtrados = [], pagina = 1, editando = null;
+let DEPTOS = {};        // codHito -> [departamentos]
+let DEPTOS_LISTA = [];  // lista única de departamentos
 let estadosActivos = new Set();  // estados de cumplimiento (chips)
 let semActivos = new Set();      // estados de actualización (semáforo: pendiente/actualizado/cumplido)
 let HIST_TODOS = null;       // histórico completo cacheado tras la primera descarga
@@ -301,8 +305,9 @@ const HIST_CACHE = {};       // codHito -> registros (caché de sesión)
 
 async function cargar() {
   try {
-    const [estadoTxt, maestroTxt] = await Promise.all([ fetchProxy(ESTADO_TSV), fetchProxy(MAESTRO_TSV) ]);
+    const [estadoTxt, maestroTxt, deptoTxt] = await Promise.all([ fetchProxy(ESTADO_TSV), fetchProxy(MAESTRO_TSV), fetchProxy(DEPTO_TSV) ]);
     parseMaestro(maestroTxt);
+    parseDeptos(deptoTxt);
     parseEstado(estadoTxt);
     iniciar();
   } catch (e) {
@@ -322,6 +327,18 @@ function parseMaestro(tsv) {
   for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const cod=(c[M.codHito]||'').trim(); if(!cod) continue; if((c[M.estatus]||'').trim().toUpperCase()!=='VIGENTE') continue;
     CLASIF[cod]={ vicem:(c[M.vicem]||'').trim(), uei:(c[M.uei]||'').trim(), tipoInfra:(c[M.tipoInfra]||'').trim(), dpto:(c[M.dpto]||'').trim(), cui:(c[M.cui]||'').trim(), responsable:(c[M.responsable]||'').trim() }; }
 }
+// Tabla de relación: COD HITOS (col 0) -> Departamento (col 1). Un hito puede tener varios.
+function parseDeptos(tsv){
+  const lineas = tsv.split('\n').filter(l=>l.trim()); DEPTOS={}; const set=new Set();
+  for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const cod=(c[0]||'').trim(); const dep=(c[1]||'').trim();
+    if(!cod||!dep) continue;
+    if(!DEPTOS[cod]) DEPTOS[cod]=[];
+    DEPTOS[cod].push(dep); set.add(dep); }
+  DEPTOS_LISTA=[...set].sort((a,b)=>a.localeCompare(b,'es'));
+}
+function deptosDe(codHito){ return DEPTOS[codHito]||[]; }
+// Departamentos únicos presentes en un conjunto de hitos (para recortar el filtro).
+function deptosDisponibles(hitos){ const set=new Set(); hitos.forEach(h=>deptosDe(h.codHito).forEach(d=>set.add(d))); return [...set].sort((a,b)=>a.localeCompare(b,'es')); }
 function parseEstado(tsv) {
   const lineas = tsv.split('\n').filter(l=>l.trim()); HITOS=[];
   for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const cod=(c[E.codHito]||'').trim(); if(!cod) continue; if(!CLASIF[cod]) continue;
@@ -352,7 +369,9 @@ function iniciar() {
   document.getElementById('app').style.display='block';
   document.getElementById('semanaLabel').textContent='Semana de reporte: '+semanaReporteTexto();
   poblarVicem();
-  ['fVicem','fUei','fTipo','fResp','fVal'].forEach(id=>document.getElementById(id).addEventListener('change',onFiltroChange));
+  poblarSelect('fDepto', DEPTOS_LISTA, 'Todos');
+  recalcularOpciones();
+  ['fVicem','fUei','fTipo','fResp','fVal','fDepto'].forEach(id=>document.getElementById(id).addEventListener('change',onFiltroChange));
   document.getElementById('fCui').addEventListener('input',onFiltroChange);
   document.getElementById('fNombre').addEventListener('input',onFiltroChange);
   document.getElementById('fHito').addEventListener('input',onFiltroChange);
@@ -369,6 +388,7 @@ function baseFiltrada(excluir){
   const v=document.getElementById('fVicem').value, u=document.getElementById('fUei').value, t=document.getElementById('fTipo').value;
   const cu=document.getElementById('fCui').value.trim(), no=document.getElementById('fNombre').value.trim(), hi=document.getElementById('fHito').value.trim();
   const re=document.getElementById('fResp').value, va=document.getElementById('fVal').value;
+  const de=document.getElementById('fDepto').value;
   return HITOS.filter(h=>{ const cl=clasifDe(h);
     const valOk=/^s[ií]$/i.test(h.validadoOgame);
     return (excluir==='vicem'||!v||cl.vicem===v) && (excluir==='uei'||!u||cl.uei===u) && (excluir==='tipo'||!t||cl.tipoInfra===t) &&
@@ -377,7 +397,8 @@ function baseFiltrada(excluir){
            (excluir==='estado'||estadosActivos.size===0||estadosActivos.has(h.estado)) &&
            (excluir==='sem'||semActivos.size===0||semActivos.has(semaforoDe(h))) &&
            (excluir==='resp'||!re||cl.responsable===re) &&
-           (excluir==='val'||!va||(va==='si'?valOk:!valOk)); });
+           (excluir==='val'||!va||(va==='si'?valOk:!valOk)) &&
+           (excluir==='depto'||!de||deptosDe(h.codHito).includes(de)); });
 }
 function toggleSem(el){ const s=el.getAttribute('data-sem'); if(semActivos.has(s)){ semActivos.delete(s); el.classList.remove('on'); } else { semActivos.add(s); el.classList.add('on'); } recalcularOpciones(); aplicarFiltros(); }
 function toggleChip(el){
@@ -390,12 +411,13 @@ function recalcularOpciones(){
   poblarSelect('fUei',  opcionesDe(h=>clasifDe(h).uei, baseFiltrada('uei')), 'Todas');
   poblarSelect('fTipo', opcionesDe(h=>clasifDe(h).tipoInfra, baseFiltrada('tipo')), 'Todos');
   poblarSelect('fResp', opcionesDe(h=>clasifDe(h).responsable, baseFiltrada('resp')), 'Todos');
+  poblarSelect('fDepto', deptosDisponibles(baseFiltrada('depto')), 'Todos');
   poblarDatalist('cuiList', opcionesDe(h=>clasifDe(h).cui, baseFiltrada('cui')));
   poblarDatalist('nombreList', opcionesDe(h=>h.nombre, baseFiltrada('nombre')));
   poblarDatalist('hitoList', opcionesDe(h=>h.hito, baseFiltrada('hito')));
 }
 function aplicarFiltros(){ filtrados = baseFiltrada(null); pagina=1; render(); }
-function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito','fResp','fVal'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); semActivos.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); recalcularOpciones(); aplicarFiltros(); }
+function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito','fResp','fVal','fDepto'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); semActivos.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); poblarSelect('fDepto', DEPTOS_LISTA, 'Todos'); recalcularOpciones(); aplicarFiltros(); }
 
 function badgeEstado(est){ if(est==='EN PROCESO') return '<span class="badge b-proc">EN PROCESO</span>'; if(est==='REPROGRAMADO') return '<span class="badge b-repr">REPROGRAMADO</span>'; if(est==='CUMPLIDO') return '<span class="badge b-cump">CUMPLIDO</span>'; return '<span class="badge">'+escapeHtml(est)+'</span>'; }
 function fmtAvance(raw){ const n=avancePct(raw); return isNaN(n)?'—':Math.round(n)+'%'; }
