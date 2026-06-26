@@ -73,6 +73,12 @@
   .btn-ico { background:none; border:none; cursor:pointer; color:var(--blue); padding:5px; border-radius:6px; }
   .btn-ico:hover { background:var(--blue-lt); }
   .avance-cell { font-weight:700; }
+  .sem { display:inline-block; width:11px; height:11px; border-radius:50%; }
+  .sem-verde { background:#1D9E75; }
+  .sem-rojo { background:#C8102E; }
+  .sem-gris { background:#b9c2cf; }
+  .val-si { color:#1D9E75; font-weight:700; }
+  .val-no { color:#b9c2cf; }
   .pager { display:flex; justify-content:center; align-items:center; gap:10px; margin-top:14px; }
   .pager button { padding:6px 12px; border:1px solid var(--border); background:#fff; border-radius:7px; cursor:pointer; font-family:inherit; font-size:13px; }
   .pager button:disabled { opacity:.4; cursor:default; }
@@ -149,6 +155,7 @@
               <span class="chip" data-estado="EN PROCESO" onclick="toggleChip(this)">EN PROCESO</span>
               <span class="chip" data-estado="REPROGRAMADO" onclick="toggleChip(this)">REPROGRAMADO</span>
               <span class="chip" data-estado="CUMPLIDO" onclick="toggleChip(this)">CUMPLIDO</span>
+              <span class="chip" id="chipPend" onclick="togglePend(this)" style="border-color:#C8102E; color:#C8102E;">⬤ Solo pendientes</span>
             </div>
           </div>
         </div>
@@ -165,7 +172,7 @@
 
       <div class="tabla-wrap">
         <table>
-          <thead><tr><th>Hito</th><th>Corte</th><th>Avance</th><th>Estado</th><th>Fecha cumpl.</th><th>Detalle del estado</th><th></th></tr></thead>
+          <thead><tr><th></th><th>Hito</th><th>Corte</th><th>Avance</th><th>Estado</th><th>Fecha cumpl.</th><th>Val. OGAME</th><th>Detalle del estado</th><th></th></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>
@@ -209,6 +216,17 @@
       <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
       <button class="btn-save" id="mGuardar" onclick="guardar()">Guardar</button>
     </div>
+
+    <!-- Validación OGAME: separada, solo para responsables OGAME -->
+    <div style="margin-top:22px; padding-top:18px; border-top:2px dashed var(--border);">
+      <div style="font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--blue); font-weight:700; margin-bottom:8px;">Solo Responsables OGAME</div>
+      <div id="mValOgameEstado" style="font-size:13px; margin-bottom:10px; color:var(--text-2);">—</div>
+      <div class="m-row3" style="grid-template-columns:1fr auto; align-items:end; gap:12px;">
+        <div style="margin:0;"><label>Clave OGAME</label><input type="password" id="mClaveOgame" placeholder="Clave de validación OGAME" autocomplete="off"></div>
+        <button class="btn-save" id="mBtnValidar" style="background:var(--blue);" onclick="validarOgame()">Validar OGAME</button>
+      </div>
+      <div class="modal-msg" id="mMsgOgame"></div>
+    </div>
   </div>
 </div>
 
@@ -233,13 +251,14 @@ const HIST_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkF
 
 const CORS_PROXIES = [ url=>url, url=>'https://corsproxy.io/?'+encodeURIComponent(url), url=>'https://api.allorigins.win/raw?url='+encodeURIComponent(url) ];
 
-const E = { corte:0, codHito:1, hito:2, categoria:3, codInterno:4, cui:5, nombre:6, fechaCump:7, estado:8, avance:9, situacional:10 };
+const E = { corte:0, codHito:1, hito:2, categoria:3, codInterno:4, cui:5, nombre:6, fechaCump:7, estado:8, avance:9, situacional:10, validadoOgame:11 };
 const M = { codHito:2, dpto:5, estatus:6, uei:8, vicem:9, tipoInfra:10, cui:11 };
 
 const PAGE_SIZE = 20;
 const HIST_MAX = 10;
 let HITOS = [], CLASIF = {}, filtrados = [], pagina = 1, editando = null;
 let estadosActivos = new Set();  // estados seleccionados en los chips
+let soloPendientes = false;      // filtro "solo pendientes de actualizar"
 let HIST_TODOS = null;       // histórico completo cacheado tras la primera descarga
 const HIST_CACHE = {};       // codHito -> registros (caché de sesión)
 
@@ -270,10 +289,26 @@ function parseEstado(tsv) {
   const lineas = tsv.split('\n').filter(l=>l.trim()); HITOS=[];
   for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const cod=(c[E.codHito]||'').trim(); if(!cod) continue; if(!CLASIF[cod]) continue;
     HITOS.push({ codHito:cod, hito:(c[E.hito]||'').trim(), nombre:(c[E.nombre]||'').trim(), cui:(c[E.cui]||'').trim(), categoria:(c[E.categoria]||'').trim(),
-      corte:(c[E.corte]||'').trim(), fechaCump:(c[E.fechaCump]||'').trim(), estado:(c[E.estado]||'').trim().toUpperCase(), avance:(c[E.avance]||'').trim(), situacional:(c[E.situacional]||'').trim() }); }
+      corte:(c[E.corte]||'').trim(), fechaCump:(c[E.fechaCump]||'').trim(), estado:(c[E.estado]||'').trim().toUpperCase(), avance:(c[E.avance]||'').trim(), situacional:(c[E.situacional]||'').trim(),
+      validadoOgame:(c[E.validadoOgame]||'').trim() }); }
 }
 
 function avancePct(raw){ if(raw===null||raw===undefined) return NaN; let s=String(raw).trim(); const t=s.includes('%'); s=s.replace('%','').replace(',','.').trim(); let n=parseFloat(s); if(isNaN(n)) return NaN; if(t) return n; if(n<=1) return n*100; return n; }
+
+// Inicio (jueves) de la semana de reporte de una fecha dada.
+function inicioSemanaDe(fecha){ const f=new Date(fecha.getFullYear(),fecha.getMonth(),fecha.getDate()); const diff=(f.getDay()-4+7)%7; f.setDate(f.getDate()-diff); return f; }
+// Parsea un corte ("1/7/2026", "2026-07-01" o fecha larga) a Date o null.
+function parseFechaCorte(s){ if(!s) return null; s=String(s).trim(); let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return new Date(+m[3],+m[2]-1,+m[1]); m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return new Date(+m[1],+m[2]-1,+m[3]); const d=new Date(s); return isNaN(d.getTime())?null:d; }
+
+// Semáforo: 'cumplido' (gris), 'actualizado' (verde) o 'pendiente' (rojo).
+function semaforoDe(h){
+  if(h.estado==='CUMPLIDO') return 'cumplido';
+  const fc=parseFechaCorte(h.corte);
+  if(!fc) return 'pendiente';
+  const semHito=inicioSemanaDe(fc).getTime();
+  const semHoy=inicioSemanaDe(new Date()).getTime();
+  return semHito===semHoy ? 'actualizado' : 'pendiente';
+}
 
 function iniciar() {
   document.getElementById('loading').style.display='none';
@@ -300,8 +335,10 @@ function baseFiltrada(excluir){
     return (excluir==='vicem'||!v||cl.vicem===v) && (excluir==='uei'||!u||cl.uei===u) && (excluir==='tipo'||!t||cl.tipoInfra===t) &&
            (excluir==='cui'||!cu||cl.cui===cu) && (excluir==='nombre'||!no||h.nombre===no) &&
            (excluir==='hito'||!hi||h.hito===hi) &&
-           (excluir==='estado'||estadosActivos.size===0||estadosActivos.has(h.estado)); });
+           (excluir==='estado'||estadosActivos.size===0||estadosActivos.has(h.estado)) &&
+           (excluir==='pend'||!soloPendientes||semaforoDe(h)==='pendiente'); });
 }
+function togglePend(el){ soloPendientes=!soloPendientes; el.classList.toggle('on'); recalcularOpciones(); aplicarFiltros(); }
 function toggleChip(el){
   const est=el.getAttribute('data-estado');
   if(estadosActivos.has(est)){ estadosActivos.delete(est); el.classList.remove('on'); }
@@ -316,7 +353,7 @@ function recalcularOpciones(){
   poblarDatalist('hitoList', opcionesDe(h=>h.hito, baseFiltrada('hito')));
 }
 function aplicarFiltros(){ filtrados = baseFiltrada(null); pagina=1; render(); }
-function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); recalcularOpciones(); aplicarFiltros(); }
+function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); soloPendientes=false; document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); recalcularOpciones(); aplicarFiltros(); }
 
 function badgeEstado(est){ if(est==='EN PROCESO') return '<span class="badge b-proc">EN PROCESO</span>'; if(est==='REPROGRAMADO') return '<span class="badge b-repr">REPROGRAMADO</span>'; if(est==='CUMPLIDO') return '<span class="badge b-cump">CUMPLIDO</span>'; return '<span class="badge">'+escapeHtml(est)+'</span>'; }
 function fmtAvance(raw){ const n=avancePct(raw); return isNaN(n)?'—':Math.round(n)+'%'; }
@@ -339,17 +376,23 @@ function render(){
   if(pagina>paginas) pagina=paginas;
   const slice=filtrados.slice((pagina-1)*PAGE_SIZE,(pagina-1)*PAGE_SIZE+PAGE_SIZE);
   const tbody=document.getElementById('tbody');
-  if(slice.length===0){ tbody.innerHTML='<tr><td colspan="7" style="text-align:center; padding:30px; color:#8a9ab0;">No hay hitos con estos filtros.</td></tr>'; }
+  if(slice.length===0){ tbody.innerHTML='<tr><td colspan="9" style="text-align:center; padding:30px; color:#8a9ab0;">No hay hitos con estos filtros.</td></tr>'; }
   else {
     let html='', grupoActual=null;
     slice.forEach(h=>{
-      if(h.nombre!==grupoActual){ grupoActual=h.nombre; html+='<tr class="grupo-row"><td colspan="7"><span class="grupo-nombre">'+(escapeHtml(h.nombre)||'(sin intervención)')+'</span></td></tr>'; }
+      if(h.nombre!==grupoActual){ grupoActual=h.nombre; html+='<tr class="grupo-row"><td colspan="9"><span class="grupo-nombre">'+(escapeHtml(h.nombre)||'(sin intervención)')+'</span></td></tr>'; }
+      const sem=semaforoDe(h);
+      const semClass = sem==='actualizado'?'sem-verde':(sem==='cumplido'?'sem-gris':'sem-rojo');
+      const semTitle = sem==='actualizado'?'Actualizado esta semana':(sem==='cumplido'?'Cumplido (no requiere actualización)':'Pendiente de actualizar');
+      const valOk = /^s[ií]$/i.test(h.validadoOgame);
       html+=`<tr class="hito-row">
+        <td style="text-align:center;"><span class="sem ${semClass}" title="${semTitle}"></span></td>
         <td class="td-hito">${escapeHtml(h.hito)||'—'}</td>
         <td style="white-space:nowrap; color:var(--text-2);">${escapeHtml(h.corte)||'—'}</td>
         <td class="avance-cell">${fmtAvance(h.avance)}</td>
         <td>${badgeEstado(h.estado)}</td>
         <td style="white-space:nowrap;">${fmtMesAnio(h.fechaCump)}</td>
+        <td style="text-align:center;">${valOk?'<span class="val-si">✓</span>':'<span class="val-no">—</span>'}</td>
         <td class="td-sit"><div class="td-sit-clip" title="${escapeHtml(h.situacional)}">${escapeHtml(h.situacional)||'—'}</div></td>
         <td><div class="acciones">
           <button class="btn-ico" onclick="abrirHist('${h.codHito}')" aria-label="Ver histórico" title="Ver histórico">
@@ -381,6 +424,13 @@ function abrirModal(codHito){
   document.getElementById('mSituacional').value=h.situacional;
   document.getElementById('mUlt').textContent='Último registrado: '+fmtAvance(h.avance);
   document.getElementById('mValidado').checked=false; limpiarRetro();
+  // Estado de validación OGAME
+  const valOk=/^s[ií]$/i.test(h.validadoOgame);
+  document.getElementById('mValOgameEstado').innerHTML = valOk
+    ? '<span style="color:#1D9E75; font-weight:700;">✓ Este hito ya está validado por OGAME esta semana.</span>'
+    : 'Este hito aún no ha sido validado por OGAME esta semana.';
+  document.getElementById('mClaveOgame').value='';
+  document.getElementById('mMsgOgame').className='modal-msg'; document.getElementById('mMsgOgame').style.display='none';
   document.getElementById('mMsg').className='modal-msg'; document.getElementById('mMsg').style.display='none';
   document.getElementById('overlay').classList.add('show'); document.body.style.overflow='hidden';
 }
@@ -410,6 +460,26 @@ async function guardar(){
 function actualizarFilaLocal(codHito,p){ const h=HITOS.find(x=>x.codHito===codHito); if(!h) return; h.estado=p.estado.toUpperCase(); h.avance=String(p.avance); h.fechaCump=p.fechaCumplimiento||h.fechaCump; h.situacional=p.situacional; h.corte=hoyCorteTexto(); render(); }
 function hoyCorteTexto(){ const d=new Date(); return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear(); }
 function modalMsg(tipo,texto){ const msg=document.getElementById('mMsg'); msg.className='modal-msg '+tipo; msg.textContent=texto; msg.style.display='block'; }
+
+// Validación OGAME: marca el registro de la semana como validado (protegido por clave OGAME).
+async function validarOgame(){
+  const msg=document.getElementById('mMsgOgame'); msg.className='modal-msg'; msg.style.display='none';
+  const clave=document.getElementById('mClaveOgame').value.trim();
+  if(!clave){ ogameMsg('err','Introduce la clave OGAME para validar.'); return; }
+  const btn=document.getElementById('mBtnValidar'); btn.disabled=true; btn.textContent='Validando…';
+  try {
+    const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({ token:TOKEN, accion:'validarOgame', codHito:editando, claveOgame:clave })});
+    const data=await res.json();
+    if(data.ok){
+      const h=HITOS.find(x=>x.codHito===editando); if(h){ h.validadoOgame='Sí'; render(); }
+      document.getElementById('mValOgameEstado').innerHTML='<span style="color:#1D9E75; font-weight:700;">✓ Este hito ya está validado por OGAME esta semana.</span>';
+      ogameMsg('ok', data.mensaje);
+    } else { ogameMsg('err', data.mensaje); }
+  } catch(e){ ogameMsg('err','Error de conexión: '+e.message); }
+  finally { btn.disabled=false; btn.textContent='Validar OGAME'; }
+}
+function ogameMsg(tipo,texto){ const msg=document.getElementById('mMsgOgame'); msg.className='modal-msg '+tipo; msg.textContent=texto; msg.style.display='block'; }
 document.getElementById('overlay').addEventListener('click',function(e){ if(e.target===this) cerrarModal(); });
 
 // ====== MODAL HISTÓRICO ======
@@ -468,13 +538,6 @@ function renderHist(registros){
   html+='</tbody></table></div>';
   if(totalSemanas>HIST_MAX) html+='<p style="font-size:12px; color:#8a9ab0; margin-top:10px;">Mostrando las '+HIST_MAX+' semanas más recientes de '+totalSemanas+' en total.</p>';
   document.getElementById('hBody').innerHTML=html;
-}
-// Parsea el corte ("17/6/2026" o "2026-06-17" o fecha ISO larga) a Date, o null.
-function parseFechaCorte(s){
-  if(!s) return null; s=String(s).trim();
-  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return new Date(+m[3], +m[2]-1, +m[1]);
-  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return new Date(+m[1], +m[2]-1, +m[3]);
-  const d=new Date(s); return isNaN(d.getTime())?null:d;
 }
 
 // ====== EXPORTAR XLSX ======
