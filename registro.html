@@ -29,7 +29,7 @@
   .btn-back { display:flex; align-items:center; gap:7px; background:#003F7D; color:#fff; border:2px solid #003F7D; border-radius:24px; padding:8px 18px; font-family:var(--sans); font-size:15px; font-weight:700; cursor:pointer; white-space:nowrap; text-decoration:none; transition:background .12s; }
   .btn-back:hover { background:#002D5C; border-color:#002D5C; }
   .main { padding:28px; }
-  .panel { max-width:1240px; margin:0 auto; background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:28px 32px; }
+  .panel { max-width:1600px; margin:0 auto; background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:28px 32px; }
   .panel-title { font-family:var(--sans); font-weight:700; font-size:30px; color:var(--blue); line-height:1.1; letter-spacing:-0.01em; }
   .panel-sub { font-size:15px; color:var(--text-2); margin-top:4px; }
   .panel-week { font-size:13px; color:var(--text-3); margin-top:2px; padding-bottom:18px; border-bottom:1px solid var(--border); margin-bottom:20px; }
@@ -43,6 +43,11 @@
   .filtros-tit { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--blue); font-weight:700; margin:0 0 12px; }
   .filtros-row4 { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
   .filtros-row4 .field { margin-bottom:12px; }
+  .filtros-f1 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .filtros-f2 { display:grid; grid-template-columns:1fr 2fr; gap:14px; }
+  .filtros-f3 { display:grid; grid-template-columns:2fr 1.4fr; gap:14px; align-items:start; }
+  .filtros-f4 { display:grid; grid-template-columns:2fr 1fr 1fr; gap:14px; align-items:start; }
+  .filtros-f1 .field, .filtros-f2 .field, .filtros-f3 .field, .filtros-f4 .field { margin-bottom:14px; }
   .filtros-nombre { margin-bottom:14px; }
   .filtros-row3 { display:grid; grid-template-columns:2fr 1.4fr; gap:14px; margin-bottom:14px; align-items:start; }
   .chips { display:flex; gap:8px; flex-wrap:wrap; }
@@ -145,23 +150,39 @@
 
       <div class="filtros">
         <p class="filtros-tit">Filtrar hitos</p>
-        <div class="filtros-row4">
+        <!-- Fila 1 -->
+        <div class="filtros-f1">
           <div class="field"><label>Viceministerio</label><select id="fVicem"><option value="">Todos</option></select></div>
           <div class="field"><label>Unidad ejecutora</label><select id="fUei"><option value="">Todas</option></select></div>
           <div class="field"><label>Tipo de infraestructura</label><select id="fTipo"><option value="">Todos</option></select></div>
-          <div class="field"><label>CUI</label><input type="text" id="fCui" list="cuiList" placeholder="Escribe o elige…" autocomplete="off"><datalist id="cuiList"></datalist></div>
         </div>
-        <div class="field filtros-nombre"><label>Nombre de la Intervención</label><input type="text" id="fNombre" list="nombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="nombreList"></datalist></div>
-        <div class="filtros-row3">
-          <div class="field" style="margin:0;"><label>Hito</label><input type="text" id="fHito" list="hitoList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="hitoList"></datalist></div>
-          <div class="field" style="margin:0;"><label>Estado del hito</label>
+        <!-- Fila 2 -->
+        <div class="filtros-f2">
+          <div class="field"><label>CUI</label><input type="text" id="fCui" list="cuiList" placeholder="Escribe o elige…" autocomplete="off"><datalist id="cuiList"></datalist></div>
+          <div class="field"><label>Nombre de la Intervención</label><input type="text" id="fNombre" list="nombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="nombreList"></datalist></div>
+        </div>
+        <!-- Fila 3 -->
+        <div class="filtros-f3">
+          <div class="field"><label>Hito</label><input type="text" id="fHito" list="hitoList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="hitoList"></datalist></div>
+          <div class="field"><label>Estado de cumplimiento del hito</label>
             <div class="chips">
               <span class="chip" data-estado="EN PROCESO" onclick="toggleChip(this)">EN PROCESO</span>
               <span class="chip" data-estado="REPROGRAMADO" onclick="toggleChip(this)">REPROGRAMADO</span>
               <span class="chip" data-estado="CUMPLIDO" onclick="toggleChip(this)">CUMPLIDO</span>
-              <span class="chip" id="chipPend" onclick="togglePend(this)" style="border-color:#C8102E; color:#C8102E;">⬤ Solo pendientes</span>
             </div>
           </div>
+        </div>
+        <!-- Fila 4 -->
+        <div class="filtros-f4">
+          <div class="field"><label>Estado de actualización</label>
+            <div class="chips">
+              <span class="chip sem-chip" id="chipPend" data-sem="pendiente" onclick="toggleSem(this)" style="border-color:#C8102E;"><span class="sem sem-rojo" style="margin-right:6px;"></span>Pendientes</span>
+              <span class="chip sem-chip" id="chipAct" data-sem="actualizado" onclick="toggleSem(this)" style="border-color:#1D9E75;"><span class="sem sem-verde" style="margin-right:6px;"></span>Actualizados</span>
+              <span class="chip sem-chip" id="chipNA" data-sem="cumplido" onclick="toggleSem(this)"><span class="sem sem-gris" style="margin-right:6px;"></span>No aplica</span>
+            </div>
+          </div>
+          <div class="field"><label>Responsable OGAME</label><select id="fResp"><option value="">Todos</option></select></div>
+          <div class="field"><label>Validado OGAME</label><select id="fVal"><option value="">Todos</option><option value="si">Validados</option><option value="no">Sin validar</option></select></div>
         </div>
         <div class="filtros-foot"><button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar filtros</button></div>
       </div>
@@ -176,7 +197,7 @@
 
       <div class="tabla-wrap">
         <table>
-          <thead><tr><th></th><th>Hito</th><th>Corte</th><th>Avance</th><th>Estado</th><th>Fecha cumpl.</th><th>Val. OGAME</th><th>Detalle del estado</th><th></th></tr></thead>
+          <thead><tr><th>Hito</th><th>Corte</th><th>Avance</th><th>Estado</th><th>Fecha cumpl.</th><th>Detalle del estado</th><th>¿Actualizado?</th><th>Val. OGAME</th><th>Acciones</th></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>
@@ -268,13 +289,13 @@ const HIST_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkF
 const CORS_PROXIES = [ url=>url, url=>'https://corsproxy.io/?'+encodeURIComponent(url), url=>'https://api.allorigins.win/raw?url='+encodeURIComponent(url) ];
 
 const E = { corte:0, codHito:1, hito:2, categoria:3, codInterno:4, cui:5, nombre:6, fechaCump:7, estado:8, avance:9, situacional:10, validadoOgame:11 };
-const M = { codHito:2, dpto:5, estatus:6, uei:8, vicem:9, tipoInfra:10, cui:11 };
+const M = { codHito:2, dpto:5, estatus:6, uei:8, vicem:9, tipoInfra:10, cui:11, responsable:12 };
 
 const PAGE_SIZE = 20;
 const HIST_MAX = 10;
 let HITOS = [], CLASIF = {}, filtrados = [], pagina = 1, editando = null;
-let estadosActivos = new Set();  // estados seleccionados en los chips
-let soloPendientes = false;      // filtro "solo pendientes de actualizar"
+let estadosActivos = new Set();  // estados de cumplimiento (chips)
+let semActivos = new Set();      // estados de actualización (semáforo: pendiente/actualizado/cumplido)
 let HIST_TODOS = null;       // histórico completo cacheado tras la primera descarga
 const HIST_CACHE = {};       // codHito -> registros (caché de sesión)
 
@@ -299,7 +320,7 @@ async function fetchProxy(url) {
 function parseMaestro(tsv) {
   const lineas = tsv.split('\n').filter(l=>l.trim()); CLASIF={};
   for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const cod=(c[M.codHito]||'').trim(); if(!cod) continue; if((c[M.estatus]||'').trim().toUpperCase()!=='VIGENTE') continue;
-    CLASIF[cod]={ vicem:(c[M.vicem]||'').trim(), uei:(c[M.uei]||'').trim(), tipoInfra:(c[M.tipoInfra]||'').trim(), dpto:(c[M.dpto]||'').trim(), cui:(c[M.cui]||'').trim() }; }
+    CLASIF[cod]={ vicem:(c[M.vicem]||'').trim(), uei:(c[M.uei]||'').trim(), tipoInfra:(c[M.tipoInfra]||'').trim(), dpto:(c[M.dpto]||'').trim(), cui:(c[M.cui]||'').trim(), responsable:(c[M.responsable]||'').trim() }; }
 }
 function parseEstado(tsv) {
   const lineas = tsv.split('\n').filter(l=>l.trim()); HITOS=[];
@@ -331,7 +352,7 @@ function iniciar() {
   document.getElementById('app').style.display='block';
   document.getElementById('semanaLabel').textContent='Semana de reporte: '+semanaReporteTexto();
   poblarVicem();
-  ['fVicem','fUei','fTipo'].forEach(id=>document.getElementById(id).addEventListener('change',onFiltroChange));
+  ['fVicem','fUei','fTipo','fResp','fVal'].forEach(id=>document.getElementById(id).addEventListener('change',onFiltroChange));
   document.getElementById('fCui').addEventListener('input',onFiltroChange);
   document.getElementById('fNombre').addEventListener('input',onFiltroChange);
   document.getElementById('fHito').addEventListener('input',onFiltroChange);
@@ -342,19 +363,23 @@ function clasifDe(h){ return CLASIF[h.codHito]||{}; }
 function opcionesDe(getter, base){ const set=new Set(); base.forEach(h=>{const v=getter(h); if(v) set.add(v);}); return [...set].sort((a,b)=>a.localeCompare(b,'es',{numeric:true})); }
 function poblarSelect(id, valores, etiqueta){ const sel=document.getElementById(id); const actual=sel.value; sel.innerHTML='<option value="">'+etiqueta+'</option>'; valores.forEach(v=>{const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o);}); if(valores.includes(actual)) sel.value=actual; }
 function poblarDatalist(id, valores){ const dl=document.getElementById(id); dl.innerHTML=''; valores.forEach(v=>{const o=document.createElement('option'); o.value=v; dl.appendChild(o);}); }
-function poblarVicem(){ poblarSelect('fVicem', opcionesDe(h=>clasifDe(h).vicem, HITOS), 'Todos'); }
+function poblarVicem(){ poblarSelect('fVicem', opcionesDe(h=>clasifDe(h).vicem, HITOS), 'Todos'); poblarSelect('fResp', opcionesDe(h=>clasifDe(h).responsable, HITOS), 'Todos'); }
 function onFiltroChange(){ recalcularOpciones(); aplicarFiltros(); }
 function baseFiltrada(excluir){
   const v=document.getElementById('fVicem').value, u=document.getElementById('fUei').value, t=document.getElementById('fTipo').value;
   const cu=document.getElementById('fCui').value.trim(), no=document.getElementById('fNombre').value.trim(), hi=document.getElementById('fHito').value.trim();
+  const re=document.getElementById('fResp').value, va=document.getElementById('fVal').value;
   return HITOS.filter(h=>{ const cl=clasifDe(h);
+    const valOk=/^s[ií]$/i.test(h.validadoOgame);
     return (excluir==='vicem'||!v||cl.vicem===v) && (excluir==='uei'||!u||cl.uei===u) && (excluir==='tipo'||!t||cl.tipoInfra===t) &&
            (excluir==='cui'||!cu||cl.cui===cu) && (excluir==='nombre'||!no||h.nombre===no) &&
            (excluir==='hito'||!hi||h.hito===hi) &&
            (excluir==='estado'||estadosActivos.size===0||estadosActivos.has(h.estado)) &&
-           (excluir==='pend'||!soloPendientes||semaforoDe(h)==='pendiente'); });
+           (excluir==='sem'||semActivos.size===0||semActivos.has(semaforoDe(h))) &&
+           (excluir==='resp'||!re||cl.responsable===re) &&
+           (excluir==='val'||!va||(va==='si'?valOk:!valOk)); });
 }
-function togglePend(el){ soloPendientes=!soloPendientes; el.classList.toggle('on'); recalcularOpciones(); aplicarFiltros(); }
+function toggleSem(el){ const s=el.getAttribute('data-sem'); if(semActivos.has(s)){ semActivos.delete(s); el.classList.remove('on'); } else { semActivos.add(s); el.classList.add('on'); } recalcularOpciones(); aplicarFiltros(); }
 function toggleChip(el){
   const est=el.getAttribute('data-estado');
   if(estadosActivos.has(est)){ estadosActivos.delete(est); el.classList.remove('on'); }
@@ -364,12 +389,13 @@ function toggleChip(el){
 function recalcularOpciones(){
   poblarSelect('fUei',  opcionesDe(h=>clasifDe(h).uei, baseFiltrada('uei')), 'Todas');
   poblarSelect('fTipo', opcionesDe(h=>clasifDe(h).tipoInfra, baseFiltrada('tipo')), 'Todos');
+  poblarSelect('fResp', opcionesDe(h=>clasifDe(h).responsable, baseFiltrada('resp')), 'Todos');
   poblarDatalist('cuiList', opcionesDe(h=>clasifDe(h).cui, baseFiltrada('cui')));
   poblarDatalist('nombreList', opcionesDe(h=>h.nombre, baseFiltrada('nombre')));
   poblarDatalist('hitoList', opcionesDe(h=>h.hito, baseFiltrada('hito')));
 }
 function aplicarFiltros(){ filtrados = baseFiltrada(null); pagina=1; render(); }
-function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); soloPendientes=false; document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); recalcularOpciones(); aplicarFiltros(); }
+function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito','fResp','fVal'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); semActivos.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); recalcularOpciones(); aplicarFiltros(); }
 
 function badgeEstado(est){ if(est==='EN PROCESO') return '<span class="badge b-proc">EN PROCESO</span>'; if(est==='REPROGRAMADO') return '<span class="badge b-repr">REPROGRAMADO</span>'; if(est==='CUMPLIDO') return '<span class="badge b-cump">CUMPLIDO</span>'; return '<span class="badge">'+escapeHtml(est)+'</span>'; }
 function fmtAvance(raw){ const n=avancePct(raw); return isNaN(n)?'—':Math.round(n)+'%'; }
@@ -402,14 +428,14 @@ function render(){
       const semTitle = sem==='actualizado'?'Actualizado esta semana':(sem==='cumplido'?'Cumplido (no requiere actualización)':'Pendiente de actualizar');
       const valOk = /^s[ií]$/i.test(h.validadoOgame);
       html+=`<tr class="hito-row">
-        <td style="text-align:center;"><span class="sem ${semClass}" title="${semTitle}"></span></td>
         <td class="td-hito">${escapeHtml(h.hito)||'—'}</td>
         <td style="white-space:nowrap; color:var(--text-2);">${escapeHtml(h.corte)||'—'}</td>
         <td class="avance-cell">${fmtAvance(h.avance)}</td>
         <td>${badgeEstado(h.estado)}</td>
         <td style="white-space:nowrap;">${fmtMesAnio(h.fechaCump)}</td>
-        <td style="text-align:center;">${valOk?'<span class="val-si">✓</span>':'<span class="val-no">—</span>'}</td>
         <td class="td-sit"><div class="td-sit-clip" title="${escapeHtml(h.situacional)}">${escapeHtml(h.situacional)||'—'}</div></td>
+        <td style="text-align:center;"><span class="sem ${semClass}" title="${semTitle}"></span></td>
+        <td style="text-align:center;">${valOk?'<span class="val-si">✓</span>':'<span class="val-no">—</span>'}</td>
         <td><div class="acciones">
           <button class="btn-ico" onclick="abrirHist('${h.codHito}')" aria-label="Ver histórico" title="Ver histórico">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
