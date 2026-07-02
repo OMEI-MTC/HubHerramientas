@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   :root {
@@ -618,93 +618,17 @@ function renderHist(registros){
 function exportarXLSX(){
   if (typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación. Verifica tu conexión e intenta de nuevo.'); return; }
   if (!filtrados.length){ alert('No hay hitos para exportar con los filtros actuales.'); return; }
-
-  // Colores institucionales
-  const ROJO='C8102E', BLANCO='FFFFFF', GRIS_TIT='F2F2F2';
-  const VERDE='E0F3EA', AMBAR='FFF3D6', ROJO_SUAVE='FDE2E4';
-
-  // Encabezados de columna (el orden define las columnas del reporte)
-  const cols=['Intervención','Hito','Departamento','CUI','Corte','Avance (%)','Estado','Fecha de cumplimiento','Detalle del estado'];
-
-  // Texto de filtros aplicados (para el bloque de título)
-  const filtrosTxt = describirFiltros();
-  const fechaGen = new Date().toLocaleString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-
-  // Construir la matriz de celdas (AOA = array of arrays)
-  const aoa=[];
-  aoa.push(['MINISTERIO DE TRANSPORTES Y COMUNICACIONES — OGAME']);            // fila 0
-  aoa.push(['Cartera Priorizada MTC · Reporte de avance de hitos']);           // fila 1
-  aoa.push(['Generado el: '+fechaGen]);                                        // fila 2
-  aoa.push(['Filtros aplicados: '+filtrosTxt]);                                // fila 3
-  aoa.push([]);                                                               // fila 4 (vacía)
-  aoa.push(cols);                                                              // fila 5 = encabezados
-  const HEADER_ROW=5;
-  filtrados.forEach(h=>{
-    aoa.push([
-      h.nombre, h.hito, deptosDe(h.codHito).join(', '), h.cui, h.corte,
-      isNaN(avancePct(h.avance))?'':Math.round(avancePct(h.avance)),
-      h.estado, h.fechaCump, h.situacional
-    ]);
-  });
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-
-  // Anchos de columna
-  ws['!cols']=[{wch:42},{wch:40},{wch:22},{wch:12},{wch:12},{wch:10},{wch:15},{wch:16},{wch:60}];
-
-  // Combinar celdas del título (que ocupen todo el ancho)
-  const nCols=cols.length;
-  ws['!merges']=[
-    {s:{r:0,c:0},e:{r:0,c:nCols-1}},
-    {s:{r:1,c:0},e:{r:1,c:nCols-1}},
-    {s:{r:2,c:0},e:{r:2,c:nCols-1}},
-    {s:{r:3,c:0},e:{r:3,c:nCols-1}}
-  ];
-
-  // Congelar filas de arriba (encabezado fijo al desplazarse)
-  ws['!freeze']={xSplit:0,ySplit:HEADER_ROW+1,topLeftCell:'A'+(HEADER_ROW+2),activePane:'bottomLeft',state:'frozen'};
-
-  // ----- Aplicar estilos celda por celda -----
-  const rango = XLSX.utils.decode_range(ws['!ref']);
-  for(let R=rango.s.r; R<=rango.e.r; R++){
-    for(let C=rango.s.c; C<=rango.e.c; C++){
-      const dir = XLSX.utils.encode_cell({r:R,c:C});
-      let cel = ws[dir]; if(!cel){ cel={t:'s',v:''}; ws[dir]=cel; }
-      cel.s = cel.s || {};
-      if(R===0){ cel.s={ font:{bold:true,sz:14,color:{rgb:ROJO}} }; }
-      else if(R===1){ cel.s={ font:{bold:true,sz:11,color:{rgb:'333333'}} }; }
-      else if(R===2||R===3){ cel.s={ font:{italic:true,sz:9,color:{rgb:'666666'}} }; }
-      else if(R===HEADER_ROW){ cel.s={ font:{bold:true,color:{rgb:BLANCO}}, fill:{fgColor:{rgb:ROJO}}, alignment:{horizontal:'center',vertical:'center',wrapText:true} }; }
-      else if(R>HEADER_ROW){
-        const esEstado = (C===6); // columna Estado
-        let fill=null;
-        if(esEstado){ const est=String(cel.v||'').toUpperCase();
-          if(est==='CUMPLIDO') fill=VERDE; else if(est==='EN PROCESO') fill=AMBAR; else if(est==='REPROGRAMADO') fill=ROJO_SUAVE; }
-        cel.s={ alignment:{vertical:'top',wrapText:(C===0||C===1||C===8)}, font:{sz:10} };
-        if(fill) cel.s.fill={fgColor:{rgb:fill}};
-        if(C===6) cel.s.alignment.horizontal='center';
-      }
-    }
-  }
-  // Altura de la fila de encabezados
-  ws['!rows']=[]; ws['!rows'][HEADER_ROW]={hpt:28};
-
+  const datos = filtrados.map(h=>({
+    'Intervención': h.nombre, 'Hito': h.hito, 'CUI': h.cui, 'Corte': h.corte,
+    'Avance (%)': isNaN(avancePct(h.avance))?'':Math.round(avancePct(h.avance)),
+    'Estado': h.estado, 'Fecha de cumplimiento': h.fechaCump, 'Detalle del estado': h.situacional
+  }));
+  const ws = XLSX.utils.json_to_sheet(datos);
+  ws['!cols']=[{wch:40},{wch:40},{wch:12},{wch:12},{wch:10},{wch:14},{wch:16},{wch:60}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Hitos');
   const fecha = new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, 'cartera_priorizada_'+fecha+'.xlsx');
-}
-
-// Arma un texto legible con los filtros activos, para el encabezado del reporte.
-function describirFiltros(){
-  const p=[];
-  const g=(id,et)=>{ const v=document.getElementById(id).value; if(v) p.push(et+': '+v); };
-  g('fVicem','Viceministerio'); g('fUei','Unidad'); g('fTipo','Tipo'); g('fDepto','Departamento');
-  g('fCui','CUI'); g('fNombre','Intervención'); g('fHito','Hito'); g('fResp','Responsable');
-  const val=document.getElementById('fVal').value; if(val) p.push('Validado OGAME: '+(val==='si'?'Sí':'No'));
-  if(estadosActivos.size) p.push('Estado: '+[...estadosActivos].join(', '));
-  if(semActivos.size){ const map={pendiente:'Pendientes',actualizado:'Actualizados',cumplido:'No aplica'}; p.push('Actualización: '+[...semActivos].map(s=>map[s]).join(', ')); }
-  return p.length? p.join(' · ') : 'Ninguno (todos los hitos)';
 }
 
 function inicioSemana(fecha){ const f=new Date(fecha.getFullYear(),fecha.getMonth(),fecha.getDate()); const diff=(f.getDay()-4+7)%7; f.setDate(f.getDate()-diff); return f; }
