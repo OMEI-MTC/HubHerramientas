@@ -46,7 +46,8 @@
   .filtros-f1 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
   .filtros-f2 { display:grid; grid-template-columns:1fr 2fr; gap:14px; }
   .filtros-f3 { display:grid; grid-template-columns:2fr 1.4fr; gap:14px; align-items:start; }
-  .filtros-f4 { display:grid; grid-template-columns:2fr 1fr 1fr; gap:14px; align-items:start; }
+  .filtros-f4 { display:grid; grid-template-columns:2fr 1fr; gap:14px; align-items:start; }
+  body.modo-ogame .filtros-f4 { grid-template-columns:2fr 1fr 1fr; }
   .filtros-f1 .field, .filtros-f2 .field, .filtros-f3 .field, .filtros-f4 .field { margin-bottom:14px; }
   .filtros-nombre { margin-bottom:14px; }
   .filtros-row3 { display:grid; grid-template-columns:2fr 1.4fr; gap:14px; margin-bottom:14px; align-items:start; }
@@ -123,6 +124,31 @@
   .hist-tabla th { background:#f4f6f9; text-align:left; padding:8px 10px; font-weight:700; color:var(--text-2); border-bottom:1px solid var(--border); position:sticky; top:0; }
   .hist-tabla td { padding:8px 10px; border-bottom:1px solid #eef0f3; vertical-align:top; }
   .hist-load { text-align:center; padding:30px; color:var(--text-2); }
+  /* ===== Vista OGAME ===== */
+  .btn-ogame { display:flex; align-items:center; gap:8px; background:#fff; color:var(--blue-dk); border:none; border-radius:24px; padding:9px 20px; font-family:var(--sans); font-size:15px; font-weight:700; cursor:pointer; white-space:nowrap; box-shadow:0 1px 6px rgba(0,0,0,0.2); transition:transform .1s, box-shadow .12s; margin-right:12px; }
+  .btn-ogame:hover { box-shadow:0 2px 10px rgba(0,0,0,0.3); }
+  .topbar-actions { display:flex; align-items:center; }
+  /* Franja que aparece solo en modo OGAME */
+  .ogame-banner { display:none; background:linear-gradient(90deg,var(--blue-dk),var(--blue)); color:#fff; padding:10px 28px; align-items:center; justify-content:space-between; font-size:14px; font-weight:600; }
+  .ogame-banner .ban-left { display:flex; align-items:center; gap:10px; }
+  .ogame-banner .ban-badge { background:rgba(255,255,255,0.22); border-radius:6px; padding:3px 10px; font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+  .btn-salir-ogame { background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.5); border-radius:20px; padding:6px 15px; font-family:var(--sans); font-size:13px; font-weight:600; cursor:pointer; }
+  .btn-salir-ogame:hover { background:rgba(255,255,255,0.28); }
+  /* Cuando el modo OGAME está activo, el body cambia de fondo */
+  body.modo-ogame { background:#E9F0FA; }
+  body.modo-ogame .ogame-banner { display:flex; }
+  body.modo-ogame .panel { border-color:#c3d6ef; box-shadow:0 1px 10px rgba(0,85,165,0.08); }
+  /* Columna "Val. OGAME": oculta por defecto, visible solo en modo OGAME */
+  .col-ogame { display:none; }
+  body.modo-ogame .col-ogame { display:table-cell; }
+  /* Bloques del modal que solo se ven en modo OGAME */
+  .solo-ogame { display:none; }
+  body.modo-ogame .solo-ogame { display:block; }
+  /* Bloques del modal que solo se ven en modo usuario */
+  body.modo-ogame .solo-usuario { display:none; }
+  /* Modal de contraseña OGAME */
+  .modal-clave { max-width:420px; }
+  .modal-clave p { font-size:13.5px; color:var(--text-2); margin-bottom:14px; line-height:1.5; }
 </style>
 </head>
 <body>
@@ -135,11 +161,26 @@
         <div class="topbar-sub">Oficina General de Articulación, Monitoreo, y Evaluación de Impacto</div>
       </div>
     </div>
-    <a class="btn-back" href="index.html">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-      Regresar a página principal
-    </a>
+    <div class="topbar-actions">
+      <button class="btn-ogame" id="btnVistaOgame" onclick="abrirClaveOgame()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Vista OGAME
+      </button>
+      <a class="btn-back" href="index.html">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Regresar a página principal
+      </a>
+    </div>
   </header>
+
+  <!-- Franja que aparece solo cuando el modo OGAME está activo -->
+  <div class="ogame-banner">
+    <div class="ban-left">
+      <span class="ban-badge">Modo OGAME</span>
+      <span>Estás en la vista de validación de OGAME. Puedes editar y validar los registros.</span>
+    </div>
+    <button class="btn-salir-ogame" onclick="salirOgame()">Salir de Vista OGAME</button>
+  </div>
 
   <main class="main">
     <div id="loading" class="panel loading">Cargando estado actual de los hitos…</div>
@@ -183,7 +224,7 @@
             </div>
           </div>
           <div class="field"><label>Responsable OGAME</label><select id="fResp"><option value="">Todos</option></select></div>
-          <div class="field"><label>Validado OGAME</label><select id="fVal"><option value="">Todos</option><option value="si">Validados</option><option value="no">Sin validar</option></select></div>
+          <div class="field solo-ogame"><label>Validado OGAME</label><select id="fVal"><option value="">Todos</option><option value="si">Validados</option><option value="no">Sin validar</option></select></div>
         </div>
         <div class="filtros-foot"><button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar filtros</button></div>
       </div>
@@ -198,7 +239,7 @@
 
       <div class="tabla-wrap">
         <table>
-          <thead><tr><th>Hito</th><th>Corte</th><th>Avance</th><th>Estado</th><th>Fecha cumpl.</th><th>Detalle del estado</th><th>¿Actualizado?</th><th>Val. OGAME</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>Hito</th><th>Corte</th><th>Avance</th><th>Estado</th><th>Fecha cumpl.</th><th>Detalle del estado</th><th>¿Actualizado?</th><th class="col-ogame">Val. OGAME</th><th>Acciones</th></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>
@@ -241,29 +282,39 @@
         </button>
       </div>
     </div>
-    <div class="check-row"><input type="checkbox" id="mValidado"><label for="mValidado">He revisado la información y confirmo que es correcta.</label></div>
+    <!-- Casilla que ve el USUARIO -->
+    <div class="check-row solo-usuario"><input type="checkbox" id="mValidado"><label for="mValidado">He revisado la información y confirmo que es correcta.</label></div>
+    <!-- Casilla que ve OGAME (validación) -->
+    <div class="check-row solo-ogame"><input type="checkbox" id="mValidadoOgame"><label for="mValidadoOgame">Ha sido validado por OGAME.</label></div>
     <div class="modal-msg" id="mMsg"></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
       <button class="btn-save" id="mGuardar" onclick="guardar()">Guardar</button>
     </div>
+  </div>
+</div>
 
-    <!-- Validación OGAME: separada, solo para responsables OGAME -->
-    <div style="margin-top:22px; padding-top:18px; border-top:2px dashed var(--border);">
-      <div style="font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--blue); font-weight:700; margin-bottom:8px;">Solo Responsables OGAME</div>
-      <div id="mValOgameEstado" style="font-size:13px; margin-bottom:10px; color:var(--text-2);">—</div>
-      <div class="m-row3" style="grid-template-columns:1fr auto; align-items:end; gap:12px;">
-        <div style="margin:0;"><label>Clave OGAME</label>
-          <div class="pass-wrap">
-            <input type="password" id="mClaveOgame" placeholder="Clave de validación OGAME" autocomplete="off">
-            <button type="button" class="pass-eye" onclick="toggleVer('mClaveOgame', this)" aria-label="Mostrar clave">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-          </div>
-        </div>
-        <button class="btn-save" id="mBtnValidar" style="background:var(--blue);" onclick="validarOgame()">Validar OGAME</button>
+<!-- MODAL CLAVE OGAME -->
+<div class="overlay" id="overlayClave">
+  <div class="modal modal-clave">
+    <div class="modal-head">
+      <div class="modal-title">Acceso a Vista OGAME</div>
+      <button class="modal-x" onclick="cerrarClaveOgame()" aria-label="Cerrar">&times;</button>
+    </div>
+    <p>Esta vista permite editar y validar los registros. Introduce la clave de OGAME para continuar.</p>
+    <div class="field">
+      <label>Clave OGAME</label>
+      <div class="pass-wrap">
+        <input type="password" id="claveOgameInput" placeholder="Clave de acceso" autocomplete="off" onkeydown="if(event.key==='Enter') confirmarClaveOgame()">
+        <button type="button" class="pass-eye" onclick="toggleVer('claveOgameInput', this)" aria-label="Mostrar clave">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
       </div>
-      <div class="modal-msg" id="mMsgOgame"></div>
+    </div>
+    <div class="modal-msg" id="mMsgClave"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="cerrarClaveOgame()">Cancelar</button>
+      <button class="btn-save" style="background:var(--blue);" onclick="confirmarClaveOgame()">Entrar</button>
     </div>
   </div>
 </div>
@@ -283,6 +334,9 @@
 // ====== CONFIGURACIÓN ======
 const ENDPOINT = 'https://script.google.com/macros/s/AKfycbxSgvtxdB2Y4VTaFOBzIkmscjhpVwJHdgw22hWBMEYhwACmhUdYZEjQm4laGJDo4k6d/exec';
 const TOKEN = 'ogame_2026';
+// Clave para entrar a la Vista OGAME (misma que la de validación).
+// Para cambiarla, edita solo el texto entre comillas de la línea de abajo.
+const CLAVE_OGAME = 'ogame_rev';
 const ESTADO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=734960726&single=true&output=tsv';
 const MAESTRO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=279418764&single=true&output=tsv';
 const HIST_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=913605508&single=true&output=tsv';
@@ -446,11 +500,12 @@ function render(){
   if(pagina>paginas) pagina=paginas;
   const slice=filtrados.slice((pagina-1)*PAGE_SIZE,(pagina-1)*PAGE_SIZE+PAGE_SIZE);
   const tbody=document.getElementById('tbody');
-  if(slice.length===0){ tbody.innerHTML='<tr><td colspan="9" style="text-align:center; padding:30px; color:#8a9ab0;">No hay hitos con estos filtros.</td></tr>'; }
+  const nCols = document.body.classList.contains('modo-ogame') ? 9 : 8;
+  if(slice.length===0){ tbody.innerHTML='<tr><td colspan="'+nCols+'" style="text-align:center; padding:30px; color:#8a9ab0;">No hay hitos con estos filtros.</td></tr>'; }
   else {
     let html='', grupoActual=null;
     slice.forEach(h=>{
-      if(h.nombre!==grupoActual){ grupoActual=h.nombre; html+='<tr class="grupo-row"><td colspan="9"><span class="grupo-nombre">'+(escapeHtml(h.nombre)||'(sin intervención)')+'</span></td></tr>'; }
+      if(h.nombre!==grupoActual){ grupoActual=h.nombre; html+='<tr class="grupo-row"><td colspan="'+nCols+'"><span class="grupo-nombre">'+(escapeHtml(h.nombre)||'(sin intervención)')+'</span></td></tr>'; }
       const sem=semaforoDe(h);
       const semClass = sem==='actualizado'?'sem-verde':(sem==='cumplido'?'sem-gris':'sem-rojo');
       const semTitle = sem==='actualizado'?'Actualizado esta semana':(sem==='cumplido'?'Cumplido (no requiere actualización)':'Pendiente de actualizar');
@@ -463,7 +518,7 @@ function render(){
         <td style="white-space:nowrap;">${fmtMesAnio(h.fechaCump)}</td>
         <td class="td-sit"><div class="td-sit-clip" title="${escapeHtml(h.situacional)}">${escapeHtml(h.situacional)||'—'}</div></td>
         <td style="text-align:center;"><span class="sem ${semClass}" title="${semTitle}"></span></td>
-        <td style="text-align:center;">${valOk?'<span class="val-si">✓</span>':'<span class="val-no">—</span>'}</td>
+        <td class="col-ogame" style="text-align:center;">${valOk?'<span class="val-si">✓</span>':'<span class="val-no">—</span>'}</td>
         <td><div class="acciones">
           <button class="btn-ico" onclick="abrirHist('${h.codHito}')" aria-label="Ver histórico" title="Ver histórico">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -483,6 +538,34 @@ function render(){
 }
 function cambiarPagina(d){ pagina+=d; render(); window.scrollTo({top:0,behavior:'smooth'}); }
 
+// ====== CONTROL DE VISTA OGAME ======
+function abrirClaveOgame(){
+  document.getElementById('claveOgameInput').value='';
+  const m=document.getElementById('mMsgClave'); m.className='modal-msg'; m.style.display='none';
+  document.getElementById('overlayClave').classList.add('show'); document.body.style.overflow='hidden';
+  setTimeout(()=>document.getElementById('claveOgameInput').focus(),100);
+}
+function cerrarClaveOgame(){ document.getElementById('overlayClave').classList.remove('show'); document.body.style.overflow=''; }
+function confirmarClaveOgame(){
+  const clave=document.getElementById('claveOgameInput').value.trim();
+  if(clave===CLAVE_OGAME){
+    document.body.classList.add('modo-ogame');
+    document.getElementById('btnVistaOgame').style.display='none';
+    cerrarClaveOgame();
+    render(); // redibuja la tabla para mostrar la columna Val. OGAME
+  } else {
+    const m=document.getElementById('mMsgClave'); m.className='modal-msg err'; m.textContent='Clave incorrecta. Verifica e intenta de nuevo.'; m.style.display='block';
+  }
+}
+function salirOgame(){
+  document.body.classList.remove('modo-ogame');
+  document.getElementById('btnVistaOgame').style.display='';
+  render(); // redibuja sin la columna Val. OGAME
+}
+let _downClave=false;
+document.getElementById('overlayClave').addEventListener('mousedown',function(e){ _downClave=(e.target===this); });
+document.getElementById('overlayClave').addEventListener('click',function(e){ if(e.target===this && _downClave) cerrarClaveOgame(); _downClave=false; });
+
 // ====== MODAL EDICIÓN ======
 function abrirModal(codHito){
   const h=HITOS.find(x=>x.codHito===codHito); if(!h) return; editando=codHito;
@@ -494,13 +577,9 @@ function abrirModal(codHito){
   document.getElementById('mSituacional').value=h.situacional;
   document.getElementById('mUlt').textContent='Último registrado: '+fmtAvance(h.avance);
   document.getElementById('mValidado').checked=false; limpiarRetro();
-  // Estado de validación OGAME
+  // Casilla de validación OGAME: se marca si el hito ya está validado esta semana.
   const valOk=/^s[ií]$/i.test(h.validadoOgame);
-  document.getElementById('mValOgameEstado').innerHTML = valOk
-    ? '<span style="color:#1D9E75; font-weight:700;">✓ Este hito ya está validado por OGAME esta semana.</span>'
-    : 'Este hito aún no ha sido validado por OGAME esta semana.';
-  document.getElementById('mClaveOgame').value='';
-  document.getElementById('mMsgOgame').className='modal-msg'; document.getElementById('mMsgOgame').style.display='none';
+  document.getElementById('mValidadoOgame').checked=valOk;
   document.getElementById('mMsg').className='modal-msg'; document.getElementById('mMsg').style.display='none';
   document.getElementById('overlay').classList.add('show'); document.body.style.overflow='hidden';
 }
@@ -509,18 +588,36 @@ function limpiarRetro(){ document.getElementById('mRetro').classList.remove('sho
 
 async function guardar(){
   const msg=document.getElementById('mMsg'); msg.className='modal-msg'; msg.style.display='none';
-  if(!document.getElementById('mValidado').checked) return modalMsg('err','Debes marcar la casilla de validación antes de guardar.');
+  const esOgame = document.body.classList.contains('modo-ogame');
+
+  // En modo usuario exige la casilla de confirmación. En modo OGAME no es obligatoria.
+  if(!esOgame && !document.getElementById('mValidado').checked){
+    return modalMsg('err','Debes marcar la casilla de validación antes de guardar.');
+  }
+
   const retroVisible=document.getElementById('mRetro').classList.contains('show');
   const espVisible=document.getElementById('mEspecial').classList.contains('show');
   const payload={ token:TOKEN, codHito:editando, estado:document.getElementById('mEstado').value, avance:document.getElementById('mAvance').value,
     fechaCumplimiento:document.getElementById('mFecha').value, situacional:document.getElementById('mSituacional').value, validado:true,
     confirmaRetroceso:retroVisible?document.getElementById('mConfirmaRetro').checked:false, justificacion:retroVisible?document.getElementById('mJustif').value:'',
-    claveEspecialista: espVisible?document.getElementById('mClaveEsp').value:'' };
+    // En modo OGAME se envía la clave de especialista para poder corregir aunque ya exista registro de la semana.
+    claveEspecialista: esOgame ? CLAVE_OGAME : (espVisible?document.getElementById('mClaveEsp').value:'') };
+
   const btn=document.getElementById('mGuardar'); btn.disabled=true; btn.textContent='Guardando…';
   try {
     const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const data=await res.json();
-    if(data.ok){ actualizarFilaLocal(editando,payload); delete HIST_CACHE[editando]; HIST_TODOS=null; modalMsg('ok',data.mensaje); setTimeout(cerrarModal,1200); }
+    if(data.ok){
+      actualizarFilaLocal(editando,payload); delete HIST_CACHE[editando]; HIST_TODOS=null;
+      // En modo OGAME, si además marcó "Ha sido validado por OGAME", se valida en la misma acción.
+      if(esOgame && document.getElementById('mValidadoOgame').checked){
+        modalMsg('ok','Registro guardado. Validando…');
+        await validarEnOgame(editando);
+      } else {
+        modalMsg('ok',data.mensaje);
+      }
+      setTimeout(cerrarModal,1200);
+    }
     else if(data.tipo==='retroceso'){ document.getElementById('mRetro').classList.add('show'); document.getElementById('mRetroMsg').textContent='Esto es un retroceso respecto al '+data.avanceAnterior+'% anterior. ¿Es correcto? Confirma y justifica para continuar.'; modalMsg('warn','Revisa el aviso de retroceso, justifica y vuelve a guardar.'); }
     else if(data.tipo==='duplicado'){ document.getElementById('mEspecial').classList.add('show'); modalMsg('warn','Este hito ya tiene registro esta semana. Introduce la clave de especialista para corregirlo.'); }
     else { modalMsg('err',data.mensaje); }
@@ -531,25 +628,21 @@ function actualizarFilaLocal(codHito,p){ const h=HITOS.find(x=>x.codHito===codHi
 function hoyCorteTexto(){ const d=new Date(); return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear(); }
 function modalMsg(tipo,texto){ const msg=document.getElementById('mMsg'); msg.className='modal-msg '+tipo; msg.textContent=texto; msg.style.display='block'; }
 
-// Validación OGAME: marca el registro de la semana como validado (protegido por clave OGAME).
-async function validarOgame(){
-  const msg=document.getElementById('mMsgOgame'); msg.className='modal-msg'; msg.style.display='none';
-  const clave=document.getElementById('mClaveOgame').value.trim();
-  if(!clave){ ogameMsg('err','Introduce la clave OGAME para validar.'); return; }
-  const btn=document.getElementById('mBtnValidar'); btn.disabled=true; btn.textContent='Validando…';
+// Validación OGAME: marca el registro de la semana como validado.
+// La clave va incluida automáticamente (ya se validó al entrar a la Vista OGAME).
+async function validarEnOgame(codHito){
   try {
     const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({ token:TOKEN, accion:'validarOgame', codHito:editando, claveOgame:clave })});
+      body:JSON.stringify({ token:TOKEN, accion:'validarOgame', codHito:codHito, claveOgame:CLAVE_OGAME })});
     const data=await res.json();
     if(data.ok){
-      const h=HITOS.find(x=>x.codHito===editando); if(h){ h.validadoOgame='Sí'; render(); }
-      document.getElementById('mValOgameEstado').innerHTML='<span style="color:#1D9E75; font-weight:700;">✓ Este hito ya está validado por OGAME esta semana.</span>';
-      ogameMsg('ok', data.mensaje);
-    } else { ogameMsg('err', data.mensaje); }
-  } catch(e){ ogameMsg('err','Error de conexión: '+e.message); }
-  finally { btn.disabled=false; btn.textContent='Validar OGAME'; }
+      const h=HITOS.find(x=>x.codHito===codHito); if(h){ h.validadoOgame='Sí'; render(); }
+      modalMsg('ok','Registro guardado y validado por OGAME.');
+    } else {
+      modalMsg('warn','El registro se guardó, pero la validación no se completó: '+data.mensaje);
+    }
+  } catch(e){ modalMsg('warn','El registro se guardó, pero la validación falló por conexión: '+e.message); }
 }
-function ogameMsg(tipo,texto){ const msg=document.getElementById('mMsgOgame'); msg.className='modal-msg '+tipo; msg.textContent=texto; msg.style.display='block'; }
 let _downEnOverlay=false;
 document.getElementById('overlay').addEventListener('mousedown',function(e){ _downEnOverlay=(e.target===this); });
 document.getElementById('overlay').addEventListener('click',function(e){ if(e.target===this && _downEnOverlay) cerrarModal(); _downEnOverlay=false; });
