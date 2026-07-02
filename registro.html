@@ -144,6 +144,8 @@
   /* Bloques del modal que solo se ven en modo OGAME */
   .solo-ogame { display:none; }
   body.modo-ogame .solo-ogame { display:block; }
+  /* Las casillas (check-row) deben conservar su alineación horizontal aun en modo OGAME */
+  body.modo-ogame .check-row.solo-ogame { display:flex; }
   /* Bloques del modal que solo se ven en modo usuario */
   body.modo-ogame .solo-usuario { display:none; }
   /* Modal de contraseña OGAME */
@@ -272,15 +274,9 @@
       <textarea id="mJustif" placeholder="Explica por qué el avance disminuyó…"></textarea>
       <div class="check-row"><input type="checkbox" id="mConfirmaRetro"><label for="mConfirmaRetro">Confirmo que el retroceso es correcto.</label></div>
     </div>
-    <div class="retro-box" id="mEspecial" style="background:#EEF4FF; border-color:#8FAADC;">
-      <p style="color:#0055A5;">Este hito ya tiene un registro esta semana. Solo un especialista puede corregirlo. Introduce la clave de especialista para continuar.</p>
-      <label>Clave de especialista</label>
-      <div class="pass-wrap">
-        <input type="password" id="mClaveEsp" placeholder="Clave de especialista" autocomplete="off">
-        <button type="button" class="pass-eye" onclick="toggleVer('mClaveEsp', this)" aria-label="Mostrar clave">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
-      </div>
+    <div class="retro-box" id="mEspecial" style="background:#FFF8E6; border-color:#E6A817;">
+      <p style="color:#8a6200;">Este hito ya tiene un registro esta semana. Si continúas, se reemplazará con la información que acabas de ingresar.</p>
+      <div class="check-row"><input type="checkbox" id="mConfirmaReemplazo"><label for="mConfirmaReemplazo">Confirmo que deseo reemplazar el registro de esta semana.</label></div>
     </div>
     <!-- Casilla que ve el USUARIO -->
     <div class="check-row solo-usuario"><input type="checkbox" id="mValidado"><label for="mValidado">He revisado la información y confirmo que es correcta.</label></div>
@@ -584,7 +580,7 @@ function abrirModal(codHito){
   document.getElementById('overlay').classList.add('show'); document.body.style.overflow='hidden';
 }
 function cerrarModal(){ document.getElementById('overlay').classList.remove('show'); document.body.style.overflow=''; editando=null; }
-function limpiarRetro(){ document.getElementById('mRetro').classList.remove('show'); document.getElementById('mConfirmaRetro').checked=false; document.getElementById('mJustif').value=''; document.getElementById('mEspecial').classList.remove('show'); document.getElementById('mClaveEsp').value=''; }
+function limpiarRetro(){ document.getElementById('mRetro').classList.remove('show'); document.getElementById('mConfirmaRetro').checked=false; document.getElementById('mJustif').value=''; document.getElementById('mEspecial').classList.remove('show'); document.getElementById('mConfirmaReemplazo').checked=false; }
 
 async function guardar(){
   const msg=document.getElementById('mMsg'); msg.className='modal-msg'; msg.style.display='none';
@@ -596,12 +592,22 @@ async function guardar(){
   }
 
   const retroVisible=document.getElementById('mRetro').classList.contains('show');
-  const espVisible=document.getElementById('mEspecial').classList.contains('show');
+  const reemplazoVisible=document.getElementById('mEspecial').classList.contains('show');
+
+  // Si se está mostrando el aviso de reemplazo, el usuario debe confirmar con la casilla.
+  if(reemplazoVisible && !document.getElementById('mConfirmaReemplazo').checked){
+    return modalMsg('err','Marca la casilla para confirmar que deseas reemplazar el registro de esta semana.');
+  }
+
+  // La clave de especialista viaja de forma automática y oculta (el usuario nunca la escribe):
+  //  - En modo OGAME siempre, para poder corregir.
+  //  - En modo usuario, solo si ya confirmó que quiere reemplazar el registro de la semana.
+  const usarClave = esOgame || (reemplazoVisible && document.getElementById('mConfirmaReemplazo').checked);
+
   const payload={ token:TOKEN, codHito:editando, estado:document.getElementById('mEstado').value, avance:document.getElementById('mAvance').value,
     fechaCumplimiento:document.getElementById('mFecha').value, situacional:document.getElementById('mSituacional').value, validado:true,
     confirmaRetroceso:retroVisible?document.getElementById('mConfirmaRetro').checked:false, justificacion:retroVisible?document.getElementById('mJustif').value:'',
-    // En modo OGAME se envía la clave de especialista para poder corregir aunque ya exista registro de la semana.
-    claveEspecialista: esOgame ? CLAVE_OGAME : (espVisible?document.getElementById('mClaveEsp').value:'') };
+    claveEspecialista: usarClave ? CLAVE_OGAME : '' };
 
   const btn=document.getElementById('mGuardar'); btn.disabled=true; btn.textContent='Guardando…';
   try {
@@ -619,7 +625,7 @@ async function guardar(){
       setTimeout(cerrarModal,1200);
     }
     else if(data.tipo==='retroceso'){ document.getElementById('mRetro').classList.add('show'); document.getElementById('mRetroMsg').textContent='Esto es un retroceso respecto al '+data.avanceAnterior+'% anterior. ¿Es correcto? Confirma y justifica para continuar.'; modalMsg('warn','Revisa el aviso de retroceso, justifica y vuelve a guardar.'); }
-    else if(data.tipo==='duplicado'){ document.getElementById('mEspecial').classList.add('show'); modalMsg('warn','Este hito ya tiene registro esta semana. Introduce la clave de especialista para corregirlo.'); }
+    else if(data.tipo==='duplicado'){ document.getElementById('mEspecial').classList.add('show'); modalMsg('warn','Este hito ya tiene un registro esta semana. Confirma abajo si deseas reemplazarlo.'); }
     else { modalMsg('err',data.mensaje); }
   } catch(e){ modalMsg('err','Error de conexión: '+e.message); }
   finally { btn.disabled=false; btn.textContent='Guardar'; }
