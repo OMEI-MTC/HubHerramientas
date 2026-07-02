@@ -266,7 +266,7 @@
       <div><label>Estado</label><select id="mEstado"><option value="EN PROCESO">EN PROCESO</option><option value="REPROGRAMADO">REPROGRAMADO</option><option value="CUMPLIDO">CUMPLIDO</option></select></div>
       <div><label>Fecha de cumplimiento</label><input type="date" id="mFecha"></div>
     </div>
-    <div class="field"><label>% de avance</label><input type="number" id="mAvance" min="0" max="100" step="1" placeholder="Ej. 75"><span class="ult-avance" id="mUlt">—</span></div>
+    <div class="field"><label>% de avance</label><input type="number" id="mAvance" min="0" max="100" step="0.1" placeholder="Ej. 75.5"><span class="ult-avance" id="mUlt">—</span></div>
     <div class="field"><label>Detalle del estado</label><textarea id="mSituacional" placeholder="Describe el avance real de esta semana…"></textarea></div>
     <div class="retro-box" id="mRetro">
       <p id="mRetroMsg">Esto es un retroceso respecto al avance anterior. ¿Es correcto?</p>
@@ -476,7 +476,25 @@ function aplicarFiltros(){ filtrados = baseFiltrada(null); pagina=1; render(); }
 function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito','fResp','fVal','fDepto'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); semActivos.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); poblarSelect('fDepto', DEPTOS_LISTA, 'Todos'); recalcularOpciones(); aplicarFiltros(); }
 
 function badgeEstado(est){ if(est==='EN PROCESO') return '<span class="badge b-proc">EN PROCESO</span>'; if(est==='REPROGRAMADO') return '<span class="badge b-repr">REPROGRAMADO</span>'; if(est==='CUMPLIDO') return '<span class="badge b-cump">CUMPLIDO</span>'; return '<span class="badge">'+escapeHtml(est)+'</span>'; }
-function fmtAvance(raw){ const n=avancePct(raw); return isNaN(n)?'—':Math.round(n)+'%'; }
+function fmtAvance(raw){ const n=avancePct(raw); if(isNaN(n)) return '—'; const r=Math.round(n*10)/10; return (Number.isInteger(r)?r:r.toFixed(1))+'%'; }
+
+// Limpia el "Corte" quitándole la hora si viene pegada (ej. "7/07/2026 22:00:00" -> "7/07/2026").
+function fmtCorteLimpio(s){
+  if(!s) return '—';
+  s=String(s).trim();
+  // Si tiene una parte de fecha al inicio (d/m/aaaa o aaaa-mm-dd), quedarse solo con ella.
+  let m=s.match(/^(\d{1,2}\/\d{1,2}\/\d{4})/); if(m) return m[1];
+  m=s.match(/^(\d{4}-\d{2}-\d{2})/); if(m){ const p=m[1].split('-'); return (+p[2])+'/'+(+p[1])+'/'+p[0]; }
+  return escapeHtml(s);
+}
+// Muestra la fecha de cumplimiento como dd/mm/aaaa (ej. "2026-07-01" -> "01/07/2026").
+function fmtFechaDMA(s){
+  if(!s) return '—';
+  s=String(s).trim();
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return m[3]+'/'+m[2]+'/'+m[1];
+  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return String(m[1]).padStart(2,'0')+'/'+String(m[2]).padStart(2,'0')+'/'+m[3];
+  return escapeHtml(s);
+}
 
 // Convierte "1/7/2026" o "2026-07-01" a "jul-26" (mes abreviado en español + año de 2 dígitos)
 function fmtMesAnio(s){
@@ -569,7 +587,7 @@ function abrirModal(codHito){
   document.getElementById('mHito').textContent=h.hito;
   document.getElementById('mEstado').value=['EN PROCESO','REPROGRAMADO','CUMPLIDO'].includes(h.estado)?h.estado:'EN PROCESO';
   document.getElementById('mFecha').value=toISODate(h.fechaCump);
-  const pct=avancePct(h.avance); document.getElementById('mAvance').value=isNaN(pct)?0:Math.round(pct);
+  const pct=avancePct(h.avance); document.getElementById('mAvance').value=isNaN(pct)?0:Math.round(pct*10)/10;
   document.getElementById('mSituacional').value=h.situacional;
   document.getElementById('mUlt').textContent='Último registrado: '+fmtAvance(h.avance);
   document.getElementById('mValidado').checked=false; limpiarRetro();
@@ -604,28 +622,28 @@ async function guardar(){
   //  - En modo usuario, solo si ya confirmó que quiere reemplazar el registro de la semana.
   const usarClave = esOgame || (reemplazoVisible && document.getElementById('mConfirmaReemplazo').checked);
 
+  // ¿OGAME marcó "Ha sido validado por OGAME"? Se envía en el MISMO viaje.
+  const validarAhora = esOgame && document.getElementById('mValidadoOgame').checked;
+
   const payload={ token:TOKEN, codHito:editando, estado:document.getElementById('mEstado').value, avance:document.getElementById('mAvance').value,
     fechaCumplimiento:document.getElementById('mFecha').value, situacional:document.getElementById('mSituacional').value, validado:true,
     confirmaRetroceso:retroVisible?document.getElementById('mConfirmaRetro').checked:false, justificacion:retroVisible?document.getElementById('mJustif').value:'',
-    claveEspecialista: usarClave ? CLAVE_OGAME : '' };
+    claveEspecialista: usarClave ? CLAVE_OGAME : '',
+    validadoOgame: validarAhora };  // el backend guarda y valida en un solo paso
 
   const btn=document.getElementById('mGuardar'); btn.disabled=true; btn.textContent='Guardando…';
   try {
     const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const data=await res.json();
     if(data.ok){
+      // Refleja el resultado localmente (incluida la validación si se marcó).
       actualizarFilaLocal(editando,payload); delete HIST_CACHE[editando]; HIST_TODOS=null;
-      // En modo OGAME, si además marcó "Ha sido validado por OGAME", se valida en la misma acción.
-      if(esOgame && document.getElementById('mValidadoOgame').checked){
-        modalMsg('ok','Registro guardado. Validando…');
-        await validarEnOgame(editando);
-      } else {
-        modalMsg('ok',data.mensaje);
-      }
+      if(validarAhora){ const h=HITOS.find(x=>x.codHito===editando); if(h){ h.validadoOgame='Sí'; render(); } }
+      modalMsg('ok',data.mensaje);
       setTimeout(cerrarModal,1200);
     }
     else if(data.tipo==='retroceso'){ document.getElementById('mRetro').classList.add('show'); document.getElementById('mRetroMsg').textContent='Esto es un retroceso respecto al '+data.avanceAnterior+'% anterior. ¿Es correcto? Confirma y justifica para continuar.'; modalMsg('warn','Revisa el aviso de retroceso, justifica y vuelve a guardar.'); }
-    else if(data.tipo==='duplicado'){ document.getElementById('mEspecial').classList.add('show'); modalMsg('warn','Este hito ya tiene un registro esta semana. Confirma abajo si deseas reemplazarlo.'); }
+    else if(data.tipo==='duplicado'){ document.getElementById('mEspecial').classList.add('show'); }
     else { modalMsg('err',data.mensaje); }
   } catch(e){ modalMsg('err','Error de conexión: '+e.message); }
   finally { btn.disabled=false; btn.textContent='Guardar'; }
@@ -706,7 +724,7 @@ function renderHist(registros){
   const ultimos = unicos.slice(0, HIST_MAX);
   let html='<div style="max-height:50vh; overflow-y:auto;"><table class="hist-tabla"><thead><tr><th>Corte</th><th>Estado</th><th>Fecha cumpl.</th><th>Detalle del estado</th></tr></thead><tbody>';
   ultimos.forEach(r=>{
-    html+='<tr><td style="white-space:nowrap;">'+escapeHtml(r.corte)+'</td><td>'+badgeEstado(r.estado)+'</td><td style="white-space:nowrap;">'+escapeHtml(r.fechaCump)+'</td><td>'+escapeHtml(r.situacional)+'</td></tr>';
+    html+='<tr><td style="white-space:nowrap;">'+fmtCorteLimpio(r.corte)+'</td><td>'+badgeEstado(r.estado)+'</td><td style="white-space:nowrap;">'+fmtFechaDMA(r.fechaCump)+'</td><td>'+escapeHtml(r.situacional)+'</td></tr>';
   });
   html+='</tbody></table></div>';
   if(totalSemanas>HIST_MAX) html+='<p style="font-size:12px; color:#8a9ab0; margin-top:10px;">Mostrando las '+HIST_MAX+' semanas más recientes de '+totalSemanas+' en total.</p>';
@@ -719,7 +737,7 @@ function exportarXLSX(){
   if (!filtrados.length){ alert('No hay hitos para exportar con los filtros actuales.'); return; }
   const datos = filtrados.map(h=>({
     'Intervención': h.nombre, 'Hito': h.hito, 'CUI': h.cui, 'Corte': h.corte,
-    'Avance (%)': isNaN(avancePct(h.avance))?'':Math.round(avancePct(h.avance)),
+    'Avance (%)': isNaN(avancePct(h.avance))?'':Math.round(avancePct(h.avance)*10)/10,
     'Estado': h.estado, 'Fecha de cumplimiento': h.fechaCump, 'Detalle del estado': h.situacional
   }));
   const ws = XLSX.utils.json_to_sheet(datos);
