@@ -83,11 +83,13 @@
   .pass-wrap input { padding-right:40px; }
   .pass-eye { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-3); padding:4px; display:flex; }
   .pass-eye:hover { color:var(--text-2); }
-  .pager { display:flex; justify-content:center; align-items:center; gap:16px; margin-top:20px; padding:14px; background:#f4f6f9; border:1px solid var(--border); border-radius:10px; }
-  .pager button { padding:9px 18px; border:1px solid var(--blue); background:#fff; color:var(--blue); border-radius:8px; cursor:pointer; font-family:inherit; font-size:14px; font-weight:700; transition:background .12s; }
+  .pager { display:flex; justify-content:center; align-items:center; gap:16px; margin-top:20px; }
+  .pager button { padding:8px 16px; border:1px solid var(--blue); background:#fff; color:var(--blue); border-radius:8px; cursor:pointer; font-family:inherit; font-size:14px; font-weight:700; transition:background .12s; }
   .pager button:hover:not(:disabled) { background:var(--blue-lt); }
   .pager button:disabled { opacity:.35; cursor:default; border-color:var(--border); color:var(--text-3); }
   .pager span { font-size:15px; color:var(--text); font-weight:700; }
+  /* Paginador de arriba: compacto, alineado a la derecha junto al contador */
+  .pager-top { justify-content:flex-end; margin-top:0; }
   .loading { text-align:center; color:var(--text-2); padding:40px; }
   .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:50; align-items:center; justify-content:center; padding:20px; }
   .overlay.show { display:flex; }
@@ -231,6 +233,12 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Descargar Excel
         </button>
+      </div>
+
+      <div class="pager pager-top">
+        <button id="prevBtnTop" onclick="cambiarPagina(-1)">‹ Anterior</button>
+        <span id="pageInfoTop">—</span>
+        <button id="nextBtnTop" onclick="cambiarPagina(1)">Siguiente ›</button>
       </div>
 
       <div class="tabla-wrap">
@@ -541,10 +549,12 @@ function render(){
   let nCump=0, nRepr=0, nProc=0;
   filtrados.forEach(h=>{ if(h.estado==='CUMPLIDO') nCump++; else if(h.estado==='REPROGRAMADO') nRepr++; else if(h.estado==='EN PROCESO') nProc++; });
   const partes = [ tot+(tot===1?' hito':' hitos'), nCump+' cumplidos', nRepr+' reprogramados', nProc+' en proceso' ];
-  document.getElementById('contadorHitos').innerHTML = partes.join(' &nbsp;·&nbsp; ') + (tot>PAGE_SIZE?' &nbsp;·&nbsp; <strong>página '+pagina+' de '+paginas+'</strong>':'');
-  document.getElementById('pageInfo').textContent='Página '+pagina+' de '+paginas;
-  document.getElementById('prevBtn').disabled=pagina<=1;
-  document.getElementById('nextBtn').disabled=pagina>=paginas;
+  document.getElementById('contadorHitos').innerHTML = partes.join(' &nbsp;·&nbsp; ');
+  // Actualiza los dos paginadores (arriba y abajo) de una sola vez
+  const infoPag='Página '+pagina+' de '+paginas;
+  ['pageInfo','pageInfoTop'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=infoPag; });
+  ['prevBtn','prevBtnTop'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=pagina<=1; });
+  ['nextBtn','nextBtnTop'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=pagina>=paginas; });
 }
 function cambiarPagina(d){ pagina+=d; render(); window.scrollTo({top:0,behavior:'smooth'}); }
 
@@ -644,7 +654,7 @@ async function guardar(){
   } catch(e){ modalMsg('err','Error de conexión: '+e.message); }
   finally { btn.disabled=false; btn.textContent='Guardar'; }
 }
-function actualizarFilaLocal(codHito,p){ const h=HITOS.find(x=>x.codHito===codHito); if(!h) return; h.estado=p.estado.toUpperCase(); h.avance=String(p.avance); h.fechaCump=p.fechaCumplimiento||h.fechaCump; h.situacional=p.situacional; h.corte=hoyCorteTexto(); render(); }
+function actualizarFilaLocal(codHito,p){ const h=HITOS.find(x=>x.codHito===codHito); if(!h) return; h.estado=p.estado.toUpperCase(); h.avance=String(p.avance)+'%'; h.fechaCump=p.fechaCumplimiento||h.fechaCump; h.situacional=p.situacional; h.corte=hoyCorteTexto(); render(); }
 function hoyCorteTexto(){ const d=new Date(); return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear(); }
 function modalMsg(tipo,texto){ const msg=document.getElementById('mMsg'); msg.className='modal-msg '+tipo; msg.textContent=texto; msg.style.display='block'; }
 
