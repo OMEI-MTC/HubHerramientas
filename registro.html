@@ -41,16 +41,10 @@
   textarea { min-height:70px; resize:vertical; }
   .filtros { background:#f7f9fc; border:1px solid #e3e9f2; border-radius:10px; padding:16px 18px 16px; margin-bottom:22px; }
   .filtros-tit { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--blue); font-weight:700; margin:0 0 12px; }
-  .filtros-row4 { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
-  .filtros-row4 .field { margin-bottom:12px; }
-  .filtros-f1 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
-  .filtros-f2 { display:grid; grid-template-columns:1fr 2fr; gap:14px; }
-  .filtros-f3 { display:grid; grid-template-columns:2fr 1.4fr; gap:14px; align-items:start; }
-  .filtros-f4 { display:grid; grid-template-columns:2fr 1fr; gap:14px; align-items:start; }
-  body.modo-ogame .filtros-f4 { grid-template-columns:2fr 1fr 1fr; }
-  .filtros-f1 .field, .filtros-f2 .field, .filtros-f3 .field, .filtros-f4 .field { margin-bottom:14px; }
-  .filtros-nombre { margin-bottom:14px; }
-  .filtros-row3 { display:grid; grid-template-columns:2fr 1.4fr; gap:14px; margin-bottom:14px; align-items:start; }
+  /* Cuadrícula de filtros: 3 columnas iguales, y fila de 2+1 columnas */
+  .filtros-3col { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:14px; align-items:start; }
+  .filtros-2y1 { display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:14px; align-items:start; }
+  .filtros-3col .field, .filtros-2y1 .field { margin-bottom:0; }
   .chips { display:flex; gap:8px; flex-wrap:wrap; }
   .chip { padding:8px 14px; border:1px solid var(--border); background:#fff; border-radius:20px; cursor:pointer; font-size:12.5px; font-weight:600; color:var(--text-2); user-select:none; transition:all .12s; }
   .chip:hover { border-color:#b9c5d6; }
@@ -89,10 +83,11 @@
   .pass-wrap input { padding-right:40px; }
   .pass-eye { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-3); padding:4px; display:flex; }
   .pass-eye:hover { color:var(--text-2); }
-  .pager { display:flex; justify-content:center; align-items:center; gap:10px; margin-top:14px; }
-  .pager button { padding:6px 12px; border:1px solid var(--border); background:#fff; border-radius:7px; cursor:pointer; font-family:inherit; font-size:13px; }
-  .pager button:disabled { opacity:.4; cursor:default; }
-  .pager span { font-size:13px; color:var(--text-2); }
+  .pager { display:flex; justify-content:center; align-items:center; gap:16px; margin-top:20px; padding:14px; background:#f4f6f9; border:1px solid var(--border); border-radius:10px; }
+  .pager button { padding:9px 18px; border:1px solid var(--blue); background:#fff; color:var(--blue); border-radius:8px; cursor:pointer; font-family:inherit; font-size:14px; font-weight:700; transition:background .12s; }
+  .pager button:hover:not(:disabled) { background:var(--blue-lt); }
+  .pager button:disabled { opacity:.35; cursor:default; border-color:var(--border); color:var(--text-3); }
+  .pager span { font-size:15px; color:var(--text); font-weight:700; }
   .loading { text-align:center; color:var(--text-2); padding:40px; }
   .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:50; align-items:center; justify-content:center; padding:20px; }
   .overlay.show { display:flex; }
@@ -193,20 +188,20 @@
 
       <div class="filtros">
         <p class="filtros-tit">Filtrar hitos</p>
-        <!-- Fila 1 -->
-        <div class="filtros-f1">
+        <!-- Fila 1: tres columnas iguales -->
+        <div class="filtros-3col">
           <div class="field"><label>Viceministerio</label><select id="fVicem"><option value="">Todos</option></select></div>
           <div class="field"><label>Unidad ejecutora</label><select id="fUei"><option value="">Todas</option></select></div>
           <div class="field"><label>Tipo de infraestructura</label><select id="fTipo"><option value="">Todos</option></select></div>
         </div>
-        <!-- Fila 2 -->
-        <div class="filtros-f2" style="grid-template-columns:1fr 1fr 2fr;">
+        <!-- Fila 2: tres columnas iguales -->
+        <div class="filtros-3col">
           <div class="field"><label>Departamento</label><select id="fDepto"><option value="">Todos</option></select></div>
           <div class="field"><label>CUI</label><input type="text" id="fCui" list="cuiList" placeholder="Escribe o elige…" autocomplete="off"><datalist id="cuiList"></datalist></div>
           <div class="field"><label>Nombre de la Intervención</label><input type="text" id="fNombre" list="nombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="nombreList"></datalist></div>
         </div>
-        <!-- Fila 3 -->
-        <div class="filtros-f3">
+        <!-- Fila 3: Hito (2 columnas) + Estado de cumplimiento (1 columna) -->
+        <div class="filtros-2y1">
           <div class="field"><label>Hito</label><input type="text" id="fHito" list="hitoList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="hitoList"></datalist></div>
           <div class="field"><label>Estado de cumplimiento del hito</label>
             <div class="chips">
@@ -216,8 +211,8 @@
             </div>
           </div>
         </div>
-        <!-- Fila 4 -->
-        <div class="filtros-f4">
+        <!-- Fila 4: Estado de actualización + Validado OGAME (este último solo en modo OGAME) -->
+        <div class="filtros-2y1">
           <div class="field"><label>Estado de actualización</label>
             <div class="chips">
               <span class="chip sem-chip" id="chipPend" data-sem="pendiente" onclick="toggleSem(this)" style="border-color:#C8102E;"><span class="sem sem-rojo" style="margin-right:6px;"></span>Pendientes</span>
@@ -225,7 +220,6 @@
               <span class="chip sem-chip" id="chipNA" data-sem="cumplido" onclick="toggleSem(this)"><span class="sem sem-gris" style="margin-right:6px;"></span>No aplica</span>
             </div>
           </div>
-          <div class="field"><label>Responsable OGAME</label><select id="fResp"><option value="">Todos</option></select></div>
           <div class="field solo-ogame"><label>Validado OGAME</label><select id="fVal"><option value="">Todos</option><option value="si">Validados</option><option value="no">Sin validar</option></select></div>
         </div>
         <div class="filtros-foot"><button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar filtros</button></div>
@@ -427,7 +421,7 @@ function iniciar() {
   poblarVicem();
   poblarSelect('fDepto', DEPTOS_LISTA, 'Todos');
   recalcularOpciones();
-  ['fVicem','fUei','fTipo','fResp','fVal','fDepto'].forEach(id=>document.getElementById(id).addEventListener('change',onFiltroChange));
+  ['fVicem','fUei','fTipo','fVal','fDepto'].forEach(id=>document.getElementById(id).addEventListener('change',onFiltroChange));
   document.getElementById('fCui').addEventListener('input',onFiltroChange);
   document.getElementById('fNombre').addEventListener('input',onFiltroChange);
   document.getElementById('fHito').addEventListener('input',onFiltroChange);
@@ -438,12 +432,12 @@ function clasifDe(h){ return CLASIF[h.codHito]||{}; }
 function opcionesDe(getter, base){ const set=new Set(); base.forEach(h=>{const v=getter(h); if(v) set.add(v);}); return [...set].sort((a,b)=>a.localeCompare(b,'es',{numeric:true})); }
 function poblarSelect(id, valores, etiqueta){ const sel=document.getElementById(id); const actual=sel.value; sel.innerHTML='<option value="">'+etiqueta+'</option>'; valores.forEach(v=>{const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o);}); if(valores.includes(actual)) sel.value=actual; }
 function poblarDatalist(id, valores){ const dl=document.getElementById(id); dl.innerHTML=''; valores.forEach(v=>{const o=document.createElement('option'); o.value=v; dl.appendChild(o);}); }
-function poblarVicem(){ poblarSelect('fVicem', opcionesDe(h=>clasifDe(h).vicem, HITOS), 'Todos'); poblarSelect('fResp', opcionesDe(h=>clasifDe(h).responsable, HITOS), 'Todos'); }
+function poblarVicem(){ poblarSelect('fVicem', opcionesDe(h=>clasifDe(h).vicem, HITOS), 'Todos'); }
 function onFiltroChange(){ recalcularOpciones(); aplicarFiltros(); }
 function baseFiltrada(excluir){
   const v=document.getElementById('fVicem').value, u=document.getElementById('fUei').value, t=document.getElementById('fTipo').value;
   const cu=document.getElementById('fCui').value.trim(), no=document.getElementById('fNombre').value.trim(), hi=document.getElementById('fHito').value.trim();
-  const re=document.getElementById('fResp').value, va=document.getElementById('fVal').value;
+  const va=document.getElementById('fVal').value;
   const de=document.getElementById('fDepto').value;
   return HITOS.filter(h=>{ const cl=clasifDe(h);
     const valOk=/^s[ií]$/i.test(h.validadoOgame);
@@ -452,7 +446,6 @@ function baseFiltrada(excluir){
            (excluir==='hito'||!hi||h.hito===hi) &&
            (excluir==='estado'||estadosActivos.size===0||estadosActivos.has(h.estado)) &&
            (excluir==='sem'||semActivos.size===0||semActivos.has(semaforoDe(h))) &&
-           (excluir==='resp'||!re||cl.responsable===re) &&
            (excluir==='val'||!va||(va==='si'?valOk:!valOk)) &&
            (excluir==='depto'||!de||deptosDe(h.codHito).includes(de)); });
 }
@@ -466,14 +459,13 @@ function toggleChip(el){
 function recalcularOpciones(){
   poblarSelect('fUei',  opcionesDe(h=>clasifDe(h).uei, baseFiltrada('uei')), 'Todas');
   poblarSelect('fTipo', opcionesDe(h=>clasifDe(h).tipoInfra, baseFiltrada('tipo')), 'Todos');
-  poblarSelect('fResp', opcionesDe(h=>clasifDe(h).responsable, baseFiltrada('resp')), 'Todos');
   poblarSelect('fDepto', deptosDisponibles(baseFiltrada('depto')), 'Todos');
   poblarDatalist('cuiList', opcionesDe(h=>clasifDe(h).cui, baseFiltrada('cui')));
   poblarDatalist('nombreList', opcionesDe(h=>h.nombre, baseFiltrada('nombre')));
   poblarDatalist('hitoList', opcionesDe(h=>h.hito, baseFiltrada('hito')));
 }
 function aplicarFiltros(){ filtrados = baseFiltrada(null); pagina=1; render(); }
-function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito','fResp','fVal','fDepto'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); semActivos.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); poblarSelect('fDepto', DEPTOS_LISTA, 'Todos'); recalcularOpciones(); aplicarFiltros(); }
+function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito','fVal','fDepto'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); semActivos.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); poblarSelect('fDepto', DEPTOS_LISTA, 'Todos'); recalcularOpciones(); aplicarFiltros(); }
 
 function badgeEstado(est){ if(est==='EN PROCESO') return '<span class="badge b-proc">EN PROCESO</span>'; if(est==='REPROGRAMADO') return '<span class="badge b-repr">REPROGRAMADO</span>'; if(est==='CUMPLIDO') return '<span class="badge b-cump">CUMPLIDO</span>'; return '<span class="badge">'+escapeHtml(est)+'</span>'; }
 function fmtAvance(raw){ const n=avancePct(raw); if(isNaN(n)) return '—'; const r=Math.round(n*10)/10; return (Number.isInteger(r)?r:r.toFixed(1))+'%'; }
@@ -545,7 +537,11 @@ function render(){
     });
     tbody.innerHTML=html;
   }
-  document.getElementById('contadorHitos').textContent=tot+(tot===1?' hito':' hitos')+(tot>PAGE_SIZE?' · página '+pagina+' de '+paginas:'');
+  // Desglose por estado de cumplimiento sobre lo filtrado
+  let nCump=0, nRepr=0, nProc=0;
+  filtrados.forEach(h=>{ if(h.estado==='CUMPLIDO') nCump++; else if(h.estado==='REPROGRAMADO') nRepr++; else if(h.estado==='EN PROCESO') nProc++; });
+  const partes = [ tot+(tot===1?' hito':' hitos'), nCump+' cumplidos', nRepr+' reprogramados', nProc+' en proceso' ];
+  document.getElementById('contadorHitos').innerHTML = partes.join(' &nbsp;·&nbsp; ') + (tot>PAGE_SIZE?' &nbsp;·&nbsp; <strong>página '+pagina+' de '+paginas+'</strong>':'');
   document.getElementById('pageInfo').textContent='Página '+pagina+' de '+paginas;
   document.getElementById('prevBtn').disabled=pagina<=1;
   document.getElementById('nextBtn').disabled=pagina>=paginas;
