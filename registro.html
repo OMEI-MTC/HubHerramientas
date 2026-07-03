@@ -52,7 +52,10 @@
   .filtros-foot { display:flex; justify-content:flex-end; }
   .btn-limpiar { padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:8px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:600; color:var(--text-2); }
   .btn-limpiar:hover { background:#eef0f3; }
-  .tabla-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:13px; color:var(--text-2); }
+  .tabla-meta { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; margin-bottom:10px; font-size:13px; color:var(--text-2); }
+  .tabla-meta .meta-izq { justify-self:start; }
+  .tabla-meta .meta-centro { justify-self:center; margin-top:0; }
+  .tabla-meta .meta-der { justify-self:end; }
   .btn-export { display:flex; align-items:center; gap:7px; padding:8px 16px; border:none; background:var(--green); color:#fff; border-radius:8px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:700; }
   .btn-export:hover { background:var(--green-dk); }
   .tabla-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
@@ -228,17 +231,18 @@
       </div>
 
       <div class="tabla-meta">
-        <span id="contadorHitos">—</span>
-        <button class="btn-export" onclick="exportarXLSX()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Descargar Excel
-        </button>
-      </div>
-
-      <div class="pager pager-top">
-        <button id="prevBtnTop" onclick="cambiarPagina(-1)">‹ Anterior</button>
-        <span id="pageInfoTop">—</span>
-        <button id="nextBtnTop" onclick="cambiarPagina(1)">Siguiente ›</button>
+        <span id="contadorHitos" class="meta-izq">—</span>
+        <div class="pager pager-top meta-centro">
+          <button id="prevBtnTop" onclick="cambiarPagina(-1)">‹ Anterior</button>
+          <span id="pageInfoTop">—</span>
+          <button id="nextBtnTop" onclick="cambiarPagina(1)">Siguiente ›</button>
+        </div>
+        <div class="meta-der">
+          <button class="btn-export" onclick="exportarXLSX()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar Excel
+          </button>
+        </div>
       </div>
 
       <div class="tabla-wrap">
