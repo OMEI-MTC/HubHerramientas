@@ -659,7 +659,16 @@ async function guardar(){
   finally { btn.disabled=false; btn.textContent='Guardar'; }
 }
 function actualizarFilaLocal(codHito,p){ const h=HITOS.find(x=>x.codHito===codHito); if(!h) return; h.estado=p.estado.toUpperCase(); h.avance=String(p.avance)+'%'; h.fechaCump=p.fechaCumplimiento||h.fechaCump; h.situacional=p.situacional; h.corte=hoyCorteTexto(); render(); }
-function hoyCorteTexto(){ const d=new Date(); return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear(); }
+function hoyCorteTexto(){
+  // Miércoles que cierra la semana de reporte (jueves→miércoles), igual que el backend.
+  const hoy=new Date();
+  const f=new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  const diff=(f.getDay()-4+7)%7;   // 4 = jueves (inicio de semana)
+  f.setDate(f.getDate()-diff+6);    // inicio + 6 = miércoles de cierre
+  const dd=String(f.getDate()).padStart(2,'0');
+  const mm=String(f.getMonth()+1).padStart(2,'0');
+  return dd+'/'+mm+'/'+f.getFullYear();
+}
 function modalMsg(tipo,texto){ const msg=document.getElementById('mMsg'); msg.className='modal-msg '+tipo; msg.textContent=texto; msg.style.display='block'; }
 
 // Validación OGAME: marca el registro de la semana como validado.
