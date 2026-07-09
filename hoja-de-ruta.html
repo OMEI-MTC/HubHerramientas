@@ -154,7 +154,7 @@
   .tabla-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; }
   thead th {
-    background: var(--navy);
+    background: #3B5998;
     color: var(--blanco);
     font-size: 12px; font-weight: 600;
     padding: 10px 14px;
@@ -510,18 +510,25 @@
       <table id="tabla-principal">
         <thead>
           <tr>
-            <th style="width:28%">Intervención estratégica</th>
-            <th style="width:22%">Estado situacional</th>
-            <th style="width:8%; text-align:right">Costo (MM S/)</th>
-            <th style="width:7%; text-align:right">PIM (MM S/)</th>
-            <th style="width:8%; text-align:right">Devengado (MM S/)</th>
-            <th style="width:18%">Hitos clave</th>
-            <th style="width:9%; text-align:center">Fecha cumpl.</th>
-            <th style="width:8%; text-align:center">Actualizado</th>
+            <th rowspan="2" style="width:24%; vertical-align:middle">Intervención estratégica</th>
+            <th rowspan="2" style="width:20%; vertical-align:middle">Estado situacional</th>
+            <th style="width:7%; text-align:right">Costo</th>
+            <th style="width:6%; text-align:right">PIM</th>
+            <th style="width:7%; text-align:right">Devengado</th>
+            <th style="width:7%; text-align:center">Avance</th>
+            <th rowspan="2" style="width:17%; vertical-align:middle">Hitos clave</th>
+            <th rowspan="2" style="width:7%; text-align:center; vertical-align:middle">Fecha de<br>Cumplimiento</th>
+            <th rowspan="2" style="width:5%; text-align:center; vertical-align:middle">Actualizado</th>
+          </tr>
+          <tr>
+            <th style="text-align:right; font-weight:500; font-size:10px; padding-top:2px; padding-bottom:6px">(MM S/)</th>
+            <th style="text-align:right; font-weight:500; font-size:10px; padding-top:2px; padding-bottom:6px">(MM S/)</th>
+            <th style="text-align:right; font-weight:500; font-size:10px; padding-top:2px; padding-bottom:6px">(MM S/)</th>
+            <th style="text-align:center; font-weight:500; font-size:10px; padding-top:2px; padding-bottom:6px">Financiero</th>
           </tr>
         </thead>
         <tbody id="tabla-body">
-          <tr><td colspan="8"><div class="estado-carga"><div class="spinner"></div>Cargando datos...</div></td></tr>
+          <tr><td colspan="9"><div class="estado-carga"><div class="spinner"></div>Cargando datos...</div></td></tr>
         </tbody>
       </table>
     </div>
@@ -718,7 +725,7 @@ async function cargarDatos() {
 
   } catch (e) {
     document.getElementById('tabla-body').innerHTML =
-      `<tr><td colspan="7"><div class="estado-carga">⚠️ Error al cargar datos. Verifica tu conexión e intenta recargar la página.</div></td></tr>`;
+      `<tr><td colspan="9"><div class="estado-carga">⚠️ Error al cargar datos. Verifica tu conexión e intenta recargar la página.</div></td></tr>`;
     document.getElementById('resumen-info').textContent = 'Error al cargar';
     console.error(e);
   }
@@ -787,7 +794,7 @@ function renderTabla() {
   const tbody = document.getElementById('tabla-body');
 
   if (pagina.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="estado-carga">No hay intervenciones que coincidan con los filtros aplicados.</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9"><div class="estado-carga">No hay intervenciones que coincidan con los filtros aplicados.</div></td></tr>`;
     return;
   }
 
@@ -804,14 +811,25 @@ function renderTabla() {
       ? `<div class="estado-situacional">${esc(est.estado)}</div>`
       : `<div class="estado-vacio">Sin registro</div>`;
 
+    // Avance financiero: Devengado / PIM
+    let avanceHtml = '—';
+    if (tieneRegistro && est.pim && est.devengado) {
+      const pim = parseFloat(est.pim);
+      const dev = parseFloat(est.devengado);
+      if (pim > 0) {
+        const pct = (dev / pim * 100).toFixed(1);
+        avanceHtml = `<span style="font-weight:700;color:var(--navy)">${pct}%</span>`;
+      }
+    }
+
     const nHitos = interv.hitos.length;
 
-    // columna Actualizado: fecha + ícono lápiz
+    // columna Actualizado (rowspan igual a nHitos): fecha + ícono lápiz
     const colActualizado = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
         ${tieneRegistro
           ? `<span style="font-size:11px;color:var(--verde);font-weight:600">${esc(est.fechaReg)}</span>`
-          : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro</span>`}
+          : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin reg.</span>`}
         <button class="btn-lapiz" onclick="abrirModal('${esc(interv.codigo)}')" title="Registrar actualización">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -820,36 +838,56 @@ function renderTabla() {
         </button>
       </div>`;
 
+    // La fila "fantasma" de intervención solo lleva las 6 celdas con rowspan
+    // Las celdas de Hitos / Fecha / Actualizado van en las filas de hito
     html += `
     <tr class="fila-intervencion">
-      <td rowspan="${nHitos + 1}" style="vertical-align:top; border-right:1px solid #C7D2FE">
+      <td rowspan="${nHitos}" style="vertical-align:top; border-right:1px solid #C7D2FE">
         <div style="font-weight:600;color:var(--navy);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
         <div style="margin-top:5px;font-size:11px;color:var(--gris-texto)">${esc(interv.organo)}</div>
         ${interv.dep ? `<div style="font-size:11px;color:var(--gris-texto)">${esc(interv.dep)}</div>` : ''}
         ${badgePrior ? `<div style="margin-top:6px">${badgePrior}</div>` : ''}
       </td>
-      <td rowspan="${nHitos + 1}" style="vertical-align:top; border-right:1px solid var(--gris-borde)">
+      <td rowspan="${nHitos}" style="vertical-align:top; border-right:1px solid var(--gris-borde)">
         ${estadoHtml}
       </td>
-      <td rowspan="${nHitos + 1}" style="text-align:right;vertical-align:top">${tieneRegistro && est.costo ? esc(est.costo) : '—'}</td>
-      <td rowspan="${nHitos + 1}" style="text-align:right;vertical-align:top">${tieneRegistro && est.pim ? esc(est.pim) : '—'}</td>
-      <td rowspan="${nHitos + 1}" style="text-align:right;vertical-align:top">${tieneRegistro && est.devengado ? esc(est.devengado) : '—'}</td>
-      <td rowspan="${nHitos + 1}" style="text-align:center;vertical-align:middle">${colActualizado}</td>
-    </tr>`;
+      <td rowspan="${nHitos}" style="text-align:right;vertical-align:top;padding-top:10px">${tieneRegistro && est.costo ? esc(est.costo) : '—'}</td>
+      <td rowspan="${nHitos}" style="text-align:right;vertical-align:top;padding-top:10px">${tieneRegistro && est.pim ? esc(est.pim) : '—'}</td>
+      <td rowspan="${nHitos}" style="text-align:right;vertical-align:top;padding-top:10px">${tieneRegistro && est.devengado ? esc(est.devengado) : '—'}</td>
+      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding-top:10px">${avanceHtml}</td>
+      <td rowspan="${nHitos}" style="text-align:center;vertical-align:middle">${colActualizado}</td>`;
 
-    interv.hitos.forEach(h => {
+    // Primera fila de hito: incluye las primeras 2 celdas de hito (Hito + Fecha)
+    // La celda Actualizado ya fue puesta arriba con rowspan
+    interv.hitos.forEach((h, idx) => {
       const eh = estadoHitos[h.codhito] || {};
       const fechaChip = eh.fechaCumplimiento
         ? `<span class="fecha-chip con-fecha">${esc(eh.fechaCumplimiento)}</span>`
         : `<span class="fecha-chip sin-fecha">Sin fecha</span>`;
-      html += `
-    <tr class="fila-hito">
-      <td class="col-hito">
+
+      if (idx === 0) {
+        // primera fila de hito: cierra el <tr> de intervención y abre uno nuevo
+        html += `
+      <td style="padding:8px 14px;border-bottom:1px solid var(--gris-borde);font-size:13px;vertical-align:middle">
         <div class="hito-nombre">${esc(h.nombre)}</div>
       </td>
-      <td class="col-fecha" style="text-align:center">${fechaChip}</td>
+      <td style="text-align:center;padding:8px 14px;border-bottom:1px solid var(--gris-borde);vertical-align:middle">${fechaChip}</td>
     </tr>`;
+      } else {
+        html += `
+    <tr class="fila-hito">
+      <td style="padding:8px 14px;border-bottom:1px solid var(--gris-borde);font-size:13px;vertical-align:middle">
+        <div class="hito-nombre">${esc(h.nombre)}</div>
+      </td>
+      <td style="text-align:center;padding:8px 14px;border-bottom:1px solid var(--gris-borde);vertical-align:middle">${fechaChip}</td>
+    </tr>`;
+      }
     });
+
+    // Si no hay hitos, cerrar la fila
+    if (nHitos === 0) {
+      html += `<td>—</td><td>—</td></tr>`;
+    }
   });
 
   tbody.innerHTML = html;
