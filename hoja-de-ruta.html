@@ -151,24 +151,31 @@
   .btn-excel:hover { background: #15803D; }
 
   /* ── TABLA ── */
-  .tabla-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; }
+  .tabla-wrap { overflow-x: auto; padding: 0 16px 16px; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--gris-borde); }
   thead th {
-    background: #3B5998;
-    color: var(--blanco);
-    font-size: 12px; font-weight: 600;
-    padding: 10px 14px;
+    background: #F1F3F5;
+    color: #374151;
+    font-size: 11px; font-weight: 700;
+    padding: 10px 12px;
     text-align: left;
+    border-bottom: 2px solid var(--gris-borde);
     white-space: nowrap;
-    position: sticky; top: 0; z-index: 1;
+    letter-spacing: .02em;
   }
-  thead th:first-child { border-radius: 0; }
+  thead tr:nth-child(2) th {
+    background: #F1F3F5;
+    color: #6B7280;
+    font-size: 10px; font-weight: 500;
+    padding-top: 2px; padding-bottom: 7px;
+    border-bottom: 2px solid var(--gris-borde);
+  }
 
   /* fila intervención */
   .fila-intervencion td {
-    background: #EEF2FF;
-    padding: 10px 14px;
-    border-bottom: 1px solid #C7D2FE;
+    background: #F8FAFF;
+    padding: 10px 12px;
+    border-bottom: 1px solid #E5E7EB;
     vertical-align: top;
   }
   .fila-intervencion .interv-nombre {
@@ -235,17 +242,13 @@
 
   /* fila hito */
   .fila-hito td {
-    padding: 8px 14px 8px 28px;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--gris-borde);
     font-size: 13px; vertical-align: middle;
+    background: #FFFFFF;
   }
   .fila-hito:last-child td { border-bottom: none; }
-  .hito-codigo {
-    font-size: 10px; font-weight: 700; color: var(--gris-texto);
-    background: var(--gris-bg); border-radius: 3px;
-    padding: 1px 5px; white-space: nowrap;
-  }
-  .hito-nombre { color: var(--texto); line-height: 1.35; }
+  .hito-nombre { color: var(--texto); line-height: 1.35; font-size: 12px; }
 
   /* fecha cumplimiento */
   .fecha-chip {
@@ -510,21 +513,21 @@
       <table id="tabla-principal">
         <thead>
           <tr>
-            <th rowspan="2" style="width:24%; vertical-align:middle">Intervención estratégica</th>
-            <th rowspan="2" style="width:20%; vertical-align:middle">Estado situacional</th>
+            <th rowspan="2" style="width:5%; text-align:center; vertical-align:middle">Actualizado</th>
+            <th rowspan="2" style="width:22%; vertical-align:middle">Intervención estratégica</th>
+            <th rowspan="2" style="width:18%; vertical-align:middle">Estado situacional</th>
             <th style="width:7%; text-align:right">Costo</th>
             <th style="width:6%; text-align:right">PIM</th>
             <th style="width:7%; text-align:right">Devengado</th>
             <th style="width:7%; text-align:center">Avance</th>
-            <th rowspan="2" style="width:17%; vertical-align:middle">Hitos clave</th>
-            <th rowspan="2" style="width:7%; text-align:center; vertical-align:middle">Fecha de<br>Cumplimiento</th>
-            <th rowspan="2" style="width:5%; text-align:center; vertical-align:middle">Actualizado</th>
+            <th rowspan="2" style="width:20%; vertical-align:middle">Hitos clave</th>
+            <th rowspan="2" style="width:8%; text-align:center; vertical-align:middle">Fecha de<br>Cumplimiento</th>
           </tr>
           <tr>
-            <th style="text-align:right; font-weight:500; font-size:10px; padding-top:2px; padding-bottom:6px">(MM S/)</th>
-            <th style="text-align:right; font-weight:500; font-size:10px; padding-top:2px; padding-bottom:6px">(MM S/)</th>
-            <th style="text-align:right; font-weight:500; font-size:10px; padding-top:2px; padding-bottom:6px">(MM S/)</th>
-            <th style="text-align:center; font-weight:500; font-size:10px; padding-top:2px; padding-bottom:6px">Financiero</th>
+            <th style="text-align:right; font-weight:500; font-size:10px; padding-top:2px; padding-bottom:7px">(MM S/)</th>
+            <th style="text-align:right; font-weight:500; font-size:10px; padding-top:2px; padding-bottom:7px">(MM S/)</th>
+            <th style="text-align:right; font-weight:500; font-size:10px; padding-top:2px; padding-bottom:7px">(MM S/)</th>
+            <th style="text-align:center; font-weight:500; font-size:10px; padding-top:2px; padding-bottom:7px">Financiero</th>
           </tr>
         </thead>
         <tbody id="tabla-body">
@@ -824,67 +827,68 @@ function renderTabla() {
 
     const nHitos = interv.hitos.length;
 
-    // columna Actualizado (rowspan igual a nHitos): fecha + ícono lápiz
+    // columna Actualizado (primera, con rowspan): fecha + ícono lápiz
     const colActualizado = `
-      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
         ${tieneRegistro
-          ? `<span style="font-size:11px;color:var(--verde);font-weight:600">${esc(est.fechaReg)}</span>`
-          : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin reg.</span>`}
+          ? `<span style="font-size:10px;color:var(--verde);font-weight:700">${esc(est.fechaReg)}</span>`
+          : `<span style="font-size:10px;color:var(--gris-texto);font-style:italic">—</span>`}
         <button class="btn-lapiz" onclick="abrirModal('${esc(interv.codigo)}')" title="Registrar actualización">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         </button>
       </div>`;
 
-    // La fila "fantasma" de intervención solo lleva las 6 celdas con rowspan
-    // Las celdas de Hitos / Fecha / Actualizado van en las filas de hito
+    // Primera fila: Actualizado + Intervención + Estado + financieros (todos con rowspan=nHitos)
+    // + primera fila de hito (Hito + Fecha) inline
     html += `
     <tr class="fila-intervencion">
-      <td rowspan="${nHitos}" style="vertical-align:top; border-right:1px solid #C7D2FE">
-        <div style="font-weight:600;color:var(--navy);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
-        <div style="margin-top:5px;font-size:11px;color:var(--gris-texto)">${esc(interv.organo)}</div>
+      <td rowspan="${nHitos}" style="vertical-align:middle;text-align:center;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">
+        ${colActualizado}
+      </td>
+      <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
+        <div style="font-weight:700;color:var(--azul);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
+        <div style="margin-top:4px;font-size:11px;color:var(--gris-texto)">${esc(interv.organo)}</div>
         ${interv.dep ? `<div style="font-size:11px;color:var(--gris-texto)">${esc(interv.dep)}</div>` : ''}
         ${badgePrior ? `<div style="margin-top:6px">${badgePrior}</div>` : ''}
       </td>
-      <td rowspan="${nHitos}" style="vertical-align:top; border-right:1px solid var(--gris-borde)">
+      <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
         ${estadoHtml}
       </td>
-      <td rowspan="${nHitos}" style="text-align:right;vertical-align:top;padding-top:10px">${tieneRegistro && est.costo ? esc(est.costo) : '—'}</td>
-      <td rowspan="${nHitos}" style="text-align:right;vertical-align:top;padding-top:10px">${tieneRegistro && est.pim ? esc(est.pim) : '—'}</td>
-      <td rowspan="${nHitos}" style="text-align:right;vertical-align:top;padding-top:10px">${tieneRegistro && est.devengado ? esc(est.devengado) : '—'}</td>
-      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding-top:10px">${avanceHtml}</td>
-      <td rowspan="${nHitos}" style="text-align:center;vertical-align:middle">${colActualizado}</td>`;
+      <td rowspan="${nHitos}" style="text-align:right;vertical-align:top;padding:10px 12px;border-bottom:2px solid #CBD5E1">${tieneRegistro && est.costo ? esc(est.costo) : '—'}</td>
+      <td rowspan="${nHitos}" style="text-align:right;vertical-align:top;padding:10px 12px;border-bottom:2px solid #CBD5E1">${tieneRegistro && est.pim ? esc(est.pim) : '—'}</td>
+      <td rowspan="${nHitos}" style="text-align:right;vertical-align:top;padding:10px 12px;border-bottom:2px solid #CBD5E1">${tieneRegistro && est.devengado ? esc(est.devengado) : '—'}</td>
+      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:10px 12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${avanceHtml}</td>`;
 
-    // Primera fila de hito: incluye las primeras 2 celdas de hito (Hito + Fecha)
-    // La celda Actualizado ya fue puesta arriba con rowspan
     interv.hitos.forEach((h, idx) => {
       const eh = estadoHitos[h.codhito] || {};
       const fechaChip = eh.fechaCumplimiento
         ? `<span class="fecha-chip con-fecha">${esc(eh.fechaCumplimiento)}</span>`
         : `<span class="fecha-chip sin-fecha">Sin fecha</span>`;
 
+      const esUltimo = idx === interv.hitos.length - 1;
+      const bordeInferior = esUltimo ? 'border-bottom:2px solid #CBD5E1' : 'border-bottom:1px solid #E5E7EB';
+
       if (idx === 0) {
-        // primera fila de hito: cierra el <tr> de intervención y abre uno nuevo
         html += `
-      <td style="padding:8px 14px;border-bottom:1px solid var(--gris-borde);font-size:13px;vertical-align:middle">
+      <td style="padding:8px 12px;${bordeInferior};vertical-align:middle;font-size:12px">
         <div class="hito-nombre">${esc(h.nombre)}</div>
       </td>
-      <td style="text-align:center;padding:8px 14px;border-bottom:1px solid var(--gris-borde);vertical-align:middle">${fechaChip}</td>
+      <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${fechaChip}</td>
     </tr>`;
       } else {
         html += `
     <tr class="fila-hito">
-      <td style="padding:8px 14px;border-bottom:1px solid var(--gris-borde);font-size:13px;vertical-align:middle">
+      <td style="padding:8px 12px;${bordeInferior};vertical-align:middle;font-size:12px">
         <div class="hito-nombre">${esc(h.nombre)}</div>
       </td>
-      <td style="text-align:center;padding:8px 14px;border-bottom:1px solid var(--gris-borde);vertical-align:middle">${fechaChip}</td>
+      <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${fechaChip}</td>
     </tr>`;
       }
     });
 
-    // Si no hay hitos, cerrar la fila
     if (nHitos === 0) {
       html += `<td>—</td><td>—</td></tr>`;
     }
