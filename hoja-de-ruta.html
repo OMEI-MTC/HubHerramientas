@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoja de Ruta Estratégica · OGAME</title>
+<style>
+  /* ── TOKENS ── */
+  :root {
+    --rojo:      #C0392B;
+    --rojo-dark: #922B21;
+    --navy:      #1A2744;
+    --navy-mid:  #253359;
+    --blanco:    #FFFFFF;
+    --gris-bg:   #F5F6F8;
+    --gris-borde:#DDE1E9;
+    --gris-texto:#6B7280;
+    --verde:     #16A34A;
+    --verde-bg:  #DCFCE7;
+    --amarillo:  #D97706;
+    --amarillo-bg:#FEF3C7;
+    --azul:      #1D4ED8;
+    --azul-bg:   #DBEAFE;
+    --texto:     #111827;
+    --radio:     6px;
+    --sombra:    0 1px 4px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--gris-bg);
+    color: var(--texto);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--rojo);
+    color: var(--blanco);
+    padding: 0 28px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 56px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  }
+  .header-logo {
+    width: 36px; height: 36px;
+    background: var(--blanco);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; color: var(--rojo); font-size: 11px; letter-spacing: -.3px;
+  }
+  .header-title { font-size: 15px; font-weight: 600; }
+  .header-sub   { font-size: 12px; opacity: .85; }
+
+  /* ── MAIN ── */
+  .main { max-width: 1280px; margin: 0 auto; padding: 28px 24px; }
+
+  /* ── PAGE TITLE ── */
+  .page-header { margin-bottom: 20px; }
+  .page-header h1 { font-size: 22px; font-weight: 700; color: var(--navy); }
+  .page-header p  { font-size: 13px; color: var(--gris-texto); margin-top: 2px; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--blanco);
+    border-radius: 10px;
+    box-shadow: var(--sombra);
+    border: 1px solid var(--gris-borde);
+  }
+
+  /* ── FILTROS ── */
+  .filtros {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--gris-borde);
+  }
+  .filtros-label {
+    font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    color: var(--azul); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .filtros-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+  .filtro-group label {
+    display: block; font-size: 11px; font-weight: 600;
+    color: var(--gris-texto); margin-bottom: 4px;
+  }
+  .filtro-group select, .filtro-group input {
+    width: 100%; padding: 6px 10px;
+    border: 1px solid var(--gris-borde);
+    border-radius: var(--radio);
+    font-size: 13px; color: var(--texto);
+    background: var(--blanco);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 26px;
+    cursor: pointer;
+  }
+  .filtro-group select:focus, .filtro-group input:focus {
+    outline: none; border-color: var(--azul);
+  }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--gris-borde);
+    gap: 12px; flex-wrap: wrap;
+  }
+  .toolbar-info { font-size: 13px; color: var(--gris-texto); }
+  .toolbar-info strong { color: var(--texto); }
+  .toolbar-right { display: flex; align-items: center; gap: 10px; }
+
+  /* ── PAGINACIÓN ── */
+  .paginacion { display: flex; align-items: center; gap: 6px; }
+  .pag-btn {
+    padding: 5px 12px; border-radius: var(--radio);
+    border: 1px solid var(--gris-borde);
+    background: var(--blanco); cursor: pointer;
+    font-size: 12px; color: var(--texto);
+    transition: background .15s;
+  }
+  .pag-btn:hover:not(:disabled) { background: var(--gris-bg); }
+  .pag-btn:disabled { opacity: .4; cursor: default; }
+  .pag-info { font-size: 12px; color: var(--gris-texto); padding: 0 4px; }
+
+  /* ── BTN EXCEL ── */
+  .btn-excel {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: var(--radio);
+    background: var(--verde); color: var(--blanco);
+    border: none; cursor: pointer; font-size: 13px; font-weight: 600;
+    transition: background .15s;
+  }
+  .btn-excel:hover { background: #15803D; }
+
+  /* ── TABLA ── */
+  .tabla-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: var(--navy);
+    color: var(--blanco);
+    font-size: 12px; font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+    white-space: nowrap;
+    position: sticky; top: 0; z-index: 1;
+  }
+  thead th:first-child { border-radius: 0; }
+
+  /* fila intervención */
+  .fila-intervencion td {
+    background: #EEF2FF;
+    padding: 10px 14px;
+    border-bottom: 1px solid #C7D2FE;
+    vertical-align: top;
+  }
+  .fila-intervencion .interv-nombre {
+    font-weight: 600; color: var(--navy); font-size: 13px;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .interv-codigo {
+    display: inline-block;
+    background: var(--navy); color: var(--blanco);
+    font-size: 10px; font-weight: 700;
+    padding: 2px 6px; border-radius: 3px;
+    white-space: nowrap; margin-top: 1px; flex-shrink: 0;
+  }
+  .interv-meta {
+    font-size: 11px; color: var(--gris-texto); margin-top: 4px;
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .interv-meta span { display: flex; align-items: center; gap: 3px; }
+
+  /* badge priorizado */
+  .badge-priorizado {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: #FEF3C7; color: #92400E;
+    border: 1px solid #FCD34D;
+    font-size: 10px; font-weight: 700;
+    padding: 1px 7px; border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge-sin-datos {
+    display: inline-flex; align-items: center;
+    background: #F3F4F6; color: var(--gris-texto);
+    font-size: 10px; padding: 1px 7px; border-radius: 20px;
+  }
+
+  /* financiero chips */
+  .fin-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .fin-chip {
+    background: var(--blanco);
+    border: 1px solid var(--gris-borde);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+  .fin-chip .fc-label { color: var(--gris-texto); }
+  .fin-chip .fc-val   { font-weight: 700; color: var(--navy); margin-left: 4px; }
+
+  /* estado situacional */
+  .estado-situacional {
+    font-size: 12px; color: var(--texto);
+    margin-top: 6px; line-height: 1.4;
+    max-width: 480px;
+  }
+  .estado-vacio { color: var(--gris-texto); font-style: italic; font-size: 12px; margin-top: 4px; }
+
+  /* btn editar intervención */
+  .btn-editar-interv {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: var(--radio);
+    background: var(--navy); color: var(--blanco);
+    border: none; cursor: pointer; font-size: 12px; font-weight: 600;
+    transition: background .15s; white-space: nowrap;
+  }
+  .btn-editar-interv:hover { background: var(--navy-mid); }
+
+  /* fila hito */
+  .fila-hito td {
+    padding: 8px 14px 8px 28px;
+    border-bottom: 1px solid var(--gris-borde);
+    font-size: 13px; vertical-align: middle;
+  }
+  .fila-hito:last-child td { border-bottom: none; }
+  .hito-codigo {
+    font-size: 10px; font-weight: 700; color: var(--gris-texto);
+    background: var(--gris-bg); border-radius: 3px;
+    padding: 1px 5px; white-space: nowrap;
+  }
+  .hito-nombre { color: var(--texto); line-height: 1.35; }
+
+  /* fecha cumplimiento */
+  .fecha-chip {
+    display: inline-block;
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .fecha-chip.con-fecha { background: var(--azul-bg); color: var(--azul); }
+  .fecha-chip.sin-fecha { background: var(--gris-bg); color: var(--gris-texto); }
+
+  /* actualizado */
+  .actualizado-chip {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .actualizado-chip.si { background: var(--verde-bg); color: var(--verde); }
+  .actualizado-chip.no { background: #FEE2E2; color: #991B1B; }
+
+  /* ── ESTADO CARGA ── */
+  .estado-carga {
+    padding: 48px; text-align: center;
+    color: var(--gris-texto); font-size: 14px;
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--gris-borde);
+    border-top-color: var(--rojo);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 100;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.activo { display: flex; }
+
+  .modal {
+    background: var(--blanco);
+    border-radius: 12px;
+    width: 100%; max-width: 720px;
+    max-height: 90vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  }
+  .modal-header {
+    background: var(--navy);
+    color: var(--blanco);
+    padding: 18px 24px;
+    border-radius: 12px 12px 0 0;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  }
+  .modal-header h2 { font-size: 15px; font-weight: 700; line-height: 1.3; }
+  .modal-header p  { font-size: 12px; opacity: .75; margin-top: 3px; }
+  .modal-close {
+    background: none; border: none; color: var(--blanco);
+    cursor: pointer; font-size: 20px; line-height: 1;
+    opacity: .7; padding: 2px; flex-shrink: 0;
+  }
+  .modal-close:hover { opacity: 1; }
+
+  .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* secciones modal */
+  .modal-seccion-titulo {
+    font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--azul);
+    margin-bottom: 14px; padding-bottom: 6px;
+    border-bottom: 2px solid var(--azul-bg);
+  }
+  .modal-seccion { margin-bottom: 24px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid.triple { grid-template-columns: 1fr 1fr 1fr; }
+  .form-full { grid-column: 1 / -1; }
+
+  .form-group label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--gris-texto); margin-bottom: 5px;
+  }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 8px 12px;
+    border: 1px solid var(--gris-borde); border-radius: var(--radio);
+    font-size: 13px; color: var(--texto); font-family: inherit;
+    transition: border-color .15s;
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    outline: none; border-color: var(--azul);
+    box-shadow: 0 0 0 3px rgba(29,78,216,.1);
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+
+  /* toggle priorizado */
+  .toggle-wrap {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: var(--gris-bg); border-radius: var(--radio);
+    border: 1px solid var(--gris-borde);
+  }
+  .toggle-wrap label { font-size: 13px; font-weight: 600; color: var(--texto); cursor: pointer; }
+  .toggle {
+    width: 36px; height: 20px; border-radius: 10px;
+    background: var(--gris-borde); position: relative;
+    cursor: pointer; border: none; flex-shrink: 0;
+    transition: background .2s;
+  }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--blanco); transition: left .2s;
+  }
+  .toggle.activo { background: var(--verde); }
+  .toggle.activo::after { left: 19px; }
+
+  /* tabla hitos en modal */
+  .hitos-tabla { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .hitos-tabla th {
+    background: var(--gris-bg); font-size: 11px; font-weight: 700;
+    color: var(--gris-texto); padding: 8px 12px; text-align: left;
+    border-bottom: 1px solid var(--gris-borde);
+  }
+  .hitos-tabla td {
+    padding: 8px 12px; border-bottom: 1px solid var(--gris-borde);
+    font-size: 12px; vertical-align: middle;
+  }
+  .hitos-tabla tr:last-child td { border-bottom: none; }
+  .hitos-tabla input[type="date"] {
+    padding: 5px 8px; font-size: 12px;
+    border: 1px solid var(--gris-borde); border-radius: 4px;
+    color: var(--texto);
+  }
+  .hitos-tabla input[type="date"]:focus {
+    outline: none; border-color: var(--azul);
+  }
+
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--gris-borde);
+    display: flex; justify-content: flex-end; gap: 10px;
+    border-radius: 0 0 12px 12px;
+  }
+  .btn-cancelar {
+    padding: 8px 18px; border-radius: var(--radio);
+    border: 1px solid var(--gris-borde); background: var(--blanco);
+    cursor: pointer; font-size: 13px; font-weight: 600;
+    color: var(--gris-texto); transition: background .15s;
+  }
+  .btn-cancelar:hover { background: var(--gris-bg); }
+  .btn-guardar {
+    padding: 8px 22px; border-radius: var(--radio);
+    border: none; background: var(--rojo); color: var(--blanco);
+    cursor: pointer; font-size: 13px; font-weight: 700;
+    transition: background .15s; display: flex; align-items: center; gap: 6px;
+  }
+  .btn-guardar:hover { background: var(--rojo-dark); }
+  .btn-guardar:disabled { opacity: .6; cursor: default; }
+
+  /* toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 200;
+    background: var(--navy); color: var(--blanco);
+    padding: 12px 20px; border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,.3);
+    transform: translateY(80px); opacity: 0;
+    transition: transform .3s, opacity .3s;
+    max-width: 340px;
+  }
+  .toast.visible { transform: translateY(0); opacity: 1; }
+  .toast.exito { border-left: 4px solid var(--verde); }
+  .toast.error { border-left: 4px solid var(--rojo); }
+
+  /* col widths */
+  .col-hito    { width: 38%; }
+  .col-fecha   { width: 15%; }
+  .col-upd     { width: 14%; text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo">MTC</div>
+  <div>
+    <div class="header-title">Hub de Herramientas · OGAME</div>
+    <div class="header-sub">Oficina General de Articulación, Monitoreo y Evaluación de Impacto</div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="page-header">
+    <h1>Hoja de Ruta Estratégica 2026–2027</h1>
+    <p>Transferencia de gestión · Registro de estado de intervenciones y hitos clave</p>
+  </div>
+
+  <div class="card">
+    <!-- FILTROS -->
+    <div class="filtros">
+      <div class="filtros-label">Filtros</div>
+      <div class="filtros-grid">
+        <div class="filtro-group">
+          <label>Órgano</label>
+          <select id="f-organo"><option value="">Todos</option></select>
+        </div>
+        <div class="filtro-group">
+          <label>Eje prioritario</label>
+          <select id="f-eje"><option value="">Todos</option></select>
+        </div>
+        <div class="filtro-group">
+          <label>Línea de interés</label>
+          <select id="f-linea"><option value="">Todos</option></select>
+        </div>
+        <div class="filtro-group">
+          <label>Priorizado</label>
+          <select id="f-priorizado">
+            <option value="">Todos</option>
+            <option value="si">Sí</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div class="filtro-group">
+          <label>Actualizado</label>
+          <select id="f-actualizado">
+            <option value="">Todos</option>
+            <option value="si">Con registro</option>
+            <option value="no">Sin registro</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="toolbar-info" id="resumen-info">Cargando...</div>
+      <div class="toolbar-right">
+        <div class="paginacion">
+          <button class="pag-btn" id="btn-anterior" onclick="cambiarPagina(-1)" disabled>‹ Anterior</button>
+          <span class="pag-info" id="pag-info">Página 1</span>
+          <button class="pag-btn" id="btn-siguiente" onclick="cambiarPagina(1)">Siguiente ›</button>
+        </div>
+        <button class="btn-excel" onclick="exportarExcel()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="tabla-wrap">
+      <table id="tabla-principal">
+        <thead>
+          <tr>
+            <th style="width:32%">Intervención estratégica</th>
+            <th style="width:22%">Estado situacional</th>
+            <th style="width:10%">Costo (MM S/)</th>
+            <th style="width:9%">PIM (MM S/)</th>
+            <th style="width:10%">Devengado (MM S/)</th>
+            <th style="width:10%" class="col-hito">Hitos clave</th>
+            <th style="width:7%; text-align:center">Fecha cumpl.</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body">
+          <tr><td colspan="7"><div class="estado-carga"><div class="spinner"></div>Cargando datos...</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL DE REGISTRO -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modal-titulo">Registrar actualización</h2>
+        <p id="modal-subtitulo"></p>
+      </div>
+      <button class="modal-close" onclick="cerrarModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- SECCIÓN INTERVENCIÓN -->
+      <div class="modal-seccion">
+        <div class="modal-seccion-titulo">Estado de la intervención</div>
+        <div class="form-grid" style="margin-bottom:14px">
+          <div class="form-group form-full">
+            <label>Estado situacional</label>
+            <textarea id="m-estado" rows="3" placeholder="Describe el estado actual de la intervención…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Costo de inversión (MM S/)</label>
+            <input type="number" id="m-costo" placeholder="0.00" step="0.01" min="0">
+          </div>
+          <div class="form-group">
+            <label>PIM (MM S/)</label>
+            <input type="number" id="m-pim" placeholder="0.00" step="0.01" min="0">
+          </div>
+          <div class="form-group">
+            <label>Devengado (MM S/)</label>
+            <input type="number" id="m-devengado" placeholder="0.00" step="0.01" min="0">
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end">
+            <div class="toggle-wrap" style="width:100%">
+              <button class="toggle" id="toggle-priorizado" onclick="togglePriorizado()"></button>
+              <label for="toggle-priorizado" onclick="togglePriorizado()" style="cursor:pointer">Intervención priorizada</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN HITOS -->
+      <div class="modal-seccion">
+        <div class="modal-seccion-titulo">Hitos clave</div>
+        <table class="hitos-tabla">
+          <thead>
+            <tr>
+              <th style="width:55%">Hito</th>
+              <th style="width:25%">Fecha de cumplimiento</th>
+              <th style="width:20%">Última fecha registrada</th>
+            </tr>
+          </thead>
+          <tbody id="modal-hitos-body"></tbody>
+        </table>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-guardar" id="btn-guardar" onclick="guardarRegistro()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Guardar registro
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script>
+// ── CONFIGURACIÓN ──────────────────────────────────────────────────────────────
+const BACKEND_URL = 'TU_WEBAPP_URL_AQUI'; // reemplazar con URL del Apps Script
+
+const TSV_MAESTRO      = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=819717629&single=true&output=tsv';
+const TSV_ESTADO_INTERV= 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=1274731330&single=true&output=tsv';
+const TSV_ESTADO_HITOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=1161068484&single=true&output=tsv';
+
+const POR_PAGINA = 8; // intervenciones por página
+
+// ── ESTADO GLOBAL ──────────────────────────────────────────────────────────────
+let maestro      = []; // filas crudas del TSV maestro
+let intervenciones = []; // objetos agrupados { codigo, nombre, organo, eje, linea, hitos[] }
+let estadoInterv = {}; // { codigo → { estadoSituacional, costo, pim, devengado, priorizado, fechaReg } }
+let estadoHitos  = {}; // { codhito → { fechaCumplimiento, fechaReg } }
+let filtradas    = []; // intervenciones después de filtros
+let paginaActual = 1;
+let intervModal  = null; // intervención abierta en modal
+let priorizadoModal = false;
+
+// ── FETCH TSV ──────────────────────────────────────────────────────────────────
+async function fetchTSV(url) {
+  const proxies = [url,
+    'https://corsproxy.io/?' + encodeURIComponent(url),
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(url)];
+  for (const p of proxies) {
+    try {
+      const r = await fetch(p);
+      if (!r.ok) continue;
+      const txt = await r.text();
+      if (txt.trim()) return txt;
+    } catch {}
+  }
+  throw new Error('No se pudo cargar: ' + url);
+}
+
+function parseTSV(txt) {
+  const lineas = txt.trim().split('\n');
+  const headers = lineas[0].split('\t').map(h => h.trim());
+  return lineas.slice(1).map(l => {
+    const celdas = l.split('\t');
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (celdas[i] || '').trim());
+    return obj;
+  });
+}
+
+// ── CARGA INICIAL ──────────────────────────────────────────────────────────────
+async function cargarDatos() {
+  try {
+    const [tsvMaestro, tsvInterv, tsvHitos] = await Promise.all([
+      fetchTSV(TSV_MAESTRO),
+      fetchTSV(TSV_ESTADO_INTERV),
+      fetchTSV(TSV_ESTADO_HITOS)
+    ]);
+
+    // procesar maestro (plano: una fila por hito)
+    const filasMaestro = parseTSV(tsvMaestro);
+    // cols: Código, Intervención Estratégica, Relevancia sectorial, Órgano,
+    //       Ejes prioritarios de la gestión, Línea de interés, Dep., CODHITOS, Hito(s) clave(s)
+
+    const mapa = {};
+    filasMaestro.forEach(f => {
+      const cod = f['Código'];
+      if (!cod) return;
+      if (!mapa[cod]) {
+        mapa[cod] = {
+          codigo:  cod,
+          nombre:  f['Intervención Estratégica'],
+          organo:  f['Órgano'],
+          eje:     f['Ejes prioritarios  de la gestión'] || f['Ejes prioritarios de la gestión'] || '',
+          linea:   f['Línea de interés'],
+          dep:     f['Dep.'],
+          hitos:   []
+        };
+      }
+      if (f['CODHITOS']) {
+        mapa[cod].hitos.push({
+          codhito: f['CODHITOS'],
+          nombre:  f['Hito(s) clave(s)']
+        });
+      }
+    });
+    intervenciones = Object.values(mapa);
+
+    // procesar estado actual intervenciones
+    // cols: Fecha de registro, Código, Intervención Estratégica, Estado situacional,
+    //       Costo (MM S/), PIM (MM S/), Devengado (MM S/), Priorizado
+    estadoInterv = {};
+    parseTSV(tsvInterv).forEach(f => {
+      const cod = f['Código'];
+      if (!cod) return;
+      estadoInterv[cod] = {
+        fechaReg:   f['Fecha de registro'],
+        estado:     f['Estado situacional'],
+        costo:      f['Costo (MM S/)'],
+        pim:        f['PIM (MM S/)'],
+        devengado:  f['Devengado (MM S/)'],
+        priorizado: (f['Priorizado'] || '').toLowerCase() === 'sí' || (f['Priorizado'] || '').toLowerCase() === 'si'
+      };
+    });
+
+    // procesar estado actual hitos
+    // cols: Fecha de registro, Código, Intervención Estratégica, CODHITOS, Hito(s) clave(s), Fecha de Cumplimiento
+    estadoHitos = {};
+    parseTSV(tsvHitos).forEach(f => {
+      const cod = f['CODHITOS'];
+      if (!cod) return;
+      estadoHitos[cod] = {
+        fechaReg:      f['Fecha de registro'],
+        fechaCumplimiento: f['Fecha de Cumplimiento']
+      };
+    });
+
+    poblarFiltros();
+    aplicarFiltros();
+
+  } catch (e) {
+    document.getElementById('tabla-body').innerHTML =
+      `<tr><td colspan="7"><div class="estado-carga">⚠️ Error al cargar datos. Verifica tu conexión e intenta recargar la página.</div></td></tr>`;
+    document.getElementById('resumen-info').textContent = 'Error al cargar';
+    console.error(e);
+  }
+}
+
+// ── FILTROS ────────────────────────────────────────────────────────────────────
+function poblarFiltros() {
+  const unicos = (campo) => [...new Set(intervenciones.map(i => i[campo]).filter(Boolean))].sort();
+
+  const llenar = (id, vals) => {
+    const sel = document.getElementById(id);
+    vals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+    sel.addEventListener('change', aplicarFiltros);
+  };
+
+  llenar('f-organo', unicos('organo'));
+  llenar('f-eje',    unicos('eje'));
+  llenar('f-linea',  unicos('linea'));
+  document.getElementById('f-priorizado').addEventListener('change', aplicarFiltros);
+  document.getElementById('f-actualizado').addEventListener('change', aplicarFiltros);
+}
+
+function aplicarFiltros() {
+  const vOrgano     = document.getElementById('f-organo').value;
+  const vEje        = document.getElementById('f-eje').value;
+  const vLinea      = document.getElementById('f-linea').value;
+  const vPriorizado = document.getElementById('f-priorizado').value;
+  const vActualizado= document.getElementById('f-actualizado').value;
+
+  filtradas = intervenciones.filter(i => {
+    if (vOrgano && i.organo !== vOrgano) return false;
+    if (vEje    && i.eje   !== vEje)    return false;
+    if (vLinea  && i.linea !== vLinea)  return false;
+    if (vPriorizado) {
+      const esPrior = estadoInterv[i.codigo]?.priorizado;
+      if (vPriorizado === 'si' && !esPrior) return false;
+      if (vPriorizado === 'no' && esPrior)  return false;
+    }
+    if (vActualizado) {
+      const tieneReg = !!estadoInterv[i.codigo]?.fechaReg;
+      if (vActualizado === 'si' && !tieneReg) return false;
+      if (vActualizado === 'no' && tieneReg)  return false;
+    }
+    return true;
+  });
+
+  paginaActual = 1;
+  renderTabla();
+}
+
+// ── RENDER TABLA ───────────────────────────────────────────────────────────────
+function renderTabla() {
+  const totalInterv = filtradas.length;
+  const totalHitos  = filtradas.reduce((s, i) => s + i.hitos.length, 0);
+  const totalPags   = Math.max(1, Math.ceil(totalInterv / POR_PAGINA));
+
+  document.getElementById('resumen-info').innerHTML =
+    `<strong>${totalInterv}</strong> intervenciones &mdash; <strong>${totalHitos}</strong> hitos`;
+  document.getElementById('pag-info').textContent = `Página ${paginaActual} de ${totalPags}`;
+  document.getElementById('btn-anterior').disabled = paginaActual <= 1;
+  document.getElementById('btn-siguiente').disabled = paginaActual >= totalPags;
+
+  const inicio = (paginaActual - 1) * POR_PAGINA;
+  const pagina = filtradas.slice(inicio, inicio + POR_PAGINA);
+
+  const tbody = document.getElementById('tabla-body');
+
+  if (pagina.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="estado-carga">No hay intervenciones que coincidan con los filtros aplicados.</div></td></tr>`;
+    return;
+  }
+
+  let html = '';
+  pagina.forEach(interv => {
+    const est = estadoInterv[interv.codigo] || {};
+    const priorizado = est.priorizado;
+    const tieneRegistro = !!est.fechaReg;
+
+    // badges
+    const badgePrior = priorizado
+      ? `<span class="badge-priorizado">★ Priorizado</span>`
+      : '';
+
+    // financiero
+    const finHtml = tieneRegistro ? `
+      <div class="fin-chips">
+        <div class="fin-chip"><span class="fc-label">Costo</span><span class="fc-val">${fmt(est.costo)}</span></div>
+        <div class="fin-chip"><span class="fc-label">PIM</span><span class="fc-val">${fmt(est.pim)}</span></div>
+        <div class="fin-chip"><span class="fc-label">Devengado</span><span class="fc-val">${fmt(est.devengado)}</span></div>
+      </div>` : '';
+
+    const estadoHtml = est.estado
+      ? `<div class="estado-situacional">${esc(est.estado)}</div>`
+      : `<div class="estado-vacio">Sin registro</div>`;
+
+    const actBadge = tieneRegistro
+      ? `<span class="actualizado-chip si">✓ Registrado</span>`
+      : `<span class="actualizado-chip no">Pendiente</span>`;
+
+    // fila intervención — se extiende verticalmente con rowspan=N+1
+    const nHitos = interv.hitos.length;
+    html += `
+    <tr class="fila-intervencion">
+      <td rowspan="${nHitos + 1}" style="vertical-align:top; border-right:1px solid #C7D2FE">
+        <div class="interv-nombre">
+          <span class="interv-codigo">${esc(interv.codigo)}</span>
+          <span>${esc(interv.nombre)}</span>
+        </div>
+        <div class="interv-meta">
+          <span>🏛 ${esc(interv.organo)}</span>
+          ${interv.dep ? `<span>📍 ${esc(interv.dep)}</span>` : ''}
+        </div>
+        <div style="margin-top:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+          ${badgePrior}
+          ${actBadge}
+          ${est.fechaReg ? `<span style="font-size:11px; color:var(--gris-texto)">Actualizado ${esc(est.fechaReg)}</span>` : ''}
+        </div>
+        <div style="margin-top:10px">
+          <button class="btn-editar-interv" onclick="abrirModal('${esc(interv.codigo)}')">
+            ✏ Registrar actualización
+          </button>
+        </div>
+      </td>
+      <td rowspan="${nHitos + 1}" style="vertical-align:top; border-right:1px solid var(--gris-borde)">
+        ${estadoHtml}
+        ${finHtml}
+      </td>
+      <td rowspan="${nHitos + 1}" style="text-align:right; vertical-align:top">${tieneRegistro && est.costo ? esc(est.costo) : '—'}</td>
+      <td rowspan="${nHitos + 1}" style="text-align:right; vertical-align:top">${tieneRegistro && est.pim ? esc(est.pim) : '—'}</td>
+      <td rowspan="${nHitos + 1}" style="text-align:right; vertical-align:top">${tieneRegistro && est.devengado ? esc(est.devengado) : '—'}</td>
+    </tr>`;
+
+    // filas hitos
+    interv.hitos.forEach(h => {
+      const eh = estadoHitos[h.codhito] || {};
+      const fechaChip = eh.fechaCumplimiento
+        ? `<span class="fecha-chip con-fecha">${esc(eh.fechaCumplimiento)}</span>`
+        : `<span class="fecha-chip sin-fecha">Sin fecha</span>`;
+      html += `
+    <tr class="fila-hito">
+      <td class="col-hito">
+        <div class="hito-codigo">${esc(h.codhito)}</div>
+        <div class="hito-nombre" style="margin-top:3px">${esc(h.nombre)}</div>
+      </td>
+      <td class="col-fecha" style="text-align:center">${fechaChip}</td>
+    </tr>`;
+    });
+  });
+
+  tbody.innerHTML = html;
+}
+
+function fmt(v) {
+  if (!v && v !== 0) return '—';
+  const n = parseFloat(v);
+  return isNaN(n) ? v : n.toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function cambiarPagina(delta) {
+  const total = Math.ceil(filtradas.length / POR_PAGINA);
+  paginaActual = Math.max(1, Math.min(total, paginaActual + delta));
+  renderTabla();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── MODAL ──────────────────────────────────────────────────────────────────────
+function abrirModal(codigo) {
+  intervModal = intervenciones.find(i => i.codigo === codigo);
+  if (!intervModal) return;
+
+  const est = estadoInterv[codigo] || {};
+  priorizadoModal = est.priorizado || false;
+
+  document.getElementById('modal-titulo').textContent = intervModal.nombre.length > 70
+    ? intervModal.nombre.substring(0, 70) + '…'
+    : intervModal.nombre;
+  document.getElementById('modal-subtitulo').textContent = `${intervModal.codigo} · ${intervModal.organo}`;
+
+  document.getElementById('m-estado').value   = est.estado   || '';
+  document.getElementById('m-costo').value    = est.costo    || '';
+  document.getElementById('m-pim').value      = est.pim      || '';
+  document.getElementById('m-devengado').value= est.devengado|| '';
+
+  const tog = document.getElementById('toggle-priorizado');
+  tog.classList.toggle('activo', priorizadoModal);
+
+  // hitos
+  const tbody = document.getElementById('modal-hitos-body');
+  tbody.innerHTML = intervModal.hitos.map(h => {
+    const eh = estadoHitos[h.codhito] || {};
+    const fechaActual = eh.fechaCumplimiento
+      ? isoFecha(eh.fechaCumplimiento)
+      : '';
+    const ultimaLabel = eh.fechaCumplimiento
+      ? `<span style="font-size:11px;color:var(--gris-texto)">${esc(eh.fechaCumplimiento)}</span>`
+      : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro previo</span>`;
+    return `
+    <tr>
+      <td>
+        <div style="font-size:10px;font-weight:700;color:var(--gris-texto);margin-bottom:2px">${esc(h.codhito)}</div>
+        <div style="font-size:12px;color:var(--texto)">${esc(h.nombre)}</div>
+      </td>
+      <td><input type="date" data-codhito="${esc(h.codhito)}" value="${fechaActual}" style="width:100%"></td>
+      <td>${ultimaLabel}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('modal-overlay').classList.add('activo');
+  document.getElementById('m-estado').focus();
+}
+
+function cerrarModal() {
+  document.getElementById('modal-overlay').classList.remove('activo');
+  intervModal = null;
+}
+
+function togglePriorizado() {
+  priorizadoModal = !priorizadoModal;
+  document.getElementById('toggle-priorizado').classList.toggle('activo', priorizadoModal);
+}
+
+// fecha ISO desde formato dd/mm/yyyy o yyyy-mm-dd
+function isoFecha(f) {
+  if (!f) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(f)) return f;
+  const p = f.split('/');
+  if (p.length === 3) return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+  return '';
+}
+
+function fechaDisplay(iso) {
+  if (!iso) return '';
+  const p = iso.split('-');
+  if (p.length !== 3) return iso;
+  return `${p[2]}/${p[1]}/${p[0]}`;
+}
+
+// ── GUARDAR ────────────────────────────────────────────────────────────────────
+async function guardarRegistro() {
+  if (!intervModal) return;
+
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Guardando…';
+
+  // recoger datos del modal
+  const hitos = [];
+  document.querySelectorAll('#modal-hitos-body input[type="date"]').forEach(inp => {
+    hitos.push({ codhito: inp.dataset.codhito, fechaCumplimiento: inp.value ? fechaDisplay(inp.value) : '' });
+  });
+
+  const payload = {
+    accion:    'registrarHojaRuta',
+    timestamp: new Date().toISOString(),
+    codigo:    intervModal.codigo,
+    nombre:    intervModal.nombre,
+    organo:    intervModal.organo,
+    estado:    document.getElementById('m-estado').value.trim(),
+    costo:     document.getElementById('m-costo').value.trim(),
+    pim:       document.getElementById('m-pim').value.trim(),
+    devengado: document.getElementById('m-devengado').value.trim(),
+    priorizado:priorizadoModal ? 'Sí' : 'No',
+    hitos:     hitos
+  };
+
+  try {
+    const resp = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+
+    if (data.ok) {
+      // actualizar estado local sin recargar
+      estadoInterv[intervModal.codigo] = {
+        fechaReg:   fechaDisplay(new Date().toISOString().split('T')[0]),
+        estado:     payload.estado,
+        costo:      payload.costo,
+        pim:        payload.pim,
+        devengado:  payload.devengado,
+        priorizado: priorizadoModal
+      };
+      hitos.forEach(h => {
+        estadoHitos[h.codhito] = {
+          fechaReg:          estadoInterv[intervModal.codigo].fechaReg,
+          fechaCumplimiento: h.fechaCumplimiento
+        };
+      });
+
+      cerrarModal();
+      renderTabla();
+      mostrarToast('Registro guardado correctamente', 'exito');
+    } else {
+      mostrarToast('Error al guardar: ' + (data.mensaje || 'intenta de nuevo'), 'error');
+    }
+  } catch (e) {
+    // si el backend no está configurado aún, simular para pruebas
+    if (BACKEND_URL === 'TU_WEBAPP_URL_AQUI') {
+      estadoInterv[intervModal.codigo] = {
+        fechaReg:   fechaDisplay(new Date().toISOString().split('T')[0]),
+        estado:     payload.estado,
+        costo:      payload.costo,
+        pim:        payload.pim,
+        devengado:  payload.devengado,
+        priorizado: priorizadoModal
+      };
+      hitos.forEach(h => {
+        estadoHitos[h.codhito] = {
+          fechaReg:          estadoInterv[intervModal.codigo].fechaReg,
+          fechaCumplimiento: h.fechaCumplimiento
+        };
+      });
+      cerrarModal();
+      renderTabla();
+      mostrarToast('(Modo prueba) Registro simulado — conecta el backend para guardar en Sheets', 'exito');
+    } else {
+      mostrarToast('No se pudo conectar con el servidor. Intenta de nuevo.', 'error');
+      console.error(e);
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar registro';
+  }
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────────────
+function mostrarToast(msg, tipo = 'exito') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${tipo} visible`;
+  setTimeout(() => { t.classList.remove('visible'); }, 3500);
+}
+
+// ── EXPORT EXCEL ───────────────────────────────────────────────────────────────
+function exportarExcel() {
+  const rows = [['Código', 'Órgano', 'Intervención Estratégica', 'Estado situacional',
+                 'Costo (MM S/)', 'PIM (MM S/)', 'Devengado (MM S/)', 'Priorizado',
+                 'Fecha de registro', 'CODHITOS', 'Hito(s) clave(s)', 'Fecha de cumplimiento']];
+
+  filtradas.forEach(interv => {
+    const est = estadoInterv[interv.codigo] || {};
+    interv.hitos.forEach(h => {
+      const eh = estadoHitos[h.codhito] || {};
+      rows.push([
+        interv.codigo, interv.organo, interv.nombre,
+        est.estado || '', est.costo || '', est.pim || '', est.devengado || '',
+        est.priorizado ? 'Sí' : 'No', est.fechaReg || '',
+        h.codhito, h.nombre, eh.fechaCumplimiento || ''
+      ]);
+    });
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  // estilo encabezado
+  const rojo = { fgColor: { rgb: 'C0392B' } };
+  const blanco = { fgColor: { rgb: 'FFFFFF' } };
+  const navy = { fgColor: { rgb: '1A2744' } };
+
+  for (let c = 0; c < 12; c++) {
+    const ref = XLSX.utils.encode_cell({ r: 0, c });
+    if (!ws[ref]) continue;
+    ws[ref].s = {
+      fill: { patternType: 'solid', fgColor: { rgb: '1A2744' } },
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      alignment: { vertical: 'center', wrapText: true },
+      border: { bottom: { style: 'thin', color: { rgb: 'C0392B' } } }
+    };
+  }
+
+  ws['!cols'] = [8,10,40,35,10,10,12,10,14,12,40,16].map(w => ({ wch: w }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Hoja de Ruta');
+
+  const fecha = new Date().toLocaleDateString('es-PE').replace(/\//g,'-');
+  XLSX.writeFile(wb, `HojaDeRuta_OGAME_${fecha}.xlsx`);
+}
+
+// ── CERRAR MODAL CON ESC ───────────────────────────────────────────────────────
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) cerrarModal();
+});
+
+// ── INICIO ────────────────────────────────────────────────────────────────────
+cargarDatos();
+</script>
+</body>
+</html>
