@@ -188,11 +188,13 @@
 
   /* fila intervención */
   .fila-intervencion td {
-    background: #F8FAFF;
+    background: #FFFFFF;
     padding: 10px 12px;
     border-bottom: 1px solid #E5E7EB;
     vertical-align: top;
   }
+  /* columnas resaltadas: Última Actualización, Intervención, Hitos */
+  .col-resalte { background: #F8FAFF !important; }
   .fila-intervencion .interv-nombre {
     font-weight: 600; color: var(--navy); font-size: 13px;
     display: flex; align-items: flex-start; gap: 8px;
@@ -255,18 +257,20 @@
   }
   .btn-lapiz:hover { background: var(--azul); }
 
-  /* toggle solo lectura (columna Priorización) */
-  .toggle-ro {
+  /* toggle priorización (columna, interactivo) */
+  .toggle-prio {
     display: inline-block; width: 34px; height: 19px; border-radius: 10px;
     background: #cfd6e0; position: relative; vertical-align: middle;
+    border: none; cursor: pointer; padding: 0; transition: background .2s;
   }
-  .toggle-ro::after {
+  .toggle-prio::after {
     content: ''; position: absolute; top: 2.5px; left: 3px;
     width: 14px; height: 14px; border-radius: 50%;
     background: #fff; transition: left .2s;
   }
-  .toggle-ro.on { background: var(--verde); }
-  .toggle-ro.on::after { left: 17px; }
+  .toggle-prio.on { background: var(--verde); }
+  .toggle-prio.on::after { left: 17px; }
+  .toggle-prio:disabled { opacity: .5; cursor: wait; }
 
   /* fila hito */
   .fila-hito td {
@@ -570,7 +574,7 @@
             <th style="width:6%; text-align:right">PIM 2026</th>
             <th style="width:6%; text-align:right">Dev. 2026</th>
             <th rowspan="2" style="width:6%; text-align:center; vertical-align:middle">Avance<br>Financiero</th>
-            <th rowspan="2" style="width:16%; vertical-align:middle">Hitos clave</th>
+            <th rowspan="2" style="width:16%; vertical-align:middle">Hitos claves</th>
             <th rowspan="2" style="width:7%; text-align:center; vertical-align:middle">Fecha de<br>Cumplimiento</th>
           </tr>
           <tr>
@@ -620,12 +624,6 @@
           <div class="form-group">
             <label>Devengado (MM S/)</label>
             <input type="number" id="m-devengado" placeholder="0.00" step="0.01" min="0">
-          </div>
-          <div class="form-group" style="display:flex;align-items:flex-end">
-            <div class="toggle-wrap" style="width:100%">
-              <button class="toggle" id="toggle-priorizado" onclick="togglePriorizado()"></button>
-              <label for="toggle-priorizado" onclick="togglePriorizado()" style="cursor:pointer">Intervención priorizada</label>
-            </div>
           </div>
         </div>
       </div>
@@ -678,7 +676,6 @@ let estadoHitos  = {}; // { codhito → { fechaCumplimiento, fechaReg } }
 let filtradas    = []; // intervenciones después de filtros
 let paginaActual = 1;
 let intervModal  = null; // intervención abierta en modal
-let priorizadoModal = false;
 
 // ── FETCH TSV ──────────────────────────────────────────────────────────────────
 async function fetchTSV(url) {
@@ -924,8 +921,8 @@ function renderTabla() {
       ? `<span style="font-weight:700;color:var(--texto)">${esc(est.avance)}%</span>`
       : '—';
 
-    // Priorización (toggle visual de solo lectura)
-    const prioHtml = `<span class="toggle-ro ${est.priorizado ? 'on' : ''}" title="${est.priorizado ? 'Priorizada' : 'No priorizada'}"></span>`;
+    // Priorización (toggle interactivo, guardado independiente)
+    const prioHtml = `<button class="toggle-prio ${est.priorizado ? 'on' : ''}" onclick="togglePriorizacion('${esc(interv.codigo)}', this)" title="${est.priorizado ? 'Priorizada' : 'No priorizada'}"></button>`;
 
     const nHitos = interv.hitos.length;
 
@@ -945,10 +942,10 @@ function renderTabla() {
 
     html += `
     <tr class="fila-intervencion">
-      <td rowspan="${nHitos}" style="vertical-align:top;text-align:center;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding-top:12px">
+      <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;text-align:center;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding-top:12px">
         ${colActualizado}
       </td>
-      <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
+      <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
         <div style="font-weight:700;color:var(--azul);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
         <div style="margin-top:6px;font-size:11px;color:var(--gris-texto);display:flex;align-items:flex-start;gap:5px">🏛️ ${esc(interv.organo)}</div>
         ${interv.dep ? `<div style="margin-top:2px;font-size:11px;color:var(--gris-texto);display:flex;align-items:flex-start;gap:5px">📍 ${esc(interv.dep)}</div>` : ''}
@@ -975,7 +972,7 @@ function renderTabla() {
 
       if (idx === 0) {
         html += `
-      <td style="padding:8px 12px;${bordeInferior};vertical-align:middle;font-size:12px">
+      <td class="col-resalte" style="padding:8px 12px;${bordeInferior};vertical-align:middle;font-size:12px;border-left:1px solid #E5E7EB">
         <div class="hito-nombre">${esc(h.nombre)}</div>
       </td>
       <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${fechaChip}</td>
@@ -983,7 +980,7 @@ function renderTabla() {
       } else {
         html += `
     <tr class="fila-hito">
-      <td style="padding:8px 12px;${bordeInferior};vertical-align:middle;font-size:12px">
+      <td class="col-resalte" style="padding:8px 12px;${bordeInferior};vertical-align:middle;font-size:12px;border-left:1px solid #E5E7EB">
         <div class="hito-nombre">${esc(h.nombre)}</div>
       </td>
       <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${fechaChip}</td>
@@ -992,7 +989,7 @@ function renderTabla() {
     });
 
     if (nHitos === 0) {
-      html += `<td>—</td><td>—</td></tr>`;
+      html += `<td class="col-resalte">—</td><td>—</td></tr>`;
     }
   });
 
@@ -1022,7 +1019,6 @@ function abrirModal(codigo) {
   if (!intervModal) return;
 
   const est = estadoInterv[codigo] || {};
-  priorizadoModal = est.priorizado || false;
 
   document.getElementById('modal-titulo').textContent = intervModal.nombre;
   document.getElementById('modal-subtitulo').textContent = intervModal.organo;
@@ -1032,9 +1028,6 @@ function abrirModal(codigo) {
   document.getElementById('m-costo').value    = est.costo    || '';
   document.getElementById('m-pim').value      = est.pim      || '';
   document.getElementById('m-devengado').value= est.devengado|| '';
-
-  const tog = document.getElementById('toggle-priorizado');
-  tog.classList.toggle('activo', priorizadoModal);
 
   // hitos
   const tbody = document.getElementById('modal-hitos-body');
@@ -1065,9 +1058,49 @@ function cerrarModal() {
   intervModal = null;
 }
 
-function togglePriorizado() {
-  priorizadoModal = !priorizadoModal;
-  document.getElementById('toggle-priorizado').classList.toggle('activo', priorizadoModal);
+// Guardado independiente de priorización (solo Estado Actual, sin histórico ni fecha)
+async function togglePriorizacion(codigo, btn) {
+  const est = estadoInterv[codigo] || (estadoInterv[codigo] = {});
+  const nuevoValor = !est.priorizado;
+
+  // feedback visual inmediato + bloqueo mientras guarda
+  btn.disabled = true;
+  btn.classList.toggle('on', nuevoValor);
+
+  const payload = {
+    accion:     'actualizarPriorizacion',
+    codigo:     codigo,
+    priorizado: nuevoValor ? 'Sí' : 'No'
+  };
+
+  try {
+    const resp = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      est.priorizado = nuevoValor;
+      btn.title = nuevoValor ? 'Priorizada' : 'No priorizada';
+    } else {
+      // revertir si el backend rechaza
+      btn.classList.toggle('on', !nuevoValor);
+      mostrarToast('No se pudo actualizar la priorización', 'error');
+    }
+  } catch (e) {
+    if (BACKEND_URL === 'TU_WEBAPP_URL_AQUI') {
+      // modo prueba: aplicar localmente
+      est.priorizado = nuevoValor;
+      btn.title = nuevoValor ? 'Priorizada' : 'No priorizada';
+      mostrarToast('(Modo prueba) Priorización actualizada localmente', 'exito');
+    } else {
+      btn.classList.toggle('on', !nuevoValor);
+      mostrarToast('No se pudo conectar con el servidor', 'error');
+    }
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // fecha ISO desde formato dd/mm/yyyy o yyyy-mm-dd
@@ -1111,7 +1144,6 @@ async function guardarRegistro() {
     costo:     document.getElementById('m-costo').value.trim(),
     pim:       document.getElementById('m-pim').value.trim(),
     devengado: document.getElementById('m-devengado').value.trim(),
-    priorizado:priorizadoModal ? 'Sí' : 'No',
     hitos:     hitos
   };
 
@@ -1132,7 +1164,7 @@ async function guardarRegistro() {
         costo:      payload.costo,
         pim:        payload.pim,
         devengado:  payload.devengado,
-        priorizado: priorizadoModal
+        priorizado: estadoInterv[intervModal.codigo]?.priorizado || false
       };
       hitos.forEach(h => {
         estadoHitos[h.codhito] = {
@@ -1157,7 +1189,7 @@ async function guardarRegistro() {
         costo:      payload.costo,
         pim:        payload.pim,
         devengado:  payload.devengado,
-        priorizado: priorizadoModal
+        priorizado: estadoInterv[intervModal.codigo]?.priorizado || false
       };
       hitos.forEach(h => {
         estadoHitos[h.codhito] = {
