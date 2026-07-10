@@ -255,6 +255,19 @@
   }
   .btn-lapiz:hover { background: var(--azul); }
 
+  /* toggle solo lectura (columna Priorización) */
+  .toggle-ro {
+    display: inline-block; width: 34px; height: 19px; border-radius: 10px;
+    background: #cfd6e0; position: relative; vertical-align: middle;
+  }
+  .toggle-ro::after {
+    content: ''; position: absolute; top: 2.5px; left: 3px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #fff; transition: left .2s;
+  }
+  .toggle-ro.on { background: var(--verde); }
+  .toggle-ro.on::after { left: 17px; }
+
   /* fila hito */
   .fila-hito td {
     padding: 8px 12px;
@@ -508,7 +521,20 @@
             <input type="text" id="f-buscar" placeholder="Escribe para buscar…">
           </div>
         </div>
-        <div class="filtros-foot">
+        <div class="filtros-foot" style="justify-content:space-between;align-items:flex-end">
+          <div class="filtro-group" style="max-width:260px;width:100%">
+            <label style="color:var(--azul);font-weight:700;letter-spacing:.03em">ORDENAR POR</label>
+            <select id="f-orden" onchange="aplicarFiltros()">
+              <option value="">Orden original</option>
+              <option value="costo-desc">Costo (mayor a menor)</option>
+              <option value="costo-asc">Costo (menor a mayor)</option>
+              <option value="avance-desc">Avance físico (mayor a menor)</option>
+              <option value="avance-asc">Avance físico (menor a mayor)</option>
+              <option value="avfin-desc">Avance financiero (mayor a menor)</option>
+              <option value="avfin-asc">Avance financiero (menor a mayor)</option>
+              <option value="fecha-desc">Última actualización (más reciente)</option>
+            </select>
+          </div>
           <button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar filtros</button>
         </div>
       </div>
@@ -536,21 +562,23 @@
         <thead>
           <tr>
             <th rowspan="2" style="width:5%; text-align:center; vertical-align:middle">Última<br>Actualización</th>
-            <th rowspan="2" style="width:22%; vertical-align:middle">Intervención estratégica</th>
-            <th rowspan="2" style="width:18%; vertical-align:middle">Estado situacional</th>
-            <th style="width:7%; text-align:right">Costo de inv.</th>
-            <th style="width:6%; text-align:right">PIM</th>
-            <th style="width:7%; text-align:right">Devengado</th>
-            <th rowspan="2" style="width:7%; text-align:center; vertical-align:middle">Avance<br>Financiero</th>
-            <th rowspan="2" style="width:20%; vertical-align:middle">Hitos clave</th>
-            <th rowspan="2" style="width:8%; text-align:center; vertical-align:middle">Fecha de<br>Cumplimiento</th>
+            <th rowspan="2" style="width:20%; vertical-align:middle">Intervención estratégica</th>
+            <th rowspan="2" style="width:5%; text-align:center; vertical-align:middle">Priorización</th>
+            <th rowspan="2" style="width:16%; vertical-align:middle">Estado situacional</th>
+            <th rowspan="2" style="width:5%; text-align:center; vertical-align:middle">Avance</th>
+            <th style="width:6%; text-align:right">Costo Total</th>
+            <th style="width:6%; text-align:right">PIM 2026</th>
+            <th style="width:6%; text-align:right">Dev. 2026</th>
+            <th rowspan="2" style="width:6%; text-align:center; vertical-align:middle">Avance<br>Financiero</th>
+            <th rowspan="2" style="width:16%; vertical-align:middle">Hitos clave</th>
+            <th rowspan="2" style="width:7%; text-align:center; vertical-align:middle">Fecha de<br>Cumplimiento</th>
           </tr>
           <tr>
             <th colspan="3" style="text-align:center; font-weight:500; font-size:11px; padding-top:0; padding-bottom:9px">(Millones de Soles)</th>
           </tr>
         </thead>
         <tbody id="tabla-body">
-          <tr><td colspan="9"><div class="estado-carga"><div class="spinner"></div>Cargando datos...</div></td></tr>
+          <tr><td colspan="11"><div class="estado-carga"><div class="spinner"></div>Cargando datos...</div></td></tr>
         </tbody>
       </table>
     </div>
@@ -576,6 +604,10 @@
           <div class="form-group form-full">
             <label>Estado situacional</label>
             <textarea id="m-estado" rows="3" placeholder="Describe el estado actual de la intervención…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Avance físico (%)</label>
+            <input type="number" id="m-avance" placeholder="0" step="0.1" min="0" max="100">
           </div>
           <div class="form-group">
             <label>Costo de inversión (MM S/)</label>
@@ -697,6 +729,7 @@ async function cargarDatos() {
         mapa[cod] = {
           codigo:  cod,
           nombre:  f['Intervención Estratégica'],
+          relevancia: f['Relevancia sectorial'] || '',
           organo:  f['Órgano'],
           eje:     f['Ejes prioritarios  de la gestión'] || f['Ejes prioritarios de la gestión'] || '',
           linea:   f['Línea de interés'],
@@ -715,7 +748,7 @@ async function cargarDatos() {
 
     // procesar estado actual intervenciones
     // cols: Fecha de registro, Código, Intervención Estratégica, Estado situacional,
-    //       Costo (MM S/), PIM (MM S/), Devengado (MM S/), Priorizado
+    //       Costo (MM S/), PIM (MM S/), Devengado (MM S/), Avance Financiero, Avance, Priorizado
     estadoInterv = {};
     parseTSV(tsvInterv).forEach(f => {
       const cod = f['Código'];
@@ -726,6 +759,7 @@ async function cargarDatos() {
         costo:      f['Costo (MM S/)'],
         pim:        f['PIM (MM S/)'],
         devengado:  f['Devengado (MM S/)'],
+        avance:     f['Avance'] || '',
         priorizado: (f['Priorizado'] || '').toLowerCase() === 'sí' || (f['Priorizado'] || '').toLowerCase() === 'si'
       };
     });
@@ -747,7 +781,7 @@ async function cargarDatos() {
 
   } catch (e) {
     document.getElementById('tabla-body').innerHTML =
-      `<tr><td colspan="9"><div class="estado-carga">⚠️ Error al cargar datos. Verifica tu conexión e intenta recargar la página.</div></td></tr>`;
+      `<tr><td colspan="11"><div class="estado-carga">⚠️ Error al cargar datos. Verifica tu conexión e intenta recargar la página.</div></td></tr>`;
     document.getElementById('resumen-info').textContent = 'Error al cargar';
     console.error(e);
   }
@@ -797,12 +831,47 @@ function aplicarFiltros() {
     return true;
   });
 
+  // Ordenamiento
+  const vOrden = document.getElementById('f-orden').value;
+  if (vOrden) {
+    const num = (v) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+    const avFin = (cod) => {
+      const e = estadoInterv[cod] || {};
+      const pim = parseFloat(e.pim), dev = parseFloat(e.devengado);
+      return (pim > 0 && !isNaN(dev)) ? dev / pim : null;
+    };
+    const fechaComparable = (cod) => {
+      const f = estadoInterv[cod]?.fechaReg;
+      if (!f) return null;
+      const p = f.split('/');
+      return p.length === 3 ? new Date(`${p[2]}-${p[1]}-${p[0]}`).getTime() : null;
+    };
+    // ordena poniendo los null siempre al final
+    const cmp = (getA, dir) => (x, y) => {
+      const a = getA(x), b = getA(y);
+      if (a === null && b === null) return 0;
+      if (a === null) return 1;
+      if (b === null) return -1;
+      return dir === 'desc' ? b - a : a - b;
+    };
+    const mapas = {
+      'costo-desc': cmp(i => num(estadoInterv[i.codigo]?.costo), 'desc'),
+      'costo-asc':  cmp(i => num(estadoInterv[i.codigo]?.costo), 'asc'),
+      'avance-desc':cmp(i => num(estadoInterv[i.codigo]?.avance), 'desc'),
+      'avance-asc': cmp(i => num(estadoInterv[i.codigo]?.avance), 'asc'),
+      'avfin-desc': cmp(i => avFin(i.codigo), 'desc'),
+      'avfin-asc':  cmp(i => avFin(i.codigo), 'asc'),
+      'fecha-desc': cmp(i => fechaComparable(i.codigo), 'desc')
+    };
+    if (mapas[vOrden]) filtradas.sort(mapas[vOrden]);
+  }
+
   paginaActual = 1;
   renderTabla();
 }
 
 function limpiarFiltros() {
-  ['f-organo','f-eje','f-linea','f-priorizado','f-actualizado','f-buscar'].forEach(id => {
+  ['f-organo','f-eje','f-linea','f-priorizado','f-actualizado','f-buscar','f-orden'].forEach(id => {
     document.getElementById(id).value = '';
   });
   aplicarFiltros();
@@ -826,7 +895,7 @@ function renderTabla() {
   const tbody = document.getElementById('tabla-body');
 
   if (pagina.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="estado-carga">No hay intervenciones que coincidan con los filtros aplicados.</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11"><div class="estado-carga">No hay intervenciones que coincidan con los filtros aplicados.</div></td></tr>`;
     return;
   }
 
@@ -835,28 +904,32 @@ function renderTabla() {
     const est = estadoInterv[interv.codigo] || {};
     const tieneRegistro = !!est.fechaReg;
 
-    const badgePrior = est.priorizado
-      ? `<span class="badge-priorizado">★ Priorizado</span>`
-      : '';
-
     const estadoHtml = est.estado
       ? `<div class="estado-situacional">${esc(est.estado)}</div>`
       : `<div class="estado-vacio">Sin registro</div>`;
 
     // Avance financiero: Devengado / PIM
-    let avanceHtml = '—';
+    let avanceFinHtml = '—';
     if (tieneRegistro && est.pim && est.devengado) {
       const pim = parseFloat(est.pim);
       const dev = parseFloat(est.devengado);
       if (pim > 0) {
         const pct = (dev / pim * 100).toFixed(1);
-        avanceHtml = `<span style="font-weight:700;color:var(--azul)">${pct}%</span>`;
+        avanceFinHtml = `<span style="font-weight:700;color:var(--azul)">${pct}%</span>`;
       }
     }
 
+    // Avance físico (registrado a mano)
+    const avanceFisHtml = (est.avance !== undefined && est.avance !== '' && est.avance !== null)
+      ? `<span style="font-weight:700;color:var(--texto)">${esc(est.avance)}%</span>`
+      : '—';
+
+    // Priorización (toggle visual de solo lectura)
+    const prioHtml = `<span class="toggle-ro ${est.priorizado ? 'on' : ''}" title="${est.priorizado ? 'Priorizada' : 'No priorizada'}"></span>`;
+
     const nHitos = interv.hitos.length;
 
-    // columna Actualizado (primera, con rowspan): fecha + ícono lápiz, alineada arriba
+    // columna Última Actualización: fecha + ícono lápiz, alineada arriba
     const colActualizado = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
         ${tieneRegistro
@@ -870,8 +943,6 @@ function renderTabla() {
         </button>
       </div>`;
 
-    // Primera fila: Actualizado + Intervención + Estado + financieros (todos con rowspan=nHitos)
-    // + primera fila de hito (Hito + Fecha) inline
     html += `
     <tr class="fila-intervencion">
       <td rowspan="${nHitos}" style="vertical-align:top;text-align:center;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding-top:12px">
@@ -879,17 +950,19 @@ function renderTabla() {
       </td>
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
         <div style="font-weight:700;color:var(--azul);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
-        <div style="margin-top:6px;font-size:11px;color:var(--gris-texto);display:flex;align-items:center;gap:5px">🏛️ ${esc(interv.organo)}</div>
-        ${interv.dep ? `<div style="margin-top:2px;font-size:11px;color:var(--gris-texto);display:flex;align-items:center;gap:5px">📍 ${esc(interv.dep)}</div>` : ''}
-        ${badgePrior ? `<div style="margin-top:6px">${badgePrior}</div>` : ''}
+        <div style="margin-top:6px;font-size:11px;color:var(--gris-texto);display:flex;align-items:flex-start;gap:5px">🏛️ ${esc(interv.organo)}</div>
+        ${interv.dep ? `<div style="margin-top:2px;font-size:11px;color:var(--gris-texto);display:flex;align-items:flex-start;gap:5px">📍 ${esc(interv.dep)}</div>` : ''}
+        ${interv.relevancia ? `<div style="margin-top:5px;font-size:11px;color:var(--texto-2);display:flex;align-items:flex-start;gap:5px;line-height:1.35">🎯 <span>${esc(interv.relevancia)}</span></div>` : ''}
       </td>
+      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${prioHtml}</td>
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
         ${estadoHtml}
       </td>
+      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:10px 12px;border-bottom:2px solid #CBD5E1">${avanceFisHtml}</td>
       <td rowspan="${nHitos}" style="text-align:right;vertical-align:top;padding:10px 12px;border-bottom:2px solid #CBD5E1">${tieneRegistro && est.costo ? esc(est.costo) : '—'}</td>
       <td rowspan="${nHitos}" style="text-align:right;vertical-align:top;padding:10px 12px;border-bottom:2px solid #CBD5E1">${tieneRegistro && est.pim ? esc(est.pim) : '—'}</td>
       <td rowspan="${nHitos}" style="text-align:right;vertical-align:top;padding:10px 12px;border-bottom:2px solid #CBD5E1">${tieneRegistro && est.devengado ? esc(est.devengado) : '—'}</td>
-      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:10px 12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${avanceHtml}</td>`;
+      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:10px 12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${avanceFinHtml}</td>`;
 
     interv.hitos.forEach((h, idx) => {
       const eh = estadoHitos[h.codhito] || {};
@@ -951,12 +1024,11 @@ function abrirModal(codigo) {
   const est = estadoInterv[codigo] || {};
   priorizadoModal = est.priorizado || false;
 
-  document.getElementById('modal-titulo').textContent = intervModal.nombre.length > 70
-    ? intervModal.nombre.substring(0, 70) + '…'
-    : intervModal.nombre;
+  document.getElementById('modal-titulo').textContent = intervModal.nombre;
   document.getElementById('modal-subtitulo').textContent = intervModal.organo;
 
   document.getElementById('m-estado').value   = est.estado   || '';
+  document.getElementById('m-avance').value   = est.avance   || '';
   document.getElementById('m-costo').value    = est.costo    || '';
   document.getElementById('m-pim').value      = est.pim      || '';
   document.getElementById('m-devengado').value= est.devengado|| '';
@@ -1035,6 +1107,7 @@ async function guardarRegistro() {
     nombre:    intervModal.nombre,
     organo:    intervModal.organo,
     estado:    document.getElementById('m-estado').value.trim(),
+    avance:    document.getElementById('m-avance').value.trim(),
     costo:     document.getElementById('m-costo').value.trim(),
     pim:       document.getElementById('m-pim').value.trim(),
     devengado: document.getElementById('m-devengado').value.trim(),
@@ -1055,6 +1128,7 @@ async function guardarRegistro() {
       estadoInterv[intervModal.codigo] = {
         fechaReg:   fechaDisplay(new Date().toISOString().split('T')[0]),
         estado:     payload.estado,
+        avance:     payload.avance,
         costo:      payload.costo,
         pim:        payload.pim,
         devengado:  payload.devengado,
@@ -1079,6 +1153,7 @@ async function guardarRegistro() {
       estadoInterv[intervModal.codigo] = {
         fechaReg:   fechaDisplay(new Date().toISOString().split('T')[0]),
         estado:     payload.estado,
+        avance:     payload.avance,
         costo:      payload.costo,
         pim:        payload.pim,
         devengado:  payload.devengado,
@@ -1114,41 +1189,41 @@ function mostrarToast(msg, tipo = 'exito') {
 // ── EXPORT EXCEL ───────────────────────────────────────────────────────────────
 function exportarExcel() {
   const rows = [['Código', 'Órgano', 'Intervención Estratégica', 'Estado situacional',
-                 'Costo (MM S/)', 'PIM (MM S/)', 'Devengado (MM S/)', 'Priorizado',
-                 'Fecha de registro', 'CODHITOS', 'Hito(s) clave(s)', 'Fecha de cumplimiento']];
+                 'Avance físico (%)', 'Costo Total (MM S/)', 'PIM 2026 (MM S/)', 'Dev. 2026 (MM S/)',
+                 'Avance Financiero (%)', 'Priorizado', 'Fecha de registro',
+                 'Hito(s) clave(s)', 'Fecha de cumplimiento']];
 
   filtradas.forEach(interv => {
     const est = estadoInterv[interv.codigo] || {};
+    let avFin = '';
+    const pim = parseFloat(est.pim), dev = parseFloat(est.devengado);
+    if (pim > 0 && !isNaN(dev)) avFin = (dev / pim * 100).toFixed(1);
     interv.hitos.forEach(h => {
       const eh = estadoHitos[h.codhito] || {};
       rows.push([
         interv.codigo, interv.organo, interv.nombre,
-        est.estado || '', est.costo || '', est.pim || '', est.devengado || '',
-        est.priorizado ? 'Sí' : 'No', est.fechaReg || '',
-        h.codhito, h.nombre, eh.fechaCumplimiento || ''
+        est.estado || '', est.avance || '', est.costo || '', est.pim || '', est.devengado || '',
+        avFin, est.priorizado ? 'Sí' : 'No', est.fechaReg || '',
+        h.nombre, eh.fechaCumplimiento || ''
       ]);
     });
   });
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
 
-  // estilo encabezado
-  const rojo = { fgColor: { rgb: 'C0392B' } };
-  const blanco = { fgColor: { rgb: 'FFFFFF' } };
-  const navy = { fgColor: { rgb: '1A2744' } };
-
-  for (let c = 0; c < 12; c++) {
+  const NCOLS = rows[0].length;
+  for (let c = 0; c < NCOLS; c++) {
     const ref = XLSX.utils.encode_cell({ r: 0, c });
     if (!ws[ref]) continue;
     ws[ref].s = {
-      fill: { patternType: 'solid', fgColor: { rgb: '1A2744' } },
+      fill: { patternType: 'solid', fgColor: { rgb: '003F7D' } },
       font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
       alignment: { vertical: 'center', wrapText: true },
-      border: { bottom: { style: 'thin', color: { rgb: 'C0392B' } } }
+      border: { bottom: { style: 'thin', color: { rgb: 'C8102E' } } }
     };
   }
 
-  ws['!cols'] = [8,10,40,35,10,10,12,10,14,12,40,16].map(w => ({ wch: w }));
+  ws['!cols'] = [8,10,40,35,12,14,12,12,14,10,14,40,16].map(w => ({ wch: w }));
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Hoja de Ruta');
