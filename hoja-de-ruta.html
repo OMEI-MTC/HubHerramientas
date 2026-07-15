@@ -128,6 +128,7 @@
     gap: 14px;
     margin-bottom: 14px;
   }
+  .filtros-grid.seis { grid-template-columns: repeat(6, 1fr); }
   .filtro-group label {
     display: block; font-size: 12px; font-weight: 600;
     color: var(--texto-2); margin-bottom: 5px;
@@ -562,8 +563,16 @@
       <div class="filtros-box">
         <div class="filtros-label">Filtros</div>
 
-        <!-- Fila 1: Órgano, Eje, Línea, Priorizado -->
-        <div class="filtros-grid">
+        <!-- Fila 1: Grupo, Viceministerios, Órgano, Eje, Línea, Priorizado -->
+        <div class="filtros-grid seis">
+          <div class="filtro-group">
+            <label>Grupo</label>
+            <select id="f-grupo"><option value="">Todos</option></select>
+          </div>
+          <div class="filtro-group">
+            <label>Viceministerio</label>
+            <select id="f-vice"><option value="">Todos</option></select>
+          </div>
           <div class="filtro-group">
             <label>Órgano</label>
             <select id="f-organo"><option value="">Todos</option></select>
@@ -751,7 +760,8 @@
 // ── CONFIGURACIÓN ──────────────────────────────────────────────────────────────
 const BACKEND_URL = 'TU_WEBAPP_URL_AQUI'; // reemplazar con URL del Apps Script
 
-const TSV_MAESTRO      = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=819717629&single=true&output=tsv';
+const TSV_MAESTRO_INTERV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=839870935&single=true&output=tsv';
+const TSV_MAESTRO_HITOS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=819717629&single=true&output=tsv';
 const TSV_ESTADO_INTERV= 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=1274731330&single=true&output=tsv';
 const TSV_ESTADO_HITOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=1161068484&single=true&output=tsv';
 
@@ -798,40 +808,48 @@ function parseTSV(txt) {
 // ── CARGA INICIAL ──────────────────────────────────────────────────────────────
 async function cargarDatos() {
   try {
-    const [tsvMaestro, tsvInterv, tsvHitos] = await Promise.all([
-      fetchTSV(TSV_MAESTRO),
+    const [tsvMaestroInterv, tsvMaestroHitos, tsvInterv, tsvHitos] = await Promise.all([
+      fetchTSV(TSV_MAESTRO_INTERV),
+      fetchTSV(TSV_MAESTRO_HITOS),
       fetchTSV(TSV_ESTADO_INTERV),
       fetchTSV(TSV_ESTADO_HITOS)
     ]);
 
-    // procesar maestro (plano: una fila por hito)
-    const filasMaestro = parseTSV(tsvMaestro);
-    // cols: Código, Intervención Estratégica, Relevancia sectorial, Órgano,
-    //       Ejes prioritarios de la gestión, Línea de interés, Dep., CODHITOS, Hito(s) clave(s)
-
+    // 1) Maestro de intervenciones (una fila por intervención)
+    // cols: Código, Grupo, Viceministerios, Órgano, Ejes prioritarios de la gestión,
+    //       Línea de interés, Intervención Estratégica, Detalle de Intervención,
+    //       Relevancia sectorial, Área de Influencia
     const mapa = {};
-    filasMaestro.forEach(f => {
+    parseTSV(tsvMaestroInterv).forEach(f => {
       const cod = f['Código'];
       if (!cod) return;
-      if (!mapa[cod]) {
-        mapa[cod] = {
-          codigo:  cod,
-          nombre:  f['Intervención Estratégica'],
-          relevancia: f['Relevancia sectorial'] || '',
-          organo:  f['Órgano'],
-          eje:     f['Ejes prioritarios  de la gestión'] || f['Ejes prioritarios de la gestión'] || '',
-          linea:   f['Línea de interés'],
-          dep:     f['Dep.'],
-          hitos:   []
-        };
-      }
-      if (f['CODHITOS']) {
-        mapa[cod].hitos.push({
-          codhito: f['CODHITOS'],
-          nombre:  f['Hito(s) clave(s)']
-        });
-      }
+      mapa[cod] = {
+        codigo:     cod,
+        grupo:      f['Grupo'] || '',
+        vice:       f['Viceministerios'] || '',
+        organo:     f['Órgano'] || '',
+        eje:        f['Ejes prioritarios de la gestión'] || '',
+        linea:      f['Línea de interés'] || '',
+        nombre:     f['Intervención Estratégica'] || '',
+        detalle:    f['Detalle de Intervención'] || '',
+        relevancia: f['Relevancia sectorial'] || '',
+        area:       f['Área de Influencia'] || '',
+        hitos:      []
+      };
     });
+
+    // 2) Maestro de hitos (una fila por hito) — se cruza por Código
+    // cols: Código, Intervención Estratégica, Departamento, CODHITOS, Hito(s) clave(s)
+    parseTSV(tsvMaestroHitos).forEach(f => {
+      const cod = f['Código'];
+      if (!cod || !f['CODHITOS']) return;
+      if (!mapa[cod]) return; // hito sin intervención en el maestro: se ignora
+      mapa[cod].hitos.push({
+        codhito: f['CODHITOS'],
+        nombre:  f['Hito(s) clave(s)'] || ''
+      });
+    });
+
     intervenciones = Object.values(mapa);
 
     // procesar estado actual intervenciones
@@ -968,6 +986,8 @@ function poblarFiltros() {
     sel.addEventListener('change', aplicarFiltros);
   };
 
+  llenar('f-grupo',  unicos('grupo'));
+  llenar('f-vice',   unicos('vice'));
   llenar('f-organo', unicos('organo'));
   llenar('f-eje',    unicos('eje'));
   llenar('f-linea',  unicos('linea'));
@@ -1032,6 +1052,8 @@ function hitosVisibles(interv) {
 }
 
 function aplicarFiltros() {
+  const vGrupo      = document.getElementById('f-grupo').value;
+  const vVice       = document.getElementById('f-vice').value;
   const vOrgano     = document.getElementById('f-organo').value;
   const vEje        = document.getElementById('f-eje').value;
   const vLinea      = document.getElementById('f-linea').value;
@@ -1040,6 +1062,8 @@ function aplicarFiltros() {
   const vArea       = document.getElementById('f-area').value.trim().toLowerCase();
 
   filtradas = intervenciones.filter(i => {
+    if (vGrupo  && i.grupo !== vGrupo)  return false;
+    if (vVice   && i.vice  !== vVice)   return false;
     if (vOrgano && i.organo !== vOrgano) return false;
     if (vEje    && i.eje   !== vEje)    return false;
     if (vLinea  && i.linea !== vLinea)  return false;
@@ -1049,7 +1073,7 @@ function aplicarFiltros() {
       if (vPriorizado === 'no' && esPrior)  return false;
     }
     if (vBuscar && !i.nombre.toLowerCase().includes(vBuscar)) return false;
-    if (vArea && !(i.dep || '').toLowerCase().includes(vArea)) return false;
+    if (vArea && !(i.area || '').toLowerCase().includes(vArea)) return false;
     // Filtro por mes de cumplimiento (Opción B): la intervención pasa solo si
     // tiene al menos un hito en los meses seleccionados
     if (mesesSeleccion.size > 0 && hitosVisibles(i).length === 0) return false;
@@ -1061,7 +1085,7 @@ function aplicarFiltros() {
 }
 
 function limpiarFiltros() {
-  ['f-organo','f-eje','f-linea','f-priorizado','f-buscar','f-area'].forEach(id => {
+  ['f-grupo','f-vice','f-organo','f-eje','f-linea','f-priorizado','f-buscar','f-area'].forEach(id => {
     document.getElementById(id).value = '';
   });
   mesesSeleccion.clear();
@@ -1138,10 +1162,11 @@ function renderTabla() {
       </td>
       <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
         <div style="font-weight:700;color:var(--azul);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
+        ${interv.detalle ? `<div style="margin-top:6px;font-size:12px;color:var(--texto);font-weight:500;line-height:1.4;padding-left:8px;border-left:2px solid var(--azul)">${esc(interv.detalle)}</div>` : ''}
         ${interv.relevancia ? `<div style="margin-top:6px;font-size:11px;color:var(--texto-2);display:flex;align-items:flex-start;gap:5px;line-height:1.35">🎯 <span>${esc(interv.relevancia)}</span></div>` : ''}
       </td>
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>
-      <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.dep) || '—'}</td>
+      <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.area) || "—"}</td>
       <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${prioHtml}</td>
       <td class="col-ogame" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${habilHtml}</td>
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
@@ -1450,8 +1475,9 @@ function mostrarToast(msg, tipo = 'exito') {
 
 // ── EXPORT EXCEL ───────────────────────────────────────────────────────────────
 function exportarExcel() {
-  const rows = [['Código', 'Responsable', 'Área de influencia', 'Intervención Estratégica',
-                 'Relevancia sectorial', 'Estado situacional', 'Avance físico (%)',
+  const rows = [['Código', 'Grupo', 'Viceministerio', 'Responsable', 'Área de influencia',
+                 'Intervención Estratégica', 'Detalle de Intervención', 'Relevancia sectorial',
+                 'Estado situacional', 'Avance físico (%)',
                  'Priorizado', 'Fecha de registro',
                  'Hito(s) clave(s)', 'Fecha de cumplimiento']];
 
@@ -1460,8 +1486,9 @@ function exportarExcel() {
     hitosVisibles(interv).forEach(h => {
       const eh = estadoHitos[h.codhito] || {};
       rows.push([
-        interv.codigo, interv.organo, interv.dep || '', interv.nombre,
-        interv.relevancia || '', est.estado || '', est.avance || '',
+        interv.codigo, interv.grupo || '', interv.vice || '', interv.organo, interv.area || '',
+        interv.nombre, interv.detalle || '', interv.relevancia || '',
+        est.estado || '', est.avance || '',
         est.priorizado ? 'Sí' : 'No', est.fechaReg || '',
         h.nombre, eh.fechaCumplimiento || ''
       ]);
@@ -1482,7 +1509,7 @@ function exportarExcel() {
     };
   }
 
-  ws['!cols'] = [8,10,16,40,30,35,12,10,14,40,16].map(w => ({ wch: w }));
+  ws['!cols'] = [10,14,12,10,16,40,35,30,35,12,10,14,40,16].map(w => ({ wch: w }));
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Hoja de Ruta');
