@@ -129,6 +129,7 @@
     margin-bottom: 14px;
   }
   .filtros-grid.seis { grid-template-columns: repeat(6, 1fr); }
+  .filtros-grid.cinco { grid-template-columns: repeat(5, 1fr); }
   .filtro-group label {
     display: block; font-size: 12px; font-weight: 600;
     color: var(--texto-2); margin-bottom: 5px;
@@ -563,8 +564,8 @@
       <div class="filtros-box">
         <div class="filtros-label">Filtros</div>
 
-        <!-- Fila 1: Grupo, Viceministerios, Órgano, Eje, Línea, Priorizado -->
-        <div class="filtros-grid seis">
+        <!-- Fila 1: Grupo, Viceministerio, Órgano, Área de influencia, Priorizado -->
+        <div class="filtros-grid cinco">
           <div class="filtro-group">
             <label>Grupo</label>
             <select id="f-grupo"><option value="">Todos</option></select>
@@ -578,12 +579,8 @@
             <select id="f-organo"><option value="">Todos</option></select>
           </div>
           <div class="filtro-group">
-            <label>Eje prioritario</label>
-            <select id="f-eje"><option value="">Todos</option></select>
-          </div>
-          <div class="filtro-group">
-            <label>Línea de interés</label>
-            <select id="f-linea"><option value="">Todos</option></select>
+            <label>Área de influencia</label>
+            <input type="text" id="f-area" placeholder="Escribe para buscar…">
           </div>
           <div class="filtro-group">
             <label>Priorizado</label>
@@ -595,13 +592,17 @@
           </div>
         </div>
 
-        <!-- Fila 2: Área de influencia, Intervención, Fecha de cumplimiento -->
-        <div class="filtros-grid">
+        <!-- Fila 2: Eje, Línea, Intervención (2 col), Fecha de cumplimiento -->
+        <div class="filtros-grid cinco">
           <div class="filtro-group">
-            <label>Área de influencia</label>
-            <input type="text" id="f-area" placeholder="Escribe para buscar…">
+            <label>Eje prioritario</label>
+            <select id="f-eje"><option value="">Todos</option></select>
           </div>
           <div class="filtro-group">
+            <label>Línea de interés</label>
+            <select id="f-linea"><option value="">Todos</option></select>
+          </div>
+          <div class="filtro-group" style="grid-column:span 2">
             <label>Intervención</label>
             <input type="text" id="f-buscar" placeholder="Escribe para buscar…">
           </div>
@@ -967,35 +968,91 @@ function parseCumplimiento(valor) {
 let mesesDisponibles = [];   // [{label, orden, trimestre, anio}] ordenados
 let mesesSeleccion   = new Set(); // labels de meses activos
 
-// Construye la lista de meses a partir de los datos
+// Construye la lista de meses a partir de los hitos de las intervenciones
+// que pasan los demás filtros (cascada). Al inicio, de todas.
 function construirFechasCumplimiento() {
   const set = new Map(); // label -> obj
-  Object.values(estadoHitos).forEach(eh => {
-    const p = parseCumplimiento(eh.fechaCumplimiento);
-    if (p) set.set(p.label, p);
+  const base = intervenciones.length
+    ? intervenciones.filter(i => pasaFiltrosExcepto(i, '__meses__'))
+    : [];
+  base.forEach(i => {
+    i.hitos.forEach(h => {
+      const eh = estadoHitos[h.codhito];
+      if (!eh) return;
+      const p = parseCumplimiento(eh.fechaCumplimiento);
+      if (p) set.set(p.label, p);
+    });
   });
   mesesDisponibles = [...set.values()].sort((a, b) => a.orden - b.orden);
 }
 
 function poblarFiltros() {
-  const unicos = (campo) => [...new Set(intervenciones.map(i => i[campo]).filter(Boolean))].sort();
-
-  const llenar = (id, vals) => {
-    const sel = document.getElementById(id);
-    vals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
-    sel.addEventListener('change', aplicarFiltros);
-  };
-
-  llenar('f-grupo',  unicos('grupo'));
-  llenar('f-vice',   unicos('vice'));
-  llenar('f-organo', unicos('organo'));
-  llenar('f-eje',    unicos('eje'));
-  llenar('f-linea',  unicos('linea'));
+  ['f-grupo','f-vice','f-organo','f-eje','f-linea'].forEach(id => {
+    document.getElementById(id).addEventListener('change', aplicarFiltros);
+  });
   document.getElementById('f-priorizado').addEventListener('change', aplicarFiltros);
   document.getElementById('f-buscar').addEventListener('input', aplicarFiltros);
   document.getElementById('f-area').addEventListener('input', aplicarFiltros);
 
+  refrescarOpcionesFiltros();
+}
+
+// Devuelve true si la intervención pasa todos los filtros EXCEPTO el indicado.
+// Se usa para calcular qué opciones tiene sentido mostrar en cada dropdown.
+function pasaFiltrosExcepto(i, excepto) {
+  const v = {
+    grupo:      document.getElementById('f-grupo').value,
+    vice:       document.getElementById('f-vice').value,
+    organo:     document.getElementById('f-organo').value,
+    eje:        document.getElementById('f-eje').value,
+    linea:      document.getElementById('f-linea').value,
+    priorizado: document.getElementById('f-priorizado').value,
+    buscar:     document.getElementById('f-buscar').value.trim().toLowerCase(),
+    area:       document.getElementById('f-area').value.trim().toLowerCase()
+  };
+  if (excepto !== 'grupo'  && v.grupo  && i.grupo  !== v.grupo)  return false;
+  if (excepto !== 'vice'   && v.vice   && i.vice   !== v.vice)   return false;
+  if (excepto !== 'organo' && v.organo && i.organo !== v.organo) return false;
+  if (excepto !== 'eje'    && v.eje    && i.eje    !== v.eje)    return false;
+  if (excepto !== 'linea'  && v.linea  && i.linea  !== v.linea)  return false;
+  if (excepto !== 'priorizado' && v.priorizado) {
+    const esPrior = estadoInterv[i.codigo]?.priorizado;
+    if (v.priorizado === 'si' && !esPrior) return false;
+    if (v.priorizado === 'no' && esPrior)  return false;
+  }
+  if (excepto !== 'buscar' && v.buscar && !i.nombre.toLowerCase().includes(v.buscar)) return false;
+  if (excepto !== 'area'   && v.area   && !(i.area || '').toLowerCase().includes(v.area)) return false;
+  return true;
+}
+
+// Reconstruye las opciones de cada dropdown según los demás filtros activos.
+// Conserva la selección actual aunque ya no esté entre las opciones.
+function refrescarOpcionesFiltros() {
+  const campos = [
+    { id: 'f-grupo',  campo: 'grupo'  },
+    { id: 'f-vice',   campo: 'vice'   },
+    { id: 'f-organo', campo: 'organo' },
+    { id: 'f-eje',    campo: 'eje'    },
+    { id: 'f-linea',  campo: 'linea'  }
+  ];
+  campos.forEach(({ id, campo }) => {
+    const sel = document.getElementById(id);
+    const valorActual = sel.value;
+    const disponibles = [...new Set(
+      intervenciones.filter(i => pasaFiltrosExcepto(i, campo)).map(i => i[campo]).filter(Boolean)
+    )].sort();
+    // si hay algo seleccionado que ya no aparece, lo mantenemos para no perder el filtro
+    if (valorActual && !disponibles.includes(valorActual)) disponibles.push(valorActual);
+    sel.innerHTML = '<option value="">Todos</option>' +
+      disponibles.map(v => `<option value="${esc(v)}"${v === valorActual ? ' selected' : ''}>${esc(v)}</option>`).join('');
+  });
+
+  // los meses también se filtran en cascada
   construirFechasCumplimiento();
+  // si un mes seleccionado ya no existe entre los disponibles, se descarta
+  const labelsDisp = new Set(mesesDisponibles.map(m => m.label));
+  labelsDisp.add('__sinfecha__');
+  [...mesesSeleccion].forEach(l => { if (!labelsDisp.has(l)) mesesSeleccion.delete(l); });
   renderMesesDropdown();
 }
 
@@ -1081,6 +1138,7 @@ function aplicarFiltros() {
   });
 
   paginaActual = 1;
+  refrescarOpcionesFiltros();
   renderTabla();
 }
 
@@ -1161,9 +1219,11 @@ function renderTabla() {
         ${colActualizado}
       </td>
       <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
-        <div style="font-weight:700;color:var(--azul);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
-        ${interv.detalle ? `<div style="margin-top:6px;font-size:12px;color:var(--texto);font-weight:500;line-height:1.4;padding-left:8px;border-left:2px solid var(--azul)">${esc(interv.detalle)}</div>` : ''}
-        ${interv.relevancia ? `<div style="margin-top:6px;font-size:11px;color:var(--texto-2);display:flex;align-items:flex-start;gap:5px;line-height:1.35">🎯 <span>${esc(interv.relevancia)}</span></div>` : ''}
+        <div style="padding-left:9px;border-left:3px solid var(--azul)">
+          <div style="font-weight:700;color:var(--azul);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
+          ${interv.detalle ? `<div style="margin-top:4px;font-size:11px;color:var(--azul);font-style:italic;line-height:1.4">${esc(interv.detalle)}</div>` : ''}
+        </div>
+        ${interv.relevancia ? `<div style="margin-top:7px;font-size:11px;color:var(--texto-2);display:flex;align-items:flex-start;gap:5px;line-height:1.35">🎯 <span>${esc(interv.relevancia)}</span></div>` : ''}
       </td>
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.area) || "—"}</td>
@@ -1520,17 +1580,30 @@ function exportarExcel() {
 
 // ── CERRAR MODAL CON ESC ───────────────────────────────────────────────────────
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarModal(); cerrarLoginOGAME(); } });
+// Cerrar modal solo si el clic EMPIEZA y TERMINA en el overlay.
+// Evita que se cierre al seleccionar texto arrastrando desde dentro hacia fuera.
+let clicIniciadoEnOverlay = false;
+document.getElementById('modal-overlay').addEventListener('mousedown', e => {
+  clicIniciadoEnOverlay = (e.target === document.getElementById('modal-overlay'));
+});
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (clicIniciadoEnOverlay && e.target === document.getElementById('modal-overlay')) cerrarModal();
+  clicIniciadoEnOverlay = false;
+});
+
+let clicIniciadoEnLogin = false;
+document.getElementById('login-overlay').addEventListener('mousedown', e => {
+  clicIniciadoEnLogin = (e.target === document.getElementById('login-overlay'));
+});
 document.getElementById('login-overlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('login-overlay')) cerrarLoginOGAME();
+  if (clicIniciadoEnLogin && e.target === document.getElementById('login-overlay')) cerrarLoginOGAME();
+  clicIniciadoEnLogin = false;
 });
 document.addEventListener('click', e => {
   const panel = document.getElementById('meses-panel');
   if (panel && panel.classList.contains('abierto') && !panel.contains(e.target)) {
     panel.classList.remove('abierto');
   }
-});
-document.getElementById('modal-overlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('modal-overlay')) cerrarModal();
 });
 
 // ── INICIO ────────────────────────────────────────────────────────────────────
