@@ -759,7 +759,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script>
 // ── CONFIGURACIÓN ──────────────────────────────────────────────────────────────
-const BACKEND_URL = 'TU_WEBAPP_URL_AQUI'; // reemplazar con URL del Apps Script
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxFySD-V9iYZMMwYql2090TDajXnMDg7Sz2l_0rrep3UPmPPWDT4TbiCRl6t51E1AZZpw/exec';
 
 const TSV_MAESTRO_INTERV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=839870935&single=true&output=tsv';
 const TSV_MAESTRO_HITOS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=819717629&single=true&output=tsv';
@@ -1353,7 +1353,7 @@ async function togglePriorizacion(codigo, btn) {
   try {
     const resp = await fetch(BACKEND_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS en Apps Script
       body: JSON.stringify(payload)
     });
     const data = await resp.json();
@@ -1366,15 +1366,9 @@ async function togglePriorizacion(codigo, btn) {
       mostrarToast('No se pudo actualizar la priorización', 'error');
     }
   } catch (e) {
-    if (BACKEND_URL === 'TU_WEBAPP_URL_AQUI') {
-      // modo prueba: aplicar localmente
-      est.priorizado = nuevoValor;
-      btn.title = nuevoValor ? 'Priorizada' : 'No priorizada';
-      mostrarToast('(Modo prueba) Priorización actualizada localmente', 'exito');
-    } else {
-      btn.classList.toggle('on', !nuevoValor);
-      mostrarToast('No se pudo conectar con el servidor', 'error');
-    }
+    btn.classList.toggle('on', !nuevoValor);
+    mostrarToast('No se pudo conectar con el servidor', 'error');
+    console.error(e);
   } finally {
     btn.disabled = false;
   }
@@ -1396,7 +1390,7 @@ async function toggleHitosHabilitados(codigo, btn) {
   try {
     const resp = await fetch(BACKEND_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS en Apps Script
       body: JSON.stringify(payload)
     });
     const data = await resp.json();
@@ -1408,14 +1402,9 @@ async function toggleHitosHabilitados(codigo, btn) {
       mostrarToast('No se pudo actualizar la habilitación de hitos', 'error');
     }
   } catch (e) {
-    if (BACKEND_URL === 'TU_WEBAPP_URL_AQUI') {
-      est.hitosHabilitados = nuevoValor;
-      btn.title = nuevoValor ? 'Hitos habilitados' : 'Hitos bloqueados';
-      mostrarToast('(Modo prueba) Habilitación actualizada localmente', 'exito');
-    } else {
-      btn.classList.toggle('on', !nuevoValor);
-      mostrarToast('No se pudo conectar con el servidor', 'error');
-    }
+    btn.classList.toggle('on', !nuevoValor);
+    mostrarToast('No se pudo conectar con el servidor', 'error');
+    console.error(e);
   } finally {
     btn.disabled = false;
   }
@@ -1469,15 +1458,15 @@ async function guardarRegistro() {
   try {
     const resp = await fetch(BACKEND_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS en Apps Script
       body: JSON.stringify(payload)
     });
     const data = await resp.json();
 
     if (data.ok) {
-      // actualizar estado local sin recargar
+      // actualizar estado local sin recargar (usa la fecha real del backend)
       estadoInterv[intervModal.codigo] = {
-        fechaReg:   fechaDisplay(new Date().toISOString().split('T')[0]),
+        fechaReg:   data.fechaRegistro || fechaDisplay(new Date().toISOString().split('T')[0]),
         estado:     payload.estado,
         avance:     payload.avance,
         priorizado: estadoInterv[intervModal.codigo]?.priorizado || false,
@@ -1497,25 +1486,7 @@ async function guardarRegistro() {
       mostrarToast('Error al guardar: ' + (data.mensaje || 'intenta de nuevo'), 'error');
     }
   } catch (e) {
-    // si el backend no está configurado aún, simular para pruebas
-    if (BACKEND_URL === 'TU_WEBAPP_URL_AQUI') {
-      estadoInterv[intervModal.codigo] = {
-        fechaReg:   fechaDisplay(new Date().toISOString().split('T')[0]),
-        estado:     payload.estado,
-        avance:     payload.avance,
-        priorizado: estadoInterv[intervModal.codigo]?.priorizado || false,
-        hitosHabilitados: estadoInterv[intervModal.codigo]?.hitosHabilitados !== false
-      };
-      hitos.forEach(h => {
-        estadoHitos[h.codhito] = {
-          fechaReg:          estadoInterv[intervModal.codigo].fechaReg,
-          fechaCumplimiento: h.fechaCumplimiento
-        };
-      });
-      cerrarModal();
-      renderTabla();
-      mostrarToast('(Modo prueba) Registro simulado — conecta el backend para guardar en Sheets', 'exito');
-    } else {
+    {
       mostrarToast('No se pudo conectar con el servidor. Intenta de nuevo.', 'error');
       console.error(e);
     }
