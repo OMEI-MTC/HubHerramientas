@@ -153,6 +153,16 @@
     outline: none; border-color: var(--azul);
   }
   .filtros-foot { display: flex; justify-content: flex-end; }
+
+  /* checkbox "solo último hito" — alineado con los demás campos de la fila */
+  .check-ultimo {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 11px; border: 1px solid var(--gris-borde);
+    border-radius: 8px; background: #fff; cursor: pointer;
+    font-size: 13px; color: var(--texto); font-weight: 400;
+  }
+  .check-ultimo:hover { border-color: var(--azul); }
+  .check-ultimo input { width: auto; cursor: pointer; accent-color: var(--azul); flex-shrink: 0; }
   .btn-limpiar {
     padding: 8px 16px; border: 1px solid var(--gris-borde);
     background: #fff; border-radius: 8px; cursor: pointer;
@@ -592,7 +602,7 @@
           </div>
         </div>
 
-        <!-- Fila 2: Eje, Línea, Intervención (2 col), Fecha de cumplimiento -->
+        <!-- Fila 2: Eje, Línea, Intervención, Fecha de cumplimiento, Último hito -->
         <div class="filtros-grid cinco">
           <div class="filtro-group">
             <label>Eje prioritario</label>
@@ -602,7 +612,7 @@
             <label>Línea de interés</label>
             <select id="f-linea"><option value="">Todos</option></select>
           </div>
-          <div class="filtro-group" style="grid-column:span 2">
+          <div class="filtro-group">
             <label>Intervención</label>
             <input type="text" id="f-buscar" placeholder="Escribe para buscar…">
           </div>
@@ -615,6 +625,13 @@
               </button>
               <div class="meses-lista" id="meses-lista"></div>
             </div>
+          </div>
+          <div class="filtro-group">
+            <label>Hito final</label>
+            <label class="check-ultimo">
+              <input type="checkbox" id="f-ultimo" onchange="aplicarFiltros()">
+              <span>Mostrar solo el último hito</span>
+            </label>
           </div>
         </div>
 
@@ -826,6 +843,7 @@ async function cargarDatos() {
       if (!cod) return;
       mapa[cod] = {
         codigo:     cod,
+        id:         f['ID'] || cod,   // agrupa variantes (DGPRTM-28-1/-2/-3 → DGPRTM-28)
         grupo:      f['Grupo'] || '',
         vice:       f['Viceministerios'] || '',
         organo:     f['Órgano'] || '',
@@ -847,7 +865,9 @@ async function cargarDatos() {
       if (!mapa[cod]) return; // hito sin intervención en el maestro: se ignora
       mapa[cod].hitos.push({
         codhito: f['CODHITOS'],
-        nombre:  f['Hito(s) clave(s)'] || ''
+        nombre:  f['Hito(s) clave(s)'] || '',
+        ultimo:  (f['Último'] || f['Ultimo'] || '').trim().toLowerCase() === 'si' ||
+                 (f['Último'] || f['Ultimo'] || '').trim().toLowerCase() === 'sí'
       });
     });
 
@@ -1096,16 +1116,25 @@ function abrirMesesDropdown(e) {
   document.getElementById('meses-panel').classList.toggle('abierto');
 }
 
-// Hitos de una intervención que pasan el filtro de meses (Opción B).
-// Si no hay meses seleccionados, devuelve todos los hitos.
+// Hitos de una intervención que pasan los filtros de hito (Opción B: recorta).
+// Combina el filtro de meses y el de "solo último hito".
 function hitosVisibles(interv) {
-  if (mesesSeleccion.size === 0) return interv.hitos;
-  return interv.hitos.filter(h => {
-    const eh = estadoHitos[h.codhito] || {};
-    const p = parseCumplimiento(eh.fechaCumplimiento);
-    if (!p) return mesesSeleccion.has('__sinfecha__');
-    return mesesSeleccion.has(p.label);
-  });
+  let lista = interv.hitos;
+
+  // solo el hito marcado como último en el maestro
+  const soloUltimo = document.getElementById('f-ultimo')?.checked;
+  if (soloUltimo) lista = lista.filter(h => h.ultimo);
+
+  // filtro por mes de cumplimiento
+  if (mesesSeleccion.size > 0) {
+    lista = lista.filter(h => {
+      const eh = estadoHitos[h.codhito] || {};
+      const p = parseCumplimiento(eh.fechaCumplimiento);
+      if (!p) return mesesSeleccion.has('__sinfecha__');
+      return mesesSeleccion.has(p.label);
+    });
+  }
+  return lista;
 }
 
 function aplicarFiltros() {
@@ -1133,7 +1162,10 @@ function aplicarFiltros() {
     if (vArea && !(i.area || '').toLowerCase().includes(vArea)) return false;
     // Filtro por mes de cumplimiento (Opción B): la intervención pasa solo si
     // tiene al menos un hito en los meses seleccionados
-    if (mesesSeleccion.size > 0 && hitosVisibles(i).length === 0) return false;
+    // Filtros de hito (mes y/o último): la intervención pasa solo si le queda
+    // al menos un hito visible
+    const filtrandoHitos = mesesSeleccion.size > 0 || document.getElementById('f-ultimo').checked;
+    if (filtrandoHitos && hitosVisibles(i).length === 0) return false;
     return true;
   });
 
@@ -1146,6 +1178,7 @@ function limpiarFiltros() {
   ['f-grupo','f-vice','f-organo','f-eje','f-linea','f-priorizado','f-buscar','f-area'].forEach(id => {
     document.getElementById(id).value = '';
   });
+  document.getElementById('f-ultimo').checked = false;
   mesesSeleccion.clear();
   renderMesesDropdown();
   aplicarFiltros();
@@ -1153,9 +1186,11 @@ function limpiarFiltros() {
 
 // ── RENDER TABLA ───────────────────────────────────────────────────────────────
 function renderTabla() {
-  const totalInterv = filtradas.length;
+  // Display: cuenta IDs únicos (las variantes DGPRTM-28-1/-2/-3 son una sola)
+  const totalInterv = new Set(filtradas.map(i => i.id)).size;
   const totalHitos  = filtradas.reduce((s, i) => s + hitosVisibles(i).length, 0);
-  const totalPags   = Math.max(1, Math.ceil(totalInterv / POR_PAGINA));
+  // Paginación: sobre filas reales, no sobre IDs agrupados
+  const totalPags   = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
 
   document.getElementById('resumen-info').innerHTML =
     `<strong>${totalInterv}</strong> intervenciones &mdash; <strong>${totalHitos}</strong> hitos`;
@@ -1506,22 +1541,22 @@ function mostrarToast(msg, tipo = 'exito') {
 
 // ── EXPORT EXCEL ───────────────────────────────────────────────────────────────
 function exportarExcel() {
-  const rows = [['Código', 'Grupo', 'Viceministerio', 'Responsable', 'Área de influencia',
+  const rows = [['Código', 'ID', 'Grupo', 'Viceministerio', 'Responsable', 'Área de influencia',
                  'Intervención Estratégica', 'Detalle de Intervención', 'Relevancia sectorial',
                  'Estado situacional', 'Avance físico (%)',
                  'Priorizado', 'Fecha de registro',
-                 'Hito(s) clave(s)', 'Fecha de cumplimiento']];
+                 'Hito(s) clave(s)', 'Último', 'Fecha de cumplimiento']];
 
   filtradas.forEach(interv => {
     const est = estadoInterv[interv.codigo] || {};
     hitosVisibles(interv).forEach(h => {
       const eh = estadoHitos[h.codhito] || {};
       rows.push([
-        interv.codigo, interv.grupo || '', interv.vice || '', interv.organo, interv.area || '',
+        interv.codigo, interv.id || '', interv.grupo || '', interv.vice || '', interv.organo, interv.area || '',
         interv.nombre, interv.detalle || '', interv.relevancia || '',
         est.estado || '', est.avance || '',
         est.priorizado ? 'Sí' : 'No', est.fechaReg || '',
-        h.nombre, eh.fechaCumplimiento || ''
+        h.nombre, h.ultimo ? 'Sí' : '', eh.fechaCumplimiento || ''
       ]);
     });
   });
@@ -1540,7 +1575,7 @@ function exportarExcel() {
     };
   }
 
-  ws['!cols'] = [10,14,12,10,16,40,35,30,35,12,10,14,40,16].map(w => ({ wch: w }));
+  ws['!cols'] = [12,10,14,12,10,16,40,35,30,35,12,10,14,40,8,16].map(w => ({ wch: w }));
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Hoja de Ruta');
