@@ -229,6 +229,33 @@
   }
   .btn-excel:hover { background: var(--green-dk, #0F6E56); }
 
+  .btn-resumen {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px;
+    background: var(--blanco); color: var(--azul);
+    border: 1.5px solid var(--azul); cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    transition: all .15s;
+  }
+  .btn-resumen:hover { background: var(--azul); color: #fff; }
+
+  /* tabla resumen (modal) */
+  .tabla-resumen { width: 100%; border-collapse: collapse; }
+  .tabla-resumen th {
+    background: #f7f9fc; color: var(--texto-2);
+    font-size: 12px; font-weight: 700; padding: 10px 12px;
+    text-align: left; border-bottom: 2px solid #e3e9f2;
+  }
+  .tabla-resumen td {
+    padding: 9px 12px; border-bottom: 1px solid var(--gris-borde);
+    font-size: 13px;
+  }
+  .tabla-resumen tbody tr:hover { background: #f7f9fc; }
+  .tabla-resumen tfoot td {
+    background: var(--azul-bg); border-top: 2px solid var(--azul);
+    padding: 11px 12px; font-size: 13px;
+  }
+
   /* ── TABLA ── */
   .tabla-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--gris-borde); }
@@ -651,6 +678,10 @@
         <button class="pag-btn" id="btn-siguiente" onclick="cambiarPagina(1)">Siguiente ›</button>
       </div>
       <div class="toolbar-right">
+        <button class="btn-resumen" onclick="abrirResumen()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Ver resumen
+        </button>
         <button class="btn-excel" onclick="exportarExcel()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Descargar Excel
@@ -682,6 +713,29 @@
     </div>
   </div>
 </main>
+
+<!-- MODAL RESUMEN POR EQUIPO -->
+<div class="modal-overlay" id="resumen-overlay">
+  <div class="modal" style="max-width:860px">
+    <div class="modal-header">
+      <div>
+        <h2>Resumen por equipo</h2>
+        <p id="resumen-subtitulo">Total de intervenciones agrupadas por equipo</p>
+      </div>
+      <button class="modal-close" onclick="cerrarResumen()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="resumen-tabla-wrap"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="cerrarResumen()">Cerrar</button>
+      <button class="btn-guardar" style="background:var(--verde)" onclick="descargarResumen()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar resumen
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL LOGIN OGAME -->
 <div class="modal-overlay" id="login-overlay">
@@ -853,6 +907,8 @@ async function cargarDatos() {
         detalle:    f['Detalle de Intervención'] || '',
         relevancia: f['Relevancia sectorial'] || '',
         area:       f['Área de Influencia'] || '',
+        equipo:     f['EQUIPO'] || '',
+        director:   f['DIRECTOR(A)'] || '',
         hitos:      []
       };
     });
@@ -1540,6 +1596,120 @@ function mostrarToast(msg, tipo = 'exito') {
 }
 
 // ── EXPORT EXCEL ───────────────────────────────────────────────────────────────
+// ── RESUMEN POR EQUIPO ──────────────────────────────────────────────────────────
+// Agrupa las intervenciones FILTRADAS por equipo, contando IDs únicos.
+// Orden: VMT primero, luego VMC, luego el resto en el orden del maestro.
+function calcularResumen() {
+  const grupos = new Map();
+  filtradas.forEach((i, idx) => {
+    const clave = i.equipo || '(Sin equipo)';
+    if (!grupos.has(clave)) {
+      grupos.set(clave, {
+        equipo: clave, vice: i.vice || '', director: i.director || '',
+        ids: new Set(), ordenMaestro: idx
+      });
+    }
+    grupos.get(clave).ids.add(i.id);
+  });
+
+  const arr = [...grupos.values()].map(g => ({
+    equipo: g.equipo, vice: g.vice, director: g.director,
+    total: g.ids.size, ordenMaestro: g.ordenMaestro
+  }));
+
+  const rankVice = (v) => {
+    const s = (v || '').toUpperCase();
+    if (s === 'VMT') return 0;
+    if (s === 'VMC') return 1;
+    return 2;
+  };
+  arr.sort((a, b) => {
+    const ra = rankVice(a.vice), rb = rankVice(b.vice);
+    if (ra !== rb) return ra - rb;
+    return a.ordenMaestro - b.ordenMaestro;
+  });
+  return arr;
+}
+
+function abrirResumen() {
+  const datos = calcularResumen();
+  const totalGeneral = datos.reduce((s, r) => s + r.total, 0);
+
+  const filas = datos.map((r, idx) => `
+    <tr>
+      <td style="text-align:center">${idx + 1}</td>
+      <td style="text-align:center">${esc(r.vice)}</td>
+      <td>${esc(r.equipo)}</td>
+      <td>${esc(r.director)}</td>
+      <td style="text-align:center;font-weight:700">${r.total}</td>
+    </tr>`).join('');
+
+  document.getElementById('resumen-tabla-wrap').innerHTML = `
+    <table class="tabla-resumen">
+      <thead>
+        <tr>
+          <th style="width:8%;text-align:center">N°</th>
+          <th style="width:10%;text-align:center">VM</th>
+          <th style="width:42%">Equipo</th>
+          <th style="width:28%">Director(a)</th>
+          <th style="width:12%;text-align:center">Total<br>intervenciones</th>
+        </tr>
+      </thead>
+      <tbody>${filas}</tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" style="text-align:right;font-weight:700">TOTAL</td>
+          <td style="text-align:center;font-weight:700">${totalGeneral}</td>
+        </tr>
+      </tfoot>
+    </table>`;
+
+  const hayFiltros = filtradas.length !== intervenciones.length;
+  document.getElementById('resumen-subtitulo').textContent = hayFiltros
+    ? 'Total de intervenciones por equipo (según filtros aplicados)'
+    : 'Total de intervenciones por equipo';
+
+  document.getElementById('resumen-overlay').classList.add('activo');
+}
+
+function cerrarResumen() {
+  document.getElementById('resumen-overlay').classList.remove('activo');
+}
+
+function descargarResumen() {
+  const datos = calcularResumen();
+  const totalGeneral = datos.reduce((s, r) => s + r.total, 0);
+
+  const rows = [['N°', 'VM', 'Equipo', 'Director(a)', 'Total intervenciones']];
+  datos.forEach((r, idx) => rows.push([idx + 1, r.vice, r.equipo, r.director, r.total]));
+  rows.push(['', '', '', 'TOTAL', totalGeneral]);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  for (let c = 0; c < 5; c++) {
+    const ref = XLSX.utils.encode_cell({ r: 0, c });
+    if (ws[ref]) ws[ref].s = {
+      fill: { patternType: 'solid', fgColor: { rgb: '003F7D' } },
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      alignment: { vertical: 'center', horizontal: 'center', wrapText: true },
+      border: { bottom: { style: 'thin', color: { rgb: 'C8102E' } } }
+    };
+  }
+  const filaTotal = rows.length - 1;
+  for (let c = 0; c < 5; c++) {
+    const ref = XLSX.utils.encode_cell({ r: filaTotal, c });
+    if (ws[ref]) ws[ref].s = {
+      fill: { patternType: 'solid', fgColor: { rgb: 'EEF4FF' } },
+      font: { bold: true, sz: 11 }
+    };
+  }
+  ws['!cols'] = [6, 8, 50, 30, 16].map(w => ({ wch: w }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Resumen por equipo');
+  const fecha = new Date().toLocaleDateString('es-PE').replace(/\//g, '-');
+  XLSX.writeFile(wb, `ResumenEquipos_OGAME_${fecha}.xlsx`);
+}
+
 function exportarExcel() {
   const rows = [['Código', 'ID', 'Grupo', 'Viceministerio', 'Responsable', 'Área de influencia',
                  'Intervención Estratégica', 'Detalle de Intervención', 'Relevancia sectorial',
@@ -1585,7 +1755,16 @@ function exportarExcel() {
 }
 
 // ── CERRAR MODAL CON ESC ───────────────────────────────────────────────────────
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarModal(); cerrarLoginOGAME(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarModal(); cerrarLoginOGAME(); cerrarResumen(); } });
+
+let clicIniciadoEnResumen = false;
+document.getElementById('resumen-overlay').addEventListener('mousedown', e => {
+  clicIniciadoEnResumen = (e.target === document.getElementById('resumen-overlay'));
+});
+document.getElementById('resumen-overlay').addEventListener('click', e => {
+  if (clicIniciadoEnResumen && e.target === document.getElementById('resumen-overlay')) cerrarResumen();
+  clicIniciadoEnResumen = false;
+});
 // Cerrar modal solo si el clic EMPIEZA y TERMINA en el overlay.
 // Evita que se cierre al seleccionar texto arrastrando desde dentro hacia fuera.
 let clicIniciadoEnOverlay = false;
