@@ -3,988 +3,1864 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Registro de avance · Cartera Priorizada · OGAME · MTC</title>
+<title>Hoja de Ruta Estratégica · OGAME</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  /* ── TOKENS (paleta institucional del Registro) ── */
   :root {
-    --red:#C8102E; --blue:#0055A5; --blue-dk:#003F7D; --blue-lt:#EEF4FF;
-    --white:#fff; --bg:#F2F2F2; --card:#fff; --border:rgba(0,0,0,0.09);
-    --text:#1a1a1a; --text-2:#4a5568; --text-3:#8a9ab0;
-    --green:#1D9E75; --green-dk:#0F6E56;
-    --amber-bg:#FFF8E6; --amber-bd:#E6A817; --amber-tx:#8a6200; --red-bg:#FDECEE;
-    --sans:'DM Sans',system-ui,sans-serif; --serif:'DM Serif Display',serif; --r:12px;
+    --rojo:      #C8102E;
+    --rojo-dark: #A50D26;
+    --navy:      #003F7D;
+    --navy-mid:  #0055A5;
+    --blanco:    #FFFFFF;
+    --gris-bg:   #F2F2F2;
+    --gris-borde:rgba(0,0,0,0.09);
+    --gris-texto:#8a9ab0;
+    --verde:     #1D9E75;
+    --verde-bg:  #E6F6F0;
+    --amarillo:  #E6A817;
+    --amarillo-bg:#FFF8E6;
+    --azul:      #0055A5;
+    --azul-dk:   #003F7D;
+    --azul-bg:   #EEF4FF;
+    --texto:     #1a1a1a;
+    --texto-2:   #4a5568;
+    --radio:     12px;
+    --sans:      'DM Sans', system-ui, sans-serif;
+    --serif:     'DM Serif Display', serif;
+    --sombra:    0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
   }
-  body { font-family:var(--sans); background:var(--bg); color:var(--text); font-size:14px; line-height:1.5; min-height:100vh; }
-  .layout { min-height:100vh; display:grid; grid-template-rows:auto 1fr; }
-  .topbar { background:var(--red); display:flex; align-items:center; justify-content:space-between; padding:0 28px; min-height:68px; }
-  .topbar-brand { display:flex; align-items:center; gap:12px; }
-  .topbar-logo { width:40px; height:40px; border-radius:7px; overflow:hidden; flex-shrink:0; box-shadow:0 1px 6px rgba(0,0,0,0.25); }
-  .topbar-logo img { width:100%; height:100%; object-fit:cover; display:block; }
-  .topbar-name { font-size:21px; font-weight:700; color:var(--white); line-height:1.15; letter-spacing:-0.01em; }
-  .topbar-sub { font-size:12px; color:rgba(255,255,255,0.85); margin-top:2px; }
-  .btn-back { display:flex; align-items:center; gap:7px; background:#003F7D; color:#fff; border:2px solid #003F7D; border-radius:24px; padding:8px 18px; font-family:var(--sans); font-size:15px; font-weight:700; cursor:pointer; white-space:nowrap; text-decoration:none; transition:background .12s; }
-  .btn-back:hover { background:#002D5C; border-color:#002D5C; }
-  .main { padding:28px; }
-  .panel { max-width:1600px; margin:0 auto; background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:28px 32px; }
-  .panel-title { font-family:var(--sans); font-weight:700; font-size:30px; color:var(--blue); line-height:1.1; letter-spacing:-0.01em; }
-  .panel-sub { font-size:15px; color:var(--text-2); margin-top:4px; }
-  .panel-week { font-size:13px; color:var(--text-3); margin-top:2px; padding-bottom:18px; border-bottom:1px solid var(--border); margin-bottom:20px; }
-  label { display:block; font-size:13px; font-weight:600; margin:0 0 5px; color:var(--text); }
-  select, input[type=text], input[type=date], input[type=number], textarea {
-    width:100%; padding:9px 11px; font-size:14px; font-family:inherit; color:var(--text);
-    border:1px solid var(--border); border-radius:8px; background:#fff;
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--gris-bg);
+    color: var(--texto);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
   }
-  textarea { min-height:70px; resize:vertical; }
-  .filtros { background:#eef3fa; border:1px solid #c9d6ea; border-top:3px solid var(--blue); border-radius:10px; padding:16px 18px 16px; margin-bottom:22px; box-shadow:0 2px 10px rgba(0,63,125,0.07); }
-  .filtros-tit { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--blue); font-weight:700; margin:0 0 12px; }
-  /* Cuadrícula de filtros: 3 columnas iguales, y fila de 2+1 columnas */
-  .filtros-3col { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:14px; align-items:start; }
-  .filtros-2y1 { display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:14px; align-items:start; }
-  .filtros-3col .field, .filtros-2y1 .field { margin-bottom:0; }
-  /* Dropdown de fecha de cumplimiento (checks) */
-  .meses-dropdown { position:relative; }
-  .meses-btn { width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:8px; background:#fff; font-family:inherit; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:var(--text); }
-  .meses-btn:hover { border-color:var(--blue); }
-  .meses-lista { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.12); z-index:20; max-height:240px; overflow-y:auto; padding:6px; }
-  .meses-dropdown.abierto .meses-lista { display:block; }
-  .mes-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:13px; }
-  .mes-item:hover { background:var(--bg); }
-  .mes-item input { width:auto; cursor:pointer; accent-color:var(--blue); }
-  .chips { display:flex; gap:8px; flex-wrap:wrap; }
-  .chip { padding:8px 14px; border:1px solid var(--border); background:#fff; border-radius:20px; cursor:pointer; font-size:12.5px; font-weight:600; color:var(--text-2); user-select:none; transition:all .12s; }
-  .chip:hover { border-color:#b9c5d6; }
-  .chip.on { background:var(--blue); border-color:var(--blue); color:#fff; }
-  .filtros-foot { display:flex; justify-content:flex-end; }
-  .btn-limpiar { padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:8px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:600; color:var(--text-2); }
-  .btn-limpiar:hover { background:#eef0f3; }
-  .tabla-meta { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; margin-bottom:10px; font-size:13px; color:var(--text-2); }
-  .tabla-meta .meta-izq { justify-self:start; }
-  .tabla-meta .meta-centro { justify-self:center; margin-top:0; }
-  .tabla-meta .meta-der { justify-self:end; }
-  .btn-export { display:flex; align-items:center; gap:7px; padding:8px 16px; border:none; background:var(--green); color:#fff; border-radius:8px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:700; }
-  .btn-export:hover { background:var(--green-dk); }
-  .btn-resumen { display:flex; align-items:center; gap:7px; padding:8px 16px; border:1px solid var(--blue); background:#fff; color:var(--blue); border-radius:8px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:700; }
-  .btn-resumen:hover { background:var(--blue); color:#fff; }
-  .tabla-resumen { width:100%; border-collapse:collapse; }
-  .tabla-resumen th { background:var(--blue-dk); color:#fff; padding:9px 10px; font-size:12px; font-weight:700; text-align:left; border-bottom:2px solid var(--red); }
-  .tabla-resumen td { padding:8px 10px; font-size:13px; border-bottom:1px solid var(--border); }
-  .tabla-resumen tbody tr:hover { background:#f7f9fc; }
-  .tabla-resumen .grupo-vm td { background:var(--blue-lt); font-weight:700; color:var(--blue-dk); font-size:12px; text-transform:uppercase; letter-spacing:.03em; }
-  .tabla-resumen tfoot td { background:var(--blue-lt); font-weight:700; border-top:2px solid var(--blue); }
-  .tabla-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  thead th { background:#f4f6f9; text-align:left; padding:10px 12px; font-weight:700; color:var(--text-2); border-bottom:1px solid var(--border); white-space:nowrap; }
-  tbody td { padding:10px 12px; border-bottom:1px solid #eef0f3; vertical-align:middle; }
-  tbody tr.hito-row:hover { background:#fafbfc; }
-  .grupo-row td { background:var(--blue-lt); border-bottom:1px solid #d8e4f3; padding:9px 12px; }
-  .grupo-nombre { font-weight:700; color:var(--blue-dk); font-size:12.5px; letter-spacing:.01em; }
-  .td-hito { font-weight:600; color:var(--text); padding-left:22px; }
-  .badge { display:inline-block; padding:3px 9px; border-radius:12px; font-size:11px; font-weight:700; white-space:nowrap; }
-  .b-proc { background:#FFF3D6; color:#8a6200; }
-  .b-repr { background:#FDE2E4; color:#9c1322; }
-  .b-cump { background:#E0F3EA; color:#0c6647; }
-  .td-sit { max-width:260px; color:var(--text-2); font-size:12px; }
-  .td-sit-clip { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  .acciones { display:flex; gap:4px; }
-  .btn-ico { background:none; border:none; cursor:pointer; color:var(--blue); padding:5px; border-radius:6px; }
-  .btn-ico:hover { background:var(--blue-lt); }
-  .avance-cell { font-weight:700; }
-  .sem { display:inline-block; width:11px; height:11px; border-radius:50%; }
-  .sem-verde { background:#1D9E75; }
-  .sem-rojo { background:#C8102E; }
-  .sem-gris { background:#b9c2cf; }
-  .val-si { color:#1D9E75; font-weight:700; }
-  .val-no { color:#b9c2cf; }
-  .pass-wrap { position:relative; }
-  .pass-wrap input { padding-right:40px; }
-  .pass-eye { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-3); padding:4px; display:flex; }
-  .pass-eye:hover { color:var(--text-2); }
-  .pager { display:flex; justify-content:center; align-items:center; gap:16px; margin-top:20px; }
-  .pager button { padding:8px 16px; border:1px solid var(--blue); background:#fff; color:var(--blue); border-radius:8px; cursor:pointer; font-family:inherit; font-size:14px; font-weight:700; transition:background .12s; }
-  .pager button:hover:not(:disabled) { background:var(--blue-lt); }
-  .pager button:disabled { opacity:.35; cursor:default; border-color:var(--border); color:var(--text-3); }
-  .pager span { font-size:15px; color:var(--text); font-weight:700; }
-  /* Paginador de arriba: compacto, alineado a la derecha junto al contador */
-  .pager-top { justify-content:flex-end; margin-top:0; }
-  .loading { text-align:center; color:var(--text-2); padding:40px; }
-  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:50; align-items:center; justify-content:center; padding:20px; }
-  .overlay.show { display:flex; }
-  .modal { background:#fff; border-radius:var(--r); width:100%; max-width:640px; padding:24px 26px; max-height:90vh; overflow-y:auto; }
-  .modal-lg { max-width:860px; }
-  .modal-head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:18px; }
-  .modal-title { font-size:17px; font-weight:700; color:var(--blue); }
-  .modal-interv { font-size:13px; color:var(--text-2); margin-top:4px; line-height:1.4; }
-  .modal-hito { font-size:13.5px; color:var(--text); font-weight:600; margin-top:3px; }
-  .modal-x { background:none; border:none; font-size:22px; line-height:1; color:var(--text-3); cursor:pointer; }
-  .m-row3 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
-  .field { margin-bottom:14px; }
-  .ult-avance { font-size:12px; color:var(--blue); background:var(--blue-lt); border-radius:6px; padding:5px 9px; margin-top:5px; display:inline-block; }
-  .retro-box { background:var(--amber-bg); border:1px solid var(--amber-bd); border-radius:9px; padding:14px; margin-top:6px; margin-bottom:6px; display:none; }
-  .retro-box.show { display:block; }
-  .retro-box p { margin:0 0 9px; font-size:13px; color:var(--amber-tx); }
-  .check-row { display:flex; align-items:flex-start; gap:9px; margin:14px 0 4px; }
-  .check-row input { margin-top:3px; width:auto; }
-  .check-row label { font-weight:400; font-size:13.5px; margin:0; }
-  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
-  .btn-cancel { padding:10px 18px; border:1px solid var(--border); background:#fff; border-radius:8px; cursor:pointer; font-family:inherit; font-size:14px; font-weight:600; }
-  .btn-save { padding:10px 20px; border:none; background:var(--green); color:#fff; border-radius:8px; cursor:pointer; font-family:inherit; font-size:14px; font-weight:700; }
-  .btn-save:disabled { background:#b8c4d0; cursor:not-allowed; }
-  .modal-msg { border-radius:8px; padding:11px 14px; margin-top:14px; font-size:13.5px; display:none; }
-  .modal-msg.ok { background:#E8F7F0; border:1px solid var(--green); color:#0c6647; display:block; }
-  .modal-msg.err { background:var(--red-bg); border:1px solid var(--red); color:#9c1322; display:block; }
-  .modal-msg.warn { background:var(--amber-bg); border:1px solid var(--amber-bd); color:var(--amber-tx); display:block; }
-  .hist-tabla { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; }
-  .hist-tabla th { background:#f4f6f9; text-align:left; padding:8px 10px; font-weight:700; color:var(--text-2); border-bottom:1px solid var(--border); position:sticky; top:0; }
-  .hist-tabla td { padding:8px 10px; border-bottom:1px solid #eef0f3; vertical-align:top; }
-  .hist-load { text-align:center; padding:30px; color:var(--text-2); }
-  /* ===== Vista OGAME ===== */
-  .btn-ogame { display:flex; align-items:center; gap:8px; background:#fff; color:var(--blue-dk); border:none; border-radius:24px; padding:9px 20px; font-family:var(--sans); font-size:15px; font-weight:700; cursor:pointer; white-space:nowrap; box-shadow:0 1px 6px rgba(0,0,0,0.2); transition:transform .1s, box-shadow .12s; margin-right:12px; }
-  .btn-ogame:hover { box-shadow:0 2px 10px rgba(0,0,0,0.3); }
-  .topbar-actions { display:flex; align-items:center; }
-  /* Franja que aparece solo en modo OGAME */
-  .ogame-banner { display:none; background:linear-gradient(90deg,var(--blue-dk),var(--blue)); color:#fff; padding:10px 28px; align-items:center; justify-content:space-between; font-size:14px; font-weight:600; }
-  .ogame-banner .ban-left { display:flex; align-items:center; gap:10px; }
-  .ogame-banner .ban-badge { background:rgba(255,255,255,0.22); border-radius:6px; padding:3px 10px; font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
-  .btn-salir-ogame { background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.5); border-radius:20px; padding:6px 15px; font-family:var(--sans); font-size:13px; font-weight:600; cursor:pointer; }
-  .btn-salir-ogame:hover { background:rgba(255,255,255,0.28); }
-  /* Cuando el modo OGAME está activo, el body cambia de fondo */
-  body.modo-ogame { background:#E9F0FA; }
-  body.modo-ogame .ogame-banner { display:flex; }
-  body.modo-ogame .panel { border-color:#c3d6ef; box-shadow:0 1px 10px rgba(0,85,165,0.08); }
-  /* Columna "Val. OGAME": oculta por defecto, visible solo en modo OGAME */
-  .col-ogame { display:none; }
-  body.modo-ogame .col-ogame { display:table-cell; }
-  /* Bloques del modal que solo se ven en modo OGAME */
-  .solo-ogame { display:none; }
-  body.modo-ogame .solo-ogame { display:block; }
-  /* Las casillas (check-row) deben conservar su alineación horizontal aun en modo OGAME */
-  body.modo-ogame .check-row.solo-ogame { display:flex; }
-  /* Bloques del modal que solo se ven en modo usuario */
-  body.modo-ogame .solo-usuario { display:none; }
-  /* Modal de contraseña OGAME */
-  .modal-clave { max-width:420px; }
-  .modal-clave p { font-size:13.5px; color:var(--text-2); margin-bottom:14px; line-height:1.5; }
+
+  /* ── HEADER (topbar registro) ── */
+  .header {
+    background: var(--rojo);
+    color: var(--blanco);
+    padding: 0 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 75px;
+  }
+  .header-logo {
+    width: 40px; height: 40px;
+    border-radius: 8px; overflow: hidden; flex-shrink: 0;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.25);
+  }
+  .header-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .header-title { font-size: 21px; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; }
+  .header-sub   { font-size: 12px; color: rgba(255,255,255,0.85); margin-top: 2px; }
+
+  /* ── VISTA OGAME ── */
+  .btn-ogame {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    padding: 8px 16px; border-radius: 8px;
+    background: var(--blanco); color: var(--azul);
+    border: 1.5px solid var(--azul); cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    transition: all .15s;
+  }
+  .btn-ogame:hover { background: var(--azul); color: #fff; }
+  .banner-ogame {
+    background: var(--azul); color: #fff;
+    padding: 12px 20px; border-radius: 10px; margin-bottom: 18px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    font-size: 13px;
+  }
+  .btn-salir-ogame {
+    padding: 6px 14px; border-radius: 8px;
+    background: rgba(255,255,255,0.15); color: #fff;
+    border: 1px solid rgba(255,255,255,0.4); cursor: pointer;
+    font-family: inherit; font-size: 12px; font-weight: 600; flex-shrink: 0;
+  }
+  .btn-salir-ogame:hover { background: rgba(255,255,255,0.25); }
+  /* fondo tintado cuando la vista OGAME está activa */
+  .card.ogame-activa { background: #F5F9FF; border-color: #BFD9F2; }
+  /* columna solo-OGAME: oculta por defecto */
+  .col-ogame { display: none; }
+  .card.ogame-activa .col-ogame { display: table-cell; }
+
+
+  /* ── PAGE TITLE ── */
+  .page-header { margin-bottom: 20px; }
+  .page-header h1 { font-size: 30px; font-weight: 700; color: var(--azul); line-height: 1.1; letter-spacing: -0.01em; }
+  .page-header p  { font-size: 15px; color: var(--texto-2); margin-top: 4px; }
+
+  /* ── CARD ── */
+  .card {
+    max-width: 1600px; margin: 0 auto;
+    background: var(--blanco);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    border: 1px solid var(--gris-borde);
+    padding: 28px 32px;
+  }
+
+  /* ── FILTROS (estilo registro) ── */
+  .filtros {
+    margin-bottom: 22px;
+  }
+  .filtros-box {
+    background: #EAF1FB;
+    border: 1px solid #B8D0EC;
+    border-left: 4px solid var(--azul);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .filtros-label {
+    font-size: 12px; font-weight: 700; letter-spacing: .05em;
+    color: var(--azul-dk); text-transform: uppercase; margin-bottom: 12px;
+  }
+  .filtros-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .filtros-grid.seis { grid-template-columns: repeat(6, 1fr); }
+  .filtros-grid.cinco { grid-template-columns: repeat(5, 1fr); }
+  .filtro-group label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--texto-2); margin-bottom: 5px;
+  }
+  .filtro-group select, .filtro-group input {
+    width: 100%; padding: 9px 11px;
+    border: 1px solid var(--gris-borde);
+    border-radius: 8px;
+    font-size: 14px; color: var(--texto); font-family: inherit;
+    background: var(--blanco);
+  }
+  .filtro-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a9ab0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    cursor: pointer;
+  }
+  .filtro-group select:focus, .filtro-group input:focus {
+    outline: none; border-color: var(--azul);
+  }
+  .filtros-foot { display: flex; justify-content: flex-end; }
+
+  /* checkbox "solo último hito" — alineado con los demás campos de la fila */
+  .check-ultimo {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 11px; border: 1px solid var(--gris-borde);
+    border-radius: 8px; background: #fff; cursor: pointer;
+    font-size: 13px; color: var(--texto); font-weight: 400;
+  }
+  .check-ultimo:hover { border-color: var(--azul); }
+  .check-ultimo input { width: auto; cursor: pointer; accent-color: var(--azul); flex-shrink: 0; }
+  .btn-limpiar {
+    padding: 8px 16px; border: 1px solid var(--gris-borde);
+    background: #fff; border-radius: 8px; cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 600; color: var(--texto-2);
+  }
+  .btn-limpiar:hover { background: #eef0f3; }
+
+  /* ── DROPDOWN DE MESES (fecha de cumplimiento) ── */
+  .meses-dropdown { position: relative; }
+  .meses-btn {
+    width: 100%; padding: 9px 11px;
+    border: 1px solid var(--gris-borde); border-radius: 8px;
+    background: #fff; font-family: inherit; font-size: 14px;
+    cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+    color: var(--texto);
+  }
+  .meses-btn:hover { border-color: var(--azul); }
+  .meses-lista {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: #fff; border: 1px solid var(--gris-borde); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 20;
+    max-height: 240px; overflow-y: auto; padding: 6px;
+  }
+  .meses-dropdown.abierto .meses-lista { display: block; }
+  .mes-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  }
+  .mes-item:hover { background: var(--gris-bg); }
+  .mes-item input { width: auto; cursor: pointer; accent-color: var(--azul); }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    padding: 0 0 16px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+  }
+  .toolbar-info { font-size: 14px; color: var(--texto-2); }
+  .toolbar-info strong { color: var(--texto); }
+  .toolbar-right { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+
+  /* ── PAGINACIÓN ── */
+  .paginacion { display: flex; align-items: center; gap: 6px; }
+  .pag-btn {
+    padding: 7px 14px; border-radius: 8px;
+    border: 1px solid var(--gris-borde);
+    background: var(--blanco); cursor: pointer;
+    font-size: 13px; color: var(--texto); font-family: inherit;
+    transition: background .15s;
+  }
+  .pag-btn:hover:not(:disabled) { background: var(--gris-bg); }
+  .pag-btn:disabled { opacity: .4; cursor: default; }
+  .pag-info { font-size: 13px; color: var(--texto-2); font-weight: 700; padding: 0 6px; }
+
+  /* ── BTN EXCEL ── */
+  .btn-excel {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px;
+    background: var(--verde); color: var(--blanco);
+    border: none; cursor: pointer; font-size: 13px; font-weight: 700; font-family: inherit;
+    transition: background .15s;
+  }
+  .btn-excel:hover { background: var(--green-dk, #0F6E56); }
+
+  .btn-resumen {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px;
+    background: var(--blanco); color: var(--azul);
+    border: 1.5px solid var(--azul); cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    transition: all .15s;
+  }
+  .btn-resumen:hover { background: var(--azul); color: #fff; }
+
+  /* tabla resumen (modal) */
+  .tabla-resumen { width: 100%; border-collapse: collapse; }
+  .tabla-resumen th {
+    background: #f7f9fc; color: var(--texto-2);
+    font-size: 12px; font-weight: 700; padding: 10px 12px;
+    text-align: left; border-bottom: 2px solid #e3e9f2;
+  }
+  .tabla-resumen td {
+    padding: 9px 12px; border-bottom: 1px solid var(--gris-borde);
+    font-size: 13px;
+  }
+  .tabla-resumen tbody tr:hover { background: #f7f9fc; }
+  .tabla-resumen tr.fila-subtotal td {
+    background: #E8EEF7; font-size: 12px;
+    border-top: 1px solid var(--azul); border-bottom: 1px solid var(--azul);
+    color: var(--azul-dk);
+  }
+  .tabla-resumen tr.fila-subtotal:hover td { background: #E8EEF7; }
+  .tabla-resumen tfoot td {
+    background: var(--azul-bg); border-top: 2px solid var(--azul);
+    padding: 11px 12px; font-size: 13px;
+  }
+
+  /* ── TABLA ── */
+  .tabla-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--gris-borde); }
+  thead th {
+    background: #f7f9fc;
+    color: var(--texto-2);
+    font-size: 12px; font-weight: 700;
+    padding: 11px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e3e9f2;
+    white-space: nowrap;
+  }
+  thead tr:nth-child(2) th {
+    background: #f7f9fc;
+    color: var(--gris-texto);
+    font-size: 11px; font-weight: 500;
+    padding-top: 0; padding-bottom: 9px;
+    border-bottom: 1px solid #e3e9f2;
+  }
+
+  /* fila intervención */
+  .fila-intervencion td {
+    background: #FFFFFF;
+    padding: 10px 12px;
+    border-bottom: 1px solid #E5E7EB;
+    vertical-align: top;
+  }
+  /* columnas resaltadas: Última Actualización, Intervención, Hitos */
+  .col-resalte { background: #F8FAFF !important; }
+  .fila-intervencion .interv-nombre {
+    font-weight: 600; color: var(--navy); font-size: 13px;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .interv-codigo {
+    display: inline-block;
+    background: var(--navy); color: var(--blanco);
+    font-size: 10px; font-weight: 700;
+    padding: 2px 6px; border-radius: 3px;
+    white-space: nowrap; margin-top: 1px; flex-shrink: 0;
+  }
+  .interv-meta {
+    font-size: 11px; color: var(--gris-texto); margin-top: 4px;
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .interv-meta span { display: flex; align-items: center; gap: 3px; }
+
+  /* badge priorizado */
+  .badge-priorizado {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: var(--amarillo-bg); color: var(--amarillo-tx, #8a6200);
+    border: 1px solid var(--amarillo);
+    font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge-sin-datos {
+    display: inline-flex; align-items: center;
+    background: #F3F4F6; color: var(--gris-texto);
+    font-size: 10px; padding: 1px 7px; border-radius: 20px;
+  }
+
+  /* financiero chips */
+  .fin-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .fin-chip {
+    background: var(--blanco);
+    border: 1px solid var(--gris-borde);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+  .fin-chip .fc-label { color: var(--gris-texto); }
+  .fin-chip .fc-val   { font-weight: 700; color: var(--navy); margin-left: 4px; }
+
+  /* estado situacional */
+  .estado-situacional {
+    font-size: 12px; color: var(--texto);
+    margin-top: 6px; line-height: 1.4;
+    max-width: 480px;
+  }
+  .estado-vacio { color: var(--gris-texto); font-style: italic; font-size: 12px; margin-top: 4px; }
+
+  /* btn lápiz */
+  .btn-lapiz {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 8px;
+    background: var(--azul-dk); color: var(--blanco);
+    border: none; cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-lapiz:hover { background: var(--azul); }
+
+  /* toggle priorización (columna, interactivo) */
+  .toggle-prio {
+    display: inline-block; width: 34px; height: 19px; border-radius: 10px;
+    background: #cfd6e0; position: relative; vertical-align: middle;
+    border: none; cursor: pointer; padding: 0; transition: background .2s;
+  }
+  .toggle-prio::after {
+    content: ''; position: absolute; top: 2.5px; left: 3px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #fff; transition: left .2s;
+  }
+  .toggle-prio.on { background: var(--verde); }
+  .toggle-prio.on::after { left: 17px; }
+  .toggle-prio:disabled { opacity: .5; cursor: wait; }
+  /* toggle en modo consulta (vista usuario): visible pero no interactivo */
+  span.toggle-prio.deshab { cursor: default; opacity: .55; }
+
+  /* fila hito */
+  .fila-hito td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--gris-borde);
+    font-size: 13px; vertical-align: middle;
+    background: #FFFFFF;
+  }
+  .fila-hito:last-child td { border-bottom: none; }
+  .hito-nombre { color: var(--texto); line-height: 1.35; font-size: 12px; }
+
+  /* fecha cumplimiento */
+  .fecha-chip {
+    display: inline-block;
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .fecha-chip.con-fecha { background: var(--azul-bg); color: var(--azul); }
+  .fecha-chip.sin-fecha { background: var(--gris-bg); color: var(--gris-texto); }
+
+  /* actualizado */
+  .actualizado-chip {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .actualizado-chip.si { background: var(--verde-bg); color: var(--verde); }
+  .actualizado-chip.no { background: #FEE2E2; color: #991B1B; }
+
+  /* ── ESTADO CARGA ── */
+  .estado-carga {
+    padding: 48px; text-align: center;
+    color: var(--gris-texto); font-size: 14px;
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--gris-borde);
+    border-top-color: var(--rojo);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 100;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.activo { display: flex; }
+
+  .modal {
+    background: var(--blanco);
+    border-radius: 12px;
+    width: 100%; max-width: 720px;
+    max-height: 90vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  }
+  .modal-header {
+    background: var(--navy);
+    color: var(--blanco);
+    padding: 18px 24px;
+    border-radius: 12px 12px 0 0;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  }
+  .modal-header h2 { font-size: 15px; font-weight: 700; line-height: 1.3; }
+  .modal-header p  { font-size: 12px; opacity: .75; margin-top: 3px; }
+  .modal-close {
+    background: none; border: none; color: var(--blanco);
+    cursor: pointer; font-size: 20px; line-height: 1;
+    opacity: .7; padding: 2px; flex-shrink: 0;
+  }
+  .modal-close:hover { opacity: 1; }
+
+  .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* secciones modal */
+  .modal-seccion-titulo {
+    font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--azul);
+    margin-bottom: 14px; padding-bottom: 6px;
+    border-bottom: 2px solid var(--azul-bg);
+  }
+  .modal-seccion { margin-bottom: 24px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid.triple { grid-template-columns: 1fr 1fr 1fr; }
+  .form-full { grid-column: 1 / -1; }
+
+  .form-group label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--gris-texto); margin-bottom: 5px;
+  }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 8px 12px;
+    border: 1px solid var(--gris-borde); border-radius: var(--radio);
+    font-size: 13px; color: var(--texto); font-family: inherit;
+    transition: border-color .15s;
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    outline: none; border-color: var(--azul);
+    box-shadow: 0 0 0 3px rgba(29,78,216,.1);
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+
+  /* toggle priorizado */
+  .toggle-wrap {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: var(--gris-bg); border-radius: var(--radio);
+    border: 1px solid var(--gris-borde);
+  }
+  .toggle-wrap label { font-size: 13px; font-weight: 600; color: var(--texto); cursor: pointer; }
+  .toggle {
+    width: 36px; height: 20px; border-radius: 10px;
+    background: var(--gris-borde); position: relative;
+    cursor: pointer; border: none; flex-shrink: 0;
+    transition: background .2s;
+  }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--blanco); transition: left .2s;
+  }
+  .toggle.activo { background: var(--verde); }
+  .toggle.activo::after { left: 19px; }
+
+  /* tabla hitos en modal */
+  .hitos-tabla { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .hitos-tabla th {
+    background: var(--gris-bg); font-size: 11px; font-weight: 700;
+    color: var(--gris-texto); padding: 8px 12px; text-align: left;
+    border-bottom: 1px solid var(--gris-borde);
+  }
+  .hitos-tabla td {
+    padding: 8px 12px; border-bottom: 1px solid var(--gris-borde);
+    font-size: 12px; vertical-align: middle;
+  }
+  .hitos-tabla tr:last-child td { border-bottom: none; }
+  .hitos-tabla input[type="date"] {
+    padding: 5px 8px; font-size: 12px;
+    border: 1px solid var(--gris-borde); border-radius: 4px;
+    color: var(--texto);
+  }
+  .hitos-tabla input[type="date"]:focus {
+    outline: none; border-color: var(--azul);
+  }
+
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--gris-borde);
+    display: flex; justify-content: flex-end; gap: 10px;
+    border-radius: 0 0 12px 12px;
+  }
+  .btn-cancelar {
+    padding: 8px 18px; border-radius: var(--radio);
+    border: 1px solid var(--gris-borde); background: var(--blanco);
+    cursor: pointer; font-size: 13px; font-weight: 600;
+    color: var(--gris-texto); transition: background .15s;
+  }
+  .btn-cancelar:hover { background: var(--gris-bg); }
+  .btn-guardar {
+    padding: 8px 22px; border-radius: var(--radio);
+    border: none; background: var(--rojo); color: var(--blanco);
+    cursor: pointer; font-size: 13px; font-weight: 700;
+    transition: background .15s; display: flex; align-items: center; gap: 6px;
+  }
+  .btn-guardar:hover { background: var(--rojo-dark); }
+  .btn-guardar:disabled { opacity: .6; cursor: default; }
+
+  /* toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 200;
+    background: var(--navy); color: var(--blanco);
+    padding: 12px 20px; border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,.3);
+    transform: translateY(80px); opacity: 0;
+    transition: transform .3s, opacity .3s;
+    max-width: 340px;
+  }
+  .toast.visible { transform: translateY(0); opacity: 1; }
+  .toast.exito { border-left: 4px solid var(--verde); }
+  .toast.error { border-left: 4px solid var(--rojo); }
+
+  /* col widths */
+  .col-hito    { width: 38%; }
+  .col-fecha   { width: 15%; }
+  .col-upd     { width: 14%; text-align: center; }
 </style>
 </head>
 <body>
-<div class="layout">
-  <header class="topbar">
-    <div class="topbar-brand">
-      <div class="topbar-logo"><img src="mtc.jpg" alt="Logo MTC"></div>
-      <div>
-        <div class="topbar-name">Hub de Herramientas · OGAME</div>
-        <div class="topbar-sub">Oficina General de Articulación, Monitoreo, y Evaluación de Impacto</div>
-      </div>
-    </div>
-    <div class="topbar-actions">
-      <button class="btn-ogame" id="btnVistaOgame" onclick="abrirClaveOgame()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Vista OGAME
-      </button>
-      <a class="btn-back" href="index.html">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-        Regresar a página principal
-      </a>
-    </div>
-  </header>
 
-  <!-- Franja que aparece solo cuando el modo OGAME está activo -->
-  <div class="ogame-banner">
-    <div class="ban-left">
-      <span class="ban-badge">Modo OGAME</span>
-      <span>Estás en la vista de validación de OGAME. Puedes editar y validar los registros.</span>
-    </div>
-    <button class="btn-salir-ogame" onclick="salirOgame()">Salir de Vista OGAME</button>
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo"><img src="mtc.jpg" alt="Logo MTC"></div>
+  <div>
+    <div class="header-title">Hub de Herramientas · OGAME</div>
+    <div class="header-sub">Oficina General de Articulación, Monitoreo, y Evaluación de Impacto</div>
   </div>
+</header>
 
-  <main class="main">
-    <div id="loading" class="panel loading">Cargando estado actual de los hitos…</div>
-    <div id="app" class="panel" style="display:none;">
-      <div class="panel-title">CARTERA PRIORIZADA MTC</div>
-      <div class="panel-sub">Actualización semanal de avance de hitos</div>
-      <div class="panel-week" id="semanaLabel">—</div>
-
-      <div class="filtros">
-        <p class="filtros-tit">Filtrar hitos</p>
-        <!-- Fila 1: tres columnas iguales -->
-        <div class="filtros-3col">
-          <div class="field"><label>Viceministerio</label><select id="fVicem"><option value="">Todos</option></select></div>
-          <div class="field"><label>Unidad ejecutora</label><select id="fUei"><option value="">Todas</option></select></div>
-          <div class="field"><label>Tipo de infraestructura</label><select id="fTipo"><option value="">Todos</option></select></div>
-        </div>
-        <!-- Fila 2: tres columnas iguales -->
-        <div class="filtros-3col">
-          <div class="field"><label>Departamento</label><select id="fDepto"><option value="">Todos</option></select></div>
-          <div class="field"><label>CUI</label><input type="text" id="fCui" list="cuiList" placeholder="Escribe o elige…" autocomplete="off"><datalist id="cuiList"></datalist></div>
-          <div class="field"><label>Nombre de la Intervención</label><input type="text" id="fNombre" list="nombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="nombreList"></datalist></div>
-        </div>
-        <!-- Fila 3: Hito (2 columnas) + Estado de cumplimiento (1 columna) -->
-        <div class="filtros-3col">
-          <div class="field"><label>Hito</label><input type="text" id="fHito" list="hitoList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="hitoList"></datalist></div>
-          <div class="field"><label>Fecha de cumplimiento</label>
-            <div class="meses-dropdown" id="mesesPanel">
-              <button type="button" class="meses-btn" onclick="abrirMesesDropdown(event)">
-                <span id="mesesBtnLabel">Todos</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-              </button>
-              <div class="meses-lista" id="mesesLista"></div>
-            </div>
-          </div>
-          <div class="field"><label>Estado de cumplimiento del hito</label>
-            <div class="chips">
-              <span class="chip" data-estado="EN PROCESO" onclick="toggleChip(this)">EN PROCESO</span>
-              <span class="chip" data-estado="REPROGRAMADO" onclick="toggleChip(this)">REPROGRAMADO</span>
-              <span class="chip" data-estado="CUMPLIDO" onclick="toggleChip(this)">CUMPLIDO</span>
-            </div>
-          </div>
-        </div>
-        <!-- Fila 4: Categoría de hito + Estado de actualización + Validado OGAME (este último solo en modo OGAME) -->
-        <div class="filtros-3col">
-          <div class="field"><label>Categoría de hito</label><select id="fCategoria"><option value="">Todas</option></select></div>
-          <div class="field"><label>Estado de actualización</label>
-            <div class="chips">
-              <span class="chip sem-chip" id="chipPend" data-sem="pendiente" onclick="toggleSem(this)" style="border-color:#C8102E;"><span class="sem sem-rojo" style="margin-right:6px;"></span>Pendientes</span>
-              <span class="chip sem-chip" id="chipAct" data-sem="actualizado" onclick="toggleSem(this)" style="border-color:#1D9E75;"><span class="sem sem-verde" style="margin-right:6px;"></span>Actualizados</span>
-              <span class="chip sem-chip" id="chipNA" data-sem="cumplido" onclick="toggleSem(this)"><span class="sem sem-gris" style="margin-right:6px;"></span>No aplica</span>
-            </div>
-          </div>
-          <div class="field solo-ogame"><label>Validado OGAME</label><select id="fVal"><option value="">Todos</option><option value="si">Validados</option><option value="no">Sin validar</option></select></div>
-        </div>
-        <!-- Fila 5: Responsable OGAME (solo en Vista OGAME) -->
-        <div class="filtros-3col solo-ogame">
-          <div class="field"><label>Responsable OGAME</label><select id="fResp"><option value="">Todos</option></select></div>
-        </div>
-        <div class="filtros-foot"><button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar filtros</button></div>
+<!-- MAIN -->
+<main class="main">
+  <div class="card" id="card-principal">
+    <!-- Banner Vista OGAME (oculto por defecto) -->
+    <div class="banner-ogame" id="banner-ogame" style="display:none">
+      <div style="display:flex;align-items:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        <span><strong>Vista OGAME activa</strong> — edición de priorización y habilitación de hitos disponible</span>
       </div>
+      <button class="btn-salir-ogame" onclick="salirOGAME()">Salir de Vista OGAME</button>
+    </div>
 
-      <div class="tabla-meta">
-        <span id="contadorHitos" class="meta-izq">—</span>
-        <div class="pager pager-top meta-centro">
-          <button id="prevBtnTop" onclick="cambiarPagina(-1)">‹ Anterior</button>
-          <span id="pageInfoTop">—</span>
-          <button id="nextBtnTop" onclick="cambiarPagina(1)">Siguiente ›</button>
+    <div class="page-header">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+        <div>
+          <h1>Hoja de Ruta Estratégica 2026–2027</h1>
+          <p>Transferencia de gestión · Registro de estado de intervenciones e hitos clave</p>
         </div>
-        <div class="meta-der" style="display:flex; gap:8px;">
-          <button class="btn-resumen" onclick="abrirResumen()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            Ver resumen
-          </button>
-          <button class="btn-export" onclick="exportarXLSX()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Descargar Excel
-          </button>
-        </div>
-      </div>
-
-      <div class="tabla-wrap">
-        <table>
-          <thead><tr><th>Hito</th><th>Corte</th><th>Avance</th><th>Estado</th><th>Fecha cumpl.</th><th>Detalle del estado</th><th>¿Actualizado?</th><th class="col-ogame">Val. OGAME</th><th>Acciones</th></tr></thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
-
-      <div class="pager">
-        <button id="prevBtn" onclick="cambiarPagina(-1)">‹ Anterior</button>
-        <span id="pageInfo">—</span>
-        <button id="nextBtn" onclick="cambiarPagina(1)">Siguiente ›</button>
-      </div>
-    </div>
-  </main>
-</div>
-
-<!-- MODAL EDICIÓN -->
-<div class="overlay" id="overlay">
-  <div class="modal">
-    <div class="modal-head">
-      <div><div class="modal-title">Editar avance del hito</div><div class="modal-interv" id="mInterv">—</div><div class="modal-hito" id="mHito">—</div></div>
-      <button class="modal-x" onclick="cerrarModal()" aria-label="Cerrar">&times;</button>
-    </div>
-    <div class="m-row3">
-      <div><label>Estado</label><select id="mEstado"><option value="EN PROCESO">EN PROCESO</option><option value="REPROGRAMADO">REPROGRAMADO</option><option value="CUMPLIDO">CUMPLIDO</option></select></div>
-      <div><label>Fecha de cumplimiento</label><input type="date" id="mFecha"></div>
-    </div>
-    <div class="field"><label>% de avance</label><input type="number" id="mAvance" min="0" max="100" step="0.1" placeholder="Ej. 75.5"><span class="ult-avance" id="mUlt">—</span></div>
-    <div class="field"><label>Detalle del estado</label><textarea id="mSituacional" placeholder="Describe el avance real de esta semana…"></textarea></div>
-    <div class="retro-box" id="mRetro">
-      <p id="mRetroMsg">Esto es un retroceso respecto al avance anterior. ¿Es correcto?</p>
-      <label>Justificación del retroceso</label>
-      <textarea id="mJustif" placeholder="Explica por qué el avance disminuyó…"></textarea>
-      <div class="check-row"><input type="checkbox" id="mConfirmaRetro"><label for="mConfirmaRetro">Confirmo que el retroceso es correcto.</label></div>
-    </div>
-    <div class="retro-box" id="mEspecial" style="background:#FFF8E6; border-color:#E6A817;">
-      <p style="color:#8a6200;">Este hito ya tiene un registro esta semana. Si continúas, se reemplazará con la información que acabas de ingresar.</p>
-      <div class="check-row"><input type="checkbox" id="mConfirmaReemplazo"><label for="mConfirmaReemplazo">Confirmo que deseo reemplazar el registro de esta semana.</label></div>
-    </div>
-    <!-- Casilla que ve el USUARIO -->
-    <div class="check-row solo-usuario"><input type="checkbox" id="mValidado"><label for="mValidado">He revisado la información y confirmo que es correcta.</label></div>
-    <!-- Casilla que ve OGAME (validación) -->
-    <div class="check-row solo-ogame"><input type="checkbox" id="mValidadoOgame"><label for="mValidadoOgame">Ha sido validado por OGAME.</label></div>
-    <div class="modal-msg" id="mMsg"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
-      <button class="btn-save" id="mGuardar" onclick="guardar()">Guardar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL CLAVE OGAME -->
-<div class="overlay" id="overlayClave">
-  <div class="modal modal-clave">
-    <div class="modal-head">
-      <div class="modal-title">Acceso a Vista OGAME</div>
-      <button class="modal-x" onclick="cerrarClaveOgame()" aria-label="Cerrar">&times;</button>
-    </div>
-    <p>Esta vista permite editar y validar los registros. Introduce la clave de OGAME para continuar.</p>
-    <div class="field">
-      <label>Clave OGAME</label>
-      <div class="pass-wrap">
-        <input type="password" id="claveOgameInput" placeholder="Clave de acceso" autocomplete="off" onkeydown="if(event.key==='Enter') confirmarClaveOgame()">
-        <button type="button" class="pass-eye" onclick="toggleVer('claveOgameInput', this)" aria-label="Mostrar clave">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <button class="btn-ogame" id="btn-ogame" onclick="abrirLoginOGAME()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Vista OGAME
         </button>
       </div>
     </div>
-    <div class="modal-msg" id="mMsgClave"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="cerrarClaveOgame()">Cancelar</button>
-      <button class="btn-save" style="background:var(--blue);" onclick="confirmarClaveOgame()">Entrar</button>
+
+    <!-- FILTROS -->
+    <div class="filtros">
+      <div class="filtros-box">
+        <div class="filtros-label">Filtros</div>
+
+        <!-- Fila 1: Grupo, Viceministerio, Órgano, Área de influencia, Priorizado -->
+        <div class="filtros-grid cinco">
+          <div class="filtro-group">
+            <label>Grupo</label>
+            <select id="f-grupo"><option value="">Todos</option></select>
+          </div>
+          <div class="filtro-group">
+            <label>Viceministerio</label>
+            <select id="f-vice"><option value="">Todos</option></select>
+          </div>
+          <div class="filtro-group">
+            <label>Órgano</label>
+            <select id="f-organo"><option value="">Todos</option></select>
+          </div>
+          <div class="filtro-group">
+            <label>Área de influencia</label>
+            <input type="text" id="f-area" placeholder="Escribe para buscar…">
+          </div>
+          <div class="filtro-group">
+            <label>Priorizado</label>
+            <select id="f-priorizado">
+              <option value="">Todos</option>
+              <option value="si">Sí</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Fila 2: Eje, Línea, Intervención, Fecha de cumplimiento, Último hito -->
+        <div class="filtros-grid cinco">
+          <div class="filtro-group">
+            <label>Eje prioritario</label>
+            <select id="f-eje"><option value="">Todos</option></select>
+          </div>
+          <div class="filtro-group">
+            <label>Línea de interés</label>
+            <select id="f-linea"><option value="">Todos</option></select>
+          </div>
+          <div class="filtro-group">
+            <label>Intervención</label>
+            <input type="text" id="f-buscar" placeholder="Escribe para buscar…">
+          </div>
+          <div class="filtro-group">
+            <label>Fecha de cumplimiento</label>
+            <div class="meses-dropdown" id="meses-panel">
+              <button type="button" class="meses-btn" onclick="abrirMesesDropdown(event)">
+                <span id="meses-btn-label">Todos</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="meses-lista" id="meses-lista"></div>
+            </div>
+          </div>
+          <div class="filtro-group">
+            <label>Hito final</label>
+            <label class="check-ultimo">
+              <input type="checkbox" id="f-ultimo" onchange="aplicarFiltros()">
+              <span>Mostrar solo el último hito</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Fila 3: Limpiar -->
+        <div class="filtros-foot" style="justify-content:flex-end">
+          <button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar filtros</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="toolbar-info" id="resumen-info">Cargando...</div>
+      <div class="paginacion">
+        <button class="pag-btn" id="btn-anterior" onclick="cambiarPagina(-1)" disabled>‹ Anterior</button>
+        <span class="pag-info" id="pag-info">Página 1</span>
+        <button class="pag-btn" id="btn-siguiente" onclick="cambiarPagina(1)">Siguiente ›</button>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn-resumen" onclick="abrirResumen()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Ver resumen
+        </button>
+        <button class="btn-excel" onclick="exportarExcel()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="tabla-wrap">
+      <table id="tabla-principal">
+        <thead>
+          <tr>
+            <th style="width:6%; text-align:center; vertical-align:middle">Última<br>Actualización</th>
+            <th style="width:22%; vertical-align:middle">Intervención estratégica</th>
+            <th style="width:8%; vertical-align:middle">Responsable</th>
+            <th style="width:9%; vertical-align:middle">Área de influencia</th>
+            <th style="width:5%; text-align:center; vertical-align:middle">Priorización</th>
+            <th class="col-ogame" style="width:5%; text-align:center; vertical-align:middle">Habilitar<br>hitos</th>
+            <th style="width:18%; vertical-align:middle">Estado situacional</th>
+            <th style="width:5%; text-align:center; vertical-align:middle">Avance</th>
+            <th style="width:18%; vertical-align:middle">Hitos claves</th>
+            <th style="width:8%; text-align:center; vertical-align:middle">Fecha de<br>Cumplimiento</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body">
+          <tr><td colspan="9"><div class="estado-carga"><div class="spinner"></div>Cargando datos...</div></td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
-</div>
+</main>
 
-<!-- MODAL HISTÓRICO -->
-<div class="overlay" id="overlayHist">
-  <div class="modal modal-lg">
-    <div class="modal-head">
-      <div><div class="modal-title">Histórico del hito</div><div class="modal-interv" id="hInterv">—</div><div class="modal-hito" id="hHito">—</div></div>
-      <button class="modal-x" onclick="cerrarHist()" aria-label="Cerrar">&times;</button>
+<!-- MODAL RESUMEN POR EQUIPO -->
+<div class="modal-overlay" id="resumen-overlay">
+  <div class="modal" style="max-width:860px">
+    <div class="modal-header">
+      <div>
+        <h2>Resumen por equipo</h2>
+        <p id="resumen-subtitulo">Total de intervenciones agrupadas por equipo</p>
+      </div>
+      <button class="modal-close" onclick="cerrarResumen()">✕</button>
     </div>
-    <div id="hBody"><div class="hist-load">Cargando histórico…</div></div>
-  </div>
-</div>
-
-<!-- MODAL RESUMEN -->
-<div class="overlay" id="overlayResumen">
-  <div class="modal modal-lg">
-    <div class="modal-head">
-      <div><div class="modal-title">Resumen por Unidad Ejecutora</div><div class="modal-interv" id="resumenSub">Hitos por estado, agrupados por viceministerio y UEI</div></div>
-      <button class="modal-x" onclick="cerrarResumen()" aria-label="Cerrar">&times;</button>
+    <div class="modal-body">
+      <div id="resumen-tabla-wrap"></div>
     </div>
-    <div id="resumenWrap"></div>
-    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:18px;">
-      <button class="btn-cancel" onclick="cerrarResumen()">Cerrar</button>
-      <button class="btn-export" onclick="descargarResumen()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="cerrarResumen()">Cerrar</button>
+      <button class="btn-guardar" style="background:var(--verde)" onclick="descargarResumen()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Descargar resumen
       </button>
     </div>
   </div>
 </div>
 
+<!-- MODAL LOGIN OGAME -->
+<div class="modal-overlay" id="login-overlay">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div>
+        <h2>Vista OGAME</h2>
+        <p>Ingresa la contraseña para habilitar la edición</p>
+      </div>
+      <button class="modal-close" onclick="cerrarLoginOGAME()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Contraseña</label>
+        <div style="position:relative">
+          <input type="password" id="login-password" placeholder="Contraseña OGAME" style="padding-right:40px" onkeydown="if(event.key==='Enter')validarOGAME()">
+          <button type="button" id="btn-ojo" onclick="toggleVerPassword()" title="Mostrar contraseña"
+                  style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gris-texto);padding:4px;display:flex">
+            <svg id="ojo-abierto" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg id="ojo-cerrado" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+        <div id="login-error" style="color:var(--rojo);font-size:12px;margin-top:6px;display:none">Contraseña incorrecta</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="cerrarLoginOGAME()">Cancelar</button>
+      <button class="btn-guardar" onclick="validarOGAME()">Ingresar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE REGISTRO -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modal-titulo">Registrar actualización</h2>
+        <p id="modal-subtitulo"></p>
+      </div>
+      <button class="modal-close" onclick="cerrarModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- SECCIÓN INTERVENCIÓN -->
+      <div class="modal-seccion">
+        <div class="modal-seccion-titulo">Estado de la intervención</div>
+        <div class="form-grid" style="margin-bottom:14px">
+          <div class="form-group form-full">
+            <label>Estado situacional</label>
+            <textarea id="m-estado" rows="3" placeholder="Describe el estado actual de la intervención…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Avance físico (%)</label>
+            <input type="number" id="m-avance" placeholder="0" step="0.1" min="0" max="100">
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN HITOS -->
+      <div class="modal-seccion">
+        <div class="modal-seccion-titulo">Hitos clave</div>
+        <div id="modal-aviso-hitos" style="display:none;background:var(--amarillo-bg);border:1px solid var(--amarillo);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#8a6200">
+          🔒 La actualización de hitos está deshabilitada para esta intervención. Puedes registrar el estado y el avance, pero las fechas de cumplimiento no pueden modificarse.
+        </div>
+        <table class="hitos-tabla" id="modal-hitos-tabla">
+          <thead>
+            <tr>
+              <th style="width:55%">Hito</th>
+              <th style="width:25%">Fecha de cumplimiento</th>
+              <th style="width:20%">Última fecha registrada</th>
+            </tr>
+          </thead>
+          <tbody id="modal-hitos-body"></tbody>
+        </table>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-guardar" id="btn-guardar" onclick="guardarRegistro()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Guardar registro
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script>
-// ====== CONFIGURACIÓN ======
-const ENDPOINT = 'https://script.google.com/macros/s/AKfycbxSgvtxdB2Y4VTaFOBzIkmscjhpVwJHdgw22hWBMEYhwACmhUdYZEjQm4laGJDo4k6d/exec';
-const TOKEN = 'ogame_2026';
-// Clave para entrar a la Vista OGAME (misma que la de validación).
-// Para cambiarla, edita solo el texto entre comillas de la línea de abajo.
-const CLAVE_OGAME = 'ogame_rev';
-const ESTADO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=734960726&single=true&output=tsv';
-const MAESTRO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=279418764&single=true&output=tsv';
-const HIST_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=913605508&single=true&output=tsv';
-const DEPTO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=1441170985&single=true&output=tsv';
+// ── CONFIGURACIÓN ──────────────────────────────────────────────────────────────
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxFySD-V9iYZMMwYql2090TDajXnMDg7Sz2l_0rrep3UPmPPWDT4TbiCRl6t51E1AZZpw/exec';
 
-const CORS_PROXIES = [ url=>url, url=>'https://corsproxy.io/?'+encodeURIComponent(url), url=>'https://api.allorigins.win/raw?url='+encodeURIComponent(url) ];
+const TSV_MAESTRO_INTERV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=839870935&single=true&output=tsv';
+const TSV_MAESTRO_HITOS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=819717629&single=true&output=tsv';
+const TSV_ESTADO_INTERV= 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=1274731330&single=true&output=tsv';
+const TSV_ESTADO_HITOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=1161068484&single=true&output=tsv';
 
-const E = { corte:0, codHito:1, hito:2, categoria:3, codInterno:4, cui:5, nombre:6, fechaCump:7, estado:8, avance:9, situacional:10, validadoOgame:11 };
-const M = { codInterno:0, codHito:2, dpto:5, estatus:6, uei:8, vicem:9, tipoInfra:10, cui:11, responsable:12 };
+const POR_PAGINA = 8; // intervenciones por página
 
-const PAGE_SIZE = 20;
-const HIST_MAX = 10;
-let HITOS = [], CLASIF = {}, filtrados = [], pagina = 1, editando = null;
-let DEPTOS = {};        // codHito -> [departamentos]
-let DEPTOS_LISTA = [];  // lista única de departamentos
-let estadosActivos = new Set();  // estados de cumplimiento (chips)
-let semActivos = new Set();      // estados de actualización (semáforo: pendiente/actualizado/cumplido)
-let HIST_TODOS = null;       // histórico completo cacheado tras la primera descarga
-const HIST_CACHE = {};       // codHito -> registros (caché de sesión)
+// ── ESTADO GLOBAL ──────────────────────────────────────────────────────────────
+let maestro      = []; // filas crudas del TSV maestro
+let intervenciones = []; // objetos agrupados { codigo, nombre, organo, eje, linea, hitos[] }
+let estadoInterv = {}; // { codigo → { estadoSituacional, costo, pim, devengado, priorizado, fechaReg } }
+let estadoHitos  = {}; // { codhito → { fechaCumplimiento, fechaReg } }
+let filtradas    = []; // intervenciones después de filtros
+let paginaActual = 1;
+let vistaOGAME   = sessionStorage.getItem('hdr_vista_ogame') === '1'; // recuerda tras recargar
+const PASSWORD_OGAME = 'ogame.2026';
+let intervModal  = null; // intervención abierta en modal
 
-async function cargar() {
+// ── FETCH TSV ──────────────────────────────────────────────────────────────────
+async function fetchTSV(url) {
+  const proxies = [url,
+    'https://corsproxy.io/?' + encodeURIComponent(url),
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(url)];
+  for (const p of proxies) {
+    try {
+      const r = await fetch(p);
+      if (!r.ok) continue;
+      const txt = await r.text();
+      if (txt.trim()) return txt;
+    } catch {}
+  }
+  throw new Error('No se pudo cargar: ' + url);
+}
+
+function parseTSV(txt) {
+  const lineas = txt.trim().split('\n');
+  const headers = lineas[0].split('\t').map(h => h.trim());
+  return lineas.slice(1).map(l => {
+    const celdas = l.split('\t');
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (celdas[i] || '').trim());
+    return obj;
+  });
+}
+
+// ── CARGA INICIAL ──────────────────────────────────────────────────────────────
+async function cargarDatos() {
   try {
-    const [estadoTxt, maestroTxt, deptoTxt] = await Promise.all([ fetchProxy(ESTADO_TSV), fetchProxy(MAESTRO_TSV), fetchProxy(DEPTO_TSV) ]);
-    parseMaestro(maestroTxt);
-    parseDeptos(deptoTxt);
-    parseEstado(estadoTxt);
-    iniciar();
+    const [tsvMaestroInterv, tsvMaestroHitos, tsvInterv, tsvHitos] = await Promise.all([
+      fetchTSV(TSV_MAESTRO_INTERV),
+      fetchTSV(TSV_MAESTRO_HITOS),
+      fetchTSV(TSV_ESTADO_INTERV),
+      fetchTSV(TSV_ESTADO_HITOS)
+    ]);
+
+    // 1) Maestro de intervenciones (una fila por intervención)
+    // cols: Código, Grupo, Viceministerios, Órgano, Ejes prioritarios de la gestión,
+    //       Línea de interés, Intervención Estratégica, Detalle de Intervención,
+    //       Relevancia sectorial, Área de Influencia
+    const mapa = {};
+    parseTSV(tsvMaestroInterv).forEach(f => {
+      const cod = f['Código'];
+      if (!cod) return;
+      mapa[cod] = {
+        codigo:     cod,
+        id:         f['ID'] || cod,   // agrupa variantes (DGPRTM-28-1/-2/-3 → DGPRTM-28)
+        grupo:      f['Grupo'] || '',
+        vice:       f['Viceministerios'] || '',
+        organo:     f['Órgano'] || '',
+        eje:        f['Ejes prioritarios de la gestión'] || '',
+        linea:      f['Línea de interés'] || '',
+        nombre:     f['Intervención Estratégica'] || '',
+        detalle:    f['Detalle de Intervención'] || '',
+        relevancia: f['Relevancia sectorial'] || '',
+        area:       f['Área de Influencia'] || '',
+        equipo:     f['EQUIPO'] || '',
+        director:   f['DIRECTOR(A)'] || '',
+        hitos:      []
+      };
+    });
+
+    // 2) Maestro de hitos (una fila por hito) — se cruza por Código
+    // cols: Código, Intervención Estratégica, Departamento, CODHITOS, Hito(s) clave(s)
+    parseTSV(tsvMaestroHitos).forEach(f => {
+      const cod = f['Código'];
+      if (!cod || !f['CODHITOS']) return;
+      if (!mapa[cod]) return; // hito sin intervención en el maestro: se ignora
+      mapa[cod].hitos.push({
+        codhito: f['CODHITOS'],
+        nombre:  f['Hito(s) clave(s)'] || '',
+        ultimo:  (f['Último'] || f['Ultimo'] || '').trim().toLowerCase() === 'si' ||
+                 (f['Último'] || f['Ultimo'] || '').trim().toLowerCase() === 'sí'
+      });
+    });
+
+    intervenciones = Object.values(mapa);
+
+    // procesar estado actual intervenciones
+    // cols: Fecha de registro, Código, Intervención Estratégica, Estado situacional, Avance, Priorizado
+    estadoInterv = {};
+    parseTSV(tsvInterv).forEach(f => {
+      const cod = f['Código'];
+      if (!cod) return;
+      estadoInterv[cod] = {
+        fechaReg:   f['Fecha de registro'],
+        estado:     f['Estado situacional'],
+        avance:     f['Avance'] || '',
+        priorizado: (f['Priorizado'] || '').toLowerCase() === 'sí' || (f['Priorizado'] || '').toLowerCase() === 'si',
+        // Por defecto habilitado: solo se bloquea si dice explícitamente "No"
+        hitosHabilitados: (f['HitosHabilitados'] || '').toLowerCase() !== 'no'
+      };
+    });
+
+    // procesar estado actual hitos
+    // cols: Fecha de registro, Código, Intervención Estratégica, CODHITOS, Hito(s) clave(s), Fecha de Cumplimiento
+    estadoHitos = {};
+    parseTSV(tsvHitos).forEach(f => {
+      const cod = f['CODHITOS'];
+      if (!cod) return;
+      estadoHitos[cod] = {
+        fechaReg:      f['Fecha de registro'],
+        fechaCumplimiento: f['Fecha de Cumplimiento']
+      };
+    });
+
+    poblarFiltros();
+    aplicarFiltros();
+
   } catch (e) {
-    document.getElementById('loading').innerHTML = '<span style="color:#C8102E;">No se pudo cargar la información.<br><small>Verifica que las hojas estén publicadas como TSV. Error: '+e.message+'</small></span>';
+    document.getElementById('tabla-body').innerHTML =
+      `<tr><td colspan="9"><div class="estado-carga">⚠️ Error al cargar datos. Verifica tu conexión e intenta recargar la página.</div></td></tr>`;
+    document.getElementById('resumen-info').textContent = 'Error al cargar';
+    console.error(e);
   }
 }
-async function fetchProxy(url) {
-  let lastErr=null;
-  for (const fn of CORS_PROXIES) {
-    try { const res=await fetch(fn(url),{cache:'no-cache'}); if(!res.ok) throw new Error('HTTP '+res.status); const t=await res.text(); if(!t||t.length<10) throw new Error('Respuesta vacía'); return t; }
-    catch(e){ lastErr=e; }
+
+// ── VISTA OGAME ─────────────────────────────────────────────────────────────────
+function abrirLoginOGAME() {
+  const inp = document.getElementById('login-password');
+  inp.value = '';
+  inp.type = 'password';
+  document.getElementById('ojo-abierto').style.display = 'block';
+  document.getElementById('ojo-cerrado').style.display = 'none';
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('login-overlay').classList.add('activo');
+  inp.focus();
+}
+function cerrarLoginOGAME() {
+  document.getElementById('login-overlay').classList.remove('activo');
+}
+function toggleVerPassword() {
+  const inp = document.getElementById('login-password');
+  const abierto = document.getElementById('ojo-abierto');
+  const cerrado = document.getElementById('ojo-cerrado');
+  const mostrar = inp.type === 'password';
+  inp.type = mostrar ? 'text' : 'password';
+  abierto.style.display = mostrar ? 'none' : 'block';
+  cerrado.style.display = mostrar ? 'block' : 'none';
+}
+function validarOGAME() {
+  const val = document.getElementById('login-password').value;
+  if (val === PASSWORD_OGAME) {
+    vistaOGAME = true;
+    sessionStorage.setItem('hdr_vista_ogame', '1');
+    cerrarLoginOGAME();
+    aplicarVistaOGAME();
+    renderTabla();
+    mostrarToast('Vista OGAME activada', 'exito');
+  } else {
+    document.getElementById('login-error').style.display = 'block';
   }
-  throw lastErr || new Error('Sin respuesta');
 }
-let INTERNO_A_HITOS = {};  // COD INTERNO -> [COD HITOS] (un proyecto tiene varios hitos)
-function parseMaestro(tsv) {
-  const lineas = tsv.split('\n').filter(l=>l.trim()); CLASIF={}; INTERNO_A_HITOS={};
-  for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const cod=(c[M.codHito]||'').trim(); if(!cod) continue; if((c[M.estatus]||'').trim().toUpperCase()!=='VIGENTE') continue;
-    CLASIF[cod]={ vicem:(c[M.vicem]||'').trim(), uei:(c[M.uei]||'').trim(), tipoInfra:(c[M.tipoInfra]||'').trim(), dpto:(c[M.dpto]||'').trim(), cui:(c[M.cui]||'').trim(), responsable:(c[M.responsable]||'').trim() };
-    const interno=(c[M.codInterno]||'').trim();
-    if(interno){ if(!INTERNO_A_HITOS[interno]) INTERNO_A_HITOS[interno]=[]; INTERNO_A_HITOS[interno].push(cod); } }
+function salirOGAME() {
+  vistaOGAME = false;
+  sessionStorage.removeItem('hdr_vista_ogame');
+  aplicarVistaOGAME();
+  renderTabla();
 }
-// Tabla de relación: Departamento (col A=0) -> COD INTERNO (col B=1).
-// Como el formulario usa COD HITOS, se traduce vía el Maestro (INTERNO_A_HITOS).
-function parseDeptos(tsv){
-  const lineas = tsv.split('\n').filter(l=>l.trim()); DEPTOS={}; const set=new Set();
-  for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const dep=(c[0]||'').trim(); const interno=(c[1]||'').trim();
-    if(!dep||!interno) continue;
-    set.add(dep);
-    const hitos = INTERNO_A_HITOS[interno] || [];
-    hitos.forEach(codHito=>{ if(!DEPTOS[codHito]) DEPTOS[codHito]=[]; if(!DEPTOS[codHito].includes(dep)) DEPTOS[codHito].push(dep); });
+// Aplica el estado visual (banner, botón, fondo) según la vista actual
+function aplicarVistaOGAME() {
+  document.getElementById('banner-ogame').style.display = vistaOGAME ? 'flex' : 'none';
+  document.getElementById('btn-ogame').style.display = vistaOGAME ? 'none' : 'flex';
+  document.getElementById('card-principal').classList.toggle('ogame-activa', vistaOGAME);
+}
+
+// ── FILTROS ────────────────────────────────────────────────────────────────────
+
+// Utilidades de fecha de cumplimiento (formato "mmm-aa" en español)
+const MESES_ABR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+// "ago-26" -> { mes: 8, anio: 2026, orden: 2026*12+7, trimestre: 3, label: "ago-26" }
+function parseCumplimiento(valor) {
+  if (!valor) return null;
+  const limpio = valor.trim().toLowerCase();
+  const m = limpio.match(/^([a-z]{3})[-\/]?(\d{2,4})$/);
+  if (!m) return null;
+  const idxMes = MESES_ABR.indexOf(m[1]);
+  if (idxMes === -1) return null;
+  let anio = parseInt(m[2], 10);
+  if (anio < 100) anio += 2000;
+  return {
+    label: `${m[1]}-${String(anio).slice(-2)}`,
+    mes: idxMes + 1,
+    anio: anio,
+    orden: anio * 12 + idxMes,
+    trimestre: Math.floor(idxMes / 3) + 1  // 1..4
+  };
+}
+
+let mesesDisponibles = [];   // [{label, orden, trimestre, anio}] ordenados
+let mesesSeleccion   = new Set(); // labels de meses activos
+
+// Construye la lista de meses a partir de los hitos de las intervenciones
+// que pasan los demás filtros (cascada). Al inicio, de todas.
+function construirFechasCumplimiento() {
+  const set = new Map(); // label -> obj
+  const base = intervenciones.length
+    ? intervenciones.filter(i => pasaFiltrosExcepto(i, '__meses__'))
+    : [];
+  base.forEach(i => {
+    i.hitos.forEach(h => {
+      const eh = estadoHitos[h.codhito];
+      if (!eh) return;
+      const p = parseCumplimiento(eh.fechaCumplimiento);
+      if (p) set.set(p.label, p);
+    });
+  });
+  mesesDisponibles = [...set.values()].sort((a, b) => a.orden - b.orden);
+}
+
+function poblarFiltros() {
+  ['f-grupo','f-vice','f-organo','f-eje','f-linea'].forEach(id => {
+    document.getElementById(id).addEventListener('change', aplicarFiltros);
+  });
+  document.getElementById('f-priorizado').addEventListener('change', aplicarFiltros);
+  document.getElementById('f-buscar').addEventListener('input', aplicarFiltros);
+  document.getElementById('f-area').addEventListener('input', aplicarFiltros);
+
+  refrescarOpcionesFiltros();
+}
+
+// Devuelve true si la intervención pasa todos los filtros EXCEPTO el indicado.
+// Se usa para calcular qué opciones tiene sentido mostrar en cada dropdown.
+function pasaFiltrosExcepto(i, excepto) {
+  const v = {
+    grupo:      document.getElementById('f-grupo').value,
+    vice:       document.getElementById('f-vice').value,
+    organo:     document.getElementById('f-organo').value,
+    eje:        document.getElementById('f-eje').value,
+    linea:      document.getElementById('f-linea').value,
+    priorizado: document.getElementById('f-priorizado').value,
+    buscar:     document.getElementById('f-buscar').value.trim().toLowerCase(),
+    area:       document.getElementById('f-area').value.trim().toLowerCase()
+  };
+  if (excepto !== 'grupo'  && v.grupo  && i.grupo  !== v.grupo)  return false;
+  if (excepto !== 'vice'   && v.vice   && i.vice   !== v.vice)   return false;
+  if (excepto !== 'organo' && v.organo && i.organo !== v.organo) return false;
+  if (excepto !== 'eje'    && v.eje    && i.eje    !== v.eje)    return false;
+  if (excepto !== 'linea'  && v.linea  && i.linea  !== v.linea)  return false;
+  if (excepto !== 'priorizado' && v.priorizado) {
+    const esPrior = estadoInterv[i.codigo]?.priorizado;
+    if (v.priorizado === 'si' && !esPrior) return false;
+    if (v.priorizado === 'no' && esPrior)  return false;
   }
-  DEPTOS_LISTA=[...set].sort((a,b)=>a.localeCompare(b,'es'));
-}
-function deptosDe(codHito){ return DEPTOS[codHito]||[]; }
-// Departamentos únicos presentes en un conjunto de hitos (para recortar el filtro).
-function deptosDisponibles(hitos){ const set=new Set(); hitos.forEach(h=>deptosDe(h.codHito).forEach(d=>set.add(d))); return [...set].sort((a,b)=>a.localeCompare(b,'es')); }
-function parseEstado(tsv) {
-  const lineas = tsv.split('\n').filter(l=>l.trim()); HITOS=[];
-  for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const cod=(c[E.codHito]||'').trim(); if(!cod) continue; if(!CLASIF[cod]) continue;
-    HITOS.push({ codHito:cod, hito:(c[E.hito]||'').trim(), nombre:(c[E.nombre]||'').trim(), cui:(c[E.cui]||'').trim(), categoria:(c[E.categoria]||'').trim(),
-      corte:(c[E.corte]||'').trim(), fechaCump:(c[E.fechaCump]||'').trim(), estado:(c[E.estado]||'').trim().toUpperCase(), avance:(c[E.avance]||'').trim(), situacional:(c[E.situacional]||'').trim(),
-      validadoOgame:(c[E.validadoOgame]||'').trim() }); }
+  if (excepto !== 'buscar' && v.buscar && !i.nombre.toLowerCase().includes(v.buscar)) return false;
+  if (excepto !== 'area'   && v.area   && !(i.area || '').toLowerCase().includes(v.area)) return false;
+  return true;
 }
 
-function avancePct(raw){ if(raw===null||raw===undefined) return NaN; let s=String(raw).trim(); const t=s.includes('%'); s=s.replace('%','').replace(',','.').trim(); let n=parseFloat(s); if(isNaN(n)) return NaN; if(t) return n; if(n<=1) return n*100; return n; }
+// Reconstruye las opciones de cada dropdown según los demás filtros activos.
+// Conserva la selección actual aunque ya no esté entre las opciones.
+function refrescarOpcionesFiltros() {
+  const campos = [
+    { id: 'f-grupo',  campo: 'grupo'  },
+    { id: 'f-vice',   campo: 'vice'   },
+    { id: 'f-organo', campo: 'organo' },
+    { id: 'f-eje',    campo: 'eje'    },
+    { id: 'f-linea',  campo: 'linea'  }
+  ];
+  campos.forEach(({ id, campo }) => {
+    const sel = document.getElementById(id);
+    const valorActual = sel.value;
+    const disponibles = [...new Set(
+      intervenciones.filter(i => pasaFiltrosExcepto(i, campo)).map(i => i[campo]).filter(Boolean)
+    )].sort();
+    // si hay algo seleccionado que ya no aparece, lo mantenemos para no perder el filtro
+    if (valorActual && !disponibles.includes(valorActual)) disponibles.push(valorActual);
+    sel.innerHTML = '<option value="">Todos</option>' +
+      disponibles.map(v => `<option value="${esc(v)}"${v === valorActual ? ' selected' : ''}>${esc(v)}</option>`).join('');
+  });
 
-// Inicio (jueves) de la semana de reporte de una fecha dada.
-function inicioSemanaDe(fecha){ const f=new Date(fecha.getFullYear(),fecha.getMonth(),fecha.getDate()); const diff=(f.getDay()-4+7)%7; f.setDate(f.getDate()-diff); return f; }
-// Parsea un corte ("1/7/2026", "2026-07-01" o fecha larga) a Date o null.
-function parseFechaCorte(s){ if(!s) return null; s=String(s).trim(); let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return new Date(+m[3],+m[2]-1,+m[1]); m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return new Date(+m[1],+m[2]-1,+m[3]); const d=new Date(s); return isNaN(d.getTime())?null:d; }
-
-// Semáforo: 'cumplido' (gris), 'actualizado' (verde) o 'pendiente' (rojo).
-function semaforoDe(h){
-  if(h.estado==='CUMPLIDO') return 'cumplido';
-  const fc=parseFechaCorte(h.corte);
-  if(!fc) return 'pendiente';
-  const semHito=inicioSemanaDe(fc).getTime();
-  const semHoy=inicioSemanaDe(new Date()).getTime();
-  return semHito===semHoy ? 'actualizado' : 'pendiente';
+  // los meses también se filtran en cascada
+  construirFechasCumplimiento();
+  // si un mes seleccionado ya no existe entre los disponibles, se descarta
+  const labelsDisp = new Set(mesesDisponibles.map(m => m.label));
+  labelsDisp.add('__sinfecha__');
+  [...mesesSeleccion].forEach(l => { if (!labelsDisp.has(l)) mesesSeleccion.delete(l); });
+  renderMesesDropdown();
 }
 
-function iniciar() {
-  document.getElementById('loading').style.display='none';
-  document.getElementById('app').style.display='block';
-  document.getElementById('semanaLabel').textContent='Semana de reporte: '+semanaReporteTexto();
-  poblarVicem();
-  poblarSelect('fDepto', DEPTOS_LISTA, 'Todos');
-  recalcularOpciones();
-  ['fVicem','fUei','fTipo','fVal','fDepto','fCategoria','fResp'].forEach(id=>document.getElementById(id).addEventListener('change',onFiltroChange));
-  document.getElementById('fCui').addEventListener('input',onFiltroChange);
-  document.getElementById('fNombre').addEventListener('input',onFiltroChange);
-  document.getElementById('fHito').addEventListener('input',onFiltroChange);
+// Dropdown de meses con checkboxes
+function renderMesesDropdown() {
+  const cont = document.getElementById('meses-lista');
+  if (mesesDisponibles.length === 0) {
+    cont.innerHTML = '<div style="padding:10px;color:var(--gris-texto);font-size:12px">Sin fechas registradas</div>';
+  } else {
+    cont.innerHTML = mesesDisponibles.map(m => `
+      <label class="mes-item">
+        <input type="checkbox" value="${m.label}" ${mesesSeleccion.has(m.label) ? 'checked' : ''}
+               onchange="toggleMes('${m.label}', this.checked)">
+        <span>${m.label}</span>
+      </label>`).join('') +
+      `<label class="mes-item" style="border-top:1px solid var(--gris-borde);margin-top:4px;padding-top:6px">
+        <input type="checkbox" value="__sinfecha__" ${mesesSeleccion.has('__sinfecha__') ? 'checked' : ''}
+               onchange="toggleMes('__sinfecha__', this.checked)">
+        <span style="font-style:italic;color:var(--gris-texto)">Sin fecha</span>
+      </label>`;
+  }
+  actualizarBotonMeses();
+}
+
+function actualizarBotonMeses() {
+  const btn = document.getElementById('meses-btn-label');
+  const n = mesesSeleccion.size;
+  if (n === 0) { btn.textContent = 'Todos'; btn.style.color = 'var(--texto)'; }
+  else { btn.textContent = `${n} seleccionado${n > 1 ? 's' : ''}`; btn.style.color = 'var(--azul)'; }
+}
+
+function toggleMes(label, activo) {
+  if (activo) mesesSeleccion.add(label);
+  else mesesSeleccion.delete(label);
+  actualizarBotonMeses();
   aplicarFiltros();
 }
 
-function clasifDe(h){ return CLASIF[h.codHito]||{}; }
-function opcionesDe(getter, base){ const set=new Set(); base.forEach(h=>{const v=getter(h); if(v) set.add(v);}); return [...set].sort((a,b)=>a.localeCompare(b,'es',{numeric:true})); }
-function poblarSelect(id, valores, etiqueta){ const sel=document.getElementById(id); const actual=sel.value; sel.innerHTML='<option value="">'+etiqueta+'</option>'; valores.forEach(v=>{const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o);}); if(valores.includes(actual)) sel.value=actual; }
-function poblarDatalist(id, valores){ const dl=document.getElementById(id); dl.innerHTML=''; valores.forEach(v=>{const o=document.createElement('option'); o.value=v; dl.appendChild(o);}); }
-function poblarVicem(){ poblarSelect('fVicem', opcionesDe(h=>clasifDe(h).vicem, HITOS), 'Todos'); }
-function onFiltroChange(){ recalcularOpciones(); aplicarFiltros(); }
-function baseFiltrada(excluir){
-  const v=document.getElementById('fVicem').value, u=document.getElementById('fUei').value, t=document.getElementById('fTipo').value;
-  const cu=document.getElementById('fCui').value.trim(), no=document.getElementById('fNombre').value.trim(), hi=document.getElementById('fHito').value.trim();
-  const va=document.getElementById('fVal').value;
-  const de=document.getElementById('fDepto').value;
-  const ca=document.getElementById('fCategoria').value;
-  const re=document.getElementById('fResp').value;
-  return HITOS.filter(h=>{ const cl=clasifDe(h);
-    const valOk=/^s[ií]$/i.test(h.validadoOgame);
-    return (excluir==='vicem'||!v||cl.vicem===v) && (excluir==='uei'||!u||cl.uei===u) && (excluir==='tipo'||!t||cl.tipoInfra===t) &&
-           (excluir==='cui'||!cu||cl.cui===cu) && (excluir==='nombre'||!no||h.nombre===no) &&
-           (excluir==='hito'||!hi||h.hito===hi) &&
-           (excluir==='categoria'||!ca||h.categoria===ca) &&
-           (excluir==='resp'||!re||cl.responsable===re) &&
-           (excluir==='estado'||estadosActivos.size===0||estadosActivos.has(h.estado)) &&
-           (excluir==='sem'||semActivos.size===0||semActivos.has(semaforoDe(h))) &&
-           (excluir==='meses'||mesesSeleccion.size===0||coincideMes(h)) &&
-           (excluir==='val'||!va||(va==='si'?valOk:!valOk)) &&
-           (excluir==='depto'||!de||deptosDe(h.codHito).includes(de)); });
-}
-function toggleSem(el){ const s=el.getAttribute('data-sem'); if(semActivos.has(s)){ semActivos.delete(s); el.classList.remove('on'); } else { semActivos.add(s); el.classList.add('on'); } recalcularOpciones(); aplicarFiltros(); }
-function toggleChip(el){
-  const est=el.getAttribute('data-estado');
-  if(estadosActivos.has(est)){ estadosActivos.delete(est); el.classList.remove('on'); }
-  else { estadosActivos.add(est); el.classList.add('on'); }
-  recalcularOpciones(); aplicarFiltros();
-}
-function recalcularOpciones(){
-  poblarSelect('fUei',  opcionesDe(h=>clasifDe(h).uei, baseFiltrada('uei')), 'Todas');
-  poblarSelect('fTipo', opcionesDe(h=>clasifDe(h).tipoInfra, baseFiltrada('tipo')), 'Todos');
-  poblarSelect('fCategoria', opcionesDe(h=>h.categoria, baseFiltrada('categoria')), 'Todas');
-  poblarSelect('fResp', opcionesDe(h=>clasifDe(h).responsable, baseFiltrada('resp')), 'Todos');
-  poblarSelect('fDepto', deptosDisponibles(baseFiltrada('depto')), 'Todos');
-  poblarDatalist('cuiList', opcionesDe(h=>clasifDe(h).cui, baseFiltrada('cui')));
-  poblarDatalist('nombreList', opcionesDe(h=>h.nombre, baseFiltrada('nombre')));
-  poblarDatalist('hitoList', opcionesDe(h=>h.hito, baseFiltrada('hito')));
-  construirMeses();
-}
-function aplicarFiltros(){ filtrados = baseFiltrada(null); pagina=1; render(); }
-function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito','fVal','fDepto','fCategoria','fResp'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); semActivos.clear(); mesesSeleccion.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); poblarSelect('fDepto', DEPTOS_LISTA, 'Todos'); recalcularOpciones(); aplicarFiltros(); }
-
-function badgeEstado(est){ if(est==='EN PROCESO') return '<span class="badge b-proc">EN PROCESO</span>'; if(est==='REPROGRAMADO') return '<span class="badge b-repr">REPROGRAMADO</span>'; if(est==='CUMPLIDO') return '<span class="badge b-cump">CUMPLIDO</span>'; return '<span class="badge">'+escapeHtml(est)+'</span>'; }
-function fmtAvance(raw){ const n=avancePct(raw); if(isNaN(n)) return '—'; const r=Math.round(n*10)/10; return (Number.isInteger(r)?r:r.toFixed(1))+'%'; }
-
-// Limpia el "Corte" quitándole la hora si viene pegada (ej. "7/07/2026 22:00:00" -> "7/07/2026").
-function fmtCorteLimpio(s){
-  if(!s) return '—';
-  s=String(s).trim();
-  // Si tiene una parte de fecha al inicio (d/m/aaaa o aaaa-mm-dd), quedarse solo con ella.
-  let m=s.match(/^(\d{1,2}\/\d{1,2}\/\d{4})/); if(m) return m[1];
-  m=s.match(/^(\d{4}-\d{2}-\d{2})/); if(m){ const p=m[1].split('-'); return (+p[2])+'/'+(+p[1])+'/'+p[0]; }
-  return escapeHtml(s);
-}
-// Muestra la fecha de cumplimiento como dd/mm/aaaa (ej. "2026-07-01" -> "01/07/2026").
-function fmtFechaDMA(s){
-  if(!s) return '—';
-  s=String(s).trim();
-  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return m[3]+'/'+m[2]+'/'+m[1];
-  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return String(m[1]).padStart(2,'0')+'/'+String(m[2]).padStart(2,'0')+'/'+m[3];
-  return escapeHtml(s);
+function abrirMesesDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('meses-panel').classList.toggle('abierto');
 }
 
-// Convierte "1/7/2026" o "2026-07-01" a "jul-26" (mes abreviado en español + año de 2 dígitos)
-function fmtMesAnio(s){
-  if(!s) return '—';
-  s=String(s).trim();
-  const meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  let mes, anio;
-  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);          // d/m/aaaa
-  if(m){ mes=parseInt(m[2],10); anio=m[3]; }
-  else { m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m){ mes=parseInt(m[2],10); anio=m[1]; } }
-  if(!mes||mes<1||mes>12||!anio) return escapeHtml(s); // si no se reconoce, mostrar tal cual
-  return meses[mes-1]+'-'+String(anio).slice(-2);
-}
+// Hitos de una intervención que pasan los filtros de hito (Opción B: recorta).
+// Combina el filtro de meses y el de "solo último hito".
+function hitosVisibles(interv) {
+  let lista = interv.hitos;
 
-// ===== Filtro de Fecha de cumplimiento (checks) =====
-const MESES_ABR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-let mesesDisponibles = [];        // [{label, orden}]
-let mesesSeleccion = new Set();   // labels activos
+  // solo el hito marcado como último en el maestro
+  const soloUltimo = document.getElementById('f-ultimo')?.checked;
+  if (soloUltimo) lista = lista.filter(h => h.ultimo);
 
-// Convierte una fecha de cumplimiento ("1/7/2026", "2026-07-01") en {label:"jul-26", orden}
-function parseCumpl(s){
-  if(!s) return null;
-  s=String(s).trim();
-  let mes, anio;
-  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if(m){ mes=parseInt(m[2],10); anio=parseInt(m[3],10); }
-  else { m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m){ mes=parseInt(m[2],10); anio=parseInt(m[1],10); } }
-  if(!mes||mes<1||mes>12||!anio) return null;
-  return { label: MESES_ABR[mes-1]+'-'+String(anio).slice(-2), orden: anio*12+(mes-1) };
-}
-// ¿El hito coincide con los meses seleccionados? (incluye opción "sin fecha")
-function coincideMes(h){
-  const p=parseCumpl(h.fechaCump);
-  if(!p) return mesesSeleccion.has('__sinfecha__');
-  return mesesSeleccion.has(p.label);
-}
-// Construye la lista de meses disponibles según los demás filtros (cascada)
-function construirMeses(){
-  const map=new Map();
-  baseFiltrada('meses').forEach(h=>{ const p=parseCumpl(h.fechaCump); if(p) map.set(p.label, p.orden); });
-  mesesDisponibles=[...map.entries()].map(([label,orden])=>({label,orden})).sort((a,b)=>a.orden-b.orden);
-  // descartar selecciones que ya no existan
-  const disp=new Set(mesesDisponibles.map(m=>m.label)); disp.add('__sinfecha__');
-  [...mesesSeleccion].forEach(l=>{ if(!disp.has(l)) mesesSeleccion.delete(l); });
-  renderMesesDropdown();
-}
-function renderMesesDropdown(){
-  const cont=document.getElementById('mesesLista');
-  if(mesesDisponibles.length===0){
-    cont.innerHTML='<div style="padding:10px;color:#8a9ab0;font-size:12px">Sin fechas registradas</div>';
-  } else {
-    cont.innerHTML = mesesDisponibles.map(m=>`
-      <label class="mes-item"><input type="checkbox" value="${m.label}" ${mesesSeleccion.has(m.label)?'checked':''} onchange="toggleMes('${m.label}', this.checked)"><span>${m.label}</span></label>`).join('') +
-      `<label class="mes-item" style="border-top:1px solid var(--border);margin-top:4px;padding-top:6px"><input type="checkbox" value="__sinfecha__" ${mesesSeleccion.has('__sinfecha__')?'checked':''} onchange="toggleMes('__sinfecha__', this.checked)"><span style="font-style:italic;color:#8a9ab0">Sin fecha</span></label>`;
-  }
-  const btn=document.getElementById('mesesBtnLabel'); const n=mesesSeleccion.size;
-  if(n===0){ btn.textContent='Todos'; btn.style.color='var(--text)'; }
-  else { btn.textContent=n+' seleccionado'+(n>1?'s':''); btn.style.color='var(--blue)'; }
-}
-function toggleMes(label, activo){
-  if(activo) mesesSeleccion.add(label); else mesesSeleccion.delete(label);
-  recalcularOpciones(); aplicarFiltros();
-}
-function abrirMesesDropdown(e){ e.stopPropagation(); document.getElementById('mesesPanel').classList.toggle('abierto'); }
-document.addEventListener('click', e=>{ const p=document.getElementById('mesesPanel'); if(p && !p.contains(e.target)) p.classList.remove('abierto'); });
-
-function render(){
-  const tot=filtrados.length, paginas=Math.max(1,Math.ceil(tot/PAGE_SIZE));
-  if(pagina>paginas) pagina=paginas;
-  const slice=filtrados.slice((pagina-1)*PAGE_SIZE,(pagina-1)*PAGE_SIZE+PAGE_SIZE);
-  const tbody=document.getElementById('tbody');
-  const nCols = document.body.classList.contains('modo-ogame') ? 9 : 8;
-  if(slice.length===0){ tbody.innerHTML='<tr><td colspan="'+nCols+'" style="text-align:center; padding:30px; color:#8a9ab0;">No hay hitos con estos filtros.</td></tr>'; }
-  else {
-    let html='', grupoActual=null;
-    slice.forEach(h=>{
-      if(h.nombre!==grupoActual){ grupoActual=h.nombre; html+='<tr class="grupo-row"><td colspan="'+nCols+'"><span class="grupo-nombre">'+(escapeHtml(h.nombre)||'(sin intervención)')+'</span></td></tr>'; }
-      const sem=semaforoDe(h);
-      const semClass = sem==='actualizado'?'sem-verde':(sem==='cumplido'?'sem-gris':'sem-rojo');
-      const semTitle = sem==='actualizado'?'Actualizado esta semana':(sem==='cumplido'?'Cumplido (no requiere actualización)':'Pendiente de actualizar');
-      const valOk = /^s[ií]$/i.test(h.validadoOgame);
-      html+=`<tr class="hito-row">
-        <td class="td-hito">${escapeHtml(h.hito)||'—'}</td>
-        <td style="white-space:nowrap; color:var(--text-2);">${escapeHtml(h.corte)||'—'}</td>
-        <td class="avance-cell">${fmtAvance(h.avance)}</td>
-        <td>${badgeEstado(h.estado)}</td>
-        <td style="white-space:nowrap;">${fmtMesAnio(h.fechaCump)}</td>
-        <td class="td-sit"><div class="td-sit-clip" title="${escapeHtml(h.situacional)}">${escapeHtml(h.situacional)||'—'}</div></td>
-        <td style="text-align:center;"><span class="sem ${semClass}" title="${semTitle}"></span></td>
-        <td class="col-ogame" style="text-align:center;">${valOk?'<span class="val-si">✓</span>':'<span class="val-no">—</span>'}</td>
-        <td><div class="acciones">
-          <button class="btn-ico" onclick="abrirHist('${h.codHito}')" aria-label="Ver histórico" title="Ver histórico">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          </button>
-          <button class="btn-ico" onclick="abrirModal('${h.codHito}')" aria-label="Editar" title="Editar">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-          </button>
-        </div></td>
-      </tr>`;
+  // filtro por mes de cumplimiento
+  if (mesesSeleccion.size > 0) {
+    lista = lista.filter(h => {
+      const eh = estadoHitos[h.codhito] || {};
+      const p = parseCumplimiento(eh.fechaCumplimiento);
+      if (!p) return mesesSeleccion.has('__sinfecha__');
+      return mesesSeleccion.has(p.label);
     });
-    tbody.innerHTML=html;
   }
-  // Desglose por estado de cumplimiento sobre lo filtrado
-  let nCump=0, nRepr=0, nProc=0;
-  filtrados.forEach(h=>{ if(h.estado==='CUMPLIDO') nCump++; else if(h.estado==='REPROGRAMADO') nRepr++; else if(h.estado==='EN PROCESO') nProc++; });
-  const partes = [ tot+(tot===1?' hito':' hitos'), nCump+' cumplidos', nRepr+' reprogramados', nProc+' en proceso' ];
-  document.getElementById('contadorHitos').innerHTML = partes.join(' &nbsp;·&nbsp; ');
-  // Actualiza los dos paginadores (arriba y abajo) de una sola vez
-  const infoPag='Página '+pagina+' de '+paginas;
-  ['pageInfo','pageInfoTop'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=infoPag; });
-  ['prevBtn','prevBtnTop'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=pagina<=1; });
-  ['nextBtn','nextBtnTop'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=pagina>=paginas; });
+  return lista;
 }
-function cambiarPagina(d){ pagina+=d; render(); window.scrollTo({top:0,behavior:'smooth'}); }
 
-// ====== CONTROL DE VISTA OGAME ======
-function abrirClaveOgame(){
-  document.getElementById('claveOgameInput').value='';
-  const m=document.getElementById('mMsgClave'); m.className='modal-msg'; m.style.display='none';
-  document.getElementById('overlayClave').classList.add('show'); document.body.style.overflow='hidden';
-  setTimeout(()=>document.getElementById('claveOgameInput').focus(),100);
-}
-function cerrarClaveOgame(){ document.getElementById('overlayClave').classList.remove('show'); document.body.style.overflow=''; }
-function confirmarClaveOgame(){
-  const clave=document.getElementById('claveOgameInput').value.trim();
-  if(clave===CLAVE_OGAME){
-    document.body.classList.add('modo-ogame');
-    document.getElementById('btnVistaOgame').style.display='none';
-    cerrarClaveOgame();
-    render(); // redibuja la tabla para mostrar la columna Val. OGAME
-  } else {
-    const m=document.getElementById('mMsgClave'); m.className='modal-msg err'; m.textContent='Clave incorrecta. Verifica e intenta de nuevo.'; m.style.display='block';
-  }
-}
-function salirOgame(){
-  document.body.classList.remove('modo-ogame');
-  document.getElementById('btnVistaOgame').style.display='';
-  render(); // redibuja sin la columna Val. OGAME
-}
-let _downClave=false;
-document.getElementById('overlayClave').addEventListener('mousedown',function(e){ _downClave=(e.target===this); });
-document.getElementById('overlayClave').addEventListener('click',function(e){ if(e.target===this && _downClave) cerrarClaveOgame(); _downClave=false; });
+function aplicarFiltros() {
+  const vGrupo      = document.getElementById('f-grupo').value;
+  const vVice       = document.getElementById('f-vice').value;
+  const vOrgano     = document.getElementById('f-organo').value;
+  const vEje        = document.getElementById('f-eje').value;
+  const vLinea      = document.getElementById('f-linea').value;
+  const vPriorizado = document.getElementById('f-priorizado').value;
+  const vBuscar     = document.getElementById('f-buscar').value.trim().toLowerCase();
+  const vArea       = document.getElementById('f-area').value.trim().toLowerCase();
 
-// ====== MODAL EDICIÓN ======
-function abrirModal(codHito){
-  const h=HITOS.find(x=>x.codHito===codHito); if(!h) return; editando=codHito;
-  document.getElementById('mInterv').textContent=h.nombre;
-  document.getElementById('mHito').textContent=h.hito;
-  document.getElementById('mEstado').value=['EN PROCESO','REPROGRAMADO','CUMPLIDO'].includes(h.estado)?h.estado:'EN PROCESO';
-  document.getElementById('mFecha').value=toISODate(h.fechaCump);
-  const pct=avancePct(h.avance); document.getElementById('mAvance').value=isNaN(pct)?0:Math.round(pct*10)/10;
-  document.getElementById('mSituacional').value=h.situacional;
-  document.getElementById('mUlt').textContent='Último registrado: '+fmtAvance(h.avance);
-  document.getElementById('mValidado').checked=false; limpiarRetro();
-  // Casilla de validación OGAME: se marca si el hito ya está validado esta semana.
-  const valOk=/^s[ií]$/i.test(h.validadoOgame);
-  document.getElementById('mValidadoOgame').checked=valOk;
-  document.getElementById('mMsg').className='modal-msg'; document.getElementById('mMsg').style.display='none';
-  document.getElementById('overlay').classList.add('show'); document.body.style.overflow='hidden';
-}
-function cerrarModal(){ document.getElementById('overlay').classList.remove('show'); document.body.style.overflow=''; editando=null; }
-function limpiarRetro(){ document.getElementById('mRetro').classList.remove('show'); document.getElementById('mConfirmaRetro').checked=false; document.getElementById('mJustif').value=''; document.getElementById('mEspecial').classList.remove('show'); document.getElementById('mConfirmaReemplazo').checked=false; }
-
-async function guardar(){
-  const msg=document.getElementById('mMsg'); msg.className='modal-msg'; msg.style.display='none';
-  const esOgame = document.body.classList.contains('modo-ogame');
-
-  // En modo usuario exige la casilla de confirmación. En modo OGAME no es obligatoria.
-  if(!esOgame && !document.getElementById('mValidado').checked){
-    return modalMsg('err','Debes marcar la casilla de validación antes de guardar.');
-  }
-
-  const retroVisible=document.getElementById('mRetro').classList.contains('show');
-  const reemplazoVisible=document.getElementById('mEspecial').classList.contains('show');
-
-  // Si se está mostrando el aviso de reemplazo, el usuario debe confirmar con la casilla.
-  if(reemplazoVisible && !document.getElementById('mConfirmaReemplazo').checked){
-    return modalMsg('err','Marca la casilla para confirmar que deseas reemplazar el registro de esta semana.');
-  }
-
-  // La clave de especialista viaja de forma automática y oculta (el usuario nunca la escribe):
-  //  - En modo OGAME siempre, para poder corregir.
-  //  - En modo usuario, solo si ya confirmó que quiere reemplazar el registro de la semana.
-  const usarClave = esOgame || (reemplazoVisible && document.getElementById('mConfirmaReemplazo').checked);
-
-  // ¿OGAME marcó "Ha sido validado por OGAME"? Se envía en el MISMO viaje.
-  const validarAhora = esOgame && document.getElementById('mValidadoOgame').checked;
-
-  const payload={ token:TOKEN, codHito:editando, estado:document.getElementById('mEstado').value, avance:document.getElementById('mAvance').value,
-    fechaCumplimiento:document.getElementById('mFecha').value, situacional:document.getElementById('mSituacional').value, validado:true,
-    confirmaRetroceso:retroVisible?document.getElementById('mConfirmaRetro').checked:false, justificacion:retroVisible?document.getElementById('mJustif').value:'',
-    claveEspecialista: usarClave ? CLAVE_OGAME : '',
-    validadoOgame: validarAhora };  // el backend guarda y valida en un solo paso
-
-  const btn=document.getElementById('mGuardar'); btn.disabled=true; btn.textContent='Guardando…';
-  try {
-    const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
-    const data=await res.json();
-    if(data.ok){
-      // Refleja el resultado localmente (incluida la validación si se marcó).
-      actualizarFilaLocal(editando,payload); delete HIST_CACHE[editando]; HIST_TODOS=null;
-      if(validarAhora){ const h=HITOS.find(x=>x.codHito===editando); if(h){ h.validadoOgame='Sí'; render(); } }
-      modalMsg('ok',data.mensaje);
-      setTimeout(cerrarModal,1200);
+  filtradas = intervenciones.filter(i => {
+    if (vGrupo  && i.grupo !== vGrupo)  return false;
+    if (vVice   && i.vice  !== vVice)   return false;
+    if (vOrgano && i.organo !== vOrgano) return false;
+    if (vEje    && i.eje   !== vEje)    return false;
+    if (vLinea  && i.linea !== vLinea)  return false;
+    if (vPriorizado) {
+      const esPrior = estadoInterv[i.codigo]?.priorizado;
+      if (vPriorizado === 'si' && !esPrior) return false;
+      if (vPriorizado === 'no' && esPrior)  return false;
     }
-    else if(data.tipo==='retroceso'){ document.getElementById('mRetro').classList.add('show'); document.getElementById('mRetroMsg').textContent='Esto es un retroceso respecto al '+data.avanceAnterior+'% anterior. ¿Es correcto? Confirma y justifica para continuar.'; modalMsg('warn','Revisa el aviso de retroceso, justifica y vuelve a guardar.'); }
-    else if(data.tipo==='duplicado'){ document.getElementById('mEspecial').classList.add('show'); }
-    else { modalMsg('err',data.mensaje); }
-  } catch(e){ modalMsg('err','Error de conexión: '+e.message); }
-  finally { btn.disabled=false; btn.textContent='Guardar'; }
-}
-function actualizarFilaLocal(codHito,p){ const h=HITOS.find(x=>x.codHito===codHito); if(!h) return; h.estado=p.estado.toUpperCase(); h.avance=String(p.avance)+'%'; h.fechaCump=p.fechaCumplimiento||h.fechaCump; h.situacional=p.situacional; h.corte=hoyCorteTexto(); render(); }
-function hoyCorteTexto(){
-  // Miércoles que cierra la semana de reporte (jueves→miércoles), igual que el backend.
-  const hoy=new Date();
-  const f=new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-  const diff=(f.getDay()-4+7)%7;   // 4 = jueves (inicio de semana)
-  f.setDate(f.getDate()-diff+6);    // inicio + 6 = miércoles de cierre
-  const dd=String(f.getDate()).padStart(2,'0');
-  const mm=String(f.getMonth()+1).padStart(2,'0');
-  return dd+'/'+mm+'/'+f.getFullYear();
-}
-function modalMsg(tipo,texto){ const msg=document.getElementById('mMsg'); msg.className='modal-msg '+tipo; msg.textContent=texto; msg.style.display='block'; }
+    if (vBuscar && !i.nombre.toLowerCase().includes(vBuscar)) return false;
+    if (vArea && !(i.area || '').toLowerCase().includes(vArea)) return false;
+    // Filtro por mes de cumplimiento (Opción B): la intervención pasa solo si
+    // tiene al menos un hito en los meses seleccionados
+    // Filtros de hito (mes y/o último): la intervención pasa solo si le queda
+    // al menos un hito visible
+    const filtrandoHitos = mesesSeleccion.size > 0 || document.getElementById('f-ultimo').checked;
+    if (filtrandoHitos && hitosVisibles(i).length === 0) return false;
+    return true;
+  });
 
-// Validación OGAME: marca el registro de la semana como validado.
-// La clave va incluida automáticamente (ya se validó al entrar a la Vista OGAME).
-async function validarEnOgame(codHito){
+  paginaActual = 1;
+  refrescarOpcionesFiltros();
+  renderTabla();
+}
+
+function limpiarFiltros() {
+  ['f-grupo','f-vice','f-organo','f-eje','f-linea','f-priorizado','f-buscar','f-area'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-ultimo').checked = false;
+  mesesSeleccion.clear();
+  renderMesesDropdown();
+  aplicarFiltros();
+}
+
+// ── RENDER TABLA ───────────────────────────────────────────────────────────────
+function renderTabla() {
+  // Display: cuenta IDs únicos (las variantes DGPRTM-28-1/-2/-3 son una sola)
+  const totalInterv = new Set(filtradas.map(i => i.id)).size;
+  const totalHitos  = filtradas.reduce((s, i) => s + hitosVisibles(i).length, 0);
+  // Paginación: sobre filas reales, no sobre IDs agrupados
+  const totalPags   = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
+
+  document.getElementById('resumen-info').innerHTML =
+    `<strong>${totalInterv}</strong> intervenciones &mdash; <strong>${totalHitos}</strong> hitos`;
+  document.getElementById('pag-info').textContent = `Página ${paginaActual} de ${totalPags}`;
+  document.getElementById('btn-anterior').disabled = paginaActual <= 1;
+  document.getElementById('btn-siguiente').disabled = paginaActual >= totalPags;
+
+  const inicio = (paginaActual - 1) * POR_PAGINA;
+  const pagina = filtradas.slice(inicio, inicio + POR_PAGINA);
+
+  const tbody = document.getElementById('tabla-body');
+
+  if (pagina.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="estado-carga">No hay intervenciones que coincidan con los filtros aplicados.</div></td></tr>`;
+    return;
+  }
+
+  let html = '';
+  pagina.forEach(interv => {
+    const est = estadoInterv[interv.codigo] || {};
+    const tieneRegistro = !!est.fechaReg;
+
+    const estadoHtml = est.estado
+      ? `<div class="estado-situacional">${esc(est.estado)}</div>`
+      : `<div class="estado-vacio">Sin registro</div>`;
+
+    // Avance físico (registrado a mano)
+    const avanceFisHtml = (est.avance !== undefined && est.avance !== '' && est.avance !== null)
+      ? `<span style="font-weight:700;color:var(--texto)">${fmtAvance(est.avance)}</span>`
+      : '—';
+
+    // Priorización: editable solo en Vista OGAME; en vista usuario, gris y no clickeable
+    const prioHtml = vistaOGAME
+      ? `<button class="toggle-prio ${est.priorizado ? 'on' : ''}" onclick="togglePriorizacion('${esc(interv.codigo)}', this)" title="${est.priorizado ? 'Priorizada' : 'No priorizada'}"></button>`
+      : `<span class="toggle-prio ${est.priorizado ? 'on' : ''} deshab" title="${est.priorizado ? 'Priorizada' : 'No priorizada'}"></span>`;
+
+    // Habilitar hitos (solo columna OGAME): candado editable por OGAME
+    const habil = est.hitosHabilitados !== false; // por defecto true
+    const habilHtml = `<button class="toggle-prio ${habil ? 'on' : ''}" onclick="toggleHitosHabilitados('${esc(interv.codigo)}', this)" title="${habil ? 'Hitos habilitados' : 'Hitos bloqueados'}"></button>`;
+
+    const hitosMostrar = hitosVisibles(interv);
+    const nHitos = hitosMostrar.length;
+
+    // columna Última Actualización: fecha + ícono lápiz, alineada arriba
+    const colActualizado = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        ${tieneRegistro
+          ? `<span style="font-size:11px;color:var(--texto);font-weight:700">${esc(est.fechaReg)}</span>`
+          : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro</span>`}
+        <button class="btn-lapiz" onclick="abrirModal('${esc(interv.codigo)}')" title="Registrar actualización">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
+      </div>`;
+
+    html += `
+    <tr class="fila-intervencion">
+      <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;text-align:center;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding-top:12px">
+        ${colActualizado}
+      </td>
+      <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
+        <div style="padding-left:9px;border-left:3px solid var(--azul)">
+          <div style="font-weight:700;color:var(--azul);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
+          ${interv.detalle ? `<div style="margin-top:4px;font-size:11px;color:var(--azul);font-style:italic;line-height:1.4">${esc(interv.detalle)}</div>` : ''}
+        </div>
+        ${interv.relevancia ? `<div style="margin-top:7px;font-size:11px;color:var(--texto-2);display:flex;align-items:flex-start;gap:5px;line-height:1.35">🎯 <span>${esc(interv.relevancia)}</span></div>` : ''}
+      </td>
+      <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>
+      <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.area) || "—"}</td>
+      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${prioHtml}</td>
+      <td class="col-ogame" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${habilHtml}</td>
+      <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
+        ${estadoHtml}
+      </td>
+      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:10px 12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${avanceFisHtml}</td>`;
+
+    hitosMostrar.forEach((h, idx) => {
+      const eh = estadoHitos[h.codhito] || {};
+      const fechaChip = eh.fechaCumplimiento
+        ? `<span class="fecha-chip con-fecha">${esc(eh.fechaCumplimiento)}</span>`
+        : `<span class="fecha-chip sin-fecha">Sin fecha</span>`;
+
+      const esUltimo = idx === hitosMostrar.length - 1;
+      const bordeInferior = esUltimo ? 'border-bottom:2px solid #CBD5E1' : 'border-bottom:1px solid #E5E7EB';
+
+      if (idx === 0) {
+        html += `
+      <td class="col-resalte" style="padding:8px 12px;${bordeInferior};vertical-align:middle;font-size:12px;border-left:1px solid #E5E7EB">
+        <div class="hito-nombre">${esc(h.nombre)}</div>
+      </td>
+      <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${fechaChip}</td>
+    </tr>`;
+      } else {
+        html += `
+    <tr class="fila-hito">
+      <td class="col-resalte" style="padding:8px 12px;${bordeInferior};vertical-align:middle;font-size:12px;border-left:1px solid #E5E7EB">
+        <div class="hito-nombre">${esc(h.nombre)}</div>
+      </td>
+      <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${fechaChip}</td>
+    </tr>`;
+      }
+    });
+
+    if (nHitos === 0) {
+      html += `<td class="col-resalte">—</td><td>—</td></tr>`;
+    }
+  });
+
+  tbody.innerHTML = html;
+}
+
+function fmt(v) {
+  if (!v && v !== 0) return '—';
+  const n = parseFloat(v);
+  return isNaN(n) ? v : n.toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+// Muestra el avance como porcentaje, tolerando datos ya con "%" o con coma decimal.
+// Acepta "25", "25%", "25,00%", "25.00%" → muestra "25%".
+function fmtAvance(v) {
+  var limpio = String(v).replace(/%/g, '').replace(',', '.').trim();
+  var n = parseFloat(limpio);
+  if (isNaN(n)) return esc(String(v)); // si no es número, lo muestra tal cual
+  // sin decimales si es entero, con un decimal si los tiene
+  var texto = Number.isInteger(n) ? String(n) : n.toFixed(1);
+  return texto + '%';
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function cambiarPagina(delta) {
+  const total = Math.ceil(filtradas.length / POR_PAGINA);
+  paginaActual = Math.max(1, Math.min(total, paginaActual + delta));
+  renderTabla();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── MODAL ──────────────────────────────────────────────────────────────────────
+function abrirModal(codigo) {
+  intervModal = intervenciones.find(i => i.codigo === codigo);
+  if (!intervModal) return;
+
+  const est = estadoInterv[codigo] || {};
+
+  document.getElementById('modal-titulo').textContent = intervModal.nombre;
+  document.getElementById('modal-subtitulo').textContent = intervModal.organo;
+
+  document.getElementById('m-estado').value   = est.estado   || '';
+  document.getElementById('m-avance').value   = est.avance ? String(est.avance).replace(/%/g,'').replace(',','.').trim() : '';
+
+  // ¿Están habilitados los hitos para esta intervención?
+  const hitosBloqueados = est.hitosHabilitados === false;
+  const avisoHitos = document.getElementById('modal-aviso-hitos');
+  avisoHitos.style.display = hitosBloqueados ? 'block' : 'none';
+  // ocultar la tabla completa de hitos si están bloqueados
+  document.getElementById('modal-hitos-tabla').style.display = hitosBloqueados ? 'none' : 'table';
+
+  // hitos
+  const tbody = document.getElementById('modal-hitos-body');
+  tbody.innerHTML = hitosBloqueados ? '' : intervModal.hitos.map(h => {
+    const eh = estadoHitos[h.codhito] || {};
+    const fechaActual = eh.fechaCumplimiento
+      ? isoFecha(eh.fechaCumplimiento)
+      : '';
+    const ultimaLabel = eh.fechaCumplimiento
+      ? `<span style="font-size:11px;color:var(--gris-texto)">${esc(eh.fechaCumplimiento)}</span>`
+      : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro previo</span>`;
+    return `
+    <tr>
+      <td>
+        <div style="font-size:12px;color:var(--texto)">${esc(h.nombre)}</div>
+      </td>
+      <td><input type="date" data-codhito="${esc(h.codhito)}" value="${fechaActual}" style="width:100%"></td>
+      <td>${ultimaLabel}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('modal-overlay').classList.add('activo');
+  document.getElementById('m-estado').focus();
+}
+
+function cerrarModal() {
+  document.getElementById('modal-overlay').classList.remove('activo');
+  intervModal = null;
+}
+
+// Guardado independiente de priorización (solo Estado Actual, sin histórico ni fecha)
+async function togglePriorizacion(codigo, btn) {
+  const est = estadoInterv[codigo] || (estadoInterv[codigo] = {});
+  const nuevoValor = !est.priorizado;
+
+  // feedback visual inmediato + bloqueo mientras guarda
+  btn.disabled = true;
+  btn.classList.toggle('on', nuevoValor);
+
+  const payload = {
+    accion:     'actualizarPriorizacion',
+    codigo:     codigo,
+    priorizado: nuevoValor ? 'Sí' : 'No'
+  };
+
   try {
-    const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({ token:TOKEN, accion:'validarOgame', codHito:codHito, claveOgame:CLAVE_OGAME })});
-    const data=await res.json();
-    if(data.ok){
-      const h=HITOS.find(x=>x.codHito===codHito); if(h){ h.validadoOgame='Sí'; render(); }
-      modalMsg('ok','Registro guardado y validado por OGAME.');
+    const resp = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS en Apps Script
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      est.priorizado = nuevoValor;
+      btn.title = nuevoValor ? 'Priorizada' : 'No priorizada';
     } else {
-      modalMsg('warn','El registro se guardó, pero la validación no se completó: '+data.mensaje);
+      // revertir si el backend rechaza
+      btn.classList.toggle('on', !nuevoValor);
+      mostrarToast('No se pudo actualizar la priorización', 'error');
     }
-  } catch(e){ modalMsg('warn','El registro se guardó, pero la validación falló por conexión: '+e.message); }
+  } catch (e) {
+    btn.classList.toggle('on', !nuevoValor);
+    mostrarToast('No se pudo conectar con el servidor', 'error');
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+  }
 }
-let _downEnOverlay=false;
-document.getElementById('overlay').addEventListener('mousedown',function(e){ _downEnOverlay=(e.target===this); });
-document.getElementById('overlay').addEventListener('click',function(e){ if(e.target===this && _downEnOverlay) cerrarModal(); _downEnOverlay=false; });
 
-// ====== MODAL HISTÓRICO ======
-async function abrirHist(codHito){
-  const h=HITOS.find(x=>x.codHito===codHito); if(!h) return;
-  document.getElementById('hInterv').textContent=h.nombre;
-  document.getElementById('hHito').textContent=h.hito;
-  document.getElementById('hBody').innerHTML='<div class="hist-load">Cargando histórico…</div>';
-  document.getElementById('overlayHist').classList.add('show'); document.body.style.overflow='hidden';
+// Candado de habilitación de hitos (solo OGAME): guardado independiente en Estado Actual
+async function toggleHitosHabilitados(codigo, btn) {
+  const est = estadoInterv[codigo] || (estadoInterv[codigo] = {});
+  const nuevoValor = est.hitosHabilitados === false ? true : false; // alterna
+  btn.disabled = true;
+  btn.classList.toggle('on', nuevoValor);
+
+  const payload = {
+    accion:  'actualizarHitosHabilitados',
+    codigo:  codigo,
+    habilitados: nuevoValor ? 'Sí' : 'No'
+  };
+
   try {
-    const registros = await obtenerHistorico(codHito);
-    renderHist(registros);
-  } catch(e){
-    document.getElementById('hBody').innerHTML='<div class="hist-load" style="color:#C8102E;">No se pudo cargar el histórico.<br><small>'+e.message+'</small></div>';
-  }
-}
-function cerrarHist(){ document.getElementById('overlayHist').classList.remove('show'); document.body.style.overflow=''; }
-let _downEnHist=false;
-document.getElementById('overlayHist').addEventListener('mousedown',function(e){ _downEnHist=(e.target===this); });
-document.getElementById('overlayHist').addEventListener('click',function(e){ if(e.target===this && _downEnHist) cerrarHist(); _downEnHist=false; });
-
-// Descarga el histórico (una vez por sesión) y filtra los registros de un hito.
-async function obtenerHistorico(codHito){
-  if (HIST_CACHE[codHito]) return HIST_CACHE[codHito];
-  if (!HIST_TODOS){
-    const txt = await fetchProxy(HIST_TSV);
-    HIST_TODOS = txt.split('\n').filter(l=>l.trim());
-  }
-  const registros=[];
-  for (let i=1;i<HIST_TODOS.length;i++){
-    const c=HIST_TODOS[i].split('\t');
-    if((c[E.codHito]||'').trim()===codHito){
-      registros.push({ corte:(c[E.corte]||'').trim(), estado:(c[E.estado]||'').trim().toUpperCase(), fechaCump:(c[E.fechaCump]||'').trim(), situacional:(c[E.situacional]||'').trim() });
+    const resp = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS en Apps Script
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      est.hitosHabilitados = nuevoValor;
+      btn.title = nuevoValor ? 'Hitos habilitados' : 'Hitos bloqueados';
+    } else {
+      btn.classList.toggle('on', !nuevoValor);
+      mostrarToast('No se pudo actualizar la habilitación de hitos', 'error');
     }
+  } catch (e) {
+    btn.classList.toggle('on', !nuevoValor);
+    mostrarToast('No se pudo conectar con el servidor', 'error');
+    console.error(e);
+  } finally {
+    btn.disabled = false;
   }
-  HIST_CACHE[codHito]=registros;
-  return registros;
-}
-function renderHist(registros){
-  if(!registros.length){ document.getElementById('hBody').innerHTML='<div class="hist-load">Este hito aún no tiene registros históricos.</div>'; return; }
-  // Quedarse con la versión final de cada SEMANA de reporte (jueves–miércoles).
-  // Como el histórico está en orden cronológico, la última fila de cada semana es la final.
-  const porSemana = {};
-  registros.forEach(r=>{
-    const f = parseFechaCorte(r.corte);
-    const clave = f ? inicioSemana(f).getTime() : r.corte; // agrupa por inicio de semana
-    porSemana[clave] = r; // la última de esa semana sobrescribe → versión final
-  });
-  let unicos = Object.values(porSemana);
-  // ordenar por corte descendente (más reciente primero)
-  unicos.sort((a,b)=>{ const fa=parseFechaCorte(a.corte), fb=parseFechaCorte(b.corte); return (fb?fb.getTime():0)-(fa?fa.getTime():0); });
-  const totalSemanas = unicos.length;
-  const ultimos = unicos.slice(0, HIST_MAX);
-  let html='<div style="max-height:50vh; overflow-y:auto;"><table class="hist-tabla"><thead><tr><th>Corte</th><th>Estado</th><th>Fecha cumpl.</th><th>Detalle del estado</th></tr></thead><tbody>';
-  ultimos.forEach(r=>{
-    html+='<tr><td style="white-space:nowrap;">'+fmtCorteLimpio(r.corte)+'</td><td>'+badgeEstado(r.estado)+'</td><td style="white-space:nowrap;">'+fmtFechaDMA(r.fechaCump)+'</td><td>'+escapeHtml(r.situacional)+'</td></tr>';
-  });
-  html+='</tbody></table></div>';
-  if(totalSemanas>HIST_MAX) html+='<p style="font-size:12px; color:#8a9ab0; margin-top:10px;">Mostrando las '+HIST_MAX+' semanas más recientes de '+totalSemanas+' en total.</p>';
-  document.getElementById('hBody').innerHTML=html;
 }
 
-// ====== EXPORTAR XLSX ======
-function exportarXLSX(){
-  if (typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación. Verifica tu conexión e intenta de nuevo.'); return; }
-  if (!filtrados.length){ alert('No hay hitos para exportar con los filtros actuales.'); return; }
-  const datos = filtrados.map(h=>({
-    'Intervención': h.nombre, 'Hito': h.hito, 'CUI': h.cui, 'Corte': h.corte,
-    'Avance (%)': isNaN(avancePct(h.avance))?'':Math.round(avancePct(h.avance)*10)/10,
-    'Estado': h.estado, 'Fecha de cumplimiento': h.fechaCump, 'Detalle del estado': h.situacional
+// fecha ISO desde formato dd/mm/yyyy o yyyy-mm-dd
+function isoFecha(f) {
+  if (!f) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(f)) return f;
+  const p = f.split('/');
+  if (p.length === 3) return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+  return '';
+}
+
+function fechaDisplay(iso) {
+  if (!iso) return '';
+  const p = iso.split('-');
+  if (p.length !== 3) return iso;
+  return `${p[2]}/${p[1]}/${p[0]}`;
+}
+
+// ── GUARDAR ────────────────────────────────────────────────────────────────────
+async function guardarRegistro() {
+  if (!intervModal) return;
+
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Guardando…';
+
+  // recoger datos del modal
+  const estActual = estadoInterv[intervModal.codigo] || {};
+  const hitosBloqueados = estActual.hitosHabilitados === false;
+  const hitos = [];
+  if (!hitosBloqueados) {
+    document.querySelectorAll('#modal-hitos-body input[type="date"]').forEach(inp => {
+      hitos.push({ codhito: inp.dataset.codhito, fechaCumplimiento: inp.value ? fechaDisplay(inp.value) : '' });
+    });
+  }
+
+  const payload = {
+    accion:    'registrarHojaRuta',
+    timestamp: new Date().toISOString(),
+    codigo:    intervModal.codigo,
+    nombre:    intervModal.nombre,
+    organo:    intervModal.organo,
+    estado:    document.getElementById('m-estado').value.trim(),
+    avance:    document.getElementById('m-avance').value.trim(),
+    hitos:     hitos
+  };
+
+  try {
+    const resp = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS en Apps Script
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+
+    if (data.ok) {
+      // actualizar estado local sin recargar (usa la fecha real del backend)
+      estadoInterv[intervModal.codigo] = {
+        fechaReg:   data.fechaRegistro || fechaDisplay(new Date().toISOString().split('T')[0]),
+        estado:     payload.estado,
+        avance:     payload.avance,
+        priorizado: estadoInterv[intervModal.codigo]?.priorizado || false,
+        hitosHabilitados: estadoInterv[intervModal.codigo]?.hitosHabilitados !== false
+      };
+      hitos.forEach(h => {
+        estadoHitos[h.codhito] = {
+          fechaReg:          estadoInterv[intervModal.codigo].fechaReg,
+          fechaCumplimiento: h.fechaCumplimiento
+        };
+      });
+
+      cerrarModal();
+      renderTabla();
+      mostrarToast('Registro guardado correctamente', 'exito');
+    } else {
+      mostrarToast('Error al guardar: ' + (data.mensaje || 'intenta de nuevo'), 'error');
+    }
+  } catch (e) {
+    {
+      mostrarToast('No se pudo conectar con el servidor. Intenta de nuevo.', 'error');
+      console.error(e);
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar registro';
+  }
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────────────
+function mostrarToast(msg, tipo = 'exito') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${tipo} visible`;
+  setTimeout(() => { t.classList.remove('visible'); }, 3500);
+}
+
+// ── EXPORT EXCEL ───────────────────────────────────────────────────────────────
+// ── RESUMEN POR EQUIPO ──────────────────────────────────────────────────────────
+// Agrupa las intervenciones FILTRADAS por equipo, contando IDs únicos.
+// Orden: VMT primero, luego VMC, luego el resto en el orden del maestro.
+function calcularResumen() {
+  const grupos = new Map();
+  filtradas.forEach((i, idx) => {
+    const clave = i.equipo || '(Sin equipo)';
+    if (!grupos.has(clave)) {
+      grupos.set(clave, {
+        equipo: clave, vice: i.vice || '', director: i.director || '',
+        ids: new Set(), ordenMaestro: idx
+      });
+    }
+    grupos.get(clave).ids.add(i.id);
+  });
+
+  const arr = [...grupos.values()].map(g => ({
+    equipo: g.equipo, vice: g.vice, director: g.director,
+    total: g.ids.size, ordenMaestro: g.ordenMaestro
   }));
-  const ws = XLSX.utils.json_to_sheet(datos);
-  ws['!cols']=[{wch:40},{wch:40},{wch:12},{wch:12},{wch:10},{wch:14},{wch:16},{wch:60}];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Hitos');
-  const fecha = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, 'cartera_priorizada_'+fecha+'.xlsx');
-}
 
-function inicioSemana(fecha){ const f=new Date(fecha.getFullYear(),fecha.getMonth(),fecha.getDate()); const diff=(f.getDay()-4+7)%7; f.setDate(f.getDate()-diff); return f; }
-function semanaReporteTexto(){ const ini=inicioSemana(new Date()); const fin=new Date(ini); fin.setDate(fin.getDate()+6); const fmt=d=>d.toLocaleDateString('es-PE',{day:'2-digit',month:'short'}); return fmt(ini)+' – '+fmt(fin); }
-function toISODate(s){ if(!s) return ''; s=s.trim(); if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10); const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m){ return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'); } return ''; }
-function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-
-// Muestra u oculta el texto de un campo de clave
-function toggleVer(id, btn){
-  const inp=document.getElementById(id);
-  if(inp.type==='password'){ inp.type='text'; btn.style.color='#0055A5'; }
-  else { inp.type='password'; btn.style.color=''; }
-}
-
-// ====== VISTA RESUMEN (por Viceministerio → UEI, conteo por estado) ======
-function rankVM(v){ const s=(v||'').toUpperCase(); if(s==='VMT') return 0; if(s==='VMC') return 1; return 2; }
-
-// Agrupa los hitos filtrados por Viceministerio y, dentro, por UEI.
-// Cada fila UEI cuenta hitos por estado. Orden: VMT, VMC, resto (aparición).
-function calcularResumen(){
-  const grupos=new Map();  // uei -> {vm, uei, cumplido, proceso, reprog, orden}
-  let orden=0;
-  filtrados.forEach(h=>{
-    const cl=clasifDe(h);
-    const vm=cl.vicem||'(Sin viceministerio)';
-    const uei=cl.uei||'(Sin unidad ejecutora)';
-    const clave=vm+'||'+uei;
-    if(!grupos.has(clave)){ grupos.set(clave, {vm, uei, cumplido:0, proceso:0, reprog:0, orden:orden++}); }
-    const g=grupos.get(clave);
-    if(h.estado==='CUMPLIDO') g.cumplido++;
-    else if(h.estado==='EN PROCESO') g.proceso++;
-    else if(h.estado==='REPROGRAMADO') g.reprog++;
+  const rankVice = (v) => {
+    const s = (v || '').toUpperCase();
+    if (s === 'VMT') return 0;
+    if (s === 'VMC') return 1;
+    return 2;
+  };
+  arr.sort((a, b) => {
+    const ra = rankVice(a.vice), rb = rankVice(b.vice);
+    if (ra !== rb) return ra - rb;
+    return a.ordenMaestro - b.ordenMaestro;
   });
-  const arr=[...grupos.values()];
-  arr.sort((a,b)=>{ const ra=rankVM(a.vm), rb=rankVM(b.vm); if(ra!==rb) return ra-rb; if(a.vm!==b.vm) return a.vm.localeCompare(b.vm,'es'); return a.orden-b.orden; });
   return arr;
 }
 
-function abrirResumen(){
-  const datos=calcularResumen();
-  const tot={cumplido:0, proceso:0, reprog:0};
-  let filas='', vmActual=null, n=0;
-  datos.forEach(r=>{
-    if(r.vm!==vmActual){ vmActual=r.vm; filas+=`<tr class="grupo-vm"><td colspan="6">${escapeHtml(r.vm)}</td></tr>`; }
-    n++;
-    const totFila=r.cumplido+r.proceso+r.reprog;
-    tot.cumplido+=r.cumplido; tot.proceso+=r.proceso; tot.reprog+=r.reprog;
-    filas+=`<tr>
-      <td style="text-align:center">${n}</td>
-      <td>${escapeHtml(r.uei)}</td>
-      <td style="text-align:center">${r.cumplido}</td>
-      <td style="text-align:center">${r.proceso}</td>
-      <td style="text-align:center">${r.reprog}</td>
-      <td style="text-align:center;font-weight:700">${totFila}</td>
+function abrirResumen() {
+  const datos = calcularResumen();
+  const totalGeneral = datos.reduce((s, r) => s + r.total, 0);
+
+  // construye filas insertando subtotal tras el último equipo de VMT y de VMC
+  let filas = '';
+  let numero = 0; // numeración corrida que salta subtotales
+  const subtotalHtml = (vm, suma) => `
+    <tr class="fila-subtotal">
+      <td></td>
+      <td style="text-align:center">${esc(vm)}</td>
+      <td colspan="2" style="text-align:right;font-weight:700">TOTAL ${esc(vm)}</td>
+      <td style="text-align:center;font-weight:700">${suma}</td>
     </tr>`;
+
+  datos.forEach((r, idx) => {
+    numero++;
+    filas += `
+    <tr>
+      <td style="text-align:center">${numero}</td>
+      <td style="text-align:center">${esc(r.vice)}</td>
+      <td>${esc(r.equipo)}</td>
+      <td>${esc(r.director)}</td>
+      <td style="text-align:center;font-weight:700">${r.total}</td>
+    </tr>`;
+
+    // ¿es el último de su bloque VMT o VMC? entonces insertamos subtotal
+    const vmActual = (r.vice || '').toUpperCase();
+    const vmSiguiente = datos[idx + 1] ? (datos[idx + 1].vice || '').toUpperCase() : null;
+    if ((vmActual === 'VMT' || vmActual === 'VMC') && vmActual !== vmSiguiente) {
+      const suma = datos.filter(d => (d.vice || '').toUpperCase() === vmActual)
+                        .reduce((s, d) => s + d.total, 0);
+      filas += subtotalHtml(vmActual, suma);
+    }
   });
-  const totGeneral=tot.cumplido+tot.proceso+tot.reprog;
-  document.getElementById('resumenWrap').innerHTML = datos.length===0
-    ? '<div style="text-align:center;padding:30px;color:#8a9ab0;">No hay hitos con los filtros actuales.</div>'
-    : `<table class="tabla-resumen">
-        <thead><tr>
-          <th style="width:6%;text-align:center">N°</th>
-          <th style="width:42%">Unidad Ejecutora</th>
-          <th style="width:13%;text-align:center">Cumplido</th>
-          <th style="width:13%;text-align:center">En proceso</th>
-          <th style="width:13%;text-align:center">Reprogramado</th>
-          <th style="width:13%;text-align:center">Total</th>
-        </tr></thead>
-        <tbody>${filas}</tbody>
-        <tfoot><tr>
-          <td colspan="2" style="text-align:right">TOTAL</td>
-          <td style="text-align:center">${tot.cumplido}</td>
-          <td style="text-align:center">${tot.proceso}</td>
-          <td style="text-align:center">${tot.reprog}</td>
-          <td style="text-align:center">${totGeneral}</td>
-        </tr></tfoot>
-      </table>`;
-  const hayFiltros = filtrados.length !== HITOS.length;
-  document.getElementById('resumenSub').textContent = hayFiltros
-    ? 'Hitos por estado, agrupados por viceministerio y UEI (según filtros aplicados)'
-    : 'Hitos por estado, agrupados por viceministerio y UEI';
-  document.getElementById('overlayResumen').classList.add('show');
-  document.body.style.overflow='hidden';
-}
-function cerrarResumen(){ document.getElementById('overlayResumen').classList.remove('show'); document.body.style.overflow=''; }
-let _downResumen=false;
-document.getElementById('overlayResumen').addEventListener('mousedown',function(e){ _downResumen=(e.target===this); });
-document.getElementById('overlayResumen').addEventListener('click',function(e){ if(e.target===this && _downResumen) cerrarResumen(); _downResumen=false; });
 
-function descargarResumen(){
-  if (typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
-  const datos=calcularResumen();
-  if(!datos.length){ alert('No hay hitos para exportar con los filtros actuales.'); return; }
-  const rows=[['N°','Viceministerio','Unidad Ejecutora','Cumplido','En proceso','Reprogramado','Total']];
-  let n=0, tc=0,tp=0,tr=0;
-  datos.forEach(r=>{ n++; const tf=r.cumplido+r.proceso+r.reprog; tc+=r.cumplido; tp+=r.proceso; tr+=r.reprog;
-    rows.push([n, r.vm, r.uei, r.cumplido, r.proceso, r.reprog, tf]); });
-  rows.push(['', '', 'TOTAL', tc, tp, tr, tc+tp+tr]);
-  const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:6},{wch:22},{wch:45},{wch:12},{wch:12},{wch:14},{wch:10}];
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Resumen por UEI');
-  const fecha=new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, 'resumen_cartera_'+fecha+'.xlsx');
+  document.getElementById('resumen-tabla-wrap').innerHTML = `
+    <table class="tabla-resumen">
+      <thead>
+        <tr>
+          <th style="width:8%;text-align:center">N°</th>
+          <th style="width:10%;text-align:center">VM</th>
+          <th style="width:42%">Equipo</th>
+          <th style="width:28%">Director(a)</th>
+          <th style="width:12%;text-align:center">Total<br>intervenciones</th>
+        </tr>
+      </thead>
+      <tbody>${filas}</tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" style="text-align:right;font-weight:700">TOTAL</td>
+          <td style="text-align:center;font-weight:700">${totalGeneral}</td>
+        </tr>
+      </tfoot>
+    </table>`;
+
+  const hayFiltros = filtradas.length !== intervenciones.length;
+  document.getElementById('resumen-subtitulo').textContent = hayFiltros
+    ? 'Total de intervenciones por equipo (según filtros aplicados)'
+    : 'Total de intervenciones por equipo';
+
+  document.getElementById('resumen-overlay').classList.add('activo');
 }
 
-cargar();
+function cerrarResumen() {
+  document.getElementById('resumen-overlay').classList.remove('activo');
+}
+
+function descargarResumen() {
+  const datos = calcularResumen();
+  const totalGeneral = datos.reduce((s, r) => s + r.total, 0);
+
+  const rows = [['N°', 'VM', 'Equipo', 'Director(a)', 'Total intervenciones']];
+  const filasSubtotal = []; // índices de fila (0-based en la hoja) que son subtotal
+  let numero = 0;
+
+  datos.forEach((r, idx) => {
+    numero++;
+    rows.push([numero, r.vice, r.equipo, r.director, r.total]);
+
+    const vmActual = (r.vice || '').toUpperCase();
+    const vmSiguiente = datos[idx + 1] ? (datos[idx + 1].vice || '').toUpperCase() : null;
+    if ((vmActual === 'VMT' || vmActual === 'VMC') && vmActual !== vmSiguiente) {
+      const suma = datos.filter(d => (d.vice || '').toUpperCase() === vmActual)
+                        .reduce((s, d) => s + d.total, 0);
+      rows.push(['', vmActual, 'TOTAL ' + vmActual, '', suma]);
+      filasSubtotal.push(rows.length - 1);
+    }
+  });
+  rows.push(['', '', '', 'TOTAL', totalGeneral]);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  for (let c = 0; c < 5; c++) {
+    const ref = XLSX.utils.encode_cell({ r: 0, c });
+    if (ws[ref]) ws[ref].s = {
+      fill: { patternType: 'solid', fgColor: { rgb: '003F7D' } },
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      alignment: { vertical: 'center', horizontal: 'center', wrapText: true },
+      border: { bottom: { style: 'thin', color: { rgb: 'C8102E' } } }
+    };
+  }
+  // subtotales resaltados
+  filasSubtotal.forEach(fila => {
+    for (let c = 0; c < 5; c++) {
+      const ref = XLSX.utils.encode_cell({ r: fila, c });
+      if (ws[ref]) ws[ref].s = {
+        fill: { patternType: 'solid', fgColor: { rgb: 'E8EEF7' } },
+        font: { bold: true, sz: 11, color: { rgb: '003F7D' } }
+      };
+    }
+  });
+  // total general
+  const filaTotal = rows.length - 1;
+  for (let c = 0; c < 5; c++) {
+    const ref = XLSX.utils.encode_cell({ r: filaTotal, c });
+    if (ws[ref]) ws[ref].s = {
+      fill: { patternType: 'solid', fgColor: { rgb: 'EEF4FF' } },
+      font: { bold: true, sz: 11 }
+    };
+  }
+  ws['!cols'] = [6, 8, 50, 30, 16].map(w => ({ wch: w }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Resumen por equipo');
+  const fecha = new Date().toLocaleDateString('es-PE').replace(/\//g, '-');
+  XLSX.writeFile(wb, `ResumenEquipos_OGAME_${fecha}.xlsx`);
+}
+
+function exportarExcel() {
+  const rows = [['Código', 'ID', 'Grupo', 'Viceministerio', 'Responsable', 'Área de influencia',
+                 'Intervención Estratégica', 'Detalle de Intervención', 'Relevancia sectorial',
+                 'Estado situacional', 'Avance físico (%)',
+                 'Priorizado', 'Fecha de registro',
+                 'Hito(s) clave(s)', 'Último', 'Fecha de cumplimiento']];
+
+  filtradas.forEach(interv => {
+    const est = estadoInterv[interv.codigo] || {};
+    hitosVisibles(interv).forEach(h => {
+      const eh = estadoHitos[h.codhito] || {};
+      rows.push([
+        interv.codigo, interv.id || '', interv.grupo || '', interv.vice || '', interv.organo, interv.area || '',
+        interv.nombre, interv.detalle || '', interv.relevancia || '',
+        est.estado || '', est.avance || '',
+        est.priorizado ? 'Sí' : 'No', est.fechaReg || '',
+        h.nombre, h.ultimo ? 'Sí' : '', eh.fechaCumplimiento || ''
+      ]);
+    });
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  const NCOLS = rows[0].length;
+  for (let c = 0; c < NCOLS; c++) {
+    const ref = XLSX.utils.encode_cell({ r: 0, c });
+    if (!ws[ref]) continue;
+    ws[ref].s = {
+      fill: { patternType: 'solid', fgColor: { rgb: '003F7D' } },
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      alignment: { vertical: 'center', wrapText: true },
+      border: { bottom: { style: 'thin', color: { rgb: 'C8102E' } } }
+    };
+  }
+
+  ws['!cols'] = [12,10,14,12,10,16,40,35,30,35,12,10,14,40,8,16].map(w => ({ wch: w }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Hoja de Ruta');
+
+  const fecha = new Date().toLocaleDateString('es-PE').replace(/\//g,'-');
+  XLSX.writeFile(wb, `HojaDeRuta_OGAME_${fecha}.xlsx`);
+}
+
+// ── CERRAR MODAL CON ESC ───────────────────────────────────────────────────────
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarModal(); cerrarLoginOGAME(); cerrarResumen(); } });
+
+let clicIniciadoEnResumen = false;
+document.getElementById('resumen-overlay').addEventListener('mousedown', e => {
+  clicIniciadoEnResumen = (e.target === document.getElementById('resumen-overlay'));
+});
+document.getElementById('resumen-overlay').addEventListener('click', e => {
+  if (clicIniciadoEnResumen && e.target === document.getElementById('resumen-overlay')) cerrarResumen();
+  clicIniciadoEnResumen = false;
+});
+// Cerrar modal solo si el clic EMPIEZA y TERMINA en el overlay.
+// Evita que se cierre al seleccionar texto arrastrando desde dentro hacia fuera.
+let clicIniciadoEnOverlay = false;
+document.getElementById('modal-overlay').addEventListener('mousedown', e => {
+  clicIniciadoEnOverlay = (e.target === document.getElementById('modal-overlay'));
+});
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (clicIniciadoEnOverlay && e.target === document.getElementById('modal-overlay')) cerrarModal();
+  clicIniciadoEnOverlay = false;
+});
+
+let clicIniciadoEnLogin = false;
+document.getElementById('login-overlay').addEventListener('mousedown', e => {
+  clicIniciadoEnLogin = (e.target === document.getElementById('login-overlay'));
+});
+document.getElementById('login-overlay').addEventListener('click', e => {
+  if (clicIniciadoEnLogin && e.target === document.getElementById('login-overlay')) cerrarLoginOGAME();
+  clicIniciadoEnLogin = false;
+});
+document.addEventListener('click', e => {
+  const panel = document.getElementById('meses-panel');
+  if (panel && panel.classList.contains('abierto') && !panel.contains(e.target)) {
+    panel.classList.remove('abierto');
+  }
+});
+
+// ── INICIO ────────────────────────────────────────────────────────────────────
+aplicarVistaOGAME();
+cargarDatos();
 </script>
 </body>
 </html>
