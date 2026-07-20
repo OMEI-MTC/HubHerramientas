@@ -254,6 +254,10 @@
           </div>
           <div class="field solo-ogame"><label>Validado OGAME</label><select id="fVal"><option value="">Todos</option><option value="si">Validados</option><option value="no">Sin validar</option></select></div>
         </div>
+        <!-- Fila 5: Responsable OGAME (solo en Vista OGAME) -->
+        <div class="filtros-3col solo-ogame">
+          <div class="field"><label>Responsable OGAME</label><select id="fResp"><option value="">Todos</option></select></div>
+        </div>
         <div class="filtros-foot"><button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar filtros</button></div>
       </div>
 
@@ -482,7 +486,7 @@ function iniciar() {
   poblarVicem();
   poblarSelect('fDepto', DEPTOS_LISTA, 'Todos');
   recalcularOpciones();
-  ['fVicem','fUei','fTipo','fVal','fDepto','fCategoria'].forEach(id=>document.getElementById(id).addEventListener('change',onFiltroChange));
+  ['fVicem','fUei','fTipo','fVal','fDepto','fCategoria','fResp'].forEach(id=>document.getElementById(id).addEventListener('change',onFiltroChange));
   document.getElementById('fCui').addEventListener('input',onFiltroChange);
   document.getElementById('fNombre').addEventListener('input',onFiltroChange);
   document.getElementById('fHito').addEventListener('input',onFiltroChange);
@@ -501,12 +505,14 @@ function baseFiltrada(excluir){
   const va=document.getElementById('fVal').value;
   const de=document.getElementById('fDepto').value;
   const ca=document.getElementById('fCategoria').value;
+  const re=document.getElementById('fResp').value;
   return HITOS.filter(h=>{ const cl=clasifDe(h);
     const valOk=/^s[ií]$/i.test(h.validadoOgame);
     return (excluir==='vicem'||!v||cl.vicem===v) && (excluir==='uei'||!u||cl.uei===u) && (excluir==='tipo'||!t||cl.tipoInfra===t) &&
            (excluir==='cui'||!cu||cl.cui===cu) && (excluir==='nombre'||!no||h.nombre===no) &&
            (excluir==='hito'||!hi||h.hito===hi) &&
            (excluir==='categoria'||!ca||h.categoria===ca) &&
+           (excluir==='resp'||!re||cl.responsable===re) &&
            (excluir==='estado'||estadosActivos.size===0||estadosActivos.has(h.estado)) &&
            (excluir==='sem'||semActivos.size===0||semActivos.has(semaforoDe(h))) &&
            (excluir==='meses'||mesesSeleccion.size===0||coincideMes(h)) &&
@@ -524,6 +530,7 @@ function recalcularOpciones(){
   poblarSelect('fUei',  opcionesDe(h=>clasifDe(h).uei, baseFiltrada('uei')), 'Todas');
   poblarSelect('fTipo', opcionesDe(h=>clasifDe(h).tipoInfra, baseFiltrada('tipo')), 'Todos');
   poblarSelect('fCategoria', opcionesDe(h=>h.categoria, baseFiltrada('categoria')), 'Todas');
+  poblarSelect('fResp', opcionesDe(h=>clasifDe(h).responsable, baseFiltrada('resp')), 'Todos');
   poblarSelect('fDepto', deptosDisponibles(baseFiltrada('depto')), 'Todos');
   poblarDatalist('cuiList', opcionesDe(h=>clasifDe(h).cui, baseFiltrada('cui')));
   poblarDatalist('nombreList', opcionesDe(h=>h.nombre, baseFiltrada('nombre')));
@@ -531,7 +538,7 @@ function recalcularOpciones(){
   construirMeses();
 }
 function aplicarFiltros(){ filtrados = baseFiltrada(null); pagina=1; render(); }
-function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito','fVal','fDepto','fCategoria'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); semActivos.clear(); mesesSeleccion.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); poblarSelect('fDepto', DEPTOS_LISTA, 'Todos'); recalcularOpciones(); aplicarFiltros(); }
+function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito','fVal','fDepto','fCategoria','fResp'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); semActivos.clear(); mesesSeleccion.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); poblarSelect('fDepto', DEPTOS_LISTA, 'Todos'); recalcularOpciones(); aplicarFiltros(); }
 
 function badgeEstado(est){ if(est==='EN PROCESO') return '<span class="badge b-proc">EN PROCESO</span>'; if(est==='REPROGRAMADO') return '<span class="badge b-repr">REPROGRAMADO</span>'; if(est==='CUMPLIDO') return '<span class="badge b-cump">CUMPLIDO</span>'; return '<span class="badge">'+escapeHtml(est)+'</span>'; }
 function fmtAvance(raw){ const n=avancePct(raw); if(isNaN(n)) return '—'; const r=Math.round(n*10)/10; return (Number.isInteger(r)?r:r.toFixed(1))+'%'; }
