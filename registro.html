@@ -45,6 +45,15 @@
   .filtros-3col { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:14px; align-items:start; }
   .filtros-2y1 { display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:14px; align-items:start; }
   .filtros-3col .field, .filtros-2y1 .field { margin-bottom:0; }
+  /* Dropdown de fecha de cumplimiento (checks) */
+  .meses-dropdown { position:relative; }
+  .meses-btn { width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:8px; background:#fff; font-family:inherit; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:var(--text); }
+  .meses-btn:hover { border-color:var(--blue); }
+  .meses-lista { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.12); z-index:20; max-height:240px; overflow-y:auto; padding:6px; }
+  .meses-dropdown.abierto .meses-lista { display:block; }
+  .mes-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:13px; }
+  .mes-item:hover { background:var(--bg); }
+  .mes-item input { width:auto; cursor:pointer; accent-color:var(--blue); }
   .chips { display:flex; gap:8px; flex-wrap:wrap; }
   .chip { padding:8px 14px; border:1px solid var(--border); background:#fff; border-radius:20px; cursor:pointer; font-size:12.5px; font-weight:600; color:var(--text-2); user-select:none; transition:all .12s; }
   .chip:hover { border-color:#b9c5d6; }
@@ -58,6 +67,14 @@
   .tabla-meta .meta-der { justify-self:end; }
   .btn-export { display:flex; align-items:center; gap:7px; padding:8px 16px; border:none; background:var(--green); color:#fff; border-radius:8px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:700; }
   .btn-export:hover { background:var(--green-dk); }
+  .btn-resumen { display:flex; align-items:center; gap:7px; padding:8px 16px; border:1px solid var(--blue); background:#fff; color:var(--blue); border-radius:8px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:700; }
+  .btn-resumen:hover { background:var(--blue); color:#fff; }
+  .tabla-resumen { width:100%; border-collapse:collapse; }
+  .tabla-resumen th { background:var(--blue-dk); color:#fff; padding:9px 10px; font-size:12px; font-weight:700; text-align:left; border-bottom:2px solid var(--red); }
+  .tabla-resumen td { padding:8px 10px; font-size:13px; border-bottom:1px solid var(--border); }
+  .tabla-resumen tbody tr:hover { background:#f7f9fc; }
+  .tabla-resumen .grupo-vm td { background:var(--blue-lt); font-weight:700; color:var(--blue-dk); font-size:12px; text-transform:uppercase; letter-spacing:.03em; }
+  .tabla-resumen tfoot td { background:var(--blue-lt); font-weight:700; border-top:2px solid var(--blue); }
   .tabla-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
   thead th { background:#f4f6f9; text-align:left; padding:10px 12px; font-weight:700; color:var(--text-2); border-bottom:1px solid var(--border); white-space:nowrap; }
@@ -206,8 +223,17 @@
           <div class="field"><label>Nombre de la Intervención</label><input type="text" id="fNombre" list="nombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="nombreList"></datalist></div>
         </div>
         <!-- Fila 3: Hito (2 columnas) + Estado de cumplimiento (1 columna) -->
-        <div class="filtros-2y1">
+        <div class="filtros-3col">
           <div class="field"><label>Hito</label><input type="text" id="fHito" list="hitoList" placeholder="Escribe parte del nombre o elige…" autocomplete="off"><datalist id="hitoList"></datalist></div>
+          <div class="field"><label>Fecha de cumplimiento</label>
+            <div class="meses-dropdown" id="mesesPanel">
+              <button type="button" class="meses-btn" onclick="abrirMesesDropdown(event)">
+                <span id="mesesBtnLabel">Todos</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="meses-lista" id="mesesLista"></div>
+            </div>
+          </div>
           <div class="field"><label>Estado de cumplimiento del hito</label>
             <div class="chips">
               <span class="chip" data-estado="EN PROCESO" onclick="toggleChip(this)">EN PROCESO</span>
@@ -216,8 +242,9 @@
             </div>
           </div>
         </div>
-        <!-- Fila 4: Estado de actualización + Validado OGAME (este último solo en modo OGAME) -->
-        <div class="filtros-2y1">
+        <!-- Fila 4: Categoría de hito + Estado de actualización + Validado OGAME (este último solo en modo OGAME) -->
+        <div class="filtros-3col">
+          <div class="field"><label>Categoría de hito</label><select id="fCategoria"><option value="">Todas</option></select></div>
           <div class="field"><label>Estado de actualización</label>
             <div class="chips">
               <span class="chip sem-chip" id="chipPend" data-sem="pendiente" onclick="toggleSem(this)" style="border-color:#C8102E;"><span class="sem sem-rojo" style="margin-right:6px;"></span>Pendientes</span>
@@ -237,7 +264,11 @@
           <span id="pageInfoTop">—</span>
           <button id="nextBtnTop" onclick="cambiarPagina(1)">Siguiente ›</button>
         </div>
-        <div class="meta-der">
+        <div class="meta-der" style="display:flex; gap:8px;">
+          <button class="btn-resumen" onclick="abrirResumen()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            Ver resumen
+          </button>
           <button class="btn-export" onclick="exportarXLSX()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Descargar Excel
@@ -329,6 +360,24 @@
       <button class="modal-x" onclick="cerrarHist()" aria-label="Cerrar">&times;</button>
     </div>
     <div id="hBody"><div class="hist-load">Cargando histórico…</div></div>
+  </div>
+</div>
+
+<!-- MODAL RESUMEN -->
+<div class="overlay" id="overlayResumen">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <div><div class="modal-title">Resumen por Unidad Ejecutora</div><div class="modal-interv" id="resumenSub">Hitos por estado, agrupados por viceministerio y UEI</div></div>
+      <button class="modal-x" onclick="cerrarResumen()" aria-label="Cerrar">&times;</button>
+    </div>
+    <div id="resumenWrap"></div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:18px;">
+      <button class="btn-cancel" onclick="cerrarResumen()">Cerrar</button>
+      <button class="btn-export" onclick="descargarResumen()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar resumen
+      </button>
+    </div>
   </div>
 </div>
 
@@ -433,7 +482,7 @@ function iniciar() {
   poblarVicem();
   poblarSelect('fDepto', DEPTOS_LISTA, 'Todos');
   recalcularOpciones();
-  ['fVicem','fUei','fTipo','fVal','fDepto'].forEach(id=>document.getElementById(id).addEventListener('change',onFiltroChange));
+  ['fVicem','fUei','fTipo','fVal','fDepto','fCategoria'].forEach(id=>document.getElementById(id).addEventListener('change',onFiltroChange));
   document.getElementById('fCui').addEventListener('input',onFiltroChange);
   document.getElementById('fNombre').addEventListener('input',onFiltroChange);
   document.getElementById('fHito').addEventListener('input',onFiltroChange);
@@ -451,13 +500,16 @@ function baseFiltrada(excluir){
   const cu=document.getElementById('fCui').value.trim(), no=document.getElementById('fNombre').value.trim(), hi=document.getElementById('fHito').value.trim();
   const va=document.getElementById('fVal').value;
   const de=document.getElementById('fDepto').value;
+  const ca=document.getElementById('fCategoria').value;
   return HITOS.filter(h=>{ const cl=clasifDe(h);
     const valOk=/^s[ií]$/i.test(h.validadoOgame);
     return (excluir==='vicem'||!v||cl.vicem===v) && (excluir==='uei'||!u||cl.uei===u) && (excluir==='tipo'||!t||cl.tipoInfra===t) &&
            (excluir==='cui'||!cu||cl.cui===cu) && (excluir==='nombre'||!no||h.nombre===no) &&
            (excluir==='hito'||!hi||h.hito===hi) &&
+           (excluir==='categoria'||!ca||h.categoria===ca) &&
            (excluir==='estado'||estadosActivos.size===0||estadosActivos.has(h.estado)) &&
            (excluir==='sem'||semActivos.size===0||semActivos.has(semaforoDe(h))) &&
+           (excluir==='meses'||mesesSeleccion.size===0||coincideMes(h)) &&
            (excluir==='val'||!va||(va==='si'?valOk:!valOk)) &&
            (excluir==='depto'||!de||deptosDe(h.codHito).includes(de)); });
 }
@@ -471,13 +523,15 @@ function toggleChip(el){
 function recalcularOpciones(){
   poblarSelect('fUei',  opcionesDe(h=>clasifDe(h).uei, baseFiltrada('uei')), 'Todas');
   poblarSelect('fTipo', opcionesDe(h=>clasifDe(h).tipoInfra, baseFiltrada('tipo')), 'Todos');
+  poblarSelect('fCategoria', opcionesDe(h=>h.categoria, baseFiltrada('categoria')), 'Todas');
   poblarSelect('fDepto', deptosDisponibles(baseFiltrada('depto')), 'Todos');
   poblarDatalist('cuiList', opcionesDe(h=>clasifDe(h).cui, baseFiltrada('cui')));
   poblarDatalist('nombreList', opcionesDe(h=>h.nombre, baseFiltrada('nombre')));
   poblarDatalist('hitoList', opcionesDe(h=>h.hito, baseFiltrada('hito')));
+  construirMeses();
 }
 function aplicarFiltros(){ filtrados = baseFiltrada(null); pagina=1; render(); }
-function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito','fVal','fDepto'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); semActivos.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); poblarSelect('fDepto', DEPTOS_LISTA, 'Todos'); recalcularOpciones(); aplicarFiltros(); }
+function limpiarFiltros(){ ['fVicem','fUei','fTipo','fCui','fNombre','fHito','fVal','fDepto','fCategoria'].forEach(id=>document.getElementById(id).value=''); estadosActivos.clear(); semActivos.clear(); mesesSeleccion.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); poblarVicem(); poblarSelect('fDepto', DEPTOS_LISTA, 'Todos'); recalcularOpciones(); aplicarFiltros(); }
 
 function badgeEstado(est){ if(est==='EN PROCESO') return '<span class="badge b-proc">EN PROCESO</span>'; if(est==='REPROGRAMADO') return '<span class="badge b-repr">REPROGRAMADO</span>'; if(est==='CUMPLIDO') return '<span class="badge b-cump">CUMPLIDO</span>'; return '<span class="badge">'+escapeHtml(est)+'</span>'; }
 function fmtAvance(raw){ const n=avancePct(raw); if(isNaN(n)) return '—'; const r=Math.round(n*10)/10; return (Number.isInteger(r)?r:r.toFixed(1))+'%'; }
@@ -512,6 +566,58 @@ function fmtMesAnio(s){
   if(!mes||mes<1||mes>12||!anio) return escapeHtml(s); // si no se reconoce, mostrar tal cual
   return meses[mes-1]+'-'+String(anio).slice(-2);
 }
+
+// ===== Filtro de Fecha de cumplimiento (checks) =====
+const MESES_ABR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+let mesesDisponibles = [];        // [{label, orden}]
+let mesesSeleccion = new Set();   // labels activos
+
+// Convierte una fecha de cumplimiento ("1/7/2026", "2026-07-01") en {label:"jul-26", orden}
+function parseCumpl(s){
+  if(!s) return null;
+  s=String(s).trim();
+  let mes, anio;
+  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m){ mes=parseInt(m[2],10); anio=parseInt(m[3],10); }
+  else { m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m){ mes=parseInt(m[2],10); anio=parseInt(m[1],10); } }
+  if(!mes||mes<1||mes>12||!anio) return null;
+  return { label: MESES_ABR[mes-1]+'-'+String(anio).slice(-2), orden: anio*12+(mes-1) };
+}
+// ¿El hito coincide con los meses seleccionados? (incluye opción "sin fecha")
+function coincideMes(h){
+  const p=parseCumpl(h.fechaCump);
+  if(!p) return mesesSeleccion.has('__sinfecha__');
+  return mesesSeleccion.has(p.label);
+}
+// Construye la lista de meses disponibles según los demás filtros (cascada)
+function construirMeses(){
+  const map=new Map();
+  baseFiltrada('meses').forEach(h=>{ const p=parseCumpl(h.fechaCump); if(p) map.set(p.label, p.orden); });
+  mesesDisponibles=[...map.entries()].map(([label,orden])=>({label,orden})).sort((a,b)=>a.orden-b.orden);
+  // descartar selecciones que ya no existan
+  const disp=new Set(mesesDisponibles.map(m=>m.label)); disp.add('__sinfecha__');
+  [...mesesSeleccion].forEach(l=>{ if(!disp.has(l)) mesesSeleccion.delete(l); });
+  renderMesesDropdown();
+}
+function renderMesesDropdown(){
+  const cont=document.getElementById('mesesLista');
+  if(mesesDisponibles.length===0){
+    cont.innerHTML='<div style="padding:10px;color:#8a9ab0;font-size:12px">Sin fechas registradas</div>';
+  } else {
+    cont.innerHTML = mesesDisponibles.map(m=>`
+      <label class="mes-item"><input type="checkbox" value="${m.label}" ${mesesSeleccion.has(m.label)?'checked':''} onchange="toggleMes('${m.label}', this.checked)"><span>${m.label}</span></label>`).join('') +
+      `<label class="mes-item" style="border-top:1px solid var(--border);margin-top:4px;padding-top:6px"><input type="checkbox" value="__sinfecha__" ${mesesSeleccion.has('__sinfecha__')?'checked':''} onchange="toggleMes('__sinfecha__', this.checked)"><span style="font-style:italic;color:#8a9ab0">Sin fecha</span></label>`;
+  }
+  const btn=document.getElementById('mesesBtnLabel'); const n=mesesSeleccion.size;
+  if(n===0){ btn.textContent='Todos'; btn.style.color='var(--text)'; }
+  else { btn.textContent=n+' seleccionado'+(n>1?'s':''); btn.style.color='var(--blue)'; }
+}
+function toggleMes(label, activo){
+  if(activo) mesesSeleccion.add(label); else mesesSeleccion.delete(label);
+  recalcularOpciones(); aplicarFiltros();
+}
+function abrirMesesDropdown(e){ e.stopPropagation(); document.getElementById('mesesPanel').classList.toggle('abierto'); }
+document.addEventListener('click', e=>{ const p=document.getElementById('mesesPanel'); if(p && !p.contains(e.target)) p.classList.remove('abierto'); });
 
 function render(){
   const tot=filtrados.length, paginas=Math.max(1,Math.ceil(tot/PAGE_SIZE));
@@ -777,6 +883,98 @@ function toggleVer(id, btn){
   const inp=document.getElementById(id);
   if(inp.type==='password'){ inp.type='text'; btn.style.color='#0055A5'; }
   else { inp.type='password'; btn.style.color=''; }
+}
+
+// ====== VISTA RESUMEN (por Viceministerio → UEI, conteo por estado) ======
+function rankVM(v){ const s=(v||'').toUpperCase(); if(s==='VMT') return 0; if(s==='VMC') return 1; return 2; }
+
+// Agrupa los hitos filtrados por Viceministerio y, dentro, por UEI.
+// Cada fila UEI cuenta hitos por estado. Orden: VMT, VMC, resto (aparición).
+function calcularResumen(){
+  const grupos=new Map();  // uei -> {vm, uei, cumplido, proceso, reprog, orden}
+  let orden=0;
+  filtrados.forEach(h=>{
+    const cl=clasifDe(h);
+    const vm=cl.vicem||'(Sin viceministerio)';
+    const uei=cl.uei||'(Sin unidad ejecutora)';
+    const clave=vm+'||'+uei;
+    if(!grupos.has(clave)){ grupos.set(clave, {vm, uei, cumplido:0, proceso:0, reprog:0, orden:orden++}); }
+    const g=grupos.get(clave);
+    if(h.estado==='CUMPLIDO') g.cumplido++;
+    else if(h.estado==='EN PROCESO') g.proceso++;
+    else if(h.estado==='REPROGRAMADO') g.reprog++;
+  });
+  const arr=[...grupos.values()];
+  arr.sort((a,b)=>{ const ra=rankVM(a.vm), rb=rankVM(b.vm); if(ra!==rb) return ra-rb; if(a.vm!==b.vm) return a.vm.localeCompare(b.vm,'es'); return a.orden-b.orden; });
+  return arr;
+}
+
+function abrirResumen(){
+  const datos=calcularResumen();
+  const tot={cumplido:0, proceso:0, reprog:0};
+  let filas='', vmActual=null, n=0;
+  datos.forEach(r=>{
+    if(r.vm!==vmActual){ vmActual=r.vm; filas+=`<tr class="grupo-vm"><td colspan="6">${escapeHtml(r.vm)}</td></tr>`; }
+    n++;
+    const totFila=r.cumplido+r.proceso+r.reprog;
+    tot.cumplido+=r.cumplido; tot.proceso+=r.proceso; tot.reprog+=r.reprog;
+    filas+=`<tr>
+      <td style="text-align:center">${n}</td>
+      <td>${escapeHtml(r.uei)}</td>
+      <td style="text-align:center">${r.cumplido}</td>
+      <td style="text-align:center">${r.proceso}</td>
+      <td style="text-align:center">${r.reprog}</td>
+      <td style="text-align:center;font-weight:700">${totFila}</td>
+    </tr>`;
+  });
+  const totGeneral=tot.cumplido+tot.proceso+tot.reprog;
+  document.getElementById('resumenWrap').innerHTML = datos.length===0
+    ? '<div style="text-align:center;padding:30px;color:#8a9ab0;">No hay hitos con los filtros actuales.</div>'
+    : `<table class="tabla-resumen">
+        <thead><tr>
+          <th style="width:6%;text-align:center">N°</th>
+          <th style="width:42%">Unidad Ejecutora</th>
+          <th style="width:13%;text-align:center">Cumplido</th>
+          <th style="width:13%;text-align:center">En proceso</th>
+          <th style="width:13%;text-align:center">Reprogramado</th>
+          <th style="width:13%;text-align:center">Total</th>
+        </tr></thead>
+        <tbody>${filas}</tbody>
+        <tfoot><tr>
+          <td colspan="2" style="text-align:right">TOTAL</td>
+          <td style="text-align:center">${tot.cumplido}</td>
+          <td style="text-align:center">${tot.proceso}</td>
+          <td style="text-align:center">${tot.reprog}</td>
+          <td style="text-align:center">${totGeneral}</td>
+        </tr></tfoot>
+      </table>`;
+  const hayFiltros = filtrados.length !== HITOS.length;
+  document.getElementById('resumenSub').textContent = hayFiltros
+    ? 'Hitos por estado, agrupados por viceministerio y UEI (según filtros aplicados)'
+    : 'Hitos por estado, agrupados por viceministerio y UEI';
+  document.getElementById('overlayResumen').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function cerrarResumen(){ document.getElementById('overlayResumen').classList.remove('show'); document.body.style.overflow=''; }
+let _downResumen=false;
+document.getElementById('overlayResumen').addEventListener('mousedown',function(e){ _downResumen=(e.target===this); });
+document.getElementById('overlayResumen').addEventListener('click',function(e){ if(e.target===this && _downResumen) cerrarResumen(); _downResumen=false; });
+
+function descargarResumen(){
+  if (typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
+  const datos=calcularResumen();
+  if(!datos.length){ alert('No hay hitos para exportar con los filtros actuales.'); return; }
+  const rows=[['N°','Viceministerio','Unidad Ejecutora','Cumplido','En proceso','Reprogramado','Total']];
+  let n=0, tc=0,tp=0,tr=0;
+  datos.forEach(r=>{ n++; const tf=r.cumplido+r.proceso+r.reprog; tc+=r.cumplido; tp+=r.proceso; tr+=r.reprog;
+    rows.push([n, r.vm, r.uei, r.cumplido, r.proceso, r.reprog, tf]); });
+  rows.push(['', '', 'TOTAL', tc, tp, tr, tc+tp+tr]);
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:6},{wch:22},{wch:45},{wch:12},{wch:12},{wch:14},{wch:10}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Resumen por UEI');
+  const fecha=new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, 'resumen_cartera_'+fecha+'.xlsx');
 }
 
 cargar();
