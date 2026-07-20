@@ -113,14 +113,15 @@
     margin-bottom: 22px;
   }
   .filtros-box {
-    background: #f7f9fc;
-    border: 1px solid #e3e9f2;
+    background: #EAF1FB;
+    border: 1px solid #B8D0EC;
+    border-left: 4px solid var(--azul);
     border-radius: 10px;
     padding: 16px 18px;
   }
   .filtros-label {
     font-size: 12px; font-weight: 700; letter-spacing: .05em;
-    color: var(--azul); text-transform: uppercase; margin-bottom: 12px;
+    color: var(--azul-dk); text-transform: uppercase; margin-bottom: 12px;
   }
   .filtros-grid {
     display: grid;
@@ -251,6 +252,12 @@
     font-size: 13px;
   }
   .tabla-resumen tbody tr:hover { background: #f7f9fc; }
+  .tabla-resumen tr.fila-subtotal td {
+    background: #E8EEF7; font-size: 12px;
+    border-top: 1px solid var(--azul); border-bottom: 1px solid var(--azul);
+    color: var(--azul-dk);
+  }
+  .tabla-resumen tr.fila-subtotal:hover td { background: #E8EEF7; }
   .tabla-resumen tfoot td {
     background: var(--azul-bg); border-top: 2px solid var(--azul);
     padding: 11px 12px; font-size: 13px;
@@ -716,7 +723,7 @@
 
 <!-- MODAL RESUMEN POR EQUIPO -->
 <div class="modal-overlay" id="resumen-overlay">
-  <div class="modal" style="max-width:860px">
+  <div class="modal" style="max-width:1080px">
     <div class="modal-header">
       <div>
         <h2>Resumen por equipo</h2>
@@ -1045,14 +1052,17 @@ let mesesDisponibles = [];   // [{label, orden, trimestre, anio}] ordenados
 let mesesSeleccion   = new Set(); // labels de meses activos
 
 // Construye la lista de meses a partir de los hitos de las intervenciones
-// que pasan los demás filtros (cascada). Al inicio, de todas.
+// que pasan los demás filtros (cascada). Respeta también el checkbox "solo
+// último hito": si está activo, solo considera los hitos marcados como último.
 function construirFechasCumplimiento() {
   const set = new Map(); // label -> obj
   const base = intervenciones.length
     ? intervenciones.filter(i => pasaFiltrosExcepto(i, '__meses__'))
     : [];
+  const soloUltimo = document.getElementById('f-ultimo')?.checked;
   base.forEach(i => {
-    i.hitos.forEach(h => {
+    var hitosBase = soloUltimo ? i.hitos.filter(h => h.ultimo) : i.hitos;
+    hitosBase.forEach(h => {
       const eh = estadoHitos[h.codhito];
       if (!eh) return;
       const p = parseCumplimiento(eh.fechaCumplimiento);
@@ -1194,6 +1204,14 @@ function hitosVisibles(interv) {
 }
 
 function aplicarFiltros() {
+  // Primero sincroniza qué meses son válidos (respeta demás filtros y el
+  // checkbox de último hito) y descarta selecciones de meses que ya no aplican.
+  // Esto evita que la tabla quede vacía por un mes que dejó de ser posible.
+  construirFechasCumplimiento();
+  const labelsValidos = new Set(mesesDisponibles.map(m => m.label));
+  labelsValidos.add('__sinfecha__');
+  [...mesesSeleccion].forEach(l => { if (!labelsValidos.has(l)) mesesSeleccion.delete(l); });
+
   const vGrupo      = document.getElementById('f-grupo').value;
   const vVice       = document.getElementById('f-vice').value;
   const vOrgano     = document.getElementById('f-organo').value;
@@ -1216,8 +1234,6 @@ function aplicarFiltros() {
     }
     if (vBuscar && !i.nombre.toLowerCase().includes(vBuscar)) return false;
     if (vArea && !(i.area || '').toLowerCase().includes(vArea)) return false;
-    // Filtro por mes de cumplimiento (Opción B): la intervención pasa solo si
-    // tiene al menos un hito en los meses seleccionados
     // Filtros de hito (mes y/o último): la intervención pasa solo si le queda
     // al menos un hito visible
     const filtrandoHitos = mesesSeleccion.size > 0 || document.getElementById('f-ultimo').checked;
@@ -1275,7 +1291,7 @@ function renderTabla() {
 
     // Avance físico (registrado a mano)
     const avanceFisHtml = (est.avance !== undefined && est.avance !== '' && est.avance !== null)
-      ? `<span style="font-weight:700;color:var(--texto)">${esc(est.avance)}%</span>`
+      ? `<span style="font-weight:700;color:var(--texto)">${fmtAvance(est.avance)}</span>`
       : '—';
 
     // Priorización: editable solo en Vista OGAME; en vista usuario, gris y no clickeable
@@ -1366,6 +1382,17 @@ function fmt(v) {
   return isNaN(n) ? v : n.toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 }
 
+// Muestra el avance como porcentaje, tolerando datos ya con "%" o con coma decimal.
+// Acepta "25", "25%", "25,00%", "25.00%" → muestra "25%".
+function fmtAvance(v) {
+  var limpio = String(v).replace(/%/g, '').replace(',', '.').trim();
+  var n = parseFloat(limpio);
+  if (isNaN(n)) return esc(String(v)); // si no es número, lo muestra tal cual
+  // sin decimales si es entero, con un decimal si los tiene
+  var texto = Number.isInteger(n) ? String(n) : n.toFixed(1);
+  return texto + '%';
+}
+
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -1388,7 +1415,7 @@ function abrirModal(codigo) {
   document.getElementById('modal-subtitulo').textContent = intervModal.organo;
 
   document.getElementById('m-estado').value   = est.estado   || '';
-  document.getElementById('m-avance').value   = est.avance   || '';
+  document.getElementById('m-avance').value   = est.avance ? String(est.avance).replace(/%/g,'').replace(',','.').trim() : '';
 
   // ¿Están habilitados los hitos para esta intervención?
   const hitosBloqueados = est.hitosHabilitados === false;
@@ -1606,15 +1633,17 @@ function calcularResumen() {
     if (!grupos.has(clave)) {
       grupos.set(clave, {
         equipo: clave, vice: i.vice || '', director: i.director || '',
-        ids: new Set(), ordenMaestro: idx
+        ids: new Set(), totalHitos: 0, ordenMaestro: idx
       });
     }
-    grupos.get(clave).ids.add(i.id);
+    const g = grupos.get(clave);
+    g.ids.add(i.id);
+    g.totalHitos += i.hitos.length; // suma los CODHITOS de esta intervención
   });
 
   const arr = [...grupos.values()].map(g => ({
     equipo: g.equipo, vice: g.vice, director: g.director,
-    total: g.ids.size, ordenMaestro: g.ordenMaestro
+    total: g.ids.size, totalHitos: g.totalHitos, ordenMaestro: g.ordenMaestro
   }));
 
   const rankVice = (v) => {
@@ -1635,24 +1664,52 @@ function abrirResumen() {
   const datos = calcularResumen();
   const totalGeneral = datos.reduce((s, r) => s + r.total, 0);
 
-  const filas = datos.map((r, idx) => `
+  // construye filas insertando subtotal tras el último equipo de VMT y de VMC
+  let filas = '';
+  let numero = 0;
+  const subtotalHtml = (vm, sumaInterv, sumaHitos) => `
+    <tr class="fila-subtotal">
+      <td></td>
+      <td style="text-align:center">${esc(vm)}</td>
+      <td colspan="2" style="text-align:right;font-weight:700">TOTAL ${esc(vm)}</td>
+      <td style="text-align:center;font-weight:700">${sumaInterv}</td>
+      <td style="text-align:center;font-weight:700">${sumaHitos}</td>
+    </tr>`;
+
+  datos.forEach((r, idx) => {
+    numero++;
+    filas += `
     <tr>
-      <td style="text-align:center">${idx + 1}</td>
+      <td style="text-align:center">${numero}</td>
       <td style="text-align:center">${esc(r.vice)}</td>
       <td>${esc(r.equipo)}</td>
       <td>${esc(r.director)}</td>
       <td style="text-align:center;font-weight:700">${r.total}</td>
-    </tr>`).join('');
+      <td style="text-align:center">${r.totalHitos}</td>
+    </tr>`;
+
+    const vmActual = (r.vice || '').toUpperCase();
+    const vmSiguiente = datos[idx + 1] ? (datos[idx + 1].vice || '').toUpperCase() : null;
+    if ((vmActual === 'VMT' || vmActual === 'VMC') && vmActual !== vmSiguiente) {
+      const bloque = datos.filter(d => (d.vice || '').toUpperCase() === vmActual);
+      const sumaInterv = bloque.reduce((s, d) => s + d.total, 0);
+      const sumaHitos  = bloque.reduce((s, d) => s + d.totalHitos, 0);
+      filas += subtotalHtml(vmActual, sumaInterv, sumaHitos);
+    }
+  });
+
+  const totalHitosGeneral = datos.reduce((s, r) => s + r.totalHitos, 0);
 
   document.getElementById('resumen-tabla-wrap').innerHTML = `
     <table class="tabla-resumen">
       <thead>
         <tr>
-          <th style="width:8%;text-align:center">N°</th>
-          <th style="width:10%;text-align:center">VM</th>
-          <th style="width:42%">Equipo</th>
-          <th style="width:28%">Director(a)</th>
-          <th style="width:12%;text-align:center">Total<br>intervenciones</th>
+          <th style="width:6%;text-align:center">N°</th>
+          <th style="width:8%;text-align:center">VM</th>
+          <th style="width:40%">Equipo</th>
+          <th style="width:26%">Director(a)</th>
+          <th style="width:10%;text-align:center">Total<br>intervenciones</th>
+          <th style="width:10%;text-align:center">Total<br>hitos</th>
         </tr>
       </thead>
       <tbody>${filas}</tbody>
@@ -1660,6 +1717,7 @@ function abrirResumen() {
         <tr>
           <td colspan="4" style="text-align:right;font-weight:700">TOTAL</td>
           <td style="text-align:center;font-weight:700">${totalGeneral}</td>
+          <td style="text-align:center;font-weight:700">${totalHitosGeneral}</td>
         </tr>
       </tfoot>
     </table>`;
@@ -1680,12 +1738,29 @@ function descargarResumen() {
   const datos = calcularResumen();
   const totalGeneral = datos.reduce((s, r) => s + r.total, 0);
 
-  const rows = [['N°', 'VM', 'Equipo', 'Director(a)', 'Total intervenciones']];
-  datos.forEach((r, idx) => rows.push([idx + 1, r.vice, r.equipo, r.director, r.total]));
-  rows.push(['', '', '', 'TOTAL', totalGeneral]);
+  const rows = [['N°', 'VM', 'Equipo', 'Director(a)', 'Total intervenciones', 'Total hitos']];
+  const filasSubtotal = [];
+  let numero = 0;
+
+  datos.forEach((r, idx) => {
+    numero++;
+    rows.push([numero, r.vice, r.equipo, r.director, r.total, r.totalHitos]);
+
+    const vmActual = (r.vice || '').toUpperCase();
+    const vmSiguiente = datos[idx + 1] ? (datos[idx + 1].vice || '').toUpperCase() : null;
+    if ((vmActual === 'VMT' || vmActual === 'VMC') && vmActual !== vmSiguiente) {
+      const bloque = datos.filter(d => (d.vice || '').toUpperCase() === vmActual);
+      const sumaInterv = bloque.reduce((s, d) => s + d.total, 0);
+      const sumaHitos  = bloque.reduce((s, d) => s + d.totalHitos, 0);
+      rows.push(['', vmActual, 'TOTAL ' + vmActual, '', sumaInterv, sumaHitos]);
+      filasSubtotal.push(rows.length - 1);
+    }
+  });
+  const totalHitosGeneral = datos.reduce((s, r) => s + r.totalHitos, 0);
+  rows.push(['', '', '', 'TOTAL', totalGeneral, totalHitosGeneral]);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  for (let c = 0; c < 5; c++) {
+  for (let c = 0; c < 6; c++) {
     const ref = XLSX.utils.encode_cell({ r: 0, c });
     if (ws[ref]) ws[ref].s = {
       fill: { patternType: 'solid', fgColor: { rgb: '003F7D' } },
@@ -1694,15 +1769,26 @@ function descargarResumen() {
       border: { bottom: { style: 'thin', color: { rgb: 'C8102E' } } }
     };
   }
+  // subtotales resaltados
+  filasSubtotal.forEach(fila => {
+    for (let c = 0; c < 6; c++) {
+      const ref = XLSX.utils.encode_cell({ r: fila, c });
+      if (ws[ref]) ws[ref].s = {
+        fill: { patternType: 'solid', fgColor: { rgb: 'E8EEF7' } },
+        font: { bold: true, sz: 11, color: { rgb: '003F7D' } }
+      };
+    }
+  });
+  // total general
   const filaTotal = rows.length - 1;
-  for (let c = 0; c < 5; c++) {
+  for (let c = 0; c < 6; c++) {
     const ref = XLSX.utils.encode_cell({ r: filaTotal, c });
     if (ws[ref]) ws[ref].s = {
       fill: { patternType: 'solid', fgColor: { rgb: 'EEF4FF' } },
       font: { bold: true, sz: 11 }
     };
   }
-  ws['!cols'] = [6, 8, 50, 30, 16].map(w => ({ wch: w }));
+  ws['!cols'] = [6, 8, 50, 30, 16, 12].map(w => ({ wch: w }));
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Resumen por equipo');
