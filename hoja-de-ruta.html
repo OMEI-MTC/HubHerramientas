@@ -916,6 +916,7 @@ async function cargarDatos() {
         area:       f['Área de Influencia'] || '',
         equipo:     f['EQUIPO'] || '',
         director:   f['DIRECTOR(A)'] || '',
+        resumenGrupo: f['RESUMEN'] || '',
         hitos:      []
       };
     });
@@ -1633,29 +1634,31 @@ function calcularResumen() {
     if (!grupos.has(clave)) {
       grupos.set(clave, {
         equipo: clave, vice: i.vice || '', director: i.director || '',
+        resumenGrupo: i.resumenGrupo || '(Sin grupo)',
         ids: new Set(), totalHitos: 0, ordenMaestro: idx
       });
     }
     const g = grupos.get(clave);
     g.ids.add(i.id);
-    g.totalHitos += i.hitos.length; // suma los CODHITOS de esta intervención
+    g.totalHitos += i.hitos.length;
   });
 
   const arr = [...grupos.values()].map(g => ({
     equipo: g.equipo, vice: g.vice, director: g.director,
+    resumenGrupo: g.resumenGrupo,
     total: g.ids.size, totalHitos: g.totalHitos, ordenMaestro: g.ordenMaestro
   }));
 
-  const rankVice = (v) => {
-    const s = (v || '').toUpperCase();
-    if (s === 'VMT') return 0;
-    if (s === 'VMC') return 1;
-    return 2;
-  };
+  // Orden de los grupos de RESUMEN según su primera aparición en el maestro
+  const ordenGrupo = new Map();
+  arr.forEach(r => {
+    if (!ordenGrupo.has(r.resumenGrupo)) ordenGrupo.set(r.resumenGrupo, r.ordenMaestro);
+  });
+
   arr.sort((a, b) => {
-    const ra = rankVice(a.vice), rb = rankVice(b.vice);
-    if (ra !== rb) return ra - rb;
-    return a.ordenMaestro - b.ordenMaestro;
+    const ga = ordenGrupo.get(a.resumenGrupo), gb = ordenGrupo.get(b.resumenGrupo);
+    if (ga !== gb) return ga - gb;             // primero agrupa por RESUMEN
+    return a.ordenMaestro - b.ordenMaestro;     // dentro del grupo, orden del maestro
   });
   return arr;
 }
@@ -1667,11 +1670,10 @@ function abrirResumen() {
   // construye filas insertando subtotal tras el último equipo de VMT y de VMC
   let filas = '';
   let numero = 0;
-  const subtotalHtml = (vm, sumaInterv, sumaHitos) => `
+  const subtotalHtml = (grupo, sumaInterv, sumaHitos) => `
     <tr class="fila-subtotal">
       <td></td>
-      <td style="text-align:center">${esc(vm)}</td>
-      <td colspan="2" style="text-align:right;font-weight:700">TOTAL ${esc(vm)}</td>
+      <td colspan="3" style="text-align:right;font-weight:700">TOTAL ${esc(grupo)}</td>
       <td style="text-align:center;font-weight:700">${sumaInterv}</td>
       <td style="text-align:center;font-weight:700">${sumaHitos}</td>
     </tr>`;
@@ -1688,13 +1690,14 @@ function abrirResumen() {
       <td style="text-align:center">${r.totalHitos}</td>
     </tr>`;
 
-    const vmActual = (r.vice || '').toUpperCase();
-    const vmSiguiente = datos[idx + 1] ? (datos[idx + 1].vice || '').toUpperCase() : null;
-    if ((vmActual === 'VMT' || vmActual === 'VMC') && vmActual !== vmSiguiente) {
-      const bloque = datos.filter(d => (d.vice || '').toUpperCase() === vmActual);
+    // subtotal tras el último equipo de cada grupo de RESUMEN
+    const grupoActual = r.resumenGrupo;
+    const grupoSiguiente = datos[idx + 1] ? datos[idx + 1].resumenGrupo : null;
+    if (grupoActual !== grupoSiguiente) {
+      const bloque = datos.filter(d => d.resumenGrupo === grupoActual);
       const sumaInterv = bloque.reduce((s, d) => s + d.total, 0);
       const sumaHitos  = bloque.reduce((s, d) => s + d.totalHitos, 0);
-      filas += subtotalHtml(vmActual, sumaInterv, sumaHitos);
+      filas += subtotalHtml(grupoActual, sumaInterv, sumaHitos);
     }
   });
 
@@ -1704,12 +1707,12 @@ function abrirResumen() {
     <table class="tabla-resumen">
       <thead>
         <tr>
-          <th style="width:6%;text-align:center">N°</th>
-          <th style="width:8%;text-align:center">VM</th>
-          <th style="width:40%">Equipo</th>
-          <th style="width:26%">Director(a)</th>
-          <th style="width:10%;text-align:center">Total<br>intervenciones</th>
-          <th style="width:10%;text-align:center">Total<br>hitos</th>
+          <th style="width:5%;text-align:center">N°</th>
+          <th style="width:12%;text-align:center">Órgano de<br>Alta Dirección</th>
+          <th style="width:37%">Instancia Responsable</th>
+          <th style="width:24%">Titular de la instancia responsable</th>
+          <th style="width:11%;text-align:center">Total<br>intervenciones</th>
+          <th style="width:11%;text-align:center">Total<br>hitos</th>
         </tr>
       </thead>
       <tbody>${filas}</tbody>
@@ -1738,7 +1741,8 @@ function descargarResumen() {
   const datos = calcularResumen();
   const totalGeneral = datos.reduce((s, r) => s + r.total, 0);
 
-  const rows = [['N°', 'VM', 'Equipo', 'Director(a)', 'Total intervenciones', 'Total hitos']];
+  const rows = [['N°', 'Órgano de Alta Dirección', 'Instancia Responsable',
+                 'Titular de la instancia responsable', 'Total intervenciones', 'Total hitos']];
   const filasSubtotal = [];
   let numero = 0;
 
@@ -1746,13 +1750,13 @@ function descargarResumen() {
     numero++;
     rows.push([numero, r.vice, r.equipo, r.director, r.total, r.totalHitos]);
 
-    const vmActual = (r.vice || '').toUpperCase();
-    const vmSiguiente = datos[idx + 1] ? (datos[idx + 1].vice || '').toUpperCase() : null;
-    if ((vmActual === 'VMT' || vmActual === 'VMC') && vmActual !== vmSiguiente) {
-      const bloque = datos.filter(d => (d.vice || '').toUpperCase() === vmActual);
+    const grupoActual = r.resumenGrupo;
+    const grupoSiguiente = datos[idx + 1] ? datos[idx + 1].resumenGrupo : null;
+    if (grupoActual !== grupoSiguiente) {
+      const bloque = datos.filter(d => d.resumenGrupo === grupoActual);
       const sumaInterv = bloque.reduce((s, d) => s + d.total, 0);
       const sumaHitos  = bloque.reduce((s, d) => s + d.totalHitos, 0);
-      rows.push(['', vmActual, 'TOTAL ' + vmActual, '', sumaInterv, sumaHitos]);
+      rows.push(['', '', 'TOTAL ' + grupoActual, '', sumaInterv, sumaHitos]);
       filasSubtotal.push(rows.length - 1);
     }
   });
@@ -1801,7 +1805,7 @@ function exportarExcel() {
                  'Intervención Estratégica', 'Detalle de Intervención', 'Relevancia sectorial',
                  'Estado situacional', 'Avance físico (%)',
                  'Priorizado', 'Fecha de registro',
-                 'Hito(s) clave(s)', 'Último', 'Fecha de cumplimiento']];
+                 'CODHITOS', 'Hito(s) clave(s)', 'Último', 'Fecha de cumplimiento']];
 
   filtradas.forEach(interv => {
     const est = estadoInterv[interv.codigo] || {};
@@ -1812,7 +1816,7 @@ function exportarExcel() {
         interv.nombre, interv.detalle || '', interv.relevancia || '',
         est.estado || '', est.avance || '',
         est.priorizado ? 'Sí' : 'No', est.fechaReg || '',
-        h.nombre, h.ultimo ? 'Sí' : '', eh.fechaCumplimiento || ''
+        h.codhito, h.nombre, h.ultimo ? 'Sí' : '', eh.fechaCumplimiento || ''
       ]);
     });
   });
@@ -1831,7 +1835,7 @@ function exportarExcel() {
     };
   }
 
-  ws['!cols'] = [12,10,14,12,10,16,40,35,30,35,12,10,14,40,8,16].map(w => ({ wch: w }));
+  ws['!cols'] = [12,10,14,12,10,16,40,35,30,35,12,10,14,12,40,8,16].map(w => ({ wch: w }));
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Hoja de Ruta');
