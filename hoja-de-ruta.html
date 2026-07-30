@@ -608,7 +608,7 @@
       <div class="filtros-box">
         <div class="filtros-label">Filtros</div>
 
-        <!-- Fila 1: Grupo, Viceministerio, Órgano, Área de influencia, Priorizado -->
+        <!-- Fila 1: Grupo, Viceministerio, Órgano, Priorizado, Discurso -->
         <div class="filtros-grid cinco">
           <div class="filtro-group">
             <label>Grupo</label>
@@ -623,10 +623,6 @@
             <select id="f-organo"><option value="">Todos</option></select>
           </div>
           <div class="filtro-group">
-            <label>Área de influencia</label>
-            <input type="text" id="f-area" placeholder="Escribe para buscar…">
-          </div>
-          <div class="filtro-group">
             <label>Priorizado</label>
             <select id="f-priorizado">
               <option value="">Todos</option>
@@ -634,9 +630,16 @@
               <option value="no">No</option>
             </select>
           </div>
+          <div class="filtro-group">
+            <label>Discurso de 28 de julio</label>
+            <label class="check-ultimo">
+              <input type="checkbox" id="f-discurso" onchange="aplicarFiltros()">
+              <span>Solo mencionadas</span>
+            </label>
+          </div>
         </div>
 
-        <!-- Fila 2: Eje, Línea, Intervención, Fecha de cumplimiento, Último hito -->
+        <!-- Fila 2: Eje, Línea, Área de influencia (3 de 5) -->
         <div class="filtros-grid cinco">
           <div class="filtro-group">
             <label>Eje prioritario</label>
@@ -647,8 +650,24 @@
             <select id="f-linea"><option value="">Todos</option></select>
           </div>
           <div class="filtro-group">
+            <label>Área de influencia</label>
+            <input type="text" id="f-area" placeholder="Escribe para buscar…">
+          </div>
+        </div>
+
+        <!-- Fila 3: CUI, Intervención, Hito, Fecha de cumplimiento, Hito final -->
+        <div class="filtros-grid cinco">
+          <div class="filtro-group">
+            <label>CUI</label>
+            <input type="text" id="f-cui" placeholder="Escribe para buscar…">
+          </div>
+          <div class="filtro-group">
             <label>Intervención</label>
             <input type="text" id="f-buscar" placeholder="Escribe para buscar…">
+          </div>
+          <div class="filtro-group">
+            <label>Hito</label>
+            <input type="text" id="f-hito" placeholder="Escribe para buscar…">
           </div>
           <div class="filtro-group">
             <label>Fecha de cumplimiento</label>
@@ -669,7 +688,7 @@
           </div>
         </div>
 
-        <!-- Fila 3: Limpiar -->
+        <!-- Fila 4: Limpiar -->
         <div class="filtros-foot" style="justify-content:flex-end">
           <button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar filtros</button>
         </div>
@@ -917,6 +936,9 @@ async function cargarDatos() {
         equipo:     f['EQUIPO'] || '',
         director:   f['DIRECTOR(A)'] || '',
         resumenGrupo: f['RESUMEN'] || '',
+        cui:        f['CUI'] || '',
+        discurso:   (f['Discurso'] || '').trim().toLowerCase() === 'si' ||
+                    (f['Discurso'] || '').trim().toLowerCase() === 'sí',
         hitos:      []
       };
     });
@@ -1061,8 +1083,10 @@ function construirFechasCumplimiento() {
     ? intervenciones.filter(i => pasaFiltrosExcepto(i, '__meses__'))
     : [];
   const soloUltimo = document.getElementById('f-ultimo')?.checked;
+  const vHito = document.getElementById('f-hito')?.value.trim().toLowerCase();
   base.forEach(i => {
     var hitosBase = soloUltimo ? i.hitos.filter(h => h.ultimo) : i.hitos;
+    if (vHito) hitosBase = hitosBase.filter(h => (h.nombre || '').toLowerCase().includes(vHito));
     hitosBase.forEach(h => {
       const eh = estadoHitos[h.codhito];
       if (!eh) return;
@@ -1080,6 +1104,8 @@ function poblarFiltros() {
   document.getElementById('f-priorizado').addEventListener('change', aplicarFiltros);
   document.getElementById('f-buscar').addEventListener('input', aplicarFiltros);
   document.getElementById('f-area').addEventListener('input', aplicarFiltros);
+  document.getElementById('f-cui').addEventListener('input', aplicarFiltros);
+  document.getElementById('f-hito').addEventListener('input', aplicarFiltros);
 
   refrescarOpcionesFiltros();
 }
@@ -1095,7 +1121,9 @@ function pasaFiltrosExcepto(i, excepto) {
     linea:      document.getElementById('f-linea').value,
     priorizado: document.getElementById('f-priorizado').value,
     buscar:     document.getElementById('f-buscar').value.trim().toLowerCase(),
-    area:       document.getElementById('f-area').value.trim().toLowerCase()
+    area:       document.getElementById('f-area').value.trim().toLowerCase(),
+    cui:        document.getElementById('f-cui').value.trim().toLowerCase(),
+    discurso:   document.getElementById('f-discurso').checked
   };
   if (excepto !== 'grupo'  && v.grupo  && i.grupo  !== v.grupo)  return false;
   if (excepto !== 'vice'   && v.vice   && i.vice   !== v.vice)   return false;
@@ -1109,6 +1137,8 @@ function pasaFiltrosExcepto(i, excepto) {
   }
   if (excepto !== 'buscar' && v.buscar && !i.nombre.toLowerCase().includes(v.buscar)) return false;
   if (excepto !== 'area'   && v.area   && !(i.area || '').toLowerCase().includes(v.area)) return false;
+  if (excepto !== 'cui'    && v.cui    && !(i.cui || '').toLowerCase().includes(v.cui)) return false;
+  if (excepto !== 'discurso' && v.discurso && !i.discurso) return false;
   return true;
 }
 
@@ -1184,13 +1214,17 @@ function abrirMesesDropdown(e) {
 }
 
 // Hitos de una intervención que pasan los filtros de hito (Opción B: recorta).
-// Combina el filtro de meses y el de "solo último hito".
+// Combina: filtro de meses, "solo último hito", y búsqueda de texto en el hito.
 function hitosVisibles(interv) {
   let lista = interv.hitos;
 
   // solo el hito marcado como último en el maestro
   const soloUltimo = document.getElementById('f-ultimo')?.checked;
   if (soloUltimo) lista = lista.filter(h => h.ultimo);
+
+  // búsqueda de texto en el nombre del hito
+  const vHito = document.getElementById('f-hito')?.value.trim().toLowerCase();
+  if (vHito) lista = lista.filter(h => (h.nombre || '').toLowerCase().includes(vHito));
 
   // filtro por mes de cumplimiento
   if (mesesSeleccion.size > 0) {
@@ -1221,6 +1255,9 @@ function aplicarFiltros() {
   const vPriorizado = document.getElementById('f-priorizado').value;
   const vBuscar     = document.getElementById('f-buscar').value.trim().toLowerCase();
   const vArea       = document.getElementById('f-area').value.trim().toLowerCase();
+  const vCui        = document.getElementById('f-cui').value.trim().toLowerCase();
+  const vDiscurso   = document.getElementById('f-discurso').checked;
+  const vHito       = document.getElementById('f-hito').value.trim().toLowerCase();
 
   filtradas = intervenciones.filter(i => {
     if (vGrupo  && i.grupo !== vGrupo)  return false;
@@ -1235,9 +1272,13 @@ function aplicarFiltros() {
     }
     if (vBuscar && !i.nombre.toLowerCase().includes(vBuscar)) return false;
     if (vArea && !(i.area || '').toLowerCase().includes(vArea)) return false;
-    // Filtros de hito (mes y/o último): la intervención pasa solo si le queda
-    // al menos un hito visible
-    const filtrandoHitos = mesesSeleccion.size > 0 || document.getElementById('f-ultimo').checked;
+    if (vCui && !(i.cui || '').toLowerCase().includes(vCui)) return false;
+    if (vDiscurso && !i.discurso) return false;
+    // Filtros de hito (mes, último, y/o texto de hito): la intervención pasa
+    // solo si le queda al menos un hito visible
+    const filtrandoHitos = mesesSeleccion.size > 0 ||
+                           document.getElementById('f-ultimo').checked ||
+                           vHito !== '';
     if (filtrandoHitos && hitosVisibles(i).length === 0) return false;
     return true;
   });
@@ -1248,10 +1289,11 @@ function aplicarFiltros() {
 }
 
 function limpiarFiltros() {
-  ['f-grupo','f-vice','f-organo','f-eje','f-linea','f-priorizado','f-buscar','f-area'].forEach(id => {
+  ['f-grupo','f-vice','f-organo','f-eje','f-linea','f-priorizado','f-buscar','f-area','f-cui','f-hito'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('f-ultimo').checked = false;
+  document.getElementById('f-discurso').checked = false;
   mesesSeleccion.clear();
   renderMesesDropdown();
   aplicarFiltros();
@@ -1801,8 +1843,8 @@ function descargarResumen() {
 }
 
 function exportarExcel() {
-  const rows = [['Código', 'ID', 'Grupo', 'Viceministerio', 'Responsable', 'Área de influencia',
-                 'Intervención Estratégica', 'Detalle de Intervención', 'Relevancia sectorial',
+  const rows = [['Código', 'ID', 'CUI', 'Grupo', 'Viceministerio', 'Responsable', 'Área de influencia',
+                 'Discurso 28 julio', 'Intervención Estratégica', 'Detalle de Intervención', 'Relevancia sectorial',
                  'Estado situacional', 'Avance físico (%)',
                  'Priorizado', 'Fecha de registro',
                  'CODHITOS', 'Hito(s) clave(s)', 'Último', 'Fecha de cumplimiento']];
@@ -1812,8 +1854,8 @@ function exportarExcel() {
     hitosVisibles(interv).forEach(h => {
       const eh = estadoHitos[h.codhito] || {};
       rows.push([
-        interv.codigo, interv.id || '', interv.grupo || '', interv.vice || '', interv.organo, interv.area || '',
-        interv.nombre, interv.detalle || '', interv.relevancia || '',
+        interv.codigo, interv.id || '', interv.cui || '', interv.grupo || '', interv.vice || '', interv.organo, interv.area || '',
+        interv.discurso ? 'Sí' : '', interv.nombre, interv.detalle || '', interv.relevancia || '',
         est.estado || '', est.avance || '',
         est.priorizado ? 'Sí' : 'No', est.fechaReg || '',
         h.codhito, h.nombre, h.ultimo ? 'Sí' : '', eh.fechaCumplimiento || ''
@@ -1835,7 +1877,7 @@ function exportarExcel() {
     };
   }
 
-  ws['!cols'] = [12,10,14,12,10,16,40,35,30,35,12,10,14,12,40,8,16].map(w => ({ wch: w }));
+  ws['!cols'] = [12,10,12,14,12,10,16,10,40,35,30,35,12,10,14,12,40,8,16].map(w => ({ wch: w }));
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Hoja de Ruta');
