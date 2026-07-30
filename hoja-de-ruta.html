@@ -1843,41 +1843,120 @@ function descargarResumen() {
 }
 
 function exportarExcel() {
-  const rows = [['Código', 'ID', 'CUI', 'Grupo', 'Viceministerio', 'Responsable', 'Área de influencia',
-                 'Discurso 28 julio', 'Intervención Estratégica', 'Detalle de Intervención', 'Relevancia sectorial',
-                 'Estado situacional', 'Avance físico (%)',
-                 'Priorizado', 'Fecha de registro',
-                 'CODHITOS', 'Hito(s) clave(s)', 'Último', 'Fecha de cumplimiento']];
+  // Orden de columnas (para leer):
+  // 0 Fecha de registro, 1 Código, 2 CODHITOS  → encabezado GRIS (internas)
+  // 3 en adelante → encabezado AZUL
+  // Combinadas por Código: Detalle(11), Intervención(12), Relevancia(13), Estado(14)
+  const encabezados = ['Fecha de registro', 'Código', 'CODHITOS',
+    'Discurso 28 julio', 'Priorizado', 'Último', 'Grupo', 'Viceministerio',
+    'Responsable', 'Área de influencia', 'CUI', 'Detalle de Intervención',
+    'Intervención Estratégica', 'Relevancia sectorial', 'Estado situacional',
+    'Avance físico (%)', 'Hito(s) clave(s)', 'Fecha de cumplimiento'];
+
+  const rows = [encabezados];
+  // rangos por Código (para Intervención, Relevancia, Estado y las columnas repetidas de código)
+  const bloquesCodigo = []; // { inicio, fin }
+  // rangos por ID (para Detalle de Intervención)
+  const bloquesId = [];     // { inicio, fin }
+
+  // control de bloques por ID: acumula filas mientras el ID no cambie
+  let idActual = null, idInicio = null;
+
+  const cerrarBloqueId = (finFila) => {
+    if (idActual !== null && finFila > idInicio) {
+      bloquesId.push({ inicio: idInicio, fin: finFila });
+    }
+  };
 
   filtradas.forEach(interv => {
     const est = estadoInterv[interv.codigo] || {};
-    hitosVisibles(interv).forEach(h => {
+    const hitos = hitosVisibles(interv);
+    if (hitos.length === 0) return;
+
+    const idInterv = interv.id || interv.codigo;
+    // ¿cambió el ID respecto a la intervención anterior? cierra el bloque previo
+    if (idInterv !== idActual) {
+      cerrarBloqueId(rows.length - 1);
+      idActual = idInterv;
+      idInicio = rows.length; // primera fila de este nuevo ID
+    }
+
+    const filaInicio = rows.length; // primera fila de este Código
+    hitos.forEach(h => {
       const eh = estadoHitos[h.codhito] || {};
       rows.push([
-        interv.codigo, interv.id || '', interv.cui || '', interv.grupo || '', interv.vice || '', interv.organo, interv.area || '',
-        interv.discurso ? 'Sí' : '', interv.nombre, interv.detalle || '', interv.relevancia || '',
-        est.estado || '', est.avance || '',
-        est.priorizado ? 'Sí' : 'No', est.fechaReg || '',
-        h.codhito, h.nombre, h.ultimo ? 'Sí' : '', eh.fechaCumplimiento || ''
+        est.fechaReg || '', interv.codigo, h.codhito,
+        interv.discurso ? 'Sí' : '', est.priorizado ? 'Sí' : 'No', h.ultimo ? 'Sí' : '',
+        interv.grupo || '', interv.vice || '', interv.organo, interv.area || '', interv.cui || '',
+        interv.detalle || '', interv.nombre, interv.relevancia || '', est.estado || '',
+        est.avance ? fmtAvance(est.avance) : '',
+        h.nombre, eh.fechaCumplimiento || ''
       ]);
     });
+    const filaFin = rows.length - 1;
+    if (filaFin > filaInicio) bloquesCodigo.push({ inicio: filaInicio, fin: filaFin });
   });
+  cerrarBloqueId(rows.length - 1); // cerrar el último bloque de ID
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
+  const NCOLS = encabezados.length;
 
-  const NCOLS = rows[0].length;
+  // ── Encabezados: gris para las 3 primeras, azul para el resto ──
   for (let c = 0; c < NCOLS; c++) {
     const ref = XLSX.utils.encode_cell({ r: 0, c });
     if (!ws[ref]) continue;
+    const esInterna = c < 3;
     ws[ref].s = {
-      fill: { patternType: 'solid', fgColor: { rgb: '003F7D' } },
+      fill: { patternType: 'solid', fgColor: { rgb: esInterna ? '6B7280' : '003F7D' } },
       font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
-      alignment: { vertical: 'center', wrapText: true },
+      alignment: { vertical: 'center', horizontal: 'center', wrapText: true },
       border: { bottom: { style: 'thin', color: { rgb: 'C8102E' } } }
     };
   }
 
-  ws['!cols'] = [12,10,12,14,12,10,16,10,40,35,30,35,12,10,14,12,40,8,16].map(w => ({ wch: w }));
+  // ── Estilo de celdas de datos: alineación arriba + ajuste de texto ──
+  for (let r = 1; r < rows.length; r++) {
+    for (let c = 0; c < NCOLS; c++) {
+      const ref = XLSX.utils.encode_cell({ r, c });
+      if (!ws[ref]) ws[ref] = { t: 's', v: '' };
+      ws[ref].s = {
+        alignment: { vertical: 'top', wrapText: true },
+        border: { bottom: { style: 'hair', color: { rgb: 'D0D0D0' } } }
+      };
+    }
+  }
+
+  // ── Combinar celdas en dos niveles ──
+  ws['!merges'] = ws['!merges'] || [];
+
+  // Nivel Código: Intervención(12), Relevancia(13), Estado(14)
+  const colsPorCodigo = [12, 13, 14];
+  bloquesCodigo.forEach(b => {
+    colsPorCodigo.forEach(c => {
+      ws['!merges'].push({ s: { r: b.inicio, c }, e: { r: b.fin, c } });
+    });
+  });
+
+  // Nivel ID: Detalle(11) + columnas comunes a todo el ID
+  //   Fecha registro no aplica (puede variar por Código), la dejamos por Código si es igual.
+  //   Comunes por ID: Discurso(3), Grupo(6), Vice(7), Responsable(8), Área(9), CUI(10)
+  const colsPorId = [11, 3, 6, 7, 8, 9, 10];
+  bloquesId.forEach(b => {
+    colsPorId.forEach(c => {
+      ws['!merges'].push({ s: { r: b.inicio, c }, e: { r: b.fin, c } });
+    });
+  });
+
+  // Código(1) y Priorizado(4) se combinan por Código (son a nivel de intervención)
+  bloquesCodigo.forEach(b => {
+    [1, 4].forEach(c => {
+      ws['!merges'].push({ s: { r: b.inicio, c }, e: { r: b.fin, c } });
+    });
+  });
+
+  // ── Anchos de columna ──
+  ws['!cols'] = [14, 12, 12, 10, 10, 8, 16, 14, 12, 18, 12, 34, 34, 30, 40, 12, 40, 16]
+    .map(w => ({ wch: w }));
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Hoja de Ruta');
