@@ -1062,18 +1062,27 @@ const MESES_ABR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','
 // Años disponibles en el selector mes-año del modal (2025 a 2030)
 const ANIOS_SELECT = [2025, 2026, 2027, 2028, 2029, 2030];
 
-// "ago-26" -> { mes: 8, anio: 2026, orden: 2026*12+7, trimestre: 3, label: "ago-26" }
+// Variantes de abreviatura que apuntan al mismo mes canónico (índice 0-11).
+// Cubre "sept"/"set"/"setiembre" para septiembre y nombres completos comunes.
+const ALIAS_MESES = {
+  ene:0, enero:0, feb:1, febrero:1, mar:2, marzo:2, abr:3, abril:3,
+  may:4, mayo:4, jun:5, junio:5, jul:6, julio:6, ago:7, agosto:7,
+  sep:8, sept:8, set:8, setiembre:8, septiembre:8,
+  oct:9, octubre:9, nov:10, noviembre:10, dic:11, diciembre:11
+};
+
+// "ago-26" / "sept-26" -> { mes, anio, orden, trimestre, label } (label canónico "sep-26")
 function parseCumplimiento(valor) {
   if (!valor) return null;
   const limpio = valor.trim().toLowerCase();
-  const m = limpio.match(/^([a-z]{3})[-\/]?(\d{2,4})$/);
+  const m = limpio.match(/^([a-zé]+)[-\/]?(\d{2,4})$/); // letras (variables) + año
   if (!m) return null;
-  const idxMes = MESES_ABR.indexOf(m[1]);
-  if (idxMes === -1) return null;
+  const idxMes = ALIAS_MESES[m[1]];
+  if (idxMes === undefined) return null;
   let anio = parseInt(m[2], 10);
   if (anio < 100) anio += 2000;
   return {
-    label: `${m[1]}-${String(anio).slice(-2)}`,
+    label: `${MESES_ABR[idxMes]}-${String(anio).slice(-2)}`, // siempre canónico
     mes: idxMes + 1,
     anio: anio,
     orden: anio * 12 + idxMes,
@@ -1396,8 +1405,10 @@ function renderTabla() {
 
     hitosMostrar.forEach((h, idx) => {
       const eh = estadoHitos[h.codhito] || {};
+      const pFecha = parseCumplimiento(eh.fechaCumplimiento);
+      const fechaTexto = pFecha ? pFecha.label : eh.fechaCumplimiento;
       const fechaChip = eh.fechaCumplimiento
-        ? `<span class="fecha-chip con-fecha">${esc(eh.fechaCumplimiento)}</span>`
+        ? `<span class="fecha-chip con-fecha">${esc(fechaTexto)}</span>`
         : `<span class="fecha-chip sin-fecha">Sin fecha</span>`;
       const estadoIcono = iconoEstadoCumpl(eh.estadoCumplimiento);
 
