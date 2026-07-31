@@ -1869,14 +1869,12 @@ function resumenFiltrosActivos() {
 }
 
 function exportarExcel() {
-  // Orden de columnas (para leer):
-  // 0 Fecha de registro, 1 Código, 2 CODHITOS  → encabezado GRIS (internas)
-  // 3 en adelante → encabezado AZUL
-  const encabezados = ['Fecha de registro', 'Código', 'CODHITOS',
-    'Discurso 28 julio', 'Priorizado', 'Grupo', 'Viceministerio',
-    'Responsable', 'Área de influencia', 'CUI', 'Detalle de Intervención',
+  // Columnas de visualización (se retiraron Código, CODHITOS, Priorizado,
+  // Grupo, Avance físico e Hito final por ser internas/técnicas).
+  const encabezados = ['Fecha de registro', 'Discurso 28 julio', 'Viceministerio',
+    'Responsable', 'Área de influencia', 'CUI', 'Línea de Intervención',
     'Intervención Estratégica', 'Relevancia sectorial', 'Estado situacional',
-    'Avance físico (%)', 'Hito final', 'Hito(s) clave(s)', 'Fecha de cumplimiento'];
+    'Hito(s) clave(s)', 'Fecha de cumplimiento'];
 
   const NCOLS = encabezados.length;
   const textoFiltros = resumenFiltrosActivos();
@@ -1922,12 +1920,10 @@ function exportarExcel() {
     hitos.forEach(h => {
       const eh = estadoHitos[h.codhito] || {};
       rows.push([
-        est.fechaReg || '', interv.codigo, h.codhito,
-        interv.discurso ? 'Sí' : '', est.priorizado ? 'Sí' : 'No',
-        interv.grupo || '', interv.vice || '', interv.organo, interv.area || '', interv.cui || '',
+        est.fechaReg || '', interv.discurso ? 'Sí' : '', interv.vice || '',
+        interv.organo, interv.area || '', interv.cui || '',
         interv.detalle || '', interv.nombre, interv.relevancia || '', est.estado || '',
-        est.avance ? fmtAvance(est.avance) : '',
-        h.ultimo ? 'Sí' : '', h.nombre, eh.fechaCumplimiento || ''
+        h.nombre, eh.fechaCumplimiento || ''
       ]);
     });
     const filaFin = rows.length - 1;
@@ -1948,11 +1944,11 @@ function exportarExcel() {
     font: { italic: true, sz: 10, color: { rgb: '6B7280' } }
   };
 
-  // ── Encabezados (fila 3): gris para las 3 primeras, azul para el resto ──
+  // ── Encabezados (fila 3): gris solo para "Fecha de registro", azul el resto ──
   for (let c = 0; c < NCOLS; c++) {
     const ref = XLSX.utils.encode_cell({ r: FILA_ENCABEZADO, c });
     if (!ws[ref]) continue;
-    const esInterna = c < 3;
+    const esInterna = c === 0; // solo Fecha de registro
     ws[ref].s = {
       fill: { patternType: 'solid', fgColor: { rgb: esInterna ? '6B7280' : '003F7D' } },
       font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
@@ -1976,32 +1972,25 @@ function exportarExcel() {
   // ── Combinar celdas en dos niveles ──
   ws['!merges'] = ws['!merges'] || [];
 
-  // Nivel Código: Intervención(11), Relevancia(12), Estado(13)
-  const colsPorCodigo = [11, 12, 13];
+  // Nivel Código: Intervención(7), Relevancia(8), Estado(9)
+  const colsPorCodigo = [7, 8, 9];
   bloquesCodigo.forEach(b => {
     colsPorCodigo.forEach(c => {
       ws['!merges'].push({ s: { r: b.inicio, c }, e: { r: b.fin, c } });
     });
   });
 
-  // Nivel ID: Detalle(10) + columnas comunes a todo el ID
-  //   Comunes por ID: Discurso(3), Grupo(5), Vice(6), Responsable(7), Área(8), CUI(9)
-  const colsPorId = [10, 3, 5, 6, 7, 8, 9];
+  // Nivel ID: Línea de Intervención(6) + columnas comunes a todo el ID
+  //   Comunes por ID: Discurso(1), Viceministerio(2), Responsable(3), Área(4), CUI(5)
+  const colsPorId = [6, 1, 2, 3, 4, 5];
   bloquesId.forEach(b => {
     colsPorId.forEach(c => {
       ws['!merges'].push({ s: { r: b.inicio, c }, e: { r: b.fin, c } });
     });
   });
 
-  // Código(1) y Priorizado(4) se combinan por Código (son a nivel de intervención)
-  bloquesCodigo.forEach(b => {
-    [1, 4].forEach(c => {
-      ws['!merges'].push({ s: { r: b.inicio, c }, e: { r: b.fin, c } });
-    });
-  });
-
   // ── Anchos de columna ──
-  ws['!cols'] = [14, 12, 12, 10, 10, 16, 14, 12, 18, 12, 34, 34, 30, 40, 12, 8, 40, 16]
+  ws['!cols'] = [14, 10, 14, 12, 18, 12, 34, 34, 30, 40, 40, 16]
     .map(w => ({ wch: w }));
 
   const wb = XLSX.utils.book_new();
