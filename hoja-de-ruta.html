@@ -646,7 +646,7 @@
           </div>
         </div>
 
-        <!-- Fila 2: Eje, Línea, Área de influencia (3 de 5) -->
+        <!-- Fila 2: Eje, Línea, Área de influencia, Estado de cumplimiento (4 de 5) -->
         <div class="filtros-grid cinco">
           <div class="filtro-group">
             <label>Eje prioritario</label>
@@ -659,6 +659,16 @@
           <div class="filtro-group">
             <label>Área de influencia</label>
             <input type="text" id="f-area" placeholder="Escribe para buscar…">
+          </div>
+          <div class="filtro-group">
+            <label>Estado de cumplimiento</label>
+            <select id="f-estado-cumpl">
+              <option value="">Todos</option>
+              <option value="Cumplido">✅ Cumplido</option>
+              <option value="En proceso">🔄 En proceso</option>
+              <option value="Reprogramado">📅 Reprogramado</option>
+              <option value="__sin__">Sin estado</option>
+            </select>
           </div>
         </div>
 
@@ -735,12 +745,13 @@
             <th class="col-ogame" style="width:5%; text-align:center; vertical-align:middle">Habilitar<br>hitos</th>
             <th style="width:18%; vertical-align:middle">Estado situacional</th>
             <th style="width:5%; text-align:center; vertical-align:middle">Avance</th>
-            <th style="width:18%; vertical-align:middle">Hitos claves</th>
-            <th style="width:8%; text-align:center; vertical-align:middle">Fecha de<br>Cumplimiento</th>
+            <th style="width:16%; vertical-align:middle">Hitos claves</th>
+            <th style="width:7%; text-align:center; vertical-align:middle">Fecha de<br>Cumplimiento</th>
+            <th style="width:8%; text-align:center; vertical-align:middle">Estado de<br>cumplimiento</th>
           </tr>
         </thead>
         <tbody id="tabla-body">
-          <tr><td colspan="9"><div class="estado-carga"><div class="spinner"></div>Cargando datos...</div></td></tr>
+          <tr><td colspan="10"><div class="estado-carga"><div class="spinner"></div>Cargando datos...</div></td></tr>
         </tbody>
       </table>
     </div>
@@ -1000,7 +1011,7 @@ async function cargarDatos() {
 
   } catch (e) {
     document.getElementById('tabla-body').innerHTML =
-      `<tr><td colspan="9"><div class="estado-carga">⚠️ Error al cargar datos. Verifica tu conexión e intenta recargar la página.</div></td></tr>`;
+      `<tr><td colspan="10"><div class="estado-carga">⚠️ Error al cargar datos. Verifica tu conexión e intenta recargar la página.</div></td></tr>`;
     document.getElementById('resumen-info').textContent = 'Error al cargar';
     console.error(e);
   }
@@ -1125,6 +1136,7 @@ function poblarFiltros() {
   document.getElementById('f-area').addEventListener('input', aplicarFiltros);
   document.getElementById('f-cui').addEventListener('input', aplicarFiltros);
   document.getElementById('f-hito').addEventListener('input', aplicarFiltros);
+  document.getElementById('f-estado-cumpl').addEventListener('change', aplicarFiltros);
 
   refrescarOpcionesFiltros();
 }
@@ -1245,6 +1257,17 @@ function hitosVisibles(interv) {
   const vHito = document.getElementById('f-hito')?.value.trim().toLowerCase();
   if (vHito) lista = lista.filter(h => (h.nombre || '').toLowerCase().includes(vHito));
 
+  // filtro por estado de cumplimiento del hito
+  const vEstadoCumpl = document.getElementById('f-estado-cumpl')?.value;
+  if (vEstadoCumpl) {
+    lista = lista.filter(h => {
+      const eh = estadoHitos[h.codhito] || {};
+      const est = eh.estadoCumplimiento || '';
+      if (vEstadoCumpl === '__sin__') return est === '';
+      return est === vEstadoCumpl;
+    });
+  }
+
   // filtro por mes de cumplimiento
   if (mesesSeleccion.size > 0) {
     lista = lista.filter(h => {
@@ -1297,7 +1320,8 @@ function aplicarFiltros() {
     // solo si le queda al menos un hito visible
     const filtrandoHitos = mesesSeleccion.size > 0 ||
                            document.getElementById('f-ultimo').checked ||
-                           vHito !== '';
+                           vHito !== '' ||
+                           document.getElementById('f-estado-cumpl').value !== '';
     if (filtrandoHitos && hitosVisibles(i).length === 0) return false;
     return true;
   });
@@ -1308,7 +1332,7 @@ function aplicarFiltros() {
 }
 
 function limpiarFiltros() {
-  ['f-grupo','f-vice','f-organo','f-eje','f-linea','f-priorizado','f-buscar','f-area','f-cui','f-hito'].forEach(id => {
+  ['f-grupo','f-vice','f-organo','f-eje','f-linea','f-priorizado','f-buscar','f-area','f-cui','f-hito','f-estado-cumpl'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('f-ultimo').checked = false;
@@ -1338,7 +1362,7 @@ function renderTabla() {
   const tbody = document.getElementById('tabla-body');
 
   if (pagina.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="estado-carga">No hay intervenciones que coincidan con los filtros aplicados.</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10"><div class="estado-carga">No hay intervenciones que coincidan con los filtros aplicados.</div></td></tr>`;
     return;
   }
 
@@ -1410,7 +1434,7 @@ function renderTabla() {
       const fechaChip = eh.fechaCumplimiento
         ? `<span class="fecha-chip con-fecha">${esc(fechaTexto)}</span>`
         : `<span class="fecha-chip sin-fecha">Sin fecha</span>`;
-      const estadoIcono = iconoEstadoCumpl(eh.estadoCumplimiento);
+      const estadoChip = chipEstadoCumpl(eh.estadoCumplimiento);
 
       const esUltimo = idx === hitosMostrar.length - 1;
       const bordeInferior = esUltimo ? 'border-bottom:2px solid #CBD5E1' : 'border-bottom:1px solid #E5E7EB';
@@ -1418,17 +1442,19 @@ function renderTabla() {
       if (idx === 0) {
         html += `
       <td class="col-resalte" style="padding:8px 12px;${bordeInferior};vertical-align:middle;font-size:12px;border-left:1px solid #E5E7EB">
-        <div class="hito-nombre">${estadoIcono}${esc(h.nombre)}</div>
+        <div class="hito-nombre">${esc(h.nombre)}</div>
       </td>
       <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${fechaChip}</td>
+      <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${estadoChip}</td>
     </tr>`;
       } else {
         html += `
     <tr class="fila-hito">
       <td class="col-resalte" style="padding:8px 12px;${bordeInferior};vertical-align:middle;font-size:12px;border-left:1px solid #E5E7EB">
-        <div class="hito-nombre">${estadoIcono}${esc(h.nombre)}</div>
+        <div class="hito-nombre">${esc(h.nombre)}</div>
       </td>
       <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${fechaChip}</td>
+      <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${estadoChip}</td>
     </tr>`;
       }
     });
@@ -1458,16 +1484,16 @@ function fmtAvance(v) {
   return texto + '%';
 }
 
-// Devuelve un icono con tooltip según el estado de cumplimiento del hito
-function iconoEstadoCumpl(estado) {
+// Devuelve un chip de color según el estado de cumplimiento del hito
+function chipEstadoCumpl(estado) {
   const mapa = {
-    'Cumplido':     { ico: '✅', txt: 'Cumplido' },
-    'En proceso':   { ico: '🔄', txt: 'En proceso' },
-    'Reprogramado': { ico: '📅', txt: 'Reprogramado' }
+    'Cumplido':     { ico: '✅', bg: '#E3F5EC', color: '#1D9E75' },
+    'En proceso':   { ico: '🔄', bg: '#E8F0FB', color: '#0055A5' },
+    'Reprogramado': { ico: '📅', bg: '#FDF0E3', color: '#B5651D' }
   };
   const e = mapa[estado];
-  if (!e) return '';
-  return `<span title="${e.txt}" style="margin-right:5px">${e.ico}</span>`;
+  if (!e) return '<span style="color:var(--gris-texto);font-size:11px">—</span>';
+  return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:600;background:${e.bg};color:${e.color};white-space:nowrap">${e.ico} ${esc(estado)}</span>`;
 }
 
 function esc(s) {
@@ -1935,6 +1961,8 @@ function resumenFiltrosActivos() {
     partes.push('Fecha de cumplimiento: ' + meses);
   }
   if (document.getElementById('f-ultimo').checked) partes.push('Solo el último hito');
+  const estadoC = val('f-estado-cumpl');
+  if (estadoC) partes.push('Estado de cumplimiento: ' + (estadoC === '__sin__' ? 'Sin estado' : estadoC));
 
   return partes.length ? partes.join('  ·  ') : 'Ninguno (todas las intervenciones)';
 }
@@ -1945,7 +1973,7 @@ function exportarExcel() {
   const encabezados = ['Fecha de registro', 'Discurso 28 julio', 'Viceministerio',
     'Responsable', 'Área de influencia', 'CUI', 'Línea de Intervención',
     'Intervención Estratégica', 'Relevancia sectorial', 'Estado situacional',
-    'Hito(s) clave(s)', 'Fecha de cumplimiento'];
+    'Hito(s) clave(s)', 'Fecha de cumplimiento', 'Estado de cumplimiento'];
 
   const NCOLS = encabezados.length;
   const textoFiltros = resumenFiltrosActivos();
@@ -1990,11 +2018,12 @@ function exportarExcel() {
     const filaInicio = rows.length; // primera fila de este Código
     hitos.forEach(h => {
       const eh = estadoHitos[h.codhito] || {};
+      const p = parseCumplimiento(eh.fechaCumplimiento);
       rows.push([
         est.fechaReg || '', interv.discurso ? 'Sí' : '', interv.vice || '',
         interv.organo, interv.area || '', interv.cui || '',
         interv.detalle || '', interv.nombre, interv.relevancia || '', est.estado || '',
-        h.nombre, eh.fechaCumplimiento || ''
+        h.nombre, p ? p.label : (eh.fechaCumplimiento || ''), eh.estadoCumplimiento || ''
       ]);
     });
     const filaFin = rows.length - 1;
@@ -2061,7 +2090,7 @@ function exportarExcel() {
   });
 
   // ── Anchos de columna ──
-  ws['!cols'] = [14, 10, 14, 12, 18, 12, 34, 34, 30, 40, 40, 16]
+  ws['!cols'] = [14, 10, 14, 12, 18, 12, 34, 34, 30, 40, 40, 16, 16]
     .map(w => ({ wch: w }));
 
   const wb = XLSX.utils.book_new();
