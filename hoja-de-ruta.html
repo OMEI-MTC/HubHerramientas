@@ -523,6 +523,13 @@
   .hitos-tabla input[type="date"]:focus {
     outline: none; border-color: var(--azul);
   }
+  .hitos-tabla select {
+    padding: 5px 6px; font-size: 12px;
+    border: 1px solid var(--gris-borde); border-radius: 4px;
+    color: var(--texto); background: #fff; cursor: pointer;
+  }
+  .hitos-tabla select:focus { outline: none; border-color: var(--azul); }
+  .hito-estado { width: 100%; }
 
   .modal-footer {
     padding: 16px 24px;
@@ -830,9 +837,9 @@
         <table class="hitos-tabla" id="modal-hitos-tabla">
           <thead>
             <tr>
-              <th style="width:55%">Hito</th>
-              <th style="width:25%">Fecha de cumplimiento</th>
-              <th style="width:20%">Última fecha registrada</th>
+              <th style="width:50%">Hito</th>
+              <th style="width:28%">Fecha de cumplimiento</th>
+              <th style="width:22%">Estado de Cumplimiento</th>
             </tr>
           </thead>
           <tbody id="modal-hitos-body"></tbody>
@@ -976,14 +983,15 @@ async function cargarDatos() {
     });
 
     // procesar estado actual hitos
-    // cols: Fecha de registro, Código, Intervención Estratégica, CODHITOS, Hito(s) clave(s), Fecha de Cumplimiento
+    // cols: Fecha de registro, Código, Intervención Estratégica, CODHITOS, Hito(s) clave(s), Fecha de Cumplimiento, Estado de Cumplimiento
     estadoHitos = {};
     parseTSV(tsvHitos).forEach(f => {
       const cod = f['CODHITOS'];
       if (!cod) return;
       estadoHitos[cod] = {
-        fechaReg:      f['Fecha de registro'],
-        fechaCumplimiento: f['Fecha de Cumplimiento']
+        fechaReg:           f['Fecha de registro'],
+        fechaCumplimiento:  f['Fecha de Cumplimiento'],
+        estadoCumplimiento: f['Estado de Cumplimiento'] || ''
       };
     });
 
@@ -1051,6 +1059,8 @@ function aplicarVistaOGAME() {
 
 // Utilidades de fecha de cumplimiento (formato "mmm-aa" en español)
 const MESES_ABR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+// Años disponibles en el selector mes-año del modal (2025 a 2030)
+const ANIOS_SELECT = [2025, 2026, 2027, 2028, 2029, 2030];
 
 // "ago-26" -> { mes: 8, anio: 2026, orden: 2026*12+7, trimestre: 3, label: "ago-26" }
 function parseCumplimiento(valor) {
@@ -1389,6 +1399,7 @@ function renderTabla() {
       const fechaChip = eh.fechaCumplimiento
         ? `<span class="fecha-chip con-fecha">${esc(eh.fechaCumplimiento)}</span>`
         : `<span class="fecha-chip sin-fecha">Sin fecha</span>`;
+      const estadoIcono = iconoEstadoCumpl(eh.estadoCumplimiento);
 
       const esUltimo = idx === hitosMostrar.length - 1;
       const bordeInferior = esUltimo ? 'border-bottom:2px solid #CBD5E1' : 'border-bottom:1px solid #E5E7EB';
@@ -1396,7 +1407,7 @@ function renderTabla() {
       if (idx === 0) {
         html += `
       <td class="col-resalte" style="padding:8px 12px;${bordeInferior};vertical-align:middle;font-size:12px;border-left:1px solid #E5E7EB">
-        <div class="hito-nombre">${esc(h.nombre)}</div>
+        <div class="hito-nombre">${estadoIcono}${esc(h.nombre)}</div>
       </td>
       <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${fechaChip}</td>
     </tr>`;
@@ -1404,7 +1415,7 @@ function renderTabla() {
         html += `
     <tr class="fila-hito">
       <td class="col-resalte" style="padding:8px 12px;${bordeInferior};vertical-align:middle;font-size:12px;border-left:1px solid #E5E7EB">
-        <div class="hito-nombre">${esc(h.nombre)}</div>
+        <div class="hito-nombre">${estadoIcono}${esc(h.nombre)}</div>
       </td>
       <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${fechaChip}</td>
     </tr>`;
@@ -1434,6 +1445,18 @@ function fmtAvance(v) {
   // sin decimales si es entero, con un decimal si los tiene
   var texto = Number.isInteger(n) ? String(n) : n.toFixed(1);
   return texto + '%';
+}
+
+// Devuelve un icono con tooltip según el estado de cumplimiento del hito
+function iconoEstadoCumpl(estado) {
+  const mapa = {
+    'Cumplido':     { ico: '✅', txt: 'Cumplido' },
+    'En proceso':   { ico: '🔄', txt: 'En proceso' },
+    'Reprogramado': { ico: '📅', txt: 'Reprogramado' }
+  };
+  const e = mapa[estado];
+  if (!e) return '';
+  return `<span title="${e.txt}" style="margin-right:5px">${e.ico}</span>`;
 }
 
 function esc(s) {
@@ -1471,19 +1494,41 @@ function abrirModal(codigo) {
   const tbody = document.getElementById('modal-hitos-body');
   tbody.innerHTML = hitosBloqueados ? '' : intervModal.hitos.map(h => {
     const eh = estadoHitos[h.codhito] || {};
-    const fechaActual = eh.fechaCumplimiento
-      ? isoFecha(eh.fechaCumplimiento)
-      : '';
-    const ultimaLabel = eh.fechaCumplimiento
-      ? `<span style="font-size:11px;color:var(--gris-texto)">${esc(eh.fechaCumplimiento)}</span>`
-      : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro previo</span>`;
+    // precarga el mes-año actual (ej. "oct-26") descomponiéndolo
+    const p = parseCumplimiento(eh.fechaCumplimiento);
+    const mesSel = p ? p.mes : '';
+    const anioSel = p ? p.anio : '';
+    const estadoSel = eh.estadoCumplimiento || '';
+
+    const opcionesMes = MESES_ABR.map((m, idx) =>
+      `<option value="${idx + 1}" ${mesSel === idx + 1 ? 'selected' : ''}>${m}</option>`
+    ).join('');
+    const opcionesAnio = ANIOS_SELECT.map(a =>
+      `<option value="${a}" ${anioSel === a ? 'selected' : ''}>${a}</option>`
+    ).join('');
+    const opcionesEstado = [
+      { v: '', label: '—' },
+      { v: 'Cumplido', label: '✅ Cumplido' },
+      { v: 'En proceso', label: '🔄 En proceso' },
+      { v: 'Reprogramado', label: '📅 Reprogramado' }
+    ].map(e =>
+      `<option value="${e.v}" ${estadoSel === e.v ? 'selected' : ''}>${e.label}</option>`
+    ).join('');
+
     return `
     <tr>
       <td>
         <div style="font-size:12px;color:var(--texto)">${esc(h.nombre)}</div>
       </td>
-      <td><input type="date" data-codhito="${esc(h.codhito)}" value="${fechaActual}" style="width:100%"></td>
-      <td>${ultimaLabel}</td>
+      <td>
+        <div style="display:flex;gap:5px" data-codhito="${esc(h.codhito)}" data-nombre="${esc(h.nombre || '')}">
+          <select class="hito-mes" style="flex:1;min-width:0"><option value="">mes</option>${opcionesMes}</select>
+          <select class="hito-anio" style="width:64px"><option value="">año</option>${opcionesAnio}</select>
+        </div>
+      </td>
+      <td>
+        <select class="hito-estado">${opcionesEstado}</select>
+      </td>
     </tr>`;
   }).join('');
 
@@ -1600,8 +1645,22 @@ async function guardarRegistro() {
   const hitosBloqueados = estActual.hitosHabilitados === false;
   const hitos = [];
   if (!hitosBloqueados) {
-    document.querySelectorAll('#modal-hitos-body input[type="date"]').forEach(inp => {
-      hitos.push({ codhito: inp.dataset.codhito, fechaCumplimiento: inp.value ? fechaDisplay(inp.value) : '' });
+    document.querySelectorAll('#modal-hitos-body tr').forEach(tr => {
+      const cont = tr.querySelector('[data-codhito]');
+      if (!cont) return;
+      const mes = tr.querySelector('.hito-mes').value;
+      const anio = tr.querySelector('.hito-anio').value;
+      // compone "oct-26" solo si ambos están seleccionados
+      let fecha = '';
+      if (mes && anio) {
+        fecha = `${MESES_ABR[parseInt(mes, 10) - 1]}-${String(anio).slice(-2)}`;
+      }
+      hitos.push({
+        codhito: cont.dataset.codhito,
+        nombre: cont.dataset.nombre,
+        fechaCumplimiento: fecha,
+        estadoCumplimiento: tr.querySelector('.hito-estado').value
+      });
     });
   }
 
@@ -1635,8 +1694,9 @@ async function guardarRegistro() {
       };
       hitos.forEach(h => {
         estadoHitos[h.codhito] = {
-          fechaReg:          estadoInterv[intervModal.codigo].fechaReg,
-          fechaCumplimiento: h.fechaCumplimiento
+          fechaReg:           estadoInterv[intervModal.codigo].fechaReg,
+          fechaCumplimiento:  h.fechaCumplimiento,
+          estadoCumplimiento: h.estadoCumplimiento
         };
       });
 
