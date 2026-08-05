@@ -1421,6 +1421,7 @@ function recalcEjec(){
 }
 
 function uniqSort(arr){ return [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')); }
+function valoresUnicos(arr){ const s=new Set(); arr.forEach(v=>{ if(!v) return; v.split(';').forEach(p=>{ const t=p.trim(); if(t) s.add(t); }); }); return [...s].sort((a,b)=>a.localeCompare(b,'es')); }
 function uniqSortDep(hitos){
   const s=new Set(); hitos.forEach(h=>deptosDe(h.codHito).forEach(d=>s.add(d)));
   return [...s].sort((a,b)=>a.localeCompare(b,'es'));
