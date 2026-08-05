@@ -343,58 +343,103 @@
       <div class="panel-sub">Caracterización de intervenciones y estado de sus hitos</div>
       <div class="panel-week" id="ejecSemanaLabel">—</div>
 
-      <!-- FILTROS EJECUTIVA -->
-      <div class="filtros" style="margin-bottom:18px;">
-        <p class="filtros-tit">Filtrar hitos</p>
-        <!-- Fila 1: Viceministerio, UEI, Tipo infra, Modalidad (del Maestro) -->
-        <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
-          <div class="field"><label>Viceministerio</label><select id="eFVicem" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
-          <div class="field"><label>Unidad ejecutora</label><select id="eFUei" onchange="onFiltroEjec()"><option value="">Todas</option></select></div>
-          <div class="field"><label>Tipo de infraestructura</label><select id="eFTipo" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
-          <div class="field"><label>Modalidad de Ejecución</label><select id="eFMod" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
+      <!-- FILTROS EJECUTIVA: dos acordeones independientes -->
+      <!-- Acordeón 1: Intervenciones -->
+      <div class="filtros" id="eFBoxInterv" style="margin-bottom:10px;">
+        <div class="filtros-header" onclick="toggleEjecFiltro('Interv')">
+          <p class="filtros-tit">Filtrar intervenciones</p>
+          <svg class="filtros-toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <!-- Fila 2: Departamento, CUI, Nombre intervención, Fase intervención -->
-        <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
-          <div class="field"><label>Departamento</label><select id="eFDepto" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
-          <div class="field"><label>CUI</label><input type="text" id="eFCui" list="eFCuiList" placeholder="Escribe o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFCuiList"></datalist></div>
-          <div class="field"><label>Nombre de la Intervención</label><input type="text" id="eFNombre" list="eFNombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFNombreList"></datalist></div>
-          <div class="field"><label>Fase de la Intervención</label><select id="eFFase" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
-        </div>
-        <!-- Fila 3: Factores habilitantes, Riesgos, Instancia (de Estado Intervenciones) -->
-        <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
-          <div class="field"><label>Factores habilitantes</label><input type="text" id="eFFactores" list="eFFactoresList" placeholder="Escribe o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFFactoresList"></datalist></div>
-          <div class="field"><label>Riesgos</label><input type="text" id="eFRiesgos" list="eFRiesgosList" placeholder="Escribe o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFRiesgosList"></datalist></div>
-          <div class="field"><label>Instancia que debe actuar</label><input type="text" id="eFInstancia" list="eFInstanciaList" placeholder="Escribe o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFInstanciaList"></datalist></div>
-          <div class="field"><!-- espacio reservado --></div>
-        </div>
-        <!-- Fila 4: Hito, Categoría, Estado de cumplimiento (chips), Fecha de cumplimiento -->
-        <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr); align-items:start;">
-          <div class="field"><label>Hito</label><input type="text" id="eFHito" list="eFHitoList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFHitoList"></datalist></div>
-          <div class="field"><label>Categoría de hito</label><select id="eFCategoria" onchange="onFiltroEjec()"><option value="">Todas</option></select></div>
-          <div class="field"><label>Estado de cumplimiento del hito</label>
-            <div class="chips">
-              <span class="chip" data-estado="EN PROCESO" onclick="toggleChipEjec(this)">EN PROCESO</span>
-              <span class="chip" data-estado="REPROGRAMADO" onclick="toggleChipEjec(this)">REPROGRAMADO</span>
-              <span class="chip" data-estado="CUMPLIDO" onclick="toggleChipEjec(this)">CUMPLIDO</span>
+        <div class="filtros-body" id="eFBodyInterv">
+          <!-- Fila 1: Viceministerio, UEI (multi), Tipo infra, Modalidad (multi) -->
+          <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr); margin-top:12px;">
+            <div class="field"><label>Viceministerio</label><select id="eFVicem" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
+            <div class="field"><label>Unidad ejecutora</label>
+              <div class="meses-dropdown" id="eFUeiPanel">
+                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFUeiPanel')"><span id="eFUeiLabel">Todas</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                <div class="meses-lista" id="eFUeiLista"></div>
+              </div>
+            </div>
+            <div class="field"><label>Tipo de infraestructura</label><select id="eFTipo" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
+            <div class="field"><label>Modalidad de Ejecución</label>
+              <div class="meses-dropdown" id="eFModPanel">
+                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFModPanel')"><span id="eFModLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                <div class="meses-lista" id="eFModLista"></div>
+              </div>
             </div>
           </div>
-          <div class="field"><label>Fecha de cumplimiento</label>
-            <div class="meses-dropdown" id="eMesesPanel">
-              <button type="button" class="meses-btn" onclick="abrirMesesEjec(event)">
-                <span id="eMesesBtnLabel">Todos</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-              </button>
-              <div class="meses-lista" id="eMesesLista"></div>
+          <!-- Fila 2: Departamento, CUI, Nombre, Fase (multi) -->
+          <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
+            <div class="field"><label>Departamento</label><select id="eFDepto" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
+            <div class="field"><label>CUI</label><input type="text" id="eFCui" list="eFCuiList" placeholder="Escribe o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFCuiList"></datalist></div>
+            <div class="field"><label>Nombre de la Intervención</label><input type="text" id="eFNombre" list="eFNombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFNombreList"></datalist></div>
+            <div class="field"><label>Fase de la Intervención</label>
+              <div class="meses-dropdown" id="eFFasePanel">
+                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFFasePanel')"><span id="eFFaseLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                <div class="meses-lista" id="eFFaseLista"></div>
+              </div>
             </div>
           </div>
+          <!-- Fila 3: Factores (multi), Riesgos (multi), Instancia (multi) -->
+          <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
+            <div class="field"><label>Factores habilitantes</label>
+              <div class="meses-dropdown" id="eFFactoresPanel">
+                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFFactoresPanel')"><span id="eFFactoresLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                <div class="meses-lista" id="eFFactoresLista"></div>
+              </div>
+            </div>
+            <div class="field"><label>Riesgos</label>
+              <div class="meses-dropdown" id="eFRiesgosPanel">
+                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFRiesgosPanel')"><span id="eFRiesgosLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                <div class="meses-lista" id="eFRiesgosLista"></div>
+              </div>
+            </div>
+            <div class="field"><label>Instancia que debe actuar</label>
+              <div class="meses-dropdown" id="eFInstanciaPanel">
+                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFInstanciaPanel')"><span id="eFInstanciaLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                <div class="meses-lista" id="eFInstanciaLista"></div>
+              </div>
+            </div>
+            <div class="field"><!-- espacio --></div>
+          </div>
+        </div><!-- /filtros-body interv -->
+      </div>
+
+      <!-- Acordeón 2: Hitos -->
+      <div class="filtros" id="eFBoxHitos" style="margin-bottom:18px;">
+        <div class="filtros-header" onclick="toggleEjecFiltro('Hitos')">
+          <p class="filtros-tit">Filtrar hitos</p>
+          <svg class="filtros-toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <div class="filtros-foot" style="display:flex; justify-content:space-between; align-items:center;">
-          <button class="btn-export" onclick="exportarXLSXEjec()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Descargar Excel
-          </button>
-          <button class="btn-limpiar" onclick="limpiarFiltrosEjec()">Limpiar filtros</button>
-        </div>
+        <div class="filtros-body" id="eFBodyHitos">
+          <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr); align-items:start; margin-top:12px;">
+            <div class="field"><label>Hito</label><input type="text" id="eFHito" list="eFHitoList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFHitoList"></datalist></div>
+            <div class="field"><label>Categoría de hito</label><select id="eFCategoria" onchange="onFiltroEjec()"><option value="">Todas</option></select></div>
+            <div class="field"><label>Estado de cumplimiento del hito</label>
+              <div class="chips">
+                <span class="chip" data-estado="EN PROCESO" onclick="toggleChipEjec(this)">EN PROCESO</span>
+                <span class="chip" data-estado="REPROGRAMADO" onclick="toggleChipEjec(this)">REPROGRAMADO</span>
+                <span class="chip" data-estado="CUMPLIDO" onclick="toggleChipEjec(this)">CUMPLIDO</span>
+              </div>
+            </div>
+            <div class="field"><label>Fecha de cumplimiento</label>
+              <div class="meses-dropdown" id="eMesesPanel">
+                <button type="button" class="meses-btn" onclick="abrirMesesEjec(event)">
+                  <span id="eMesesBtnLabel">Todos</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="meses-lista" id="eMesesLista"></div>
+              </div>
+            </div>
+          </div>
+          <div class="filtros-foot" style="display:flex; justify-content:space-between; align-items:center;">
+            <button class="btn-export" onclick="exportarXLSXEjec()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Descargar Excel
+            </button>
+            <button class="btn-limpiar" onclick="limpiarFiltrosEjec()">Limpiar filtros</button>
+          </div>
+        </div><!-- /filtros-body hitos -->
       </div>
 
       <div class="ejec-contador" id="ejecContador">—</div>
@@ -1115,21 +1160,43 @@ function toggleFiltros(){
 
 // ====== VISTA EJECUTIVA ======
 const EJEC_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=1061211372&single=true&output=tsv';
-
-// Índices columnas "Estado Intervenciones":
-// A=0 COD INTERNO, B=1 CUI, C=2 Nombre, D=3 Fase, E=4 Factores Habilitantes, F=5 Riesgos, G=6 Instancia que debe actuar
 const EI = { codInterno:0, cui:1, nombre:2, fase:3, factores:4, riesgos:5, instancia:6 };
 
 let INTERVENCIONES = [];
 let ejecCargado = false;
 let vistaEjecActiva = false;
+
+// Sets para cada filtro multi-select
+const eFSets = {
+  uei:      new Set(),
+  mod:      new Set(),
+  fase:     new Set(),
+  factores: new Set(),
+  riesgos:  new Set(),
+  instancia:new Set()
+};
 let eEstadosActivos = new Set();
 let eMesesSeleccion = new Set();
 
+// Configuración de cada dropdown multi (id del panel, id de lista, id de label, clave en eFSets)
+const MULTI_CFG = [
+  { panel:'eFUeiPanel',       lista:'eFUeiLista',       label:'eFUeiLabel',       key:'uei' },
+  { panel:'eFModPanel',       lista:'eFModLista',       label:'eFModLabel',       key:'mod' },
+  { panel:'eFFasePanel',      lista:'eFFaseLista',      label:'eFFaseLabel',      key:'fase' },
+  { panel:'eFFactoresPanel',  lista:'eFFactoresLista',  label:'eFFactoresLabel',  key:'factores' },
+  { panel:'eFRiesgosPanel',   lista:'eFRiesgosLista',   label:'eFRiesgosLabel',   key:'riesgos' },
+  { panel:'eFInstanciaPanel', lista:'eFInstanciaLista', label:'eFInstanciaLabel', key:'instancia' }
+];
+
+// Acordeón independiente para cada bloque de filtros ejecutiva
+function toggleEjecFiltro(cual){
+  document.getElementById('eFBox'+cual).classList.toggle('collapsed');
+}
+
 async function toggleVistaEjecutiva(){
   vistaEjecActiva = !vistaEjecActiva;
-  const btnE   = document.getElementById('btnEjecutiva');
-  const panelE = document.getElementById('panelEjecutiva');
+  const btnE    = document.getElementById('btnEjecutiva');
+  const panelE  = document.getElementById('panelEjecutiva');
   const loading = document.getElementById('loading');
   const app     = document.getElementById('app');
   if(vistaEjecActiva){
@@ -1181,86 +1248,51 @@ function parseIntervenciones(tsv){
   }
 }
 
-// Devuelve los hitos visibles de una intervención dados los filtros de hito activos
-function hitosDeIntervencion(interv){
-  const codHitos = INTERNO_A_HITOS[interv.codInterno] || [];
-  const fVicem   = document.getElementById('eFVicem').value;
-  const fUei     = document.getElementById('eFUei').value;
-  const fTipo    = document.getElementById('eFTipo').value;
-  const fMod     = document.getElementById('eFMod').value;
-  const fDepto   = document.getElementById('eFDepto').value;
-  const fCui     = document.getElementById('eFCui').value.trim();
-  const fHito    = document.getElementById('eFHito').value.trim().toLowerCase();
-  const fCat     = document.getElementById('eFCategoria').value;
-  return HITOS.filter(h=>{
-    if(!codHitos.includes(h.codHito)) return false;
-    const cl = clasifDe(h);
-    if(fVicem && cl.vicem !== fVicem) return false;
-    if(fUei   && cl.uei   !== fUei)   return false;
-    if(fTipo  && cl.tipoInfra !== fTipo) return false;
-    if(fMod   && (cl.modalidad||'') !== fMod) return false;
-    if(fDepto && !deptosDe(h.codHito).includes(fDepto)) return false;
-    if(fCui   && cl.cui !== fCui) return false;
-    if(fHito  && !h.hito.toLowerCase().includes(fHito)) return false;
-    if(fCat   && h.categoria !== fCat) return false;
-    if(eEstadosActivos.size>0 && !eEstadosActivos.has(h.estado)) return false;
-    if(eMesesSeleccion.size>0){
-      const p=parseCumpl(h.fechaCump);
-      const lab = p?p.label:null;
-      if(!(lab && eMesesSeleccion.has(lab)) && !(!lab && eMesesSeleccion.has('__sinfecha__'))) return false;
-    }
-    return true;
+// ---- Multi-select genérico ----
+function abrirMultiEjec(e, panelId){
+  e.stopPropagation();
+  // Cerrar todos los otros panels abiertos
+  document.querySelectorAll('.meses-dropdown.abierto').forEach(p=>{ if(p.id!==panelId) p.classList.remove('abierto'); });
+  document.getElementById(panelId).classList.toggle('abierto');
+}
+function renderMultiDropdown(cfg, valores){
+  const cont = document.getElementById(cfg.lista);
+  const sel  = eFSets[cfg.key];
+  if(!valores.length){
+    cont.innerHTML = '<div style="padding:10px;color:#8a9ab0;font-size:12px">Sin opciones</div>';
+  } else {
+    cont.innerHTML = valores.map(v=>`
+      <label class="mes-item">
+        <input type="checkbox" value="${escapeHtml(v)}" ${sel.has(v)?'checked':''} onchange="toggleMultiEjec('${cfg.key}',this.value,this.checked)">
+        <span>${escapeHtml(v)}</span>
+      </label>`).join('');
+  }
+  const lbl = document.getElementById(cfg.label);
+  const n = sel.size;
+  lbl.textContent = n===0 ? (cfg.key==='uei'?'Todas':'Todos') : (n+' seleccionado'+(n>1?'s':''));
+  lbl.style.color = n===0 ? 'var(--text)' : 'var(--blue)';
+}
+function toggleMultiEjec(key, valor, activo){
+  if(activo) eFSets[key].add(valor); else eFSets[key].delete(valor);
+  // Actualizar label del botón
+  const cfg = MULTI_CFG.find(c=>c.key===key);
+  if(cfg){
+    const n = eFSets[key].size;
+    const lbl = document.getElementById(cfg.label);
+    lbl.textContent = n===0 ? (key==='uei'?'Todas':'Todos') : (n+' seleccionado'+(n>1?'s':''));
+    lbl.style.color = n===0 ? 'var(--text)' : 'var(--blue)';
+  }
+  aplicarFiltrosEjec();
+}
+
+// Cerrar todos los dropdowns multi al hacer clic fuera
+document.addEventListener('click', e=>{
+  document.querySelectorAll('#panelEjecutiva .meses-dropdown.abierto').forEach(p=>{
+    if(!p.contains(e.target)) p.classList.remove('abierto');
   });
-}
+});
 
-function intervencionesFiltradas(){
-  const fNombre   = document.getElementById('eFNombre').value.trim().toLowerCase();
-  const fFase     = document.getElementById('eFFase').value;
-  const fFactores = document.getElementById('eFFactores').value.trim().toLowerCase();
-  const fRiesgos  = document.getElementById('eFRiesgos').value.trim().toLowerCase();
-  const fInstancia= document.getElementById('eFInstancia').value.trim().toLowerCase();
-  return INTERVENCIONES.filter(interv=>{
-    if(fNombre    && !interv.nombre.toLowerCase().includes(fNombre))       return false;
-    if(fFase      && interv.fase !== fFase)                                return false;
-    if(fFactores  && !interv.factores.toLowerCase().includes(fFactores))   return false;
-    if(fRiesgos   && !interv.riesgos.toLowerCase().includes(fRiesgos))     return false;
-    if(fInstancia && !interv.instancia.toLowerCase().includes(fInstancia)) return false;
-    return hitosDeIntervencion(interv).length > 0;
-  });
-}
-
-function onFiltroEjec(){ recalcEjec(); aplicarFiltrosEjec(); }
-
-function recalcEjec(){
-  const eBase = HITOS;
-  poblarSelectEjec('eFVicem',    [...new Set(eBase.map(h=>clasifDe(h).vicem).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todos');
-  poblarSelectEjec('eFUei',      [...new Set(eBase.map(h=>clasifDe(h).uei).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),   'Todas');
-  poblarSelectEjec('eFTipo',     [...new Set(eBase.map(h=>clasifDe(h).tipoInfra).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todos');
-  poblarSelectEjec('eFMod',      [...new Set(eBase.map(h=>clasifDe(h).modalidad).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todos');
-  poblarSelectEjec('eFDepto',    DEPTOS_LISTA, 'Todos');
-  poblarSelectEjec('eFCategoria',[...new Set(eBase.map(h=>h.categoria).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todas');
-  poblarSelectEjec('eFFase',     [...new Set(INTERVENCIONES.map(i=>i.fase).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todos');
-  poblarDatalistEjec('eFCuiList',       [...new Set(eBase.map(h=>clasifDe(h).cui).filter(Boolean))].sort());
-  poblarDatalistEjec('eFNombreList',    [...new Set(INTERVENCIONES.map(i=>i.nombre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  poblarDatalistEjec('eFHitoList',      [...new Set(eBase.map(h=>h.hito).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  poblarDatalistEjec('eFFactoresList',  [...new Set(INTERVENCIONES.map(i=>i.factores).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  poblarDatalistEjec('eFRiesgosList',   [...new Set(INTERVENCIONES.map(i=>i.riesgos).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  poblarDatalistEjec('eFInstanciaList', [...new Set(INTERVENCIONES.map(i=>i.instancia).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  construirMesesEjec();
-}
-
-function poblarSelectEjec(id, valores, etiqueta){
-  const sel=document.getElementById(id); if(!sel) return;
-  const actual=sel.value; sel.innerHTML='<option value="">'+etiqueta+'</option>';
-  valores.forEach(v=>{const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o);});
-  if(valores.includes(actual)) sel.value=actual;
-}
-function poblarDatalistEjec(id, valores){
-  const dl=document.getElementById(id); if(!dl) return;
-  dl.innerHTML=''; valores.forEach(v=>{const o=document.createElement('option'); o.value=v; dl.appendChild(o);});
-}
-
-// Meses dropdown ejecutiva
+// ---- Filtro de meses (ejecutiva) ----
 function construirMesesEjec(){
   const map=new Map();
   HITOS.forEach(h=>{ const p=parseCumpl(h.fechaCump); if(p) map.set(p.label,p.orden); });
@@ -1279,8 +1311,7 @@ function construirMesesEjec(){
   btn.style.color = n===0?'var(--text)':'var(--blue)';
 }
 function toggleMesEjec(label,activo){ if(activo) eMesesSeleccion.add(label); else eMesesSeleccion.delete(label); aplicarFiltrosEjec(); }
-function abrirMesesEjec(e){ e.stopPropagation(); document.getElementById('eMesesPanel').classList.toggle('abierto'); }
-document.addEventListener('click',e=>{ const p=document.getElementById('eMesesPanel'); if(p&&!p.contains(e.target)) p.classList.remove('abierto'); });
+function abrirMesesEjec(e){ e.stopPropagation(); document.querySelectorAll('#panelEjecutiva .meses-dropdown.abierto').forEach(p=>p.classList.remove('abierto')); document.getElementById('eMesesPanel').classList.toggle('abierto'); }
 
 function toggleChipEjec(el){
   const est=el.getAttribute('data-estado');
@@ -1289,6 +1320,80 @@ function toggleChipEjec(el){
   aplicarFiltrosEjec();
 }
 
+// ---- Recalcular opciones de todos los dropdowns ----
+function recalcEjec(){
+  poblarSelectEjec('eFVicem',    [...new Set(HITOS.map(h=>clasifDe(h).vicem).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todos');
+  poblarSelectEjec('eFTipo',     [...new Set(HITOS.map(h=>clasifDe(h).tipoInfra).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todos');
+  poblarSelectEjec('eFDepto',    DEPTOS_LISTA, 'Todos');
+  poblarSelectEjec('eFCategoria',[...new Set(HITOS.map(h=>h.categoria).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todas');
+  poblarDatalistEjec('eFCuiList',    [...new Set(HITOS.map(h=>clasifDe(h).cui).filter(Boolean))].sort());
+  poblarDatalistEjec('eFNombreList', [...new Set(INTERVENCIONES.map(i=>i.nombre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  poblarDatalistEjec('eFHitoList',   [...new Set(HITOS.map(h=>h.hito).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  // Multi-select dropdowns
+  renderMultiDropdown(MULTI_CFG[0], [...new Set(HITOS.map(h=>clasifDe(h).uei).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  renderMultiDropdown(MULTI_CFG[1], [...new Set(HITOS.map(h=>clasifDe(h).modalidad).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  renderMultiDropdown(MULTI_CFG[2], [...new Set(INTERVENCIONES.map(i=>i.fase).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  renderMultiDropdown(MULTI_CFG[3], [...new Set(INTERVENCIONES.map(i=>i.factores).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  renderMultiDropdown(MULTI_CFG[4], [...new Set(INTERVENCIONES.map(i=>i.riesgos).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  renderMultiDropdown(MULTI_CFG[5], [...new Set(INTERVENCIONES.map(i=>i.instancia).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  construirMesesEjec();
+}
+
+function poblarSelectEjec(id, valores, etiqueta){
+  const sel=document.getElementById(id); if(!sel) return;
+  const actual=sel.value; sel.innerHTML='<option value="">'+etiqueta+'</option>';
+  valores.forEach(v=>{const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o);});
+  if(valores.includes(actual)) sel.value=actual;
+}
+function poblarDatalistEjec(id, valores){
+  const dl=document.getElementById(id); if(!dl) return;
+  dl.innerHTML=''; valores.forEach(v=>{const o=document.createElement('option'); o.value=v; dl.appendChild(o);});
+}
+
+// ---- Lógica de filtrado ----
+function hitosDeIntervencion(interv){
+  const codHitos  = INTERNO_A_HITOS[interv.codInterno] || [];
+  const fVicem    = document.getElementById('eFVicem').value;
+  const fTipo     = document.getElementById('eFTipo').value;
+  const fDepto    = document.getElementById('eFDepto').value;
+  const fCui      = document.getElementById('eFCui').value.trim();
+  const fHito     = document.getElementById('eFHito').value.trim().toLowerCase();
+  const fCat      = document.getElementById('eFCategoria').value;
+  return HITOS.filter(h=>{
+    if(!codHitos.includes(h.codHito)) return false;
+    const cl = clasifDe(h);
+    if(fVicem && cl.vicem !== fVicem) return false;
+    if(eFSets.uei.size>0       && !eFSets.uei.has(cl.uei))          return false;
+    if(fTipo  && cl.tipoInfra !== fTipo) return false;
+    if(eFSets.mod.size>0       && !eFSets.mod.has(cl.modalidad))     return false;
+    if(fDepto && !deptosDe(h.codHito).includes(fDepto)) return false;
+    if(fCui   && cl.cui !== fCui) return false;
+    if(fHito  && !h.hito.toLowerCase().includes(fHito)) return false;
+    if(fCat   && h.categoria !== fCat) return false;
+    if(eEstadosActivos.size>0  && !eEstadosActivos.has(h.estado))    return false;
+    if(eMesesSeleccion.size>0){
+      const p=parseCumpl(h.fechaCump);
+      const lab=p?p.label:null;
+      if(!(lab && eMesesSeleccion.has(lab)) && !(!lab && eMesesSeleccion.has('__sinfecha__'))) return false;
+    }
+    return true;
+  });
+}
+
+function intervencionesFiltradas(){
+  const fNombre = document.getElementById('eFNombre').value.trim().toLowerCase();
+  return INTERVENCIONES.filter(interv=>{
+    if(fNombre && !interv.nombre.toLowerCase().includes(fNombre)) return false;
+    if(eFSets.fase.size>0      && !eFSets.fase.has(interv.fase))         return false;
+    if(eFSets.factores.size>0  && !eFSets.factores.has(interv.factores)) return false;
+    if(eFSets.riesgos.size>0   && !eFSets.riesgos.has(interv.riesgos))  return false;
+    if(eFSets.instancia.size>0 && !eFSets.instancia.has(interv.instancia)) return false;
+    return hitosDeIntervencion(interv).length > 0;
+  });
+}
+
+function onFiltroEjec(){ aplicarFiltrosEjec(); }
+
 function aplicarFiltrosEjec(){
   const visibles = intervencionesFiltradas();
   document.getElementById('ejecContador').textContent = visibles.length + (visibles.length===1?' intervención':' intervenciones');
@@ -1296,41 +1401,11 @@ function aplicarFiltrosEjec(){
 }
 
 function limpiarFiltrosEjec(){
-  ['eFVicem','eFUei','eFTipo','eFMod','eFDepto','eFCui','eFNombre','eFFase','eFFactores','eFRiesgos','eFInstancia','eFHito','eFCategoria'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['eFVicem','eFTipo','eFDepto','eFCui','eFNombre','eFHito','eFCategoria'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  Object.values(eFSets).forEach(s=>s.clear());
   eEstadosActivos.clear(); eMesesSeleccion.clear();
   document.querySelectorAll('#panelEjecutiva .chip').forEach(c=>c.classList.remove('on'));
   recalcEjec(); aplicarFiltrosEjec();
-}
-
-function exportarXLSXEjec(){
-  if(typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
-  const visibles = intervencionesFiltradas();
-  if(!visibles.length){ alert('No hay intervenciones para exportar con los filtros actuales.'); return; }
-  const rows = [['Intervención','CUI','Fase','Factores habilitantes','Riesgos','Instancia que debe actuar','Hito','Categoría de hito','Estado de cumplimiento','Fecha de cumplimiento']];
-  visibles.forEach(interv=>{
-    const hitos = hitosDeIntervencion(interv);
-    if(!hitos.length){
-      rows.push([interv.nombre, interv.cui, interv.fase, interv.factores, interv.riesgos, interv.instancia, '', '', '', '']);
-    } else {
-      hitos.forEach((h,idx)=>{
-        rows.push([
-          idx===0 ? interv.nombre   : '',
-          idx===0 ? interv.cui      : '',
-          idx===0 ? interv.fase     : '',
-          idx===0 ? interv.factores : '',
-          idx===0 ? interv.riesgos  : '',
-          idx===0 ? interv.instancia: '',
-          h.hito, h.categoria, h.estado, fmtMesAnio(h.fechaCump)
-        ]);
-      });
-    }
-  });
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:40},{wch:12},{wch:14},{wch:22},{wch:22},{wch:22},{wch:35},{wch:18},{wch:16},{wch:12}];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Vista Ejecutiva');
-  const fecha = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, 'vista_ejecutiva_'+fecha+'.xlsx');
 }
 
 function renderEjecutiva(visibles){
@@ -1341,10 +1416,8 @@ function renderEjecutiva(visibles){
   }
   let html='';
   visibles.forEach(interv=>{
-    const hitos = hitosDeIntervencion(interv);
-    const nHitos = hitos.length || 1; // rowspan mínimo 1
-
-    // Celdas de intervención con rowspan = número de hitos
+    const hitos  = hitosDeIntervencion(interv);
+    const nHitos = hitos.length || 1;
     const celdaInterv = `
       <td class="ejec-col-interv" rowspan="${nHitos}">
         <div class="ejec-nombre-interv">${escapeHtml(interv.nombre)||'—'}</div>
@@ -1354,16 +1427,12 @@ function renderEjecutiva(visibles){
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.factores)||'—'}</td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.riesgos)||'—'}</td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.instancia)||'—'}</td>`;
-
     if(!hitos.length){
-      html += `<tr class="ejec-primera">${celdaInterv}
-        <td class="ejec-col-hito" colspan="3" style="color:var(--text-3);font-size:12px;">Sin hitos registrados.</td>
-      </tr>`;
+      html += `<tr class="ejec-primera">${celdaInterv}<td class="ejec-col-hito" colspan="3" style="color:var(--text-3);font-size:12px;">Sin hitos registrados.</td></tr>`;
     } else {
-      hitos.forEach((h, idx)=>{
-        const esPrimera = idx===0;
-        html += `<tr${esPrimera?' class="ejec-primera"':''}>
-          ${esPrimera ? celdaInterv : ''}
+      hitos.forEach((h,idx)=>{
+        html += `<tr${idx===0?' class="ejec-primera"':''}>
+          ${idx===0 ? celdaInterv : ''}
           <td class="ejec-col-hito ejec-hito-nombre">${escapeHtml(h.hito)||'—'}</td>
           <td class="ejec-col-hito">${badgeEstado(h.estado)}</td>
           <td class="ejec-col-hito" style="white-space:nowrap;">${fmtMesAnio(h.fechaCump)}</td>
@@ -1372,6 +1441,32 @@ function renderEjecutiva(visibles){
     }
   });
   tbody.innerHTML = html;
+}
+
+function exportarXLSXEjec(){
+  if(typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
+  const visibles = intervencionesFiltradas();
+  if(!visibles.length){ alert('No hay intervenciones para exportar con los filtros actuales.'); return; }
+  const rows = [['Intervención','CUI','Fase','Factores habilitantes','Riesgos','Instancia que debe actuar','Hito','Categoría de hito','Estado de cumplimiento','Fecha de cumplimiento']];
+  visibles.forEach(interv=>{
+    const hitos = hitosDeIntervencion(interv);
+    if(!hitos.length){
+      rows.push([interv.nombre,interv.cui,interv.fase,interv.factores,interv.riesgos,interv.instancia,'','','','']);
+    } else {
+      hitos.forEach((h,idx)=>{
+        rows.push([
+          idx===0?interv.nombre:'', idx===0?interv.cui:'', idx===0?interv.fase:'',
+          idx===0?interv.factores:'', idx===0?interv.riesgos:'', idx===0?interv.instancia:'',
+          h.hito, h.categoria, h.estado, fmtMesAnio(h.fechaCump)
+        ]);
+      });
+    }
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:40},{wch:12},{wch:14},{wch:22},{wch:22},{wch:22},{wch:35},{wch:18},{wch:16},{wch:12}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Vista Ejecutiva');
+  XLSX.writeFile(wb, 'vista_ejecutiva_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
 cargar();
