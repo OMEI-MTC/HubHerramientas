@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   :root {
@@ -183,17 +183,17 @@
   .btn-ejecutiva:hover { background:rgba(255,255,255,0.28); }
   .btn-ejecutiva.activa { background:#fff; color:var(--red); border-color:#fff; }
 
-  /* Columnas de intervención: fondo azul claro */
-  #tablaEjec thead th.ejec-col-interv { background:#dce8f7; color:var(--blue-dk); border-bottom:2px solid #a8c4e8; }
-  #tablaEjec tbody td.ejec-col-interv { background:#eef4fc; border-bottom:1px solid #d0e2f5; vertical-align:top; }
-  /* Primera fila de cada intervención: resalta el nombre */
-  #tablaEjec tbody tr.ejec-primera td.ejec-col-interv { background:#dce8f7; border-top:2px solid #a8c4e8; }
-  .ejec-nombre-interv { font-weight:700; font-size:13px; color:var(--blue-dk); line-height:1.35; }
+  /* Columnas de intervención: fondo plomo neutro */
+  #tablaEjec thead th.ejec-col-interv { background:#e8eaed; color:var(--text); border-bottom:2px solid #c4c8ce; }
+  #tablaEjec tbody td.ejec-col-interv { background:#f4f5f6; border-bottom:1px solid #e2e4e7; vertical-align:top; }
+  /* Primera fila de cada intervención: borde superior de separación */
+  #tablaEjec tbody tr.ejec-primera td.ejec-col-interv { background:#e8eaed; border-top:2px solid #c4c8ce; }
+  .ejec-nombre-interv { font-weight:700; font-size:13px; color:var(--text); line-height:1.35; }
   .ejec-cui { font-size:11px; color:var(--text-3); margin-top:2px; }
 
   /* Celdas de hito: fondo blanco */
   #tablaEjec tbody td.ejec-col-hito { background:#fff; border-bottom:1px solid #eef0f3; vertical-align:middle; }
-  #tablaEjec tbody tr.ejec-primera td.ejec-col-hito { border-top:2px solid #a8c4e8; }
+  #tablaEjec tbody tr.ejec-primera td.ejec-col-hito { border-top:2px solid #c4c8ce; }
   .ejec-hito-nombre { font-weight:600; font-size:13px; color:var(--text); }
   #tablaEjec tbody tr:hover td.ejec-col-hito { background:#fafbfc; }
 
@@ -343,7 +343,7 @@
 
   <!-- ===== PANEL VISTA EJECUTIVA ===== -->
   <main class="main" id="panelEjecutiva" style="display:none;">
-    <div class="panel" style="max-width:1600px; margin:0 auto;">
+    <div class="panel" style="max-width:1900px; margin:0 auto;">
       <div class="panel-title">VISTA EJECUTIVA · CARTERA PRIORIZADA</div>
       <div class="panel-sub">Caracterización de intervenciones y estado de sus hitos</div>
       <div class="panel-week" id="ejecSemanaLabel">—</div>
@@ -1455,7 +1455,9 @@ function exportarXLSXEjec(){
   if(typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
   const visibles = intervencionesFiltradas();
   if(!visibles.length){ alert('No hay intervenciones para exportar con los filtros actuales.'); return; }
-  const rows = [['Intervención','CUI','Fase','Factores habilitantes','Riesgos','Instancia que debe actuar','Hito','Categoría de hito','Estado de cumplimiento','Fecha de cumplimiento']];
+
+  const headers = ['Intervención','CUI','Fase','Factores habilitantes','Riesgos','Instancia que debe actuar','Hito','Categoría de hito','Estado de cumplimiento','Fecha de cumplimiento'];
+  const rows = [headers];
   visibles.forEach(interv=>{
     const hitos = hitosDeIntervencion(interv);
     if(!hitos.length){
@@ -1470,8 +1472,21 @@ function exportarXLSXEjec(){
       });
     }
   });
+
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:40},{wch:12},{wch:14},{wch:22},{wch:22},{wch:22},{wch:35},{wch:18},{wch:16},{wch:12}];
+  ws['!cols'] = [{wch:40},{wch:12},{wch:14},{wch:22},{wch:22},{wch:22},{wch:35},{wch:18},{wch:16},{wch:12}];
+
+  // Estilo encabezado: fondo azul institucional, texto blanco, negrita
+  const estHead = {
+    font:  { bold:true, color:{ rgb:'FFFFFF' }, sz:11 },
+    fill:  { fgColor:{ rgb:'0055A5' } },
+    alignment: { horizontal:'center', vertical:'center', wrapText:true }
+  };
+  headers.forEach((_,ci)=>{
+    const ref = XLSX.utils.encode_cell({ r:0, c:ci });
+    if(ws[ref]) ws[ref].s = estHead;
+  });
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Vista Ejecutiva');
   XLSX.writeFile(wb, 'vista_ejecutiva_'+new Date().toISOString().slice(0,10)+'.xlsx');
