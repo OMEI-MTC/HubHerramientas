@@ -168,6 +168,48 @@
   /* Modal de contraseña OGAME */
   .modal-clave { max-width:420px; }
   .modal-clave p { font-size:13.5px; color:var(--text-2); margin-bottom:14px; line-height:1.5; }
+
+  /* ===== Acordeón de filtros ===== */
+  .filtros-header { display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none; margin-bottom:0; }
+  .filtros-header .filtros-tit { margin:0; }
+  .filtros-toggle-icon { transition:transform .25s; color:var(--blue); }
+  .filtros.collapsed .filtros-toggle-icon { transform:rotate(-90deg); }
+  .filtros-body { overflow:hidden; max-height:600px; transition:max-height .3s ease, opacity .25s ease; opacity:1; }
+  .filtros.collapsed .filtros-body { max-height:0; opacity:0; }
+  .filtros-header:hover .filtros-tit { color:var(--blue-dk); }
+
+  /* ===== Vista Ejecutiva ===== */
+  .btn-ejecutiva { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.15); color:#fff; border:1.5px solid rgba(255,255,255,0.6); border-radius:24px; padding:8px 18px; font-family:var(--sans); font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap; transition:background .12s; margin-right:8px; }
+  .btn-ejecutiva:hover { background:rgba(255,255,255,0.28); }
+  .btn-ejecutiva.activa { background:#fff; color:var(--red); border-color:#fff; }
+
+  /* Tabla ejecutiva: filas de intervención (encabezado de grupo) */
+  .ejec-interv-row td { background:var(--blue-dk); color:#fff; padding:10px 14px; border-bottom:2px solid var(--red); }
+  .ejec-interv-nombre { font-weight:700; font-size:13.5px; letter-spacing:.01em; }
+  .ejec-interv-meta { display:flex; gap:18px; margin-top:4px; flex-wrap:wrap; }
+  .ejec-interv-meta span { font-size:12px; color:rgba(255,255,255,0.8); }
+  .ejec-interv-meta strong { color:#fff; font-weight:600; }
+  .ejec-interv-meta .tag-fase { background:rgba(255,255,255,0.18); border-radius:5px; padding:2px 8px; font-size:11.5px; font-weight:700; letter-spacing:.02em; }
+
+  /* Celda de factores / riesgos / instancia dentro de la fila-grupo */
+  .ejec-detalle-row td { background:#f0f5ff; border-bottom:1px solid #d0dff5; padding:8px 14px 8px 22px; }
+  .ejec-detalle-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px 24px; }
+  .ejec-detalle-item label { font-size:11px; font-weight:700; color:var(--blue); text-transform:uppercase; letter-spacing:.04em; display:block; margin-bottom:2px; }
+  .ejec-detalle-item span { font-size:12.5px; color:var(--text); }
+
+  /* Hitos dentro de la vista ejecutiva */
+  .ejec-hito-row td { padding:8px 12px 8px 28px; border-bottom:1px solid #eef0f3; }
+  .ejec-hito-row:hover td { background:#fafbfc; }
+  .ejec-hito-nombre { font-weight:600; color:var(--text); font-size:13px; }
+
+  /* Mensaje sin datos en ejecutiva */
+  .ejec-empty { text-align:center; padding:40px; color:var(--text-3); font-size:14px; }
+
+  /* Filtros ejecutiva: más simple, solo nombre */
+  .ejec-filtros { background:#eef3fa; border:1px solid #c9d6ea; border-top:3px solid var(--blue); border-radius:10px; padding:14px 18px; margin-bottom:18px; box-shadow:0 2px 10px rgba(0,63,125,0.07); display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
+  .ejec-filtros .field { margin:0; min-width:220px; flex:1; }
+  .ejec-filtros .btn-limpiar { flex-shrink:0; }
+  .ejec-contador { font-size:13px; color:var(--text-2); margin-bottom:10px; }
 </style>
 </head>
 <body>
@@ -181,6 +223,10 @@
       </div>
     </div>
     <div class="topbar-actions">
+      <button class="btn-ejecutiva" id="btnEjecutiva" onclick="toggleVistaEjecutiva()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Vista Ejecutiva
+      </button>
       <button class="btn-ogame" id="btnVistaOgame" onclick="abrirClaveOgame()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Vista OGAME
@@ -208,8 +254,12 @@
       <div class="panel-sub">Actualización semanal de avance de hitos</div>
       <div class="panel-week" id="semanaLabel">—</div>
 
-      <div class="filtros">
-        <p class="filtros-tit">Filtrar hitos</p>
+      <div class="filtros" id="filtrosBox">
+        <div class="filtros-header" onclick="toggleFiltros()">
+          <p class="filtros-tit">Filtrar hitos</p>
+          <svg class="filtros-toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="filtros-body" id="filtrosBody">
         <!-- Fila 1: tres columnas iguales -->
         <div class="filtros-3col">
           <div class="field"><label>Viceministerio</label><select id="fVicem"><option value="">Todos</option></select></div>
@@ -259,6 +309,7 @@
           <div class="field"><label>Responsable OGAME</label><select id="fResp"><option value="">Todos</option></select></div>
         </div>
         <div class="filtros-foot"><button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar filtros</button></div>
+        </div><!-- /filtros-body -->
       </div>
 
       <div class="tabla-meta">
@@ -291,6 +342,49 @@
         <button id="prevBtn" onclick="cambiarPagina(-1)">‹ Anterior</button>
         <span id="pageInfo">—</span>
         <button id="nextBtn" onclick="cambiarPagina(1)">Siguiente ›</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===== PANEL VISTA EJECUTIVA ===== -->
+<div id="panelEjecutiva" style="display:none;">
+  <main class="main">
+    <div class="panel" style="max-width:1600px; margin:0 auto;">
+      <div class="panel-title">VISTA EJECUTIVA · CARTERA PRIORIZADA</div>
+      <div class="panel-sub">Caracterización de intervenciones y estado de sus hitos</div>
+      <div class="panel-week" id="ejecSemanaLabel">—</div>
+
+      <div class="ejec-filtros">
+        <div class="field"><label>Nombre de la Intervención</label>
+          <input type="text" id="ejecFNombre" list="ejecNombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="aplicarFiltrosEjec()">
+          <datalist id="ejecNombreList"></datalist>
+        </div>
+        <div class="field"><label>COD INTERNO</label>
+          <input type="text" id="ejecFCod" list="ejecCodList" placeholder="Ej. PVD55TT" autocomplete="off" oninput="aplicarFiltrosEjec()">
+          <datalist id="ejecCodList"></datalist>
+        </div>
+        <button class="btn-limpiar" onclick="limpiarFiltrosEjec()">Limpiar filtros</button>
+      </div>
+
+      <div class="ejec-contador" id="ejecContador">—</div>
+
+      <div class="tabla-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:5%">COD</th>
+              <th style="width:28%">Intervención / Hito</th>
+              <th style="width:10%">Fase</th>
+              <th style="width:16%">Factores habilitantes</th>
+              <th style="width:14%">Riesgos</th>
+              <th style="width:12%">Instancia que debe actuar</th>
+              <th style="width:7%">Avance</th>
+              <th style="width:8%">Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyEjec"></tbody>
+        </table>
       </div>
     </div>
   </main>
@@ -982,6 +1076,158 @@ function descargarResumen(){
   XLSX.utils.book_append_sheet(wb, ws, 'Resumen por UEI');
   const fecha=new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, 'resumen_cartera_'+fecha+'.xlsx');
+}
+
+// ====== ACORDEÓN DE FILTROS ======
+function toggleFiltros(){
+  document.getElementById('filtrosBox').classList.toggle('collapsed');
+}
+
+// ====== VISTA EJECUTIVA ======
+const EJEC_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=1061211372&single=true&output=tsv';
+
+// Índices columnas "Estado Intervenciones":
+// A=0 COD INTERNO, B=1 CUI, C=2 Nombre, D=3 Fase, E=4 Factores Habilitantes, F=5 Riesgos, G=6 Instancia que debe actuar
+const EI = { codInterno:0, cui:1, nombre:2, fase:3, factores:4, riesgos:5, instancia:6 };
+
+let INTERVENCIONES = [];   // datos de "Estado Intervenciones"
+let ejecCargado = false;
+let ejecFiltradas = [];
+let vistaEjecActiva = false;
+
+async function toggleVistaEjecutiva(){
+  vistaEjecActiva = !vistaEjecActiva;
+  const btnE = document.getElementById('btnEjecutiva');
+  const main = document.querySelector('main.main');
+  const panelE = document.getElementById('panelEjecutiva');
+
+  if(vistaEjecActiva){
+    btnE.classList.add('activa');
+    if(main) main.style.display = 'none';
+    panelE.style.display = 'block';
+    document.getElementById('ejecSemanaLabel').textContent = 'Semana de reporte: ' + semanaReporteTexto();
+    if(!ejecCargado) await cargarEjecutiva();
+    else aplicarFiltrosEjec();
+  } else {
+    btnE.classList.remove('activa');
+    panelE.style.display = 'none';
+    if(main) main.style.display = '';
+  }
+}
+
+async function cargarEjecutiva(){
+  const tbody = document.getElementById('tbodyEjec');
+  tbody.innerHTML = '<tr><td colspan="8" class="ejec-empty">Cargando intervenciones…</td></tr>';
+  try {
+    const txt = await fetchProxy(EJEC_TSV);
+    parseIntervenciones(txt);
+    poblarFiltrosEjec();
+    aplicarFiltrosEjec();
+    ejecCargado = true;
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="8" class="ejec-empty" style="color:#C8102E;">No se pudo cargar la hoja Estado Intervenciones.<br><small>'+e.message+'</small></td></tr>';
+  }
+}
+
+function parseIntervenciones(tsv){
+  const lineas = tsv.split('\n').filter(l=>l.trim());
+  INTERVENCIONES = [];
+  for(let i=1; i<lineas.length; i++){
+    const c = lineas[i].split('\t');
+    const cod = (c[EI.codInterno]||'').trim();
+    if(!cod) continue;
+    INTERVENCIONES.push({
+      codInterno: cod,
+      cui:        (c[EI.cui]||'').trim(),
+      nombre:     (c[EI.nombre]||'').trim(),
+      fase:       (c[EI.fase]||'').trim(),
+      factores:   (c[EI.factores]||'').trim(),
+      riesgos:    (c[EI.riesgos]||'').trim(),
+      instancia:  (c[EI.instancia]||'').trim()
+    });
+  }
+}
+
+function poblarFiltrosEjec(){
+  const nombres = [...new Set(INTERVENCIONES.map(i=>i.nombre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  const cods    = [...new Set(INTERVENCIONES.map(i=>i.codInterno).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
+  const dlN = document.getElementById('ejecNombreList'); dlN.innerHTML=''; nombres.forEach(v=>{const o=document.createElement('option'); o.value=v; dlN.appendChild(o);});
+  const dlC = document.getElementById('ejecCodList');    dlC.innerHTML=''; cods.forEach(v=>{   const o=document.createElement('option'); o.value=v; dlC.appendChild(o);});
+}
+
+function aplicarFiltrosEjec(){
+  const fN = document.getElementById('ejecFNombre').value.trim().toLowerCase();
+  const fC = document.getElementById('ejecFCod').value.trim().toLowerCase();
+  ejecFiltradas = INTERVENCIONES.filter(i=>
+    (!fN || i.nombre.toLowerCase().includes(fN)) &&
+    (!fC || i.codInterno.toLowerCase().includes(fC))
+  );
+  renderEjecutiva();
+}
+
+function limpiarFiltrosEjec(){
+  document.getElementById('ejecFNombre').value='';
+  document.getElementById('ejecFCod').value='';
+  aplicarFiltrosEjec();
+}
+
+function renderEjecutiva(){
+  const tbody = document.getElementById('tbodyEjec');
+  document.getElementById('ejecContador').textContent = ejecFiltradas.length + (ejecFiltradas.length===1?' intervención':' intervenciones');
+
+  if(!ejecFiltradas.length){
+    tbody.innerHTML='<tr><td colspan="8" class="ejec-empty">No hay intervenciones con estos filtros.</td></tr>';
+    return;
+  }
+
+  let html='';
+  ejecFiltradas.forEach(interv=>{
+    // --- Fila de encabezado de intervención ---
+    html += `<tr class="ejec-interv-row">
+      <td colspan="8">
+        <div class="ejec-interv-nombre">${escapeHtml(interv.codInterno)} · ${escapeHtml(interv.nombre)}</div>
+        <div class="ejec-interv-meta">
+          ${interv.cui?`<span><strong>CUI:</strong> ${escapeHtml(interv.cui)}</span>`:''}
+          ${interv.fase?`<span class="tag-fase">${escapeHtml(interv.fase)}</span>`:''}
+        </div>
+      </td>
+    </tr>`;
+
+    // --- Fila de detalle (Factores / Riesgos / Instancia) si hay algo ---
+    const hayDetalle = interv.factores || interv.riesgos || interv.instancia;
+    if(hayDetalle){
+      html += `<tr class="ejec-detalle-row">
+        <td colspan="8">
+          <div class="ejec-detalle-grid">
+            <div class="ejec-detalle-item"><label>Factores habilitantes</label><span>${escapeHtml(interv.factores)||'—'}</span></div>
+            <div class="ejec-detalle-item"><label>Riesgos</label><span>${escapeHtml(interv.riesgos)||'—'}</span></div>
+            <div class="ejec-detalle-item"><label>Instancia que debe actuar</label><span>${escapeHtml(interv.instancia)||'—'}</span></div>
+          </div>
+        </td>
+      </tr>`;
+    }
+
+    // --- Hitos de esta intervención (del Maestro de Hitos / Estado actual) ---
+    const codHitos = INTERNO_A_HITOS[interv.codInterno] || [];
+    const hitosDeInterv = HITOS.filter(h => codHitos.includes(h.codHito));
+
+    if(!hitosDeInterv.length){
+      html += `<tr class="ejec-hito-row"><td colspan="8" style="padding-left:28px; color:var(--text-3); font-size:12px;">Sin hitos registrados.</td></tr>`;
+    } else {
+      hitosDeInterv.forEach(h=>{
+        html += `<tr class="ejec-hito-row">
+          <td style="color:var(--text-3); font-size:11.5px; white-space:nowrap;">${escapeHtml(h.codHito)}</td>
+          <td class="ejec-hito-nombre">${escapeHtml(h.hito)||'—'}</td>
+          <td style="font-size:12px; color:var(--text-2);">${escapeHtml(h.categoria)||'—'}</td>
+          <td colspan="3" style="font-size:12px; color:var(--text-2);">${escapeHtml(h.situacional)||'—'}</td>
+          <td class="avance-cell">${fmtAvance(h.avance)}</td>
+          <td>${badgeEstado(h.estado)}</td>
+        </tr>`;
+      });
+    }
+  });
+
+  tbody.innerHTML = html;
 }
 
 cargar();
