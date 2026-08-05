@@ -345,11 +345,9 @@
       </div>
     </div>
   </main>
-</div>
 
-<!-- ===== PANEL VISTA EJECUTIVA ===== -->
-<div id="panelEjecutiva" style="display:none;">
-  <main class="main">
+  <!-- ===== PANEL VISTA EJECUTIVA ===== -->
+  <main class="main" id="panelEjecutiva" style="display:none;">
     <div class="panel" style="max-width:1600px; margin:0 auto;">
       <div class="panel-title">VISTA EJECUTIVA · CARTERA PRIORIZADA</div>
       <div class="panel-sub">Caracterización de intervenciones y estado de sus hitos</div>
@@ -1097,21 +1095,26 @@ let vistaEjecActiva = false;
 
 async function toggleVistaEjecutiva(){
   vistaEjecActiva = !vistaEjecActiva;
-  const btnE = document.getElementById('btnEjecutiva');
-  const main = document.querySelector('main.main');
+  const btnE   = document.getElementById('btnEjecutiva');
   const panelE = document.getElementById('panelEjecutiva');
+  // El panel principal son los dos divs que componen la vista normal
+  const loading = document.getElementById('loading');
+  const app     = document.getElementById('app');
 
   if(vistaEjecActiva){
     btnE.classList.add('activa');
-    if(main) main.style.display = 'none';
-    panelE.style.display = 'block';
+    loading.style.display = 'none';
+    app.style.display     = 'none';
+    panelE.style.display  = 'block';
     document.getElementById('ejecSemanaLabel').textContent = 'Semana de reporte: ' + semanaReporteTexto();
     if(!ejecCargado) await cargarEjecutiva();
     else aplicarFiltrosEjec();
   } else {
     btnE.classList.remove('activa');
     panelE.style.display = 'none';
-    if(main) main.style.display = '';
+    // Restaurar visibilidad normal (solo #app si ya cargó, sino #loading)
+    if(HITOS.length) app.style.display = 'block';
+    else loading.style.display = 'block';
   }
 }
 
