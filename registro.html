@@ -49,7 +49,7 @@
   .meses-dropdown { position:relative; }
   .meses-btn { width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:8px; background:#fff; font-family:inherit; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:var(--text); }
   .meses-btn:hover { border-color:var(--blue); }
-  .meses-lista { display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.12); z-index:20; max-height:240px; overflow-y:auto; padding:6px; }
+  .meses-lista { display:none; position:absolute; top:calc(100% + 4px); left:0; min-width:100%; width:max-content; max-width:320px; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.15); z-index:200; max-height:260px; overflow-y:auto; padding:6px; }
   .meses-dropdown.abierto .meses-lista { display:block; }
   .mes-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:13px; }
   .mes-item:hover { background:var(--bg); }
@@ -197,9 +197,14 @@
   .ejec-hito-nombre { font-weight:600; font-size:13px; color:var(--text); }
   #tablaEjec tbody tr:hover td.ejec-col-hito { background:#fafbfc; }
 
-  /* Mensaje sin datos */
-  .ejec-empty { text-align:center; padding:40px; color:var(--text-3); font-size:14px; }
-  .ejec-contador { font-size:13px; color:var(--text-2); margin-bottom:10px; }
+  /* Subgrupos dentro del acordeón único de filtros ejecutiva */
+  .ejec-filtros-grupo { margin-bottom:14px; }
+  .ejec-filtros-grupo:last-child { margin-bottom:0; }
+  .ejec-grupo-tit { font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--blue-dk); background:#dce8f7; border-radius:5px; padding:4px 10px; display:inline-block; margin-bottom:10px; }
+
+  /* Fila meta exterior (contador + botón Excel) */
+  .ejec-meta-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .ejec-meta-bar .ejec-contador { margin-bottom:0; }
 </style>
 </head>
 <body>
@@ -343,106 +348,110 @@
       <div class="panel-sub">Caracterización de intervenciones y estado de sus hitos</div>
       <div class="panel-week" id="ejecSemanaLabel">—</div>
 
-      <!-- FILTROS EJECUTIVA: dos acordeones independientes -->
-      <!-- Acordeón 1: Intervenciones -->
-      <div class="filtros" id="eFBoxInterv" style="margin-bottom:10px;">
-        <div class="filtros-header" onclick="toggleEjecFiltro('Interv')">
-          <p class="filtros-tit">Filtrar intervenciones</p>
+      <!-- FILTROS EJECUTIVA: un solo acordeón con dos grupos -->
+      <div class="filtros" id="eFBoxFiltros" style="margin-bottom:14px;">
+        <div class="filtros-header" onclick="toggleEjecFiltro()">
+          <p class="filtros-tit">Filtrar</p>
           <svg class="filtros-toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <div class="filtros-body" id="eFBodyInterv">
-          <!-- Fila 1: Viceministerio, UEI (multi), Tipo infra, Modalidad (multi) -->
-          <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr); margin-top:12px;">
-            <div class="field"><label>Viceministerio</label><select id="eFVicem" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
-            <div class="field"><label>Unidad ejecutora</label>
-              <div class="meses-dropdown" id="eFUeiPanel">
-                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFUeiPanel')"><span id="eFUeiLabel">Todas</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-                <div class="meses-lista" id="eFUeiLista"></div>
+        <div class="filtros-body" id="eFBodyFiltros">
+
+          <!-- GRUPO INTERVENCIONES -->
+          <div class="ejec-filtros-grupo" style="margin-top:14px;">
+            <span class="ejec-grupo-tit">Intervenciones</span>
+            <!-- Fila 1 -->
+            <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
+              <div class="field"><label>Viceministerio</label><select id="eFVicem" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
+              <div class="field"><label>Unidad ejecutora</label>
+                <div class="meses-dropdown" id="eFUeiPanel">
+                  <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFUeiPanel')"><span id="eFUeiLabel">Todas</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                  <div class="meses-lista" id="eFUeiLista"></div>
+                </div>
+              </div>
+              <div class="field"><label>Tipo de infraestructura</label><select id="eFTipo" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
+              <div class="field"><label>Modalidad de Ejecución</label>
+                <div class="meses-dropdown" id="eFModPanel">
+                  <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFModPanel')"><span id="eFModLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                  <div class="meses-lista" id="eFModLista"></div>
+                </div>
               </div>
             </div>
-            <div class="field"><label>Tipo de infraestructura</label><select id="eFTipo" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
-            <div class="field"><label>Modalidad de Ejecución</label>
-              <div class="meses-dropdown" id="eFModPanel">
-                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFModPanel')"><span id="eFModLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-                <div class="meses-lista" id="eFModLista"></div>
+            <!-- Fila 2 -->
+            <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
+              <div class="field"><label>Departamento</label><select id="eFDepto" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
+              <div class="field"><label>CUI</label><input type="text" id="eFCui" list="eFCuiList" placeholder="Escribe o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFCuiList"></datalist></div>
+              <div class="field"><label>Nombre de la Intervención</label><input type="text" id="eFNombre" list="eFNombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFNombreList"></datalist></div>
+              <div class="field"><label>Fase de la Intervención</label>
+                <div class="meses-dropdown" id="eFFasePanel">
+                  <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFFasePanel')"><span id="eFFaseLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                  <div class="meses-lista" id="eFFaseLista"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Fila 3 -->
+            <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
+              <div class="field"><label>Factores habilitantes</label>
+                <div class="meses-dropdown" id="eFFactoresPanel">
+                  <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFFactoresPanel')"><span id="eFFactoresLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                  <div class="meses-lista" id="eFFactoresLista"></div>
+                </div>
+              </div>
+              <div class="field"><label>Riesgos</label>
+                <div class="meses-dropdown" id="eFRiesgosPanel">
+                  <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFRiesgosPanel')"><span id="eFRiesgosLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                  <div class="meses-lista" id="eFRiesgosLista"></div>
+                </div>
+              </div>
+              <div class="field"><label>Instancia que debe actuar</label>
+                <div class="meses-dropdown" id="eFInstanciaPanel">
+                  <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFInstanciaPanel')"><span id="eFInstanciaLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                  <div class="meses-lista" id="eFInstanciaLista"></div>
+                </div>
+              </div>
+              <div class="field"></div>
+            </div>
+          </div>
+
+          <!-- SEPARADOR -->
+          <hr style="border:none; border-top:1px solid #c9d6ea; margin:4px 0 14px;">
+
+          <!-- GRUPO HITOS -->
+          <div class="ejec-filtros-grupo">
+            <span class="ejec-grupo-tit">Hitos</span>
+            <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr); align-items:start;">
+              <div class="field"><label>Hito</label><input type="text" id="eFHito" list="eFHitoList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFHitoList"></datalist></div>
+              <div class="field"><label>Categoría de hito</label><select id="eFCategoria" onchange="onFiltroEjec()"><option value="">Todas</option></select></div>
+              <div class="field"><label>Estado de cumplimiento del hito</label>
+                <div class="chips">
+                  <span class="chip" data-estado="EN PROCESO" onclick="toggleChipEjec(this)">EN PROCESO</span>
+                  <span class="chip" data-estado="REPROGRAMADO" onclick="toggleChipEjec(this)">REPROGRAMADO</span>
+                  <span class="chip" data-estado="CUMPLIDO" onclick="toggleChipEjec(this)">CUMPLIDO</span>
+                </div>
+              </div>
+              <div class="field"><label>Fecha de cumplimiento</label>
+                <div class="meses-dropdown" id="eMesesPanel">
+                  <button type="button" class="meses-btn" onclick="abrirMesesEjec(event)">
+                    <span id="eMesesBtnLabel">Todos</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  <div class="meses-lista" id="eMesesLista"></div>
+                </div>
               </div>
             </div>
           </div>
-          <!-- Fila 2: Departamento, CUI, Nombre, Fase (multi) -->
-          <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
-            <div class="field"><label>Departamento</label><select id="eFDepto" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
-            <div class="field"><label>CUI</label><input type="text" id="eFCui" list="eFCuiList" placeholder="Escribe o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFCuiList"></datalist></div>
-            <div class="field"><label>Nombre de la Intervención</label><input type="text" id="eFNombre" list="eFNombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFNombreList"></datalist></div>
-            <div class="field"><label>Fase de la Intervención</label>
-              <div class="meses-dropdown" id="eFFasePanel">
-                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFFasePanel')"><span id="eFFaseLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-                <div class="meses-lista" id="eFFaseLista"></div>
-              </div>
-            </div>
-          </div>
-          <!-- Fila 3: Factores (multi), Riesgos (multi), Instancia (multi) -->
-          <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
-            <div class="field"><label>Factores habilitantes</label>
-              <div class="meses-dropdown" id="eFFactoresPanel">
-                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFFactoresPanel')"><span id="eFFactoresLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-                <div class="meses-lista" id="eFFactoresLista"></div>
-              </div>
-            </div>
-            <div class="field"><label>Riesgos</label>
-              <div class="meses-dropdown" id="eFRiesgosPanel">
-                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFRiesgosPanel')"><span id="eFRiesgosLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-                <div class="meses-lista" id="eFRiesgosLista"></div>
-              </div>
-            </div>
-            <div class="field"><label>Instancia que debe actuar</label>
-              <div class="meses-dropdown" id="eFInstanciaPanel">
-                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFInstanciaPanel')"><span id="eFInstanciaLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-                <div class="meses-lista" id="eFInstanciaLista"></div>
-              </div>
-            </div>
-            <div class="field"><!-- espacio --></div>
-          </div>
-        </div><!-- /filtros-body interv -->
+
+          <div class="filtros-foot"><button class="btn-limpiar" onclick="limpiarFiltrosEjec()">Limpiar filtros</button></div>
+        </div><!-- /filtros-body -->
       </div>
 
-      <!-- Acordeón 2: Hitos -->
-      <div class="filtros" id="eFBoxHitos" style="margin-bottom:18px;">
-        <div class="filtros-header" onclick="toggleEjecFiltro('Hitos')">
-          <p class="filtros-tit">Filtrar hitos</p>
-          <svg class="filtros-toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="filtros-body" id="eFBodyHitos">
-          <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr); align-items:start; margin-top:12px;">
-            <div class="field"><label>Hito</label><input type="text" id="eFHito" list="eFHitoList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFHitoList"></datalist></div>
-            <div class="field"><label>Categoría de hito</label><select id="eFCategoria" onchange="onFiltroEjec()"><option value="">Todas</option></select></div>
-            <div class="field"><label>Estado de cumplimiento del hito</label>
-              <div class="chips">
-                <span class="chip" data-estado="EN PROCESO" onclick="toggleChipEjec(this)">EN PROCESO</span>
-                <span class="chip" data-estado="REPROGRAMADO" onclick="toggleChipEjec(this)">REPROGRAMADO</span>
-                <span class="chip" data-estado="CUMPLIDO" onclick="toggleChipEjec(this)">CUMPLIDO</span>
-              </div>
-            </div>
-            <div class="field"><label>Fecha de cumplimiento</label>
-              <div class="meses-dropdown" id="eMesesPanel">
-                <button type="button" class="meses-btn" onclick="abrirMesesEjec(event)">
-                  <span id="eMesesBtnLabel">Todos</span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                </button>
-                <div class="meses-lista" id="eMesesLista"></div>
-              </div>
-            </div>
-          </div>
-          <div class="filtros-foot" style="display:flex; justify-content:space-between; align-items:center;">
-            <button class="btn-export" onclick="exportarXLSXEjec()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Descargar Excel
-            </button>
-            <button class="btn-limpiar" onclick="limpiarFiltrosEjec()">Limpiar filtros</button>
-          </div>
-        </div><!-- /filtros-body hitos -->
+      <!-- Barra exterior: contador + botón Excel -->
+      <div class="ejec-meta-bar">
+        <span class="ejec-contador" id="ejecContador">—</span>
+        <button class="btn-export" onclick="exportarXLSXEjec()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar Excel
+        </button>
       </div>
-
-      <div class="ejec-contador" id="ejecContador">—</div>
 
       <div class="tabla-wrap">
         <table id="tablaEjec">
@@ -1188,9 +1197,8 @@ const MULTI_CFG = [
   { panel:'eFInstanciaPanel', lista:'eFInstanciaLista', label:'eFInstanciaLabel', key:'instancia' }
 ];
 
-// Acordeón independiente para cada bloque de filtros ejecutiva
-function toggleEjecFiltro(cual){
-  document.getElementById('eFBox'+cual).classList.toggle('collapsed');
+function toggleEjecFiltro(){
+  document.getElementById('eFBoxFiltros').classList.toggle('collapsed');
 }
 
 async function toggleVistaEjecutiva(){
