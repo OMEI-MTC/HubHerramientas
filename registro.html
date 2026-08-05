@@ -349,13 +349,9 @@
       <div class="panel-sub">Caracterización de intervenciones y estado de sus hitos</div>
       <div class="panel-week" id="ejecSemanaLabel">—</div>
 
-      <!-- FILTROS EJECUTIVA: un solo acordeón con dos grupos -->
+      <!-- FILTROS EJECUTIVA -->
       <div class="filtros" id="eFBoxFiltros" style="margin-bottom:14px;">
-        <div class="filtros-header" onclick="toggleEjecFiltro()">
-          <p class="filtros-tit">Filtrar</p>
-          <svg class="filtros-toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="filtros-body" id="eFBodyFiltros">
+        <p class="filtros-tit">Filtrar</p>
 
           <!-- GRUPO INTERVENCIONES -->
           <div class="ejec-filtros-grupo" style="margin-top:14px;">
@@ -442,7 +438,6 @@
           </div>
 
           <div class="filtros-foot"><button class="btn-limpiar" onclick="limpiarFiltrosEjec()">Limpiar filtros</button></div>
-        </div><!-- /filtros-body -->
       </div>
 
       <!-- Barra exterior: contador + botón Excel -->
@@ -1313,15 +1308,7 @@ function renderMultiDropdown(cfg, valores){
 }
 function toggleMultiEjec(key, valor, activo){
   if(activo) eFSets[key].add(valor); else eFSets[key].delete(valor);
-  // Actualizar label del botón
-  const cfg = MULTI_CFG.find(c=>c.key===key);
-  if(cfg){
-    const n = eFSets[key].size;
-    const lbl = document.getElementById(cfg.label);
-    lbl.textContent = n===0 ? (key==='uei'?'Todas':'Todos') : (n+' seleccionado'+(n>1?'s':''));
-    lbl.style.color = n===0 ? 'var(--text)' : 'var(--blue)';
-  }
-  aplicarFiltrosEjec();
+  recalcEjec(); aplicarFiltrosEjec();
 }
 
 // Cerrar todos los dropdowns multi al hacer clic fuera
@@ -1332,9 +1319,117 @@ document.addEventListener('click', e=>{
 });
 
 // ---- Filtro de meses (ejecutiva) ----
-function construirMesesEjec(){
+function toggleMesEjec(label,activo){ if(activo) eMesesSeleccion.add(label); else eMesesSeleccion.delete(label); recalcEjec(); aplicarFiltrosEjec(); }
+
+function toggleChipEjec(el){
+  const est=el.getAttribute('data-estado');
+  if(eEstadosActivos.has(est)){ eEstadosActivos.delete(est); el.classList.remove('on'); }
+  else { eEstadosActivos.add(est); el.classList.add('on'); }
+  recalcEjec(); aplicarFiltrosEjec();
+}
+
+// ---- Filtrado base para cascada ----
+// Devuelve hitos que pasan todos los filtros de hito EXCEPTO el indicado
+function hitosBaseExcepto(excluir){
+  const fVicem = document.getElementById('eFVicem').value;
+  const fTipo  = document.getElementById('eFTipo').value;
+  const fDepto = document.getElementById('eFDepto').value;
+  const fCui   = document.getElementById('eFCui').value.trim();
+  const fHito  = document.getElementById('eFHito').value.trim().toLowerCase();
+  const fCat   = document.getElementById('eFCategoria').value;
+  return HITOS.filter(h=>{
+    const cl = clasifDe(h);
+    if(excluir!=='vicem' && fVicem && cl.vicem!==fVicem)                       return false;
+    if(excluir!=='uei'   && eFSets.uei.size>0  && !eFSets.uei.has(cl.uei))    return false;
+    if(excluir!=='tipo'  && fTipo  && cl.tipoInfra!==fTipo)                    return false;
+    if(excluir!=='mod'   && eFSets.mod.size>0  && !eFSets.mod.has(cl.modalidad)) return false;
+    if(excluir!=='depto' && fDepto && !deptosDe(h.codHito).includes(fDepto))   return false;
+    if(excluir!=='cui'   && fCui   && cl.cui!==fCui)                           return false;
+    if(excluir!=='hito'  && fHito  && !h.hito.toLowerCase().includes(fHito))   return false;
+    if(excluir!=='cat'   && fCat   && h.categoria!==fCat)                      return false;
+    if(excluir!=='estado'&& eEstadosActivos.size>0 && !eEstadosActivos.has(h.estado)) return false;
+    if(excluir!=='meses' && eMesesSeleccion.size>0){
+      const p=parseCumpl(h.fechaCump); const lab=p?p.label:null;
+      if(!(lab&&eMesesSeleccion.has(lab))&&!(!lab&&eMesesSeleccion.has('__sinfecha__'))) return false;
+    }
+    return true;
+  });
+}
+// Devuelve intervenciones que pasan todos los filtros de intervención EXCEPTO el indicado,
+// y que tienen al menos un hito visible (con todos los filtros de hito activos)
+function intervBaseExcepto(excluir){
+  const fNombre = document.getElementById('eFNombre').value.trim().toLowerCase();
+  return INTERVENCIONES.filter(interv=>{
+    if(excluir!=='nombre'   && fNombre && !interv.nombre.toLowerCase().includes(fNombre)) return false;
+    if(excluir!=='fase'     && eFSets.fase.size>0     && !eFSets.fase.has(interv.fase))   return false;
+    if(excluir!=='factores' && eFSets.factores.size>0 && !eFSets.factores.has(interv.factores)) return false;
+    if(excluir!=='riesgos'  && !campoContieneAlguno(interv.riesgos,   excluir==='riesgos'  ? new Set() : eFSets.riesgos))   return false;
+    if(excluir!=='instancia'&& !campoContieneAlguno(interv.instancia, excluir==='instancia'? new Set() : eFSets.instancia)) return false;
+    return hitosDeIntervencion(interv).length > 0;
+  });
+}
+// Hitos disponibles restringidos a las intervenciones visibles (para opciones de hito/cat/estado/meses)
+function hitosDeIntervenciones(intervs){
+  const codHitosVisibles = new Set(intervs.flatMap(i=>INTERNO_A_HITOS[i.codInterno]||[]));
+  return HITOS.filter(h=>codHitosVisibles.has(h.codHito));
+}
+
+// ---- Recalcular opciones en cascada ----
+function recalcEjec(){
+  // Hitos base para cada campo (excluyendo ese campo del filtro)
+  const hVicem  = hitosBaseExcepto('vicem');
+  const hUei    = hitosBaseExcepto('uei');
+  const hTipo   = hitosBaseExcepto('tipo');
+  const hMod    = hitosBaseExcepto('mod');
+  const hDepto  = hitosBaseExcepto('depto');
+  const hCui    = hitosBaseExcepto('cui');
+  const hHito   = hitosBaseExcepto('hito');
+  const hCat    = hitosBaseExcepto('cat');
+  const hEstado = hitosBaseExcepto('estado');
+  const hMeses  = hitosBaseExcepto('meses');
+
+  // Intervenciones base para campos de intervención
+  const iNombre   = intervBaseExcepto('nombre');
+  const iFase     = intervBaseExcepto('fase');
+  const iFactores = intervBaseExcepto('factores');
+  const iRiesgos  = intervBaseExcepto('riesgos');
+  const iInstancia= intervBaseExcepto('instancia');
+
+  // Selects simples de hitos
+  poblarSelectEjec('eFVicem',    uniqSort(hVicem.map(h=>clasifDe(h).vicem)),    'Todos');
+  poblarSelectEjec('eFTipo',     uniqSort(hTipo.map(h=>clasifDe(h).tipoInfra)), 'Todos');
+  poblarSelectEjec('eFDepto',    uniqSortDep(hDepto),                           'Todos');
+  poblarSelectEjec('eFCategoria',uniqSort(hCat.map(h=>h.categoria)),            'Todas');
+
+  // Datalists
+  poblarDatalistEjec('eFCuiList',    uniqSort(hCui.map(h=>clasifDe(h).cui)));
+  poblarDatalistEjec('eFNombreList', uniqSort(iNombre.map(i=>i.nombre)));
+  poblarDatalistEjec('eFHitoList',   uniqSort(hHito.map(h=>h.hito)));
+
+  // Multi-select: UEI y Modalidad (de hitos)
+  renderMultiDropdown(MULTI_CFG[0], uniqSort(hUei.map(h=>clasifDe(h).uei)));
+  renderMultiDropdown(MULTI_CFG[1], uniqSort(hMod.map(h=>clasifDe(h).modalidad)));
+
+  // Multi-select: campos de intervención
+  renderMultiDropdown(MULTI_CFG[2], uniqSort(iFase.map(i=>i.fase)));
+  renderMultiDropdown(MULTI_CFG[3], uniqSort(iFactores.map(i=>i.factores)));
+  renderMultiDropdown(MULTI_CFG[4], valoresUnicos(iRiesgos.map(i=>i.riesgos)));
+  renderMultiDropdown(MULTI_CFG[5], valoresUnicos(iInstancia.map(i=>i.instancia)));
+
+  // Meses (de hitos filtrados por intervenciones visibles)
+  construirMesesEjecDesde(hMeses);
+}
+
+function uniqSort(arr){ return [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')); }
+function uniqSortDep(hitos){
+  const s=new Set(); hitos.forEach(h=>deptosDe(h.codHito).forEach(d=>s.add(d)));
+  return [...s].sort((a,b)=>a.localeCompare(b,'es'));
+}
+
+// Versión de construirMesesEjec que toma los hitos ya filtrados
+function construirMesesEjecDesde(hitosBase){
   const map=new Map();
-  HITOS.forEach(h=>{ const p=parseCumpl(h.fechaCump); if(p) map.set(p.label,p.orden); });
+  hitosBase.forEach(h=>{ const p=parseCumpl(h.fechaCump); if(p) map.set(p.label,p.orden); });
   const lista=[...map.entries()].map(([label,orden])=>({label,orden})).sort((a,b)=>a.orden-b.orden);
   const disp=new Set(lista.map(m=>m.label)); disp.add('__sinfecha__');
   [...eMesesSeleccion].forEach(l=>{ if(!disp.has(l)) eMesesSeleccion.delete(l); });
@@ -1348,39 +1443,6 @@ function construirMesesEjec(){
   const n=eMesesSeleccion.size;
   btn.textContent = n===0?'Todos':(n+' seleccionado'+(n>1?'s':''));
   btn.style.color = n===0?'var(--text)':'var(--blue)';
-}
-function toggleMesEjec(label,activo){ if(activo) eMesesSeleccion.add(label); else eMesesSeleccion.delete(label); aplicarFiltrosEjec(); }
-
-function toggleChipEjec(el){
-  const est=el.getAttribute('data-estado');
-  if(eEstadosActivos.has(est)){ eEstadosActivos.delete(est); el.classList.remove('on'); }
-  else { eEstadosActivos.add(est); el.classList.add('on'); }
-  aplicarFiltrosEjec();
-}
-
-// Helper: extrae valores únicos de un campo que puede contener listas separadas por ";"
-function valoresUnicos(arr){ const s=new Set(); arr.forEach(v=>{ if(!v) return; v.split(';').forEach(p=>{ const t=p.trim(); if(t) s.add(t); }); }); return [...s].sort((a,b)=>a.localeCompare(b,'es')); }
-
-// ---- Recalcular opciones de todos los dropdowns ----
-function recalcEjec(){
-  poblarSelectEjec('eFVicem',    [...new Set(HITOS.map(h=>clasifDe(h).vicem).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todos');
-  poblarSelectEjec('eFTipo',     [...new Set(HITOS.map(h=>clasifDe(h).tipoInfra).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todos');
-  poblarSelectEjec('eFDepto',    DEPTOS_LISTA, 'Todos');
-  poblarSelectEjec('eFCategoria',[...new Set(HITOS.map(h=>h.categoria).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todas');
-  poblarDatalistEjec('eFCuiList',    [...new Set(HITOS.map(h=>clasifDe(h).cui).filter(Boolean))].sort());
-  poblarDatalistEjec('eFNombreList', [...new Set(INTERVENCIONES.map(i=>i.nombre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  poblarDatalistEjec('eFHitoList',   [...new Set(HITOS.map(h=>h.hito).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  // Multi-select: UEI y Modalidad (valores simples)
-  renderMultiDropdown(MULTI_CFG[0], [...new Set(HITOS.map(h=>clasifDe(h).uei).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  renderMultiDropdown(MULTI_CFG[1], [...new Set(HITOS.map(h=>clasifDe(h).modalidad).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  // Fase: valor simple
-  renderMultiDropdown(MULTI_CFG[2], [...new Set(INTERVENCIONES.map(i=>i.fase).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  // Factores: valor simple
-  renderMultiDropdown(MULTI_CFG[3], [...new Set(INTERVENCIONES.map(i=>i.factores).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  // Riesgos e Instancia: separar por ";"
-  renderMultiDropdown(MULTI_CFG[4], valoresUnicos(INTERVENCIONES.map(i=>i.riesgos)));
-  renderMultiDropdown(MULTI_CFG[5], valoresUnicos(INTERVENCIONES.map(i=>i.instancia)));
-  construirMesesEjec();
 }
 
 function poblarSelectEjec(id, valores, etiqueta){
@@ -1443,7 +1505,7 @@ function intervencionesFiltradas(){
   });
 }
 
-function onFiltroEjec(){ aplicarFiltrosEjec(); }
+function onFiltroEjec(){ recalcEjec(); aplicarFiltrosEjec(); }
 
 function aplicarFiltrosEjec(){
   const visibles = intervencionesFiltradas();
