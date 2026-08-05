@@ -460,12 +460,13 @@
             <tr>
               <th class="ejec-col-interv" style="width:22%">Intervención</th>
               <th class="ejec-col-interv" style="width:8%">Fase</th>
-              <th class="ejec-col-interv" style="width:15%">Factores habilitantes</th>
-              <th class="ejec-col-interv" style="width:13%">Riesgos</th>
-              <th class="ejec-col-interv" style="width:13%">Instancia que debe actuar</th>
-              <th style="width:15%">Hito</th>
+              <th class="ejec-col-interv" style="width:13%">Factores habilitantes</th>
+              <th class="ejec-col-interv" style="width:11%">Riesgos</th>
+              <th class="ejec-col-interv" style="width:11%">Instancia que debe actuar</th>
+              <th style="width:17%">Hito</th>
+              <th style="width:7%">Fecha de Cumplimiento</th>
               <th style="width:8%">Estado de Cumplimiento</th>
-              <th style="width:6%">Fecha de Cumplimiento</th>
+              <th style="width:3%"></th>
             </tr>
           </thead>
           <tbody id="tbodyEjec"></tbody>
@@ -473,6 +474,26 @@
       </div>
     </div>
   </main>
+</div>
+
+<!-- MODAL ESTADO SITUACIONAL EJECUTIVA -->
+<div class="overlay" id="overlayEjecSit">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">Estado situacional</div>
+        <div class="modal-interv" id="ejecSitInterv">—</div>
+        <div class="modal-hito" id="ejecSitHito">—</div>
+      </div>
+      <button class="modal-x" onclick="cerrarEjecSit()" aria-label="Cerrar">&times;</button>
+    </div>
+    <div style="display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
+      <span id="ejecSitBadge"></span>
+      <span style="font-size:13px; color:var(--text-2);">Fecha de cumplimiento: <strong id="ejecSitFecha">—</strong></span>
+      <span style="font-size:13px; color:var(--text-2);">Avance: <strong id="ejecSitAvance">—</strong></span>
+    </div>
+    <div style="background:#f4f6f9; border-radius:8px; padding:16px 18px; font-size:14px; color:var(--text); line-height:1.65; white-space:pre-wrap;" id="ejecSitTexto">—</div>
+  </div>
 </div>
 
 <!-- MODAL EDICIÓN -->
@@ -1441,7 +1462,7 @@ function limpiarFiltrosEjec(){
 function renderEjecutiva(visibles){
   const tbody = document.getElementById('tbodyEjec');
   if(!visibles || !visibles.length){
-    tbody.innerHTML='<tr><td colspan="8" class="ejec-empty">No hay intervenciones con estos filtros.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="9" class="ejec-empty">No hay intervenciones con estos filtros.</td></tr>';
     return;
   }
   let html='';
@@ -1458,20 +1479,47 @@ function renderEjecutiva(visibles){
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.riesgos)||'—'}</td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.instancia)||'—'}</td>`;
     if(!hitos.length){
-      html += `<tr class="ejec-primera">${celdaInterv}<td class="ejec-col-hito" colspan="3" style="color:var(--text-3);font-size:12px;">Sin hitos registrados.</td></tr>`;
+      html += `<tr class="ejec-primera">${celdaInterv}<td class="ejec-col-hito" colspan="4" style="color:var(--text-3);font-size:12px;">Sin hitos registrados.</td></tr>`;
     } else {
       hitos.forEach((h,idx)=>{
+        const codEsc = escapeHtml(h.codHito);
         html += `<tr${idx===0?' class="ejec-primera"':''}>
           ${idx===0 ? celdaInterv : ''}
           <td class="ejec-col-hito ejec-hito-nombre">${escapeHtml(h.hito)||'—'}</td>
-          <td class="ejec-col-hito">${badgeEstado(h.estado)}</td>
           <td class="ejec-col-hito" style="white-space:nowrap;">${fmtMesAnio(h.fechaCump)}</td>
+          <td class="ejec-col-hito">${badgeEstado(h.estado)}</td>
+          <td class="ejec-col-hito" style="text-align:center; padding:6px;">
+            <button class="btn-ico" onclick="abrirEjecSit('${codEsc}')" title="Ver estado situacional">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
+          </td>
         </tr>`;
       });
     }
   });
   tbody.innerHTML = html;
 }
+
+// ====== MODAL ESTADO SITUACIONAL EJECUTIVA ======
+function abrirEjecSit(codHito){
+  const h = HITOS.find(x=>x.codHito===codHito);
+  if(!h) return;
+  document.getElementById('ejecSitInterv').textContent = h.nombre || '—';
+  document.getElementById('ejecSitHito').textContent   = h.hito   || '—';
+  document.getElementById('ejecSitBadge').innerHTML    = badgeEstado(h.estado);
+  document.getElementById('ejecSitFecha').textContent  = fmtMesAnio(h.fechaCump) || '—';
+  document.getElementById('ejecSitAvance').textContent = fmtAvance(h.avance);
+  document.getElementById('ejecSitTexto').textContent  = h.situacional || '(Sin detalle registrado)';
+  document.getElementById('overlayEjecSit').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function cerrarEjecSit(){
+  document.getElementById('overlayEjecSit').classList.remove('show');
+  document.body.style.overflow = '';
+}
+let _downEjecSit = false;
+document.getElementById('overlayEjecSit').addEventListener('mousedown', function(e){ _downEjecSit=(e.target===this); });
+document.getElementById('overlayEjecSit').addEventListener('click',     function(e){ if(e.target===this && _downEjecSit) cerrarEjecSit(); _downEjecSit=false; });
 
 function exportarXLSXEjec(){
   if(typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
