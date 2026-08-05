@@ -51,6 +51,7 @@
   .meses-btn:hover { border-color:var(--blue); }
   .meses-lista { display:none; position:absolute; top:calc(100% + 4px); left:0; min-width:100%; width:max-content; max-width:320px; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.15); z-index:200; max-height:260px; overflow-y:auto; padding:6px; }
   .meses-dropdown.abierto .meses-lista { display:block; }
+  .meses-dropdown.abre-arriba .meses-lista { top:auto; bottom:calc(100% + 4px); box-shadow:0 -4px 16px rgba(0,0,0,0.15); }
   .mes-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:13px; }
   .mes-item:hover { background:var(--bg); }
   .mes-item input { width:auto; cursor:pointer; accent-color:var(--blue); }
@@ -1257,12 +1258,21 @@ function parseIntervenciones(tsv){
 }
 
 // ---- Multi-select genérico ----
-function abrirMultiEjec(e, panelId){
+function abrirDropdownEjec(e, panelId){
   e.stopPropagation();
-  // Cerrar todos los otros panels abiertos
   document.querySelectorAll('.meses-dropdown.abierto').forEach(p=>{ if(p.id!==panelId) p.classList.remove('abierto'); });
-  document.getElementById(panelId).classList.toggle('abierto');
+  const panel = document.getElementById(panelId);
+  panel.classList.toggle('abierto');
+  if(panel.classList.contains('abierto')){
+    // Detectar si hay espacio suficiente abajo; si no, abrir hacia arriba
+    const rect = panel.getBoundingClientRect();
+    const espacioAbajo = window.innerHeight - rect.bottom;
+    if(espacioAbajo < 280) panel.classList.add('abre-arriba');
+    else panel.classList.remove('abre-arriba');
+  }
 }
+function abrirMultiEjec(e, panelId){ abrirDropdownEjec(e, panelId); }
+function abrirMesesEjec(e){ abrirDropdownEjec(e, 'eMesesPanel'); }
 function renderMultiDropdown(cfg, valores){
   const cont = document.getElementById(cfg.lista);
   const sel  = eFSets[cfg.key];
@@ -1319,7 +1329,6 @@ function construirMesesEjec(){
   btn.style.color = n===0?'var(--text)':'var(--blue)';
 }
 function toggleMesEjec(label,activo){ if(activo) eMesesSeleccion.add(label); else eMesesSeleccion.delete(label); aplicarFiltrosEjec(); }
-function abrirMesesEjec(e){ e.stopPropagation(); document.querySelectorAll('#panelEjecutiva .meses-dropdown.abierto').forEach(p=>p.classList.remove('abierto')); document.getElementById('eMesesPanel').classList.toggle('abierto'); }
 
 function toggleChipEjec(el){
   const est=el.getAttribute('data-estado');
@@ -1327,6 +1336,9 @@ function toggleChipEjec(el){
   else { eEstadosActivos.add(est); el.classList.add('on'); }
   aplicarFiltrosEjec();
 }
+
+// Helper: extrae valores únicos de un campo que puede contener listas separadas por ";"
+function valoresUnicos(arr){ const s=new Set(); arr.forEach(v=>{ if(!v) return; v.split(';').forEach(p=>{ const t=p.trim(); if(t) s.add(t); }); }); return [...s].sort((a,b)=>a.localeCompare(b,'es')); }
 
 // ---- Recalcular opciones de todos los dropdowns ----
 function recalcEjec(){
@@ -1337,13 +1349,16 @@ function recalcEjec(){
   poblarDatalistEjec('eFCuiList',    [...new Set(HITOS.map(h=>clasifDe(h).cui).filter(Boolean))].sort());
   poblarDatalistEjec('eFNombreList', [...new Set(INTERVENCIONES.map(i=>i.nombre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
   poblarDatalistEjec('eFHitoList',   [...new Set(HITOS.map(h=>h.hito).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  // Multi-select dropdowns
+  // Multi-select: UEI y Modalidad (valores simples)
   renderMultiDropdown(MULTI_CFG[0], [...new Set(HITOS.map(h=>clasifDe(h).uei).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
   renderMultiDropdown(MULTI_CFG[1], [...new Set(HITOS.map(h=>clasifDe(h).modalidad).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  // Fase: valor simple
   renderMultiDropdown(MULTI_CFG[2], [...new Set(INTERVENCIONES.map(i=>i.fase).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  // Factores: valor simple
   renderMultiDropdown(MULTI_CFG[3], [...new Set(INTERVENCIONES.map(i=>i.factores).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  renderMultiDropdown(MULTI_CFG[4], [...new Set(INTERVENCIONES.map(i=>i.riesgos).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  renderMultiDropdown(MULTI_CFG[5], [...new Set(INTERVENCIONES.map(i=>i.instancia).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  // Riesgos e Instancia: separar por ";"
+  renderMultiDropdown(MULTI_CFG[4], valoresUnicos(INTERVENCIONES.map(i=>i.riesgos)));
+  renderMultiDropdown(MULTI_CFG[5], valoresUnicos(INTERVENCIONES.map(i=>i.instancia)));
   construirMesesEjec();
 }
 
@@ -1388,14 +1403,21 @@ function hitosDeIntervencion(interv){
   });
 }
 
+// Helper: verifica si alguno de los ítems seleccionados está presente en un campo con lista separada por ";"
+function campoContieneAlguno(campo, set){
+  if(!set.size) return true;
+  const partes = (campo||'').split(';').map(p=>p.trim()).filter(Boolean);
+  return partes.some(p=>set.has(p));
+}
+
 function intervencionesFiltradas(){
   const fNombre = document.getElementById('eFNombre').value.trim().toLowerCase();
   return INTERVENCIONES.filter(interv=>{
     if(fNombre && !interv.nombre.toLowerCase().includes(fNombre)) return false;
-    if(eFSets.fase.size>0      && !eFSets.fase.has(interv.fase))         return false;
-    if(eFSets.factores.size>0  && !eFSets.factores.has(interv.factores)) return false;
-    if(eFSets.riesgos.size>0   && !eFSets.riesgos.has(interv.riesgos))  return false;
-    if(eFSets.instancia.size>0 && !eFSets.instancia.has(interv.instancia)) return false;
+    if(eFSets.fase.size>0     && !eFSets.fase.has(interv.fase))             return false;
+    if(eFSets.factores.size>0 && !eFSets.factores.has(interv.factores))     return false;
+    if(!campoContieneAlguno(interv.riesgos,   eFSets.riesgos))              return false;
+    if(!campoContieneAlguno(interv.instancia, eFSets.instancia))            return false;
     return hitosDeIntervencion(interv).length > 0;
   });
 }
