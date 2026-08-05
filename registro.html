@@ -346,7 +346,7 @@
       <!-- FILTROS EJECUTIVA -->
       <div class="filtros" style="margin-bottom:18px;">
         <p class="filtros-tit">Filtrar hitos</p>
-        <!-- Fila 1: Viceministerio, UEI, Tipo infra, Modalidad -->
+        <!-- Fila 1: Viceministerio, UEI, Tipo infra, Modalidad (del Maestro) -->
         <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
           <div class="field"><label>Viceministerio</label><select id="eFVicem" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
           <div class="field"><label>Unidad ejecutora</label><select id="eFUei" onchange="onFiltroEjec()"><option value="">Todas</option></select></div>
@@ -360,7 +360,14 @@
           <div class="field"><label>Nombre de la Intervención</label><input type="text" id="eFNombre" list="eFNombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFNombreList"></datalist></div>
           <div class="field"><label>Fase de la Intervención</label><select id="eFFase" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
         </div>
-        <!-- Fila 3: Hito, Categoría, Estado de cumplimiento (chips), Fecha de cumplimiento -->
+        <!-- Fila 3: Factores habilitantes, Riesgos, Instancia (de Estado Intervenciones) -->
+        <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
+          <div class="field"><label>Factores habilitantes</label><input type="text" id="eFFactores" list="eFFactoresList" placeholder="Escribe o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFFactoresList"></datalist></div>
+          <div class="field"><label>Riesgos</label><input type="text" id="eFRiesgos" list="eFRiesgosList" placeholder="Escribe o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFRiesgosList"></datalist></div>
+          <div class="field"><label>Instancia que debe actuar</label><input type="text" id="eFInstancia" list="eFInstanciaList" placeholder="Escribe o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFInstanciaList"></datalist></div>
+          <div class="field"><!-- espacio reservado --></div>
+        </div>
+        <!-- Fila 4: Hito, Categoría, Estado de cumplimiento (chips), Fecha de cumplimiento -->
         <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr); align-items:start;">
           <div class="field"><label>Hito</label><input type="text" id="eFHito" list="eFHitoList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFHitoList"></datalist></div>
           <div class="field"><label>Categoría de hito</label><select id="eFCategoria" onchange="onFiltroEjec()"><option value="">Todas</option></select></div>
@@ -381,7 +388,13 @@
             </div>
           </div>
         </div>
-        <div class="filtros-foot"><button class="btn-limpiar" onclick="limpiarFiltrosEjec()">Limpiar filtros</button></div>
+        <div class="filtros-foot" style="display:flex; justify-content:space-between; align-items:center;">
+          <button class="btn-export" onclick="exportarXLSXEjec()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar Excel
+          </button>
+          <button class="btn-limpiar" onclick="limpiarFiltrosEjec()">Limpiar filtros</button>
+        </div>
       </div>
 
       <div class="ejec-contador" id="ejecContador">—</div>
@@ -511,7 +524,7 @@ const DEPTO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxk
 const CORS_PROXIES = [ url=>url, url=>'https://corsproxy.io/?'+encodeURIComponent(url), url=>'https://api.allorigins.win/raw?url='+encodeURIComponent(url) ];
 
 const E = { corte:0, codHito:1, hito:2, categoria:3, codInterno:4, cui:5, nombre:6, fechaCump:7, estado:8, avance:9, situacional:10, validadoOgame:11 };
-const M = { codInterno:0, codHito:2, dpto:5, estatus:6, uei:8, vicem:9, tipoInfra:10, cui:11, responsable:12 };
+const M = { codInterno:0, codHito:2, dpto:5, estatus:6, modalidad:7, uei:8, vicem:9, tipoInfra:10, cui:11, responsable:12 };
 
 const PAGE_SIZE = 20;
 const HIST_MAX = 10;
@@ -546,7 +559,7 @@ let INTERNO_A_HITOS = {};  // COD INTERNO -> [COD HITOS] (un proyecto tiene vari
 function parseMaestro(tsv) {
   const lineas = tsv.split('\n').filter(l=>l.trim()); CLASIF={}; INTERNO_A_HITOS={};
   for (let i=1;i<lineas.length;i++){ const c=lineas[i].split('\t'); const cod=(c[M.codHito]||'').trim(); if(!cod) continue; if((c[M.estatus]||'').trim().toUpperCase()!=='VIGENTE') continue;
-    CLASIF[cod]={ vicem:(c[M.vicem]||'').trim(), uei:(c[M.uei]||'').trim(), tipoInfra:(c[M.tipoInfra]||'').trim(), dpto:(c[M.dpto]||'').trim(), cui:(c[M.cui]||'').trim(), responsable:(c[M.responsable]||'').trim() };
+    CLASIF[cod]={ vicem:(c[M.vicem]||'').trim(), uei:(c[M.uei]||'').trim(), tipoInfra:(c[M.tipoInfra]||'').trim(), modalidad:(c[M.modalidad]||'').trim(), dpto:(c[M.dpto]||'').trim(), cui:(c[M.cui]||'').trim(), responsable:(c[M.responsable]||'').trim() };
     const interno=(c[M.codInterno]||'').trim();
     if(interno){ if(!INTERNO_A_HITOS[interno]) INTERNO_A_HITOS[interno]=[]; INTERNO_A_HITOS[interno].push(cod); } }
 }
@@ -1201,12 +1214,17 @@ function hitosDeIntervencion(interv){
 }
 
 function intervencionesFiltradas(){
-  const fNombre = document.getElementById('eFNombre').value.trim().toLowerCase();
-  const fFase   = document.getElementById('eFFase').value;
+  const fNombre   = document.getElementById('eFNombre').value.trim().toLowerCase();
+  const fFase     = document.getElementById('eFFase').value;
+  const fFactores = document.getElementById('eFFactores').value.trim().toLowerCase();
+  const fRiesgos  = document.getElementById('eFRiesgos').value.trim().toLowerCase();
+  const fInstancia= document.getElementById('eFInstancia').value.trim().toLowerCase();
   return INTERVENCIONES.filter(interv=>{
-    if(fNombre && !interv.nombre.toLowerCase().includes(fNombre)) return false;
-    if(fFase   && interv.fase !== fFase) return false;
-    // Solo mostrar intervenciones que tengan al menos un hito visible
+    if(fNombre    && !interv.nombre.toLowerCase().includes(fNombre))       return false;
+    if(fFase      && interv.fase !== fFase)                                return false;
+    if(fFactores  && !interv.factores.toLowerCase().includes(fFactores))   return false;
+    if(fRiesgos   && !interv.riesgos.toLowerCase().includes(fRiesgos))     return false;
+    if(fInstancia && !interv.instancia.toLowerCase().includes(fInstancia)) return false;
     return hitosDeIntervencion(interv).length > 0;
   });
 }
@@ -1214,20 +1232,20 @@ function intervencionesFiltradas(){
 function onFiltroEjec(){ recalcEjec(); aplicarFiltrosEjec(); }
 
 function recalcEjec(){
-  // Poblar selects desde HITOS (misma fuente que panel principal)
-  const eBase = HITOS; // sin filtro para las opciones
+  const eBase = HITOS;
   poblarSelectEjec('eFVicem',    [...new Set(eBase.map(h=>clasifDe(h).vicem).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todos');
   poblarSelectEjec('eFUei',      [...new Set(eBase.map(h=>clasifDe(h).uei).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')),   'Todas');
   poblarSelectEjec('eFTipo',     [...new Set(eBase.map(h=>clasifDe(h).tipoInfra).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todos');
-  poblarSelectEjec('eFMod',      [...new Set(eBase.map(h=>(clasifDe(h).modalidad||'')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todos');
+  poblarSelectEjec('eFMod',      [...new Set(eBase.map(h=>clasifDe(h).modalidad).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todos');
   poblarSelectEjec('eFDepto',    DEPTOS_LISTA, 'Todos');
   poblarSelectEjec('eFCategoria',[...new Set(eBase.map(h=>h.categoria).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todas');
   poblarSelectEjec('eFFase',     [...new Set(INTERVENCIONES.map(i=>i.fase).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')), 'Todos');
-  // Datalists
-  poblarDatalistEjec('eFCuiList',    [...new Set(eBase.map(h=>clasifDe(h).cui).filter(Boolean))].sort());
-  poblarDatalistEjec('eFNombreList', [...new Set(INTERVENCIONES.map(i=>i.nombre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  poblarDatalistEjec('eFHitoList',   [...new Set(eBase.map(h=>h.hito).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
-  // Meses dropdown
+  poblarDatalistEjec('eFCuiList',       [...new Set(eBase.map(h=>clasifDe(h).cui).filter(Boolean))].sort());
+  poblarDatalistEjec('eFNombreList',    [...new Set(INTERVENCIONES.map(i=>i.nombre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  poblarDatalistEjec('eFHitoList',      [...new Set(eBase.map(h=>h.hito).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  poblarDatalistEjec('eFFactoresList',  [...new Set(INTERVENCIONES.map(i=>i.factores).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  poblarDatalistEjec('eFRiesgosList',   [...new Set(INTERVENCIONES.map(i=>i.riesgos).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
+  poblarDatalistEjec('eFInstanciaList', [...new Set(INTERVENCIONES.map(i=>i.instancia).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')));
   construirMesesEjec();
 }
 
@@ -1278,10 +1296,41 @@ function aplicarFiltrosEjec(){
 }
 
 function limpiarFiltrosEjec(){
-  ['eFVicem','eFUei','eFTipo','eFMod','eFDepto','eFCui','eFNombre','eFFase','eFHito','eFCategoria'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['eFVicem','eFUei','eFTipo','eFMod','eFDepto','eFCui','eFNombre','eFFase','eFFactores','eFRiesgos','eFInstancia','eFHito','eFCategoria'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   eEstadosActivos.clear(); eMesesSeleccion.clear();
   document.querySelectorAll('#panelEjecutiva .chip').forEach(c=>c.classList.remove('on'));
   recalcEjec(); aplicarFiltrosEjec();
+}
+
+function exportarXLSXEjec(){
+  if(typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
+  const visibles = intervencionesFiltradas();
+  if(!visibles.length){ alert('No hay intervenciones para exportar con los filtros actuales.'); return; }
+  const rows = [['Intervención','CUI','Fase','Factores habilitantes','Riesgos','Instancia que debe actuar','Hito','Categoría de hito','Estado de cumplimiento','Fecha de cumplimiento']];
+  visibles.forEach(interv=>{
+    const hitos = hitosDeIntervencion(interv);
+    if(!hitos.length){
+      rows.push([interv.nombre, interv.cui, interv.fase, interv.factores, interv.riesgos, interv.instancia, '', '', '', '']);
+    } else {
+      hitos.forEach((h,idx)=>{
+        rows.push([
+          idx===0 ? interv.nombre   : '',
+          idx===0 ? interv.cui      : '',
+          idx===0 ? interv.fase     : '',
+          idx===0 ? interv.factores : '',
+          idx===0 ? interv.riesgos  : '',
+          idx===0 ? interv.instancia: '',
+          h.hito, h.categoria, h.estado, fmtMesAnio(h.fechaCump)
+        ]);
+      });
+    }
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:40},{wch:12},{wch:14},{wch:22},{wch:22},{wch:22},{wch:35},{wch:18},{wch:16},{wch:12}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Vista Ejecutiva');
+  const fecha = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, 'vista_ejecutiva_'+fecha+'.xlsx');
 }
 
 function renderEjecutiva(visibles){
