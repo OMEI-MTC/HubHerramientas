@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   :root {
@@ -242,10 +244,16 @@
         <!-- BARRA CONTADOR + EXCEL -->
         <div class="ejec-meta-bar">
           <span class="ejec-contador" id="ejecContador">—</span>
-          <button class="btn-export" onclick="exportarXLSX()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Descargar Excel
-          </button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-export" onclick="exportarXLSX()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Descargar Excel
+            </button>
+            <button class="btn-export" style="background:#003F7D;" onclick="exportarPDF()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Descargar PDF
+            </button>
+          </div>
         </div>
 
         <!-- TABLA -->
@@ -621,6 +629,102 @@ function exportarXLSX(){
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Vista Ejecutiva');
   XLSX.writeFile(wb,'vista_ejecutiva_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+// ====== EXPORTAR PDF ======
+function exportarPDF(){
+  if(typeof window.jspdf==='undefined'){ alert('No se pudo cargar el componente PDF.'); return; }
+  const visibles=intervencionesFiltradas();
+  if(!visibles.length){ alert('No hay intervenciones para exportar.'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a3' });
+
+  // Encabezado institucional
+  doc.setFillColor(200,16,46);
+  doc.rect(0,0,420,16,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text('HUB DE HERRAMIENTAS · OGAME  —  VISTA EJECUTIVA · CARTERA PRIORIZADA',14,10.5);
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text('Semana de reporte: '+semanaReporteTexto(), 14, 14.5);
+
+  // Construir body para autoTable con rowSpan manual via didDrawCell
+  const body=[];
+  const spanInfo=[];  // [{fila, cols:[0..5], span:n}]
+
+  visibles.forEach(interv=>{
+    const hitos=hitosDeIntervencion(interv);
+    const n=hitos.length||1;
+    const rIni=body.length;
+    if(!hitos.length){
+      body.push([interv.nombre,interv.cui,interv.fase,interv.factores,interv.riesgos,interv.instancia,'','','']);
+    } else {
+      hitos.forEach((h,idx)=>{
+        body.push([
+          idx===0?interv.nombre:'__SPAN__',
+          idx===0?interv.cui:'__SPAN__',
+          idx===0?interv.fase:'__SPAN__',
+          idx===0?interv.factores:'__SPAN__',
+          idx===0?interv.riesgos:'__SPAN__',
+          idx===0?interv.instancia:'__SPAN__',
+          h.hito, h.categoria, fmtMesAnio(h.fechaCump)
+        ]);
+      });
+      if(n>1) spanInfo.push({fila:rIni, span:n});
+    }
+  });
+
+  // Colores institucionales
+  const AZUL=[0,85,165], AZUL_DK=[0,63,125], PLOMO=[232,234,237], BLANCO=[255,255,255];
+
+  doc.autoTable({
+    startY:20,
+    head:[['Intervención','CUI','Fase','Factores habilitantes','Riesgos','Instancia que debe actuar','Hito','Categoría de hito','Fecha']],
+    body: body,
+    styles:{ fontSize:7, cellPadding:2.5, valign:'top', overflow:'linebreak', lineColor:[200,200,200], lineWidth:0.2 },
+    headStyles:{ fillColor:AZUL, textColor:[255,255,255], fontStyle:'bold', halign:'center', valign:'middle', fontSize:7.5 },
+    columnStyles:{
+      0:{cellWidth:40}, 1:{cellWidth:16}, 2:{cellWidth:18},
+      3:{cellWidth:28}, 4:{cellWidth:28}, 5:{cellWidth:28},
+      6:{cellWidth:60}, 7:{cellWidth:30}, 8:{cellWidth:16}
+    },
+    alternateRowStyles:{ fillColor:BLANCO },
+    willDrawCell(data){
+      // Ocultar celdas __SPAN__ (filas no-primera de grupos con merge)
+      if(data.section==='body' && data.cell.raw==='__SPAN__'){
+        data.cell.text=[];
+      }
+    },
+    didDrawCell(data){
+      if(data.section!=='body') return;
+      // Colorear columnas de intervención
+      if(data.column.index<=5){
+        const isFirst = spanInfo.some(s=>s.fila===data.row.index);
+        const fillCol = isFirst ? PLOMO : [244,245,246];
+        doc.setFillColor(...fillCol);
+        doc.rect(data.cell.x,data.cell.y,data.cell.width,data.cell.height,'F');
+        if(data.cell.raw!=='__SPAN__' && data.cell.text && data.cell.text.length){
+          doc.setTextColor(26,26,26);
+          doc.setFontSize(data.column.index===0?7.5:7);
+          doc.setFont('helvetica', data.column.index===0?'bold':'normal');
+          doc.text(data.cell.text, data.cell.x+data.cell.padding('left'), data.cell.y+data.cell.padding('top')+5, {maxWidth:data.cell.width-data.cell.padding('left')-data.cell.padding('right')});
+        }
+      }
+    },
+    margin:{left:10, right:10}
+  });
+
+  // Pie de página con número
+  const total=doc.internal.getNumberOfPages();
+  for(let p=1;p<=total;p++){
+    doc.setPage(p);
+    doc.setFontSize(7); doc.setTextColor(150,150,150); doc.setFont('helvetica','normal');
+    doc.text('OGAME · MTC — Vista Ejecutiva Cartera Priorizada', 14, doc.internal.pageSize.height-6);
+    doc.text('Página '+p+' de '+total, 406, doc.internal.pageSize.height-6, {align:'right'});
+  }
+
+  doc.save('vista_ejecutiva_'+new Date().toISOString().slice(0,10)+'.pdf');
 }
 
 cargar();
