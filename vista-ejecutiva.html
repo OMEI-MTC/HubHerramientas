@@ -266,10 +266,9 @@
                 <th class="ejec-col-interv" style="width:13%">Factores habilitantes</th>
                 <th class="ejec-col-interv" style="width:11%">Riesgos</th>
                 <th class="ejec-col-interv" style="width:11%">Instancia que debe actuar</th>
-                <th style="width:17%">Hito</th>
-                <th style="width:7%">Fecha de Cumplimiento</th>
-                <th style="width:8%">Estado de Cumplimiento</th>
-                <th style="width:3%"></th>
+                <th style="width:20%">Hito</th>
+                <th style="width:10%">Fecha de Cumplimiento</th>
+                <th style="width:5%"></th>
               </tr>
             </thead>
             <tbody id="tbodyEjec"></tbody>
@@ -543,13 +542,13 @@ function limpiarFiltrosEjec(){
 // ====== RENDER TABLA ======
 function renderEjecutiva(visibles){
   const tbody=document.getElementById('tbodyEjec');
-  if(!visibles||!visibles.length){ tbody.innerHTML='<tr><td colspan="9" class="ejec-empty">No hay intervenciones con estos filtros.</td></tr>'; return; }
+  if(!visibles||!visibles.length){ tbody.innerHTML='<tr><td colspan="8" class="ejec-empty">No hay intervenciones con estos filtros.</td></tr>'; return; }
   let html='';
   visibles.forEach(interv=>{
     const hitos=hitosDeIntervencion(interv); const nHitos=hitos.length||1;
     const ci=`<td class="ejec-col-interv" rowspan="${nHitos}"><div class="ejec-nombre-interv">${escapeHtml(interv.nombre)||'—'}</div>${interv.cui?`<div class="ejec-cui">CUI: ${escapeHtml(interv.cui)}</div>`:''}</td><td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.fase)||'—'}</td><td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.factores)||'—'}</td><td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.riesgos)||'—'}</td><td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.instancia)||'—'}</td>`;
-    if(!hitos.length){ html+=`<tr class="ejec-primera">${ci}<td class="ejec-col-hito" colspan="4" style="color:var(--text-3);font-size:12px;">Sin hitos registrados.</td></tr>`; }
-    else { hitos.forEach((h,idx)=>{ html+=`<tr${idx===0?' class="ejec-primera"':''}>${idx===0?ci:''}<td class="ejec-col-hito ejec-hito-nombre">${escapeHtml(h.hito)||'—'}</td><td class="ejec-col-hito" style="white-space:nowrap;">${fmtMesAnio(h.fechaCump)}</td><td class="ejec-col-hito">${badgeEstado(h.estado)}</td><td class="ejec-col-hito" style="text-align:center;padding:6px;"><button class="btn-ico" onclick="abrirEjecSit('${escapeHtml(h.codHito)}')" title="Ver estado situacional"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button></td></tr>`; }); }
+    if(!hitos.length){ html+=`<tr class="ejec-primera">${ci}<td class="ejec-col-hito" colspan="3" style="color:var(--text-3);font-size:12px;">Sin hitos registrados.</td></tr>`; }
+    else { hitos.forEach((h,idx)=>{ html+=`<tr${idx===0?' class="ejec-primera"':''}>${idx===0?ci:''}<td class="ejec-col-hito ejec-hito-nombre">${escapeHtml(h.hito)||'—'}</td><td class="ejec-col-hito" style="white-space:nowrap;">${fmtMesAnio(h.fechaCump)}</td><td class="ejec-col-hito" style="text-align:center;padding:6px;"><button class="btn-ico" onclick="abrirEjecSit('${escapeHtml(h.codHito)}')" title="Ver estado situacional"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button></td></tr>`; }); }
   });
   tbody.innerHTML=html;
 }
@@ -577,18 +576,17 @@ function exportarXLSX(){
   const visibles=intervencionesFiltradas();
   if(!visibles.length){ alert('No hay intervenciones para exportar.'); return; }
 
-  const headers=['Intervención','CUI','Fase','Factores habilitantes','Riesgos','Instancia que debe actuar','Hito','Categoría de hito','Estado de cumplimiento','Fecha de cumplimiento'];
+  const headers=['Intervención','CUI','Fase','Factores habilitantes','Riesgos','Instancia que debe actuar','Hito','Categoría de hito','Fecha de cumplimiento'];
   const rows=[headers];
-  const merges=[];  // rangos de celdas a combinar
+  const merges=[];
 
-  // Construir filas y registrar merges
   visibles.forEach(interv=>{
     const hitos=hitosDeIntervencion(interv);
     const n=hitos.length||1;
-    const rIni=rows.length; // fila de inicio (0-based en la hoja, pero rows[0]=headers)
+    const rIni=rows.length;
 
     if(!hitos.length){
-      rows.push([interv.nombre,interv.cui,interv.fase,interv.factores,interv.riesgos,interv.instancia,'','','','']);
+      rows.push([interv.nombre,interv.cui,interv.fase,interv.factores,interv.riesgos,interv.instancia,'','','']);
     } else {
       hitos.forEach((h,idx)=>{
         rows.push([
@@ -598,21 +596,16 @@ function exportarXLSX(){
           idx===0?interv.factores:'',
           idx===0?interv.riesgos:'',
           idx===0?interv.instancia:'',
-          h.hito, h.categoria, h.estado, fmtMesAnio(h.fechaCump)
+          h.hito, h.categoria, fmtMesAnio(h.fechaCump)
         ]);
       });
-      // Registrar merges para columnas 0-5 si hay más de 1 hito
-      if(n>1){
-        for(let c=0;c<=5;c++){
-          merges.push({ s:{r:rIni,c}, e:{r:rIni+n-1,c} });
-        }
-      }
+      if(n>1){ for(let c=0;c<=5;c++) merges.push({ s:{r:rIni,c}, e:{r:rIni+n-1,c} }); }
     }
   });
 
   const ws=XLSX.utils.aoa_to_sheet(rows);
   ws['!merges']=merges;
-  ws['!cols']=[{wch:38},{wch:10},{wch:14},{wch:22},{wch:22},{wch:22},{wch:35},{wch:20},{wch:14},{wch:10}];
+  ws['!cols']=[{wch:38},{wch:10},{wch:14},{wch:22},{wch:22},{wch:22},{wch:40},{wch:22},{wch:12}];
 
   // Estilo encabezado
   const estHead={ font:{bold:true,color:{rgb:'FFFFFF'},sz:11}, fill:{fgColor:{rgb:'0055A5'}}, alignment:{horizontal:'center',vertical:'center',wrapText:true} };
@@ -665,7 +658,7 @@ function exportarPDF(){
     const n=hitos.length||1;
     const rIni=body.length;
     if(!hitos.length){
-      body.push([interv.nombre,interv.cui,interv.fase,interv.factores,interv.riesgos,interv.instancia,'','','','']);
+      body.push([interv.nombre,interv.cui,interv.fase,interv.factores,interv.riesgos,interv.instancia,'','','']);
     } else {
       hitos.forEach((h,idx)=>{
         body.push([
@@ -675,7 +668,7 @@ function exportarPDF(){
           idx===0?interv.factores:'__SPAN__',
           idx===0?interv.riesgos:'__SPAN__',
           idx===0?interv.instancia:'__SPAN__',
-          h.hito, h.categoria, h.estado, fmtMesAnio(h.fechaCump)
+          h.hito, h.categoria, fmtMesAnio(h.fechaCump)
         ]);
       });
       if(n>1) spanInfo.push({fila:rIni, span:n});
@@ -687,14 +680,14 @@ function exportarPDF(){
 
   doc.autoTable({
     startY:20,
-    head:[['Intervención','CUI','Fase','Factores habilitantes','Riesgos','Instancia que debe actuar','Hito','Categoría de hito','Estado','Fecha']],
+    head:[['Intervención','CUI','Fase','Factores habilitantes','Riesgos','Instancia que debe actuar','Hito','Categoría de hito','Fecha']],
     body: body,
     styles:{ fontSize:7, cellPadding:2.5, valign:'top', overflow:'linebreak', lineColor:[200,200,200], lineWidth:0.2 },
     headStyles:{ fillColor:AZUL, textColor:[255,255,255], fontStyle:'bold', halign:'center', valign:'middle', fontSize:7.5 },
     columnStyles:{
-      0:{cellWidth:38}, 1:{cellWidth:16}, 2:{cellWidth:18},
-      3:{cellWidth:26}, 4:{cellWidth:26}, 5:{cellWidth:26},
-      6:{cellWidth:50}, 7:{cellWidth:28}, 8:{cellWidth:22}, 9:{cellWidth:14}
+      0:{cellWidth:40}, 1:{cellWidth:16}, 2:{cellWidth:18},
+      3:{cellWidth:28}, 4:{cellWidth:28}, 5:{cellWidth:28},
+      6:{cellWidth:60}, 7:{cellWidth:30}, 8:{cellWidth:16}
     },
     alternateRowStyles:{ fillColor:BLANCO },
     willDrawCell(data){
@@ -711,21 +704,12 @@ function exportarPDF(){
         const fillCol = isFirst ? PLOMO : [244,245,246];
         doc.setFillColor(...fillCol);
         doc.rect(data.cell.x,data.cell.y,data.cell.width,data.cell.height,'F');
-        // Redibujar texto
         if(data.cell.raw!=='__SPAN__' && data.cell.text && data.cell.text.length){
           doc.setTextColor(26,26,26);
           doc.setFontSize(data.column.index===0?7.5:7);
           doc.setFont('helvetica', data.column.index===0?'bold':'normal');
           doc.text(data.cell.text, data.cell.x+data.cell.padding('left'), data.cell.y+data.cell.padding('top')+5, {maxWidth:data.cell.width-data.cell.padding('left')-data.cell.padding('right')});
         }
-      }
-      // Badge de estado: colorear texto
-      if(data.column.index===8 && data.cell.raw && data.cell.raw!=='__SPAN__'){
-        const estado=String(data.cell.raw);
-        const col = estado==='CUMPLIDO'?[12,102,71]: estado==='REPROGRAMADO'?[156,19,34]:[138,98,0];
-        doc.setTextColor(...col);
-        doc.setFontSize(7); doc.setFont('helvetica','bold');
-        doc.text(data.cell.text||[], data.cell.x+data.cell.padding('left'), data.cell.y+data.cell.padding('top')+5);
       }
     },
     margin:{left:10, right:10}
