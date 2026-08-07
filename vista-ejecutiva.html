@@ -296,6 +296,7 @@ const EI = { codInterno:0, cui:1, nombre:2, fase:3, factores:4, riesgos:5, insta
 let HITOS = [], CLASIF = {}, INTERNO_A_HITOS = {};
 let DEPTOS = {}, DEPTOS_LISTA = [];
 let INTERVENCIONES = [];
+let ULTIMO_CORTE = '';
 
 // Sets para cada filtro multi-select
 const eFSets = {
@@ -370,13 +371,38 @@ function deptosDe(codHito){ return DEPTOS[codHito]||[]; }
 
 function parseEstado(tsv) {
   const lineas = tsv.split('\n').filter(l=>l.trim()); HITOS=[];
+  let maxCorte=0; let maxCorteStr='';
   for (let i=1;i<lineas.length;i++){
     const c=lineas[i].split('\t'); const cod=(c[E.codHito]||'').trim(); if(!cod) continue; if(!CLASIF[cod]) continue;
     let estado=(c[E.estado]||'').trim().toUpperCase();
-    if(estado==='REPROGRAMADO') estado='EN PROCESO'; // reagrupación
+    if(estado==='REPROGRAMADO') estado='EN PROCESO';
+    const corteRaw=(c[E.corte]||'').trim();
+    // Parsear corte para comparar (formato dd/mm/yyyy o yyyy-mm-dd)
+    const pc=parseFechaCorte(corteRaw);
+    if(pc>maxCorte){ maxCorte=pc; maxCorteStr=corteRaw; }
     HITOS.push({ codHito:cod, hito:(c[E.hito]||'').trim(), nombre:(c[E.nombre]||'').trim(), cui:(c[E.cui]||'').trim(), categoria:(c[E.categoria]||'').trim(),
-      corte:(c[E.corte]||'').trim(), fechaCump:(c[E.fechaCump]||'').trim(), estado, avance:(c[E.avance]||'').trim(), situacional:(c[E.situacional]||'').trim() });
+      corte:corteRaw, fechaCump:(c[E.fechaCump]||'').trim(), estado, avance:(c[E.avance]||'').trim(), situacional:(c[E.situacional]||'').trim() });
   }
+  ULTIMO_CORTE=maxCorteStr;
+}
+
+function parseFechaCorte(s){
+  if(!s) return 0;
+  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m) return parseInt(m[3])*10000+parseInt(m[2])*100+parseInt(m[1]);
+  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return parseInt(m[1])*10000+parseInt(m[2])*100+parseInt(m[3]);
+  return 0;
+}
+
+function fmtCorte(s){
+  if(!s) return '—';
+  const MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m) return parseInt(m[1])+'-'+MESES[parseInt(m[2])-1]+'-'+String(m[3]).slice(-2);
+  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return parseInt(m[3])+'-'+MESES[parseInt(m[2])-1]+'-'+String(m[1]).slice(-2);
+  return s;
 }
 
 function parseIntervenciones(tsv){
@@ -392,7 +418,7 @@ function parseIntervenciones(tsv){
 function iniciar(){
   document.getElementById('loadingMsg').style.display = 'none';
   document.getElementById('tablaWrap').style.display  = 'block';
-  document.getElementById('ejecSemanaLabel').textContent = 'Semana de reporte: ' + semanaReporteTexto();
+  document.getElementById('ejecSemanaLabel').textContent = 'Último corte registrado: ' + fmtCorte(ULTIMO_CORTE);
   recalcEjec();
   aplicarFiltrosEjec();
 }
@@ -441,11 +467,6 @@ function fmtFechaConEmoji(fechaCump, estado){
   return emojiEstado(estado) + ' ' + fecha;
 }
 
-function semanaReporteTexto(){
-  const ini=inicioSemana(new Date()); const fin=new Date(ini); fin.setDate(fin.getDate()+6);
-  const fmt=d=>d.toLocaleDateString('es-PE',{day:'2-digit',month:'short'}); return fmt(ini)+' – '+fmt(fin);
-}
-function inicioSemana(fecha){ const f=new Date(fecha.getFullYear(),fecha.getMonth(),fecha.getDate()); const diff=(f.getDay()-4+7)%7; f.setDate(f.getDate()-diff); return f; }
 
 function uniqSort(arr){ return [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')); }
 function valoresUnicos(arr){ const s=new Set(); arr.forEach(v=>{ if(!v) return; v.split(';').forEach(p=>{ const t=p.trim(); if(t) s.add(t); }); }); return [...s].sort((a,b)=>a.localeCompare(b,'es')); }
@@ -831,9 +852,7 @@ function exportarPDFEjec(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a3' });
 
-  const hoy=new Date();
-  const MESES_PDF=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  const fechaCorte=hoy.getDate()+'-'+MESES_PDF[hoy.getMonth()]+'-'+String(hoy.getFullYear()).slice(-2);
+  const fechaCorte=fmtCorte(ULTIMO_CORTE);
   const filtroTexto=resumenFiltrosActivos();
 
   const pw=doc.internal.pageSize.getWidth();
@@ -904,7 +923,7 @@ function exportarPDFEjec(){
     startY: ALT_HEADER+2,
     tableWidth: ANCHO_UTIL,
     styles: { fontSize:12, cellPadding:3, valign:'top', overflow:'linebreak' },
-    headStyles: { fillColor:[0,85,165], textColor:255, fontStyle:'bold', halign:'center' },
+    headStyles: { fillColor:[0,85,165], textColor:255, fontStyle:'bold', halign:'center', fontSize:10 },
     columnStyles: colStyles,
     alternateRowStyles: { fillColor:[245,247,250] },
     margin: { top:ALT_HEADER+2, left:MARGIN, right:MARGIN, bottom:10 },
