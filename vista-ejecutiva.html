@@ -733,35 +733,90 @@ let _downEjecSit=false;
 document.getElementById('overlayEjecSit').addEventListener('mousedown',function(e){ _downEjecSit=(e.target===this); });
 document.getElementById('overlayEjecSit').addEventListener('click',    function(e){ if(e.target===this&&_downEjecSit) cerrarEjecSit(); _downEjecSit=false; });
 
-// ====== EXPORTAR XLSX ======
+// ====== RESUMEN DE FILTROS ACTIVOS ======
+function resumenFiltrosActivos(){
+  const partes=[];
+  const fVicem=document.getElementById('eFVicem').value;       if(fVicem) partes.push('Viceministerio: '+fVicem);
+  const fTipo =document.getElementById('eFTipo').value;        if(fTipo)  partes.push('Tipo: '+fTipo);
+  const fDepto=document.getElementById('eFDepto').value;       if(fDepto) partes.push('Depto.: '+fDepto);
+  const fCui  =document.getElementById('eFCui').value.trim();  if(fCui)   partes.push('CUI: '+fCui);
+  const fNombre=document.getElementById('eFNombre').value.trim(); if(fNombre) partes.push('Intervención: "'+fNombre+'"');
+  const fHito =document.getElementById('eFHito').value.trim(); if(fHito)  partes.push('Hito: "'+fHito+'"');
+  const fCat  =document.getElementById('eFCategoria').value;   if(fCat)   partes.push('Categoría: '+fCat);
+  if(eFSets.uei.size)      partes.push('U. Responsable: '+[...eFSets.uei].join(', '));
+  if(eFSets.mod.size)      partes.push('Modalidad: '+[...eFSets.mod].join(', '));
+  if(eFSets.fase.size)     partes.push('Fase: '+[...eFSets.fase].join(', '));
+  if(eFSets.factores.size) partes.push('Problemática: '+[...eFSets.factores].join(', '));
+  if(eFSets.riesgos.size)  partes.push('Riesgos: '+[...eFSets.riesgos].join(', '));
+  if(eFSets.instancia.size)partes.push('Actor resp.: '+[...eFSets.instancia].join(', '));
+  if(eEstadosActivos.size) partes.push('Estado: '+[...eEstadosActivos].join(', '));
+  if(eMesesSeleccion.size) partes.push('Meses: '+[...eMesesSeleccion].filter(m=>m!=='__sinfecha__').join(', '));
+  return partes.length ? 'Filtros aplicados: '+partes.join(' · ') : 'Sin filtros aplicados';
+}
+
+// ====== EXPORTAR XLSX (con celdas combinadas) ======
 function exportarXLSXEjec(){
   if(typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
   const visibles=intervencionesFiltradas();
   if(!visibles.length){ alert('No hay intervenciones para exportar con los filtros actuales.'); return; }
-  const headers=['Intervención','CUI','Departamento','Modalidad de Ejecución','Unidad Responsable','Problemática','Riesgos','Actor responsable','Hito','Fecha de cumplimiento'];
+
+  // Mismas columnas que el PDF:
+  // Intervención (nombre+UEI+CUI), Departamento, Modalidad, Problemática, Riesgos, Actor responsable, Hito, Fecha de cumplimiento
+  const headers=['Intervención (Unidad Responsable · CUI)','Departamento','Modalidad de Ejecución','Problemática','Riesgos','Actor responsable','Hito','Fecha de cumplimiento'];
   const rows=[headers];
+  const merges=[];
+  let fila=1; // fila 0 es encabezado
+
   visibles.forEach(interv=>{
     const hitos=hitosDeIntervencion(interv);
-    const cl=hitos.length?clasifDe(hitos[0]):{};
-    const depto=(DEPTOS[hitos[0]?.codHito]||[]).join(', ');
+    const hcl=hitos.length?clasifDe(hitos[0]):{};
+    const hdep=hitos.length?(DEPTOS[hitos[0].codHito]||[]).join(', '):'';
+    const intervTexto=interv.nombre+(hcl.uei?'\n'+hcl.uei:'')+(interv.cui?'\nCUI: '+interv.cui:'');
+    const n=hitos.length||1;
+
     if(!hitos.length){
-      rows.push([interv.nombre,interv.cui,depto,cl.modalidad||'',cl.uei||'',interv.factores,interv.riesgos,interv.instancia,'','']);
+      rows.push([intervTexto, hdep, hcl.modalidad||'', interv.factores, interv.riesgos, interv.instancia, '', '']);
+      fila++;
     } else {
       hitos.forEach((h,idx)=>{
-        const hcl=clasifDe(h); const hdep=(DEPTOS[h.codHito]||[]).join(', ');
         rows.push([
-          idx===0?interv.nombre:'', idx===0?interv.cui:'',
-          idx===0?hdep:'', idx===0?(hcl.modalidad||''):'', idx===0?(hcl.uei||''):'',
-          idx===0?interv.factores:'', idx===0?interv.riesgos:'', idx===0?interv.instancia:'',
-          h.hito, fmtMesAnio(h.fechaCump)
+          idx===0?intervTexto:'',
+          idx===0?hdep:'',
+          idx===0?(hcl.modalidad||''):'',
+          idx===0?interv.factores:'',
+          idx===0?interv.riesgos:'',
+          idx===0?interv.instancia:'',
+          h.hito,
+          fmtMesAnio(h.fechaCump)
         ]);
       });
+      // Combinar columnas de intervención (0–5) si hay más de 1 hito
+      if(n>1){
+        for(let c=0;c<=5;c++){
+          merges.push({s:{r:fila,c}, e:{r:fila+n-1,c}});
+        }
+      }
+      fila+=n;
     }
   });
+
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:40},{wch:12},{wch:18},{wch:22},{wch:26},{wch:24},{wch:24},{wch:24},{wch:35},{wch:14}];
+  ws['!merges']=merges;
+  ws['!cols']=[{wch:38},{wch:18},{wch:18},{wch:24},{wch:24},{wch:24},{wch:35},{wch:14}];
+
+  // Estilo encabezado
   const estHead={ font:{bold:true,color:{rgb:'FFFFFF'},sz:11}, fill:{fgColor:{rgb:'0055A5'}}, alignment:{horizontal:'center',vertical:'center',wrapText:true} };
   headers.forEach((_,ci)=>{ const ref=XLSX.utils.encode_cell({r:0,c:ci}); if(ws[ref]) ws[ref].s=estHead; });
+
+  // Estilo celdas combinadas (columnas 0–5): alineación top, wrap
+  const estInterv={ alignment:{vertical:'top',wrapText:true}, font:{sz:10} };
+  for(let r=1;r<rows.length;r++){
+    for(let c=0;c<=5;c++){
+      const ref=XLSX.utils.encode_cell({r,c});
+      if(ws[ref]) ws[ref].s=estInterv;
+    }
+  }
+
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Vista Ejecutiva');
   XLSX.writeFile(wb,'vista_ejecutiva_'+new Date().toISOString().slice(0,10)+'.xlsx');
@@ -779,26 +834,41 @@ function exportarPDFEjec(){
   const hoy=new Date();
   const MESES_PDF=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   const fechaCorte=hoy.getDate()+'-'+MESES_PDF[hoy.getMonth()]+'-'+String(hoy.getFullYear()).slice(-2);
+  const filtroTexto=resumenFiltrosActivos();
 
-  // A3 landscape: 420mm × 297mm. Márgenes left/right = 8mm cada uno → ancho útil = 404mm
   const pw=doc.internal.pageSize.getWidth();
   const MARGIN=8;
-  const ANCHO_UTIL=pw-(MARGIN*2); // ~404mm
+  const ANCHO_UTIL=pw-(MARGIN*2);
+
+  // El encabezado tiene 3 líneas: título, corte+filtros (puede ser largo → wrap manual)
+  // Altura fija del encabezado: 26mm
+  const ALT_HEADER=26;
 
   function dibujarEncabezado(){
     doc.setFillColor(200,16,46);
-    doc.rect(0,0,pw,22,'F');
+    doc.rect(0,0,pw,ALT_HEADER,'F');
     doc.setTextColor(255,255,255);
-    doc.setFontSize(16); doc.setFont('helvetica','bold');
-    doc.text('CARTERA PRIORIZADA MTC', pw/2, 10, {align:'center'});
-    doc.setFontSize(10); doc.setFont('helvetica','normal');
-    doc.text('VISTA EJECUTIVA \u2013 Corte: '+fechaCorte, pw/2, 17, {align:'center'});
+
+    // Línea 1: título grande
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text('CARTERA PRIORIZADA MTC', pw/2, 9, {align:'center'});
+
+    // Línea 2: corte
+    doc.setFontSize(8); doc.setFont('helvetica','normal');
+    doc.text('VISTA EJECUTIVA \u2013 Corte: '+fechaCorte, pw/2, 16, {align:'center'});
+
+    // Línea 3: filtros (puede ser largo, truncar si no cabe)
+    doc.setFontSize(7);
+    const maxAncho=pw-20;
+    const lineas=doc.splitTextToSize(filtroTexto, maxAncho);
+    doc.text(lineas[0], pw/2, 22, {align:'center'}); // solo primera línea para no salir del rect
+
     doc.setTextColor(0,0,0);
   }
+
   dibujarEncabezado();
 
   // Proporciones de columna (suman 1.0)
-  // Intervención(+UEI+CUI), Depto, Modalidad, Problemática, Riesgos, Actor resp., Hito, Fecha
   const PROPS=[0.22, 0.08, 0.09, 0.11, 0.11, 0.11, 0.20, 0.08];
   const ANCHOS=PROPS.map(p=>Math.round(p*ANCHO_UTIL*10)/10);
 
@@ -831,15 +901,19 @@ function exportarPDFEjec(){
   doc.autoTable({
     head: headers,
     body: body,
-    startY: 25,
+    startY: ALT_HEADER+2,
     tableWidth: ANCHO_UTIL,
     styles: { fontSize:12, cellPadding:3, valign:'top', overflow:'linebreak' },
     headStyles: { fillColor:[0,85,165], textColor:255, fontStyle:'bold', halign:'center' },
     columnStyles: colStyles,
     alternateRowStyles: { fillColor:[245,247,250] },
-    margin: { left:MARGIN, right:MARGIN },
+    margin: { top:ALT_HEADER+2, left:MARGIN, right:MARGIN, bottom:10 },
     didDrawPage: (data)=>{
+      // En TODAS las páginas redibujar encabezado (página 1 ya lo tiene, pero didDrawPage
+      // se llama antes de que autoTable empiece a pintar, así que en pág >1 lo dibujamos
+      // después del salto de página)
       if(data.pageNumber>1) dibujarEncabezado();
+      // Pie de página
       const ph=doc.internal.pageSize.getHeight();
       doc.setFontSize(8); doc.setTextColor(150);
       doc.text('Pág. '+data.pageNumber, pw-MARGIN, ph-4, {align:'right'});
