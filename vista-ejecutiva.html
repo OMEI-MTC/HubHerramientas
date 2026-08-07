@@ -95,14 +95,15 @@
   #tablaEjec tbody td.ejec-col-interv { background:#f4f5f6; border-bottom:1px solid #e2e4e7; vertical-align:top; }
   #tablaEjec tbody tr.ejec-primera td.ejec-col-interv { background:#e8eaed; border-top:2px solid #c4c8ce; }
   .ejec-nombre-interv { font-weight:700; font-size:13px; color:var(--text); line-height:1.35; }
-  .ejec-cui { font-size:11px; color:var(--text-3); margin-top:2px; }
-  /* Celdas de hito: fondo blanco */
-  #tablaEjec tbody td.ejec-col-hito { background:#fff; border-bottom:1px solid #eef0f3; vertical-align:middle; }
-  #tablaEjec tbody tr.ejec-primera td.ejec-col-hito { border-top:2px solid #c4c8ce; }
-  .ejec-hito-nombre { font-weight:600; font-size:13px; color:var(--text); }
+  .ejec-hito-nombre { font-weight:400; font-size:13px; color:var(--text); }
   #tablaEjec tbody tr:hover td.ejec-col-hito { background:#fafbfc; }
   .ejec-empty { text-align:center; padding:30px; color:var(--text-3); font-size:13px; }
   .ejec-uei-tag { font-size:11.5px; font-weight:700; color:var(--blue); margin-top:3px; margin-bottom:1px; }
+  .ejec-cui { font-size:11px; color:var(--text); margin-top:2px; }
+  /* Celdas de hito: fondo blanco */
+  #tablaEjec tbody td.ejec-col-hito { background:#fff; border-bottom:1px solid #eef0f3; vertical-align:middle; }
+  #tablaEjec tbody tr.ejec-primera td.ejec-col-hito { border-top:2px solid #c4c8ce; }
+
 </style>
 </head>
 <body>
@@ -239,13 +240,12 @@
         <table id="tablaEjec">
           <thead>
             <tr>
-              <th class="ejec-col-interv" style="width:24%">Intervención</th>
-              <th class="ejec-col-interv" style="width:6%">Fase</th>
-              <th class="ejec-col-interv" style="width:12%">Problemática</th>
-              <th class="ejec-col-interv" style="width:11%">Riesgos</th>
-              <th class="ejec-col-interv" style="width:11%">Actor responsable</th>
-              <th class="ejec-col-interv" style="width:10%">Estado Actual</th>
-              <th style="width:16%">Hito</th>
+              <th class="ejec-col-interv" style="width:26%">Intervención</th>
+              <th class="ejec-col-interv" style="width:7%">Fase</th>
+              <th class="ejec-col-interv" style="width:13%">Problemática</th>
+              <th class="ejec-col-interv" style="width:12%">Riesgos</th>
+              <th class="ejec-col-interv" style="width:12%">Actor responsable</th>
+              <th style="width:20%">Hito</th>
               <th style="width:8%">Fecha de Cumplimiento</th>
               <th style="width:2%"></th>
             </tr>
@@ -691,8 +691,7 @@ function renderEjecutiva(visibles){
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.fase)||'—'}</td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.factores)||'—'}</td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.riesgos)||'—'}</td>
-      <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.instancia)||'—'}</td>
-      <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.estadoActual)||'—'}</td>`;
+      <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.instancia)||'—'}</td>`;
     if(!hitos.length){
       html+=`<tr class="ejec-primera">${celdaInterv}<td class="ejec-col-hito" colspan="3" style="color:var(--text-3);font-size:12px;">Sin hitos registrados.</td></tr>`;
     } else {
@@ -739,14 +738,14 @@ function exportarXLSXEjec(){
   if(typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
   const visibles=intervencionesFiltradas();
   if(!visibles.length){ alert('No hay intervenciones para exportar con los filtros actuales.'); return; }
-  const headers=['Intervención','CUI','Departamento','Modalidad de Ejecución','Unidad Responsable','Problemática','Riesgos','Actor responsable','Estado Actual','Hito','Fecha de cumplimiento'];
+  const headers=['Intervención','CUI','Departamento','Modalidad de Ejecución','Unidad Responsable','Problemática','Riesgos','Actor responsable','Hito','Fecha de cumplimiento'];
   const rows=[headers];
   visibles.forEach(interv=>{
     const hitos=hitosDeIntervencion(interv);
     const cl=hitos.length?clasifDe(hitos[0]):{};
     const depto=(DEPTOS[hitos[0]?.codHito]||[]).join(', ');
     if(!hitos.length){
-      rows.push([interv.nombre,interv.cui,depto,cl.modalidad||'',cl.uei||'',interv.factores,interv.riesgos,interv.instancia,interv.estadoActual,'','']);
+      rows.push([interv.nombre,interv.cui,depto,cl.modalidad||'',cl.uei||'',interv.factores,interv.riesgos,interv.instancia,'','']);
     } else {
       hitos.forEach((h,idx)=>{
         const hcl=clasifDe(h); const hdep=(DEPTOS[h.codHito]||[]).join(', ');
@@ -754,14 +753,13 @@ function exportarXLSXEjec(){
           idx===0?interv.nombre:'', idx===0?interv.cui:'',
           idx===0?hdep:'', idx===0?(hcl.modalidad||''):'', idx===0?(hcl.uei||''):'',
           idx===0?interv.factores:'', idx===0?interv.riesgos:'', idx===0?interv.instancia:'',
-          idx===0?interv.estadoActual:'',
           h.hito, fmtMesAnio(h.fechaCump)
         ]);
       });
     }
   });
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:40},{wch:12},{wch:18},{wch:22},{wch:26},{wch:24},{wch:24},{wch:24},{wch:20},{wch:35},{wch:14}];
+  ws['!cols']=[{wch:40},{wch:12},{wch:18},{wch:22},{wch:26},{wch:24},{wch:24},{wch:24},{wch:35},{wch:14}];
   const estHead={ font:{bold:true,color:{rgb:'FFFFFF'},sz:11}, fill:{fgColor:{rgb:'0055A5'}}, alignment:{horizontal:'center',vertical:'center',wrapText:true} };
   headers.forEach((_,ci)=>{ const ref=XLSX.utils.encode_cell({r:0,c:ci}); if(ws[ref]) ws[ref].s=estHead; });
   const wb=XLSX.utils.book_new();
@@ -799,30 +797,29 @@ function exportarPDFEjec(){
   }
   dibujarEncabezado();
 
-  // Proporciones de columna (deben sumar 1.0)
-  // Intervención(+UEI), CUI, Depto, Modalidad, Problemática, Riesgos, Actor resp., Estado Actual, Hito, Fecha
-  const PROPS=[0.16, 0.05, 0.07, 0.08, 0.09, 0.09, 0.09, 0.10, 0.17, 0.10];
+  // Proporciones de columna (suman 1.0)
+  // Intervención(+UEI+CUI), Depto, Modalidad, Problemática, Riesgos, Actor resp., Hito, Fecha
+  const PROPS=[0.22, 0.08, 0.09, 0.11, 0.11, 0.11, 0.20, 0.08];
   const ANCHOS=PROPS.map(p=>Math.round(p*ANCHO_UTIL*10)/10);
 
-  const headers=[['Intervención\n(Unidad Responsable)','CUI','Departamento','Modalidad','Problemática','Riesgos','Actor responsable','Estado Actual','Hito','Fecha cumpl.']];
+  const headers=[['Intervención\n(Unidad Responsable · CUI)','Departamento','Modalidad','Problemática','Riesgos','Actor responsable','Hito','Fecha cumpl.']];
   const body=[];
   visibles.forEach(interv=>{
     const hitos=hitosDeIntervencion(interv);
     if(!hitos.length){
       const cl=clasifDe({codHito:''});
-      body.push([interv.nombre+'\n'+cl.uei,interv.cui,'',cl.modalidad||'',interv.factores,interv.riesgos,interv.instancia,interv.estadoActual,'','']);
+      const intervTexto=interv.nombre+(cl.uei?'\n'+cl.uei:'')+(interv.cui?'\nCUI: '+interv.cui:'');
+      body.push([intervTexto,'',cl.modalidad||'',interv.factores,interv.riesgos,interv.instancia,'','']);
     } else {
       hitos.forEach((h,idx)=>{
         const hcl=clasifDe(h);
         const hdep=(DEPTOS[h.codHito]||[]).join(', ');
-        const intervTexto=interv.nombre+(hcl.uei?'\n'+hcl.uei:'');
-        const fechaConEmoji=(h.estado==='CUMPLIDO'?'✅ ':'⚪ ')+fmtMesAnio(h.fechaCump);
+        const intervTexto=interv.nombre+(hcl.uei?'\n'+hcl.uei:'')+(interv.cui?'\nCUI: '+interv.cui:'');
         body.push([
-          idx===0?intervTexto:'', idx===0?interv.cui:'',
+          idx===0?intervTexto:'',
           idx===0?hdep:'', idx===0?(hcl.modalidad||''):'',
           idx===0?interv.factores:'', idx===0?interv.riesgos:'', idx===0?interv.instancia:'',
-          idx===0?interv.estadoActual:'',
-          h.hito, fechaConEmoji
+          h.hito, fmtMesAnio(h.fechaCump)
         ]);
       });
     }
@@ -836,7 +833,7 @@ function exportarPDFEjec(){
     body: body,
     startY: 25,
     tableWidth: ANCHO_UTIL,
-    styles: { fontSize:7, cellPadding:2, valign:'top', overflow:'linebreak' },
+    styles: { fontSize:12, cellPadding:3, valign:'top', overflow:'linebreak' },
     headStyles: { fillColor:[0,85,165], textColor:255, fontStyle:'bold', halign:'center' },
     columnStyles: colStyles,
     alternateRowStyles: { fillColor:[245,247,250] },
