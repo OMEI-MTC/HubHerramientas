@@ -102,6 +102,7 @@
   .ejec-hito-nombre { font-weight:600; font-size:13px; color:var(--text); }
   #tablaEjec tbody tr:hover td.ejec-col-hito { background:#fafbfc; }
   .ejec-empty { text-align:center; padding:30px; color:var(--text-3); font-size:13px; }
+  .ejec-uei-tag { font-size:11.5px; font-weight:700; color:var(--blue); margin-top:3px; margin-bottom:1px; }
 </style>
 </head>
 <body>
@@ -238,16 +239,15 @@
         <table id="tablaEjec">
           <thead>
             <tr>
-              <th class="ejec-col-interv" style="width:20%">Intervención</th>
-              <th class="ejec-col-interv" style="width:8%">Unidad Responsable</th>
+              <th class="ejec-col-interv" style="width:24%">Intervención</th>
               <th class="ejec-col-interv" style="width:6%">Fase</th>
-              <th class="ejec-col-interv" style="width:10%">Problemática</th>
-              <th class="ejec-col-interv" style="width:10%">Riesgos</th>
-              <th class="ejec-col-interv" style="width:10%">Actor responsable</th>
-              <th class="ejec-col-interv" style="width:9%">Estado Actual</th>
-              <th style="width:15%">Hito</th>
+              <th class="ejec-col-interv" style="width:12%">Problemática</th>
+              <th class="ejec-col-interv" style="width:11%">Riesgos</th>
+              <th class="ejec-col-interv" style="width:11%">Actor responsable</th>
+              <th class="ejec-col-interv" style="width:10%">Estado Actual</th>
+              <th style="width:16%">Hito</th>
               <th style="width:8%">Fecha de Cumplimiento</th>
-              <th style="width:4%"></th>
+              <th style="width:2%"></th>
             </tr>
           </thead>
           <tbody id="tbodyEjec"></tbody>
@@ -684,10 +684,10 @@ function renderEjecutiva(visibles){
     const celdaInterv=`
       <td class="ejec-col-interv" rowspan="${nHitos}">
         <div class="ejec-nombre-interv">${escapeHtml(interv.nombre)||'—'}</div>
+        ${uei?`<div class="ejec-uei-tag">${escapeHtml(uei)}</div>`:''}
         ${modalidad?`<div class="ejec-cui">${escapeHtml(modalidad)}</div>`:''}
         ${interv.cui?`<div class="ejec-cui">CUI: ${escapeHtml(interv.cui)}</div>`:''}
       </td>
-      <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(uei)}</td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.fase)||'—'}</td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.factores)||'—'}</td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.riesgos)||'—'}</td>
@@ -778,74 +778,75 @@ function exportarPDFEjec(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a3' });
 
-  // Fecha de corte para el encabezado
   const hoy=new Date();
   const MESES_PDF=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   const fechaCorte=hoy.getDate()+'-'+MESES_PDF[hoy.getMonth()]+'-'+String(hoy.getFullYear()).slice(-2);
 
-  // ---- Encabezado ----
+  // A3 landscape: 420mm × 297mm. Márgenes left/right = 8mm cada uno → ancho útil = 404mm
   const pw=doc.internal.pageSize.getWidth();
-  doc.setFillColor(200,16,46); // rojo MTC
-  doc.rect(0,0,pw,22,'F');
-  doc.setTextColor(255,255,255);
-  doc.setFontSize(16); doc.setFont('helvetica','bold');
-  doc.text('CARTERA PRIORIZADA MTC', pw/2, 10, {align:'center'});
-  doc.setFontSize(10); doc.setFont('helvetica','normal');
-  doc.text('VISTA EJECUTIVA \u2013 Corte: '+fechaCorte, pw/2, 17, {align:'center'});
-  doc.setTextColor(0,0,0);
+  const MARGIN=8;
+  const ANCHO_UTIL=pw-(MARGIN*2); // ~404mm
 
-  // ---- Datos ----
-  const headers=[['Intervención','CUI','Departamento','Modalidad','Unidad Responsable','Problemática','Riesgos','Actor responsable','Estado Actual','Hito','Fecha cumpl.']];
+  function dibujarEncabezado(){
+    doc.setFillColor(200,16,46);
+    doc.rect(0,0,pw,22,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(16); doc.setFont('helvetica','bold');
+    doc.text('CARTERA PRIORIZADA MTC', pw/2, 10, {align:'center'});
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text('VISTA EJECUTIVA \u2013 Corte: '+fechaCorte, pw/2, 17, {align:'center'});
+    doc.setTextColor(0,0,0);
+  }
+  dibujarEncabezado();
+
+  // Proporciones de columna (deben sumar 1.0)
+  // Intervención(+UEI), CUI, Depto, Modalidad, Problemática, Riesgos, Actor resp., Estado Actual, Hito, Fecha
+  const PROPS=[0.16, 0.05, 0.07, 0.08, 0.09, 0.09, 0.09, 0.10, 0.17, 0.10];
+  const ANCHOS=PROPS.map(p=>Math.round(p*ANCHO_UTIL*10)/10);
+
+  const headers=[['Intervención\n(Unidad Responsable)','CUI','Departamento','Modalidad','Problemática','Riesgos','Actor responsable','Estado Actual','Hito','Fecha cumpl.']];
   const body=[];
   visibles.forEach(interv=>{
     const hitos=hitosDeIntervencion(interv);
-    const cl=hitos.length?clasifDe(hitos[0]):{};
     if(!hitos.length){
-      body.push([interv.nombre,interv.cui,'',cl.modalidad||'',cl.uei||'',interv.factores,interv.riesgos,interv.instancia,interv.estadoActual,'','']);
+      const cl=clasifDe({codHito:''});
+      body.push([interv.nombre+'\n'+cl.uei,interv.cui,'',cl.modalidad||'',interv.factores,interv.riesgos,interv.instancia,interv.estadoActual,'','']);
     } else {
       hitos.forEach((h,idx)=>{
-        const hcl=clasifDe(h); const hdep=(DEPTOS[h.codHito]||[]).join(', ');
+        const hcl=clasifDe(h);
+        const hdep=(DEPTOS[h.codHito]||[]).join(', ');
+        const intervTexto=interv.nombre+(hcl.uei?'\n'+hcl.uei:'');
+        const fechaConEmoji=(h.estado==='CUMPLIDO'?'✅ ':'⚪ ')+fmtMesAnio(h.fechaCump);
         body.push([
-          idx===0?interv.nombre:'', idx===0?interv.cui:'',
-          idx===0?hdep:'', idx===0?(hcl.modalidad||''):'', idx===0?(hcl.uei||''):'',
+          idx===0?intervTexto:'', idx===0?interv.cui:'',
+          idx===0?hdep:'', idx===0?(hcl.modalidad||''):'',
           idx===0?interv.factores:'', idx===0?interv.riesgos:'', idx===0?interv.instancia:'',
           idx===0?interv.estadoActual:'',
-          h.hito, fmtMesAnio(h.fechaCump)
+          h.hito, fechaConEmoji
         ]);
       });
     }
   });
 
+  const colStyles={};
+  ANCHOS.forEach((w,i)=>{ colStyles[i]={cellWidth:w}; });
+
   doc.autoTable({
     head: headers,
     body: body,
     startY: 25,
+    tableWidth: ANCHO_UTIL,
     styles: { fontSize:7, cellPadding:2, valign:'top', overflow:'linebreak' },
     headStyles: { fillColor:[0,85,165], textColor:255, fontStyle:'bold', halign:'center' },
-    columnStyles: {
-      0:{cellWidth:40}, 1:{cellWidth:16}, 2:{cellWidth:20}, 3:{cellWidth:22},
-      4:{cellWidth:28}, 5:{cellWidth:22}, 6:{cellWidth:22}, 7:{cellWidth:22},
-      8:{cellWidth:22}, 9:{cellWidth:38}, 10:{cellWidth:16}
-    },
+    columnStyles: colStyles,
     alternateRowStyles: { fillColor:[245,247,250] },
-    margin: { left:8, right:8 },
+    margin: { left:MARGIN, right:MARGIN },
     didDrawPage: (data)=>{
-      // Repetir encabezado en páginas siguientes
-      if(data.pageNumber>1){
-        doc.setFillColor(200,16,46);
-        doc.rect(0,0,pw,22,'F');
-        doc.setTextColor(255,255,255);
-        doc.setFontSize(16); doc.setFont('helvetica','bold');
-        doc.text('CARTERA PRIORIZADA MTC', pw/2, 10, {align:'center'});
-        doc.setFontSize(10); doc.setFont('helvetica','normal');
-        doc.text('VISTA EJECUTIVA \u2013 Corte: '+fechaCorte, pw/2, 17, {align:'center'});
-        doc.setTextColor(0,0,0);
-      }
-      // Pie de página
+      if(data.pageNumber>1) dibujarEncabezado();
       const ph=doc.internal.pageSize.getHeight();
       doc.setFontSize(8); doc.setTextColor(150);
-      doc.text('Pág. '+data.pageNumber, pw-12, ph-5);
-      doc.text('OGAME · MTC', 8, ph-5);
+      doc.text('Pág. '+data.pageNumber, pw-MARGIN, ph-4, {align:'right'});
+      doc.text('OGAME · MTC', MARGIN, ph-4);
       doc.setTextColor(0,0,0);
     }
   });
