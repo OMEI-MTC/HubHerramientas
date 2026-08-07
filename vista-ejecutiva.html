@@ -101,7 +101,7 @@
   .ejec-uei-tag { font-size:11.5px; font-weight:700; color:var(--blue); margin-top:3px; margin-bottom:1px; }
   .ejec-cui { font-size:11px; color:var(--text); margin-top:2px; }
   /* Celdas de hito: fondo blanco */
-  #tablaEjec tbody td.ejec-col-hito { background:#fff; border-bottom:1px solid #eef0f3; vertical-align:middle; }
+  #tablaEjec tbody td.ejec-col-hito { background:#fff; border-bottom:1px solid #eef0f3; vertical-align:top; padding:8px 12px; }
   #tablaEjec tbody tr.ejec-primera td.ejec-col-hito { border-top:2px solid #c4c8ce; }
 
 </style>
@@ -869,7 +869,7 @@ function exportarPDFEjec(){
     doc.setTextColor(255,255,255);
 
     // Línea 1: título grande
-    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.setFontSize(11); doc.setFont('helvetica','bold');
     doc.text('CARTERA PRIORIZADA MTC', pw/2, 9, {align:'center'});
 
     // Línea 2: corte
