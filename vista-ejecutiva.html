@@ -415,7 +415,21 @@ function parseIntervenciones(tsv){
   }
 }
 
+function filtrarIntervencionesPorEstado(){
+  // Construir set de codInterno que tienen al menos un hito en la hoja Estado
+  const codsConEstado = new Set(HITOS.map(h=>h.codInterno).filter(Boolean));
+  // También buscar codInterno desde INTERNO_A_HITOS inverso: hito → interno
+  // HITOS no tiene codInterno directamente; lo sacamos de INTERNO_A_HITOS
+  const codsConHitos = new Set();
+  Object.entries(INTERNO_A_HITOS).forEach(([interno, hitos])=>{
+    if(hitos.some(codHito=> HITOS.find(h=>h.codHito===codHito)))
+      codsConHitos.add(interno);
+  });
+  INTERVENCIONES = INTERVENCIONES.filter(i=> codsConHitos.has(i.codInterno));
+}
+
 function iniciar(){
+  filtrarIntervencionesPorEstado();
   document.getElementById('loadingMsg').style.display = 'none';
   document.getElementById('tablaWrap').style.display  = 'block';
   document.getElementById('ejecSemanaLabel').textContent = 'Último corte registrado: ' + fmtCorte(ULTIMO_CORTE);
@@ -432,7 +446,7 @@ function fmtAvance(raw){ const n=avancePct(raw); if(isNaN(n)) return '—'; cons
 const MESES_ABR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
 function fmtMesAnio(s){
-  if(!s) return '—'; s=String(s).trim();
+  if(!s) return 'S/D'; s=String(s).trim();
   let mes, anio;
   let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if(m){ mes=parseInt(m[2],10); anio=m[3]; }
@@ -458,13 +472,12 @@ function badgeEstado(est){
 }
 
 function emojiEstado(est){
-  if(est==='CUMPLIDO')   return '✅';
-  return '⚪';
+  if(est==='CUMPLIDO') return '✅ ';
+  return '';
 }
 
 function fmtFechaConEmoji(fechaCump, estado){
-  const fecha = fmtMesAnio(fechaCump);
-  return emojiEstado(estado) + ' ' + fecha;
+  return emojiEstado(estado) + fmtMesAnio(fechaCump);
 }
 
 
