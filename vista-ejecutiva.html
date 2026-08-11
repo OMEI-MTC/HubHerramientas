@@ -149,8 +149,8 @@
         <!-- GRUPO INTERVENCIONES -->
         <div class="ejec-filtros-grupo" style="margin-top:14px;">
           <span class="ejec-grupo-tit">Intervenciones</span>
-          <!-- Fila 1 -->
-          <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
+          <!-- Fila 1: 5 columnas -->
+          <div class="filtros-3col" style="grid-template-columns:repeat(5,1fr);">
             <div class="field"><label>Viceministerio</label><select id="eFVicem" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
             <div class="field"><label>Unidad Responsable</label>
               <div class="meses-dropdown" id="eFUeiPanel">
@@ -159,30 +159,42 @@
               </div>
             </div>
             <div class="field"><label>Tipo de infraestructura</label><select id="eFTipo" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
+            <div class="field"><label style="color:var(--blue);font-weight:800;">Discurso de 28 de julio</label>
+              <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-weight:400;font-size:13px;cursor:pointer;">
+                <input type="checkbox" id="eFDiscurso" onchange="onFiltroEjec()" style="width:auto;accent-color:var(--blue);">
+                Solo mencionadas
+              </label>
+            </div>
+            <div class="field"><label style="font-weight:800;">Destacadas</label>
+              <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-weight:400;font-size:13px;cursor:pointer;">
+                <input type="checkbox" id="eFSoloPriorizadas" onchange="onFiltroEjec()" style="width:auto;accent-color:var(--red);">
+                Solo priorizadas
+              </label>
+            </div>
+          </div>
+          <!-- Fila 2: 5 columnas -->
+          <div class="filtros-3col" style="grid-template-columns:repeat(5,1fr);">
+            <div class="field"><label>Departamento</label><select id="eFDepto" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
+            <div class="field"><label>CUI</label><input type="text" id="eFCui" list="eFCuiList" placeholder="Escribe o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFCuiList"></datalist></div>
+            <div class="field"><label>Nombre de la Intervención</label><input type="text" id="eFNombre" list="eFNombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFNombreList"></datalist></div>
             <div class="field"><label>Modalidad de Ejecución</label>
               <div class="meses-dropdown" id="eFModPanel">
                 <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFModPanel')"><span id="eFModLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
                 <div class="meses-lista" id="eFModLista"></div>
               </div>
             </div>
-          </div>
-          <!-- Fila 2 -->
-          <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
-            <div class="field"><label>Departamento</label><select id="eFDepto" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
-            <div class="field"><label>CUI</label><input type="text" id="eFCui" list="eFCuiList" placeholder="Escribe o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFCuiList"></datalist></div>
-            <div class="field"><label>Nombre de la Intervención</label><input type="text" id="eFNombre" list="eFNombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFNombreList"></datalist></div>
             <div class="field"><label>Fase de la Intervención</label>
               <div class="meses-dropdown" id="eFFasePanel">
-                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFFasePanel')"><span id="eFFaseLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFFasePanel')"><span id="eFFactoresLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
                 <div class="meses-lista" id="eFFaseLista"></div>
               </div>
             </div>
           </div>
-          <!-- Fila 3 -->
-          <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr);">
+          <!-- Fila 3: 3 columnas (resto vacío) -->
+          <div class="filtros-3col" style="grid-template-columns:repeat(5,1fr);">
             <div class="field"><label>Problemática</label>
               <div class="meses-dropdown" id="eFFactoresPanel">
-                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFFactoresPanel')"><span id="eFFactoresLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFFactoresPanel')"><span id="eFFactoresLabel2">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
                 <div class="meses-lista" id="eFFactoresLista"></div>
               </div>
             </div>
@@ -199,6 +211,7 @@
               </div>
             </div>
             <div class="field"></div>
+            <div class="field"></div>
           </div>
         </div>
 
@@ -207,7 +220,7 @@
         <!-- GRUPO HITOS -->
         <div class="ejec-filtros-grupo">
           <span class="ejec-grupo-tit">Hitos</span>
-          <div class="filtros-3col" style="grid-template-columns:repeat(4,1fr); align-items:start;">
+          <div class="filtros-3col" style="grid-template-columns:repeat(5,1fr); align-items:start;">
             <div class="field"><label>Hito</label><input type="text" id="eFHito" list="eFHitoList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFHitoList"></datalist></div>
             <div class="field"><label>Categoría de hito</label><select id="eFCategoria" onchange="onFiltroEjec()"><option value="">Todas</option></select></div>
             <div class="field"><label>Estado de cumplimiento del hito</label>
@@ -225,6 +238,7 @@
                 <div class="meses-lista" id="eMesesLista"></div>
               </div>
             </div>
+            <div class="field"></div>
           </div>
         </div>
 
@@ -252,12 +266,13 @@
         <table id="tablaEjec">
           <thead>
             <tr>
-              <th class="ejec-col-interv" style="width:26%">Intervención</th>
-              <th class="ejec-col-interv" style="width:7%">Fase</th>
-              <th class="ejec-col-interv" style="width:13%">Problemática</th>
-              <th class="ejec-col-interv" style="width:12%">Riesgos</th>
-              <th class="ejec-col-interv" style="width:12%">Responsable del destrabe</th>
-              <th style="width:20%">Hito</th>
+              <th class="ejec-col-interv" style="width:18%">Intervención</th>
+              <th class="ejec-col-interv" style="width:5%;text-align:center;">Priorizar</th>
+              <th class="ejec-col-interv" style="width:6%">Fase</th>
+              <th class="ejec-col-interv" style="width:12%">Problemática</th>
+              <th class="ejec-col-interv" style="width:11%">Riesgos</th>
+              <th class="ejec-col-interv" style="width:11%">Responsable del destrabe</th>
+              <th style="width:27%">Hito</th>
               <th style="width:8%">Fecha de Cumplimiento</th>
               <th style="width:2%"></th>
             </tr>
@@ -576,7 +591,9 @@ function hitosDeIntervencion(interv){
 
 function intervencionesFiltradas(){
   const fNombre=document.getElementById('eFNombre').value.trim().toLowerCase();
+  const soloPriorizadas=document.getElementById('eFSoloPriorizadas').checked;
   const resultado = INTERVENCIONES.filter(interv=>{
+    if(soloPriorizadas && !interv.priorizado) return false;
     if(fNombre && !interv.nombre.toLowerCase().includes(fNombre)) return false;
     if(eFSets.fase.size>0     && !eFSets.fase.has(interv.fase))         return false;
     if(eFSets.factores.size>0 && !eFSets.factores.has(interv.factores)) return false;
@@ -584,7 +601,6 @@ function intervencionesFiltradas(){
     if(!campoContieneAlguno(interv.instancia, eFSets.instancia))        return false;
     return hitosDeIntervencion(interv).length > 0;
   });
-  // Priorizadas al tope
   return resultado.sort((a,b)=> (b.priorizado?1:0)-(a.priorizado?1:0));
 }
 
@@ -713,6 +729,7 @@ function aplicarFiltrosEjec(){
 
 function limpiarFiltrosEjec(){
   ['eFVicem','eFTipo','eFDepto','eFCui','eFNombre','eFHito','eFCategoria'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['eFDiscurso','eFSoloPriorizadas'].forEach(id=>{ const el=document.getElementById(id); if(el) el.checked=false; });
   Object.values(eFSets).forEach(s=>s.clear());
   eEstadosActivos.clear(); eMesesSeleccion.clear();
   document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
@@ -739,14 +756,13 @@ function renderEjecutiva(visibles){
         ${uei?`<div class="ejec-uei-tag">${escapeHtml(uei)}</div>`:''}
         ${modalidad?`<div class="ejec-cui">${escapeHtml(modalidad)}</div>`:''}
         ${interv.cui?`<div class="ejec-cui">CUI: ${escapeHtml(interv.cui)}</div>`:''}
-        <div class="prio-wrap">
-          <span class="prio-star">${interv.priorizado?'⭐':''}</span>
-          <label class="prio-toggle" title="Priorizar intervención">
-            <input type="checkbox" ${interv.priorizado?'checked':''} onchange="guardarPrioridad('${escapeHtml(interv.codInterno)}',this.checked,this)">
-            <span class="prio-slider"></span>
-          </label>
-          <span class="prio-label">${interv.priorizado?'Priorizada':'Priorizar'}</span>
-        </div>
+      </td>
+      <td class="ejec-col-interv" rowspan="${nHitos}" style="text-align:center;vertical-align:middle;">
+        ${interv.priorizado?'<div style="font-size:16px;margin-bottom:4px;">⭐</div>':''}
+        <label class="prio-toggle" title="Priorizar intervención">
+          <input type="checkbox" ${interv.priorizado?'checked':''} onchange="guardarPrioridad('${escapeHtml(interv.codInterno)}',this.checked,this)">
+          <span class="prio-slider"></span>
+        </label>
       </td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.fase)||'—'}</td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.factores)||'—'}</td>
@@ -1007,11 +1023,16 @@ function exportarPDFEjec(){
 // ====== PRIORIDAD ======
 async function guardarPrioridad(codInterno, priorizado, checkbox){
   // Feedback visual inmediato
-  const wrap  = checkbox.closest('.prio-wrap');
-  const star  = wrap.querySelector('.prio-star');
-  const label = wrap.querySelector('.prio-label');
-  star.textContent  = priorizado ? '⭐' : '';
-  label.textContent = priorizado ? 'Priorizada' : 'Priorizar';
+  const td   = checkbox.closest('td');
+  let star   = td.querySelector('div[style*="font-size:16px"]');
+  if(priorizado && !star){
+    star = document.createElement('div');
+    star.style.cssText = 'font-size:16px;margin-bottom:4px;';
+    star.textContent = '⭐';
+    td.insertBefore(star, td.querySelector('label'));
+  } else if(!priorizado && star){
+    star.remove();
+  }
   checkbox.disabled = true;
 
   // Actualizar en memoria
@@ -1026,17 +1047,14 @@ async function guardarPrioridad(codInterno, priorizado, checkbox){
     });
     const data = await res.json();
     if(!data.ok){
-      // Revertir si falla
-      checkbox.checked  = !priorizado;
-      star.textContent  = priorizado ? '' : '⭐';
-      label.textContent = priorizado ? 'Priorizar' : 'Priorizada';
+      checkbox.checked = !priorizado;
       if(interv) interv.priorizado = !priorizado;
+      if(priorizado && star) star.remove();
+      else if(!priorizado){ const s=document.createElement('div'); s.style.cssText='font-size:16px;margin-bottom:4px;'; s.textContent='⭐'; td.insertBefore(s,td.querySelector('label')); }
       alert('No se pudo guardar: ' + data.mensaje);
     }
   } catch(e){
-    checkbox.checked  = !priorizado;
-    star.textContent  = priorizado ? '' : '⭐';
-    label.textContent = priorizado ? 'Priorizar' : 'Priorizada';
+    checkbox.checked = !priorizado;
     if(interv) interv.priorizado = !priorizado;
     alert('Error de conexión al guardar la prioridad.');
   } finally {
