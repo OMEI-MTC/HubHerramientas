@@ -758,8 +758,7 @@ function renderEjecutiva(visibles){
         ${interv.cui?`<div class="ejec-cui">CUI: ${escapeHtml(interv.cui)}</div>`:''}
       </td>
       <td class="ejec-col-interv" rowspan="${nHitos}" style="text-align:center;vertical-align:middle;">
-        ${interv.priorizado?'<div style="font-size:16px;margin-bottom:4px;">⭐</div>':''}
-        <label class="prio-toggle" title="Priorizar intervención">
+        <label class="prio-toggle" title="${interv.priorizado?'Quitar prioridad':'Priorizar intervención'}">
           <input type="checkbox" ${interv.priorizado?'checked':''} onchange="guardarPrioridad('${escapeHtml(interv.codInterno)}',this.checked,this)">
           <span class="prio-slider"></span>
         </label>
@@ -1022,20 +1021,8 @@ function exportarPDFEjec(){
 
 // ====== PRIORIDAD ======
 async function guardarPrioridad(codInterno, priorizado, checkbox){
-  // Feedback visual inmediato
-  const td   = checkbox.closest('td');
-  let star   = td.querySelector('div[style*="font-size:16px"]');
-  if(priorizado && !star){
-    star = document.createElement('div');
-    star.style.cssText = 'font-size:16px;margin-bottom:4px;';
-    star.textContent = '⭐';
-    td.insertBefore(star, td.querySelector('label'));
-  } else if(!priorizado && star){
-    star.remove();
-  }
   checkbox.disabled = true;
 
-  // Actualizar en memoria
   const interv = INTERVENCIONES.find(i=>i.codInterno===codInterno);
   if(interv) interv.priorizado = priorizado;
 
@@ -1049,8 +1036,6 @@ async function guardarPrioridad(codInterno, priorizado, checkbox){
     if(!data.ok){
       checkbox.checked = !priorizado;
       if(interv) interv.priorizado = !priorizado;
-      if(priorizado && star) star.remove();
-      else if(!priorizado){ const s=document.createElement('div'); s.style.cssText='font-size:16px;margin-bottom:4px;'; s.textContent='⭐'; td.insertBefore(s,td.querySelector('label')); }
       alert('No se pudo guardar: ' + data.mensaje);
     }
   } catch(e){
