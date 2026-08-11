@@ -90,20 +90,25 @@
   /* Barra meta */
   .ejec-meta-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
   .ejec-meta-bar .ejec-contador { margin-bottom:0; }
-  /* Columnas de intervención: fondo plomo neutro */
-  #tablaEjec thead th.ejec-col-interv { background:#e8eaed; color:var(--text); border-bottom:2px solid #c4c8ce; }
-  #tablaEjec tbody td.ejec-col-interv { background:#f4f5f6; border-bottom:1px solid #e2e4e7; vertical-align:top; }
-  #tablaEjec tbody tr.ejec-primera td.ejec-col-interv { background:#e8eaed; border-top:2px solid #c4c8ce; }
-  .ejec-nombre-interv { font-weight:700; font-size:13px; color:var(--text); line-height:1.35; }
+  /* Columnas de intervención: fondo azul muy suave */
+  #tablaEjec thead th.ejec-col-interv { background:#dce8f7; color:var(--blue-dk); border-bottom:2px solid #b3cde8; border-right:1px solid #b3cde8; }
+  #tablaEjec thead th:not(.ejec-col-interv) { border-right:1px solid var(--border); }
+  #tablaEjec tbody td.ejec-col-interv { background:#eef4fc; border-bottom:1px solid #d0e2f4; border-right:1px solid #d0e2f4; vertical-align:top; }
+  #tablaEjec tbody tr.ejec-primera td.ejec-col-interv { background:#e4eff9; border-top:2px solid #b3cde8; }
+  #tablaEjec tbody td.ejec-col-hito { background:#fff; border-bottom:1px solid #eef0f3; border-right:1px solid #eef0f3; vertical-align:top; padding:8px 12px; }
+  #tablaEjec tbody tr.ejec-primera td.ejec-col-hito { border-top:2px solid #b3cde8; }
+  #tablaEjec tbody tr:hover td.ejec-col-hito { background:#f7f9ff; }
+  #tablaEjec tbody tr:hover td.ejec-col-interv { background:#e0ecf8; }
+
+  .ejec-nombre-interv { font-weight:700; font-size:13px; color:#003F7D; line-height:1.35; }
   .ejec-hito-nombre { font-weight:400; font-size:13px; color:var(--text); }
-  #tablaEjec tbody tr:hover td.ejec-col-hito { background:#fafbfc; }
   .ejec-empty { text-align:center; padding:30px; color:var(--text-3); font-size:13px; }
-  .ejec-uei-tag { font-size:11.5px; font-weight:700; color:var(--blue); margin-top:3px; margin-bottom:1px; }
-  .ejec-cui { font-size:11px; color:var(--text); margin-top:2px; }
+  .ejec-uei-tag { font-size:11.5px; font-weight:700; color:var(--text); margin-top:3px; margin-bottom:1px; }
+  .ejec-cui { font-size:11px; color:var(--text-3); margin-top:2px; }
 
   /* Toggle prioridad */
   .prio-wrap { display:flex; align-items:center; gap:6px; margin-top:5px; }
-  .prio-star { font-size:14px; line-height:1; transition:transform .15s; }
+  .prio-star { font-size:14px; line-height:1; transition:transform .15px; }
   .prio-toggle { position:relative; width:36px; height:20px; flex-shrink:0; }
   .prio-toggle input { opacity:0; width:0; height:0; }
   .prio-slider { position:absolute; inset:0; background:#d1d5db; border-radius:20px; cursor:pointer; transition:background .2s; }
@@ -112,9 +117,27 @@
   .prio-toggle input:checked + .prio-slider::before { transform:translateX(16px); }
   .prio-label { font-size:11px; color:var(--text-3); font-weight:600; white-space:nowrap; }
   .prio-toggle input:checked ~ .prio-label { color:var(--red); }
-  /* Celdas de hito: fondo blanco */
-  #tablaEjec tbody td.ejec-col-hito { background:#fff; border-bottom:1px solid #eef0f3; vertical-align:top; padding:8px 12px; }
-  #tablaEjec tbody tr.ejec-primera td.ejec-col-hito { border-top:2px solid #c4c8ce; }
+
+  /* Chip de fecha según estado */
+  .fecha-chip { display:inline-block; padding:2px 8px; border-radius:20px; font-size:11.5px; font-weight:600; white-space:nowrap; }
+  .fecha-chip.cumplido { background:#E0F3EA; color:#0c6647; }
+  .fecha-chip.en-proceso { background:#EEF4FF; color:#0055A5; }
+  .fecha-chip.sd { background:#f0f1f3; color:#8a9ab0; }
+
+  /* Chips de riesgo */
+  .riesgo-chips { display:flex; flex-wrap:wrap; gap:4px; }
+  .rc { display:inline-block; padding:2px 7px; border-radius:10px; font-size:11px; font-weight:600; white-space:nowrap; }
+  .rc-controversia  { background:#ede7f6; color:#5e35b1; }
+  .rc-insumos       { background:#fff3e0; color:#e65100; }
+  .rc-interferencias{ background:#fffde7; color:#f57f17; }
+  .rc-prediales     { background:#fce4ec; color:#b71c1c; }
+  .rc-retraso       { background:#fce4ec; color:#880e4f; }
+  .rc-administrativo{ background:#fff8e1; color:#ff6f00; }
+  .rc-climatico     { background:#e0f7fa; color:#006064; }
+  .rc-ejecucion     { background:#fbe9e7; color:#bf360c; }
+  .rc-financiero    { background:#ffebee; color:#c62828; }
+  .rc-sin-riesgo    { background:#f1f8e9; color:#33691e; }
+  .rc-otro          { background:#f5f5f5; color:#616161; }
 
 </style>
 </head>
@@ -514,8 +537,32 @@ function emojiEstado(est){
   return '';
 }
 
-function fmtFechaConEmoji(fechaCump, estado){
-  return emojiEstado(estado) + fmtMesAnio(fechaCump);
+function chipRiesgos(riesgosStr){
+  if(!riesgosStr||!riesgosStr.trim()) return '—';
+  const MAP = {
+    'controversia técnica':'rc-controversia',
+    'falta de insumos':'rc-insumos',
+    'interferencias':'rc-interferencias',
+    'problemas prediales':'rc-prediales',
+    'retraso contractual':'rc-retraso',
+    'riesgo administrativo':'rc-administrativo',
+    'riesgo climático':'rc-climatico',
+    'riesgo de ejecución':'rc-ejecucion',
+    'riesgo financiero':'rc-financiero',
+    'sin riesgos relevantes':'rc-sin-riesgo'
+  };
+  const chips = riesgosStr.split(';').map(r=>r.trim()).filter(Boolean).map(r=>{
+    const cls = MAP[r.toLowerCase()] || 'rc-otro';
+    return `<span class="rc ${cls}">${escapeHtml(r)}</span>`;
+  }).join('');
+  return `<div class="riesgo-chips">${chips}</div>`;
+}
+
+function fmtFechaChip(fechaCump, estado){
+  const fecha = fmtMesAnio(fechaCump);
+  if(fecha==='S/D') return `<span class="fecha-chip sd">S/D</span>`;
+  if(estado==='CUMPLIDO') return `<span class="fecha-chip cumplido">✅ ${fecha}</span>`;
+  return `<span class="fecha-chip en-proceso">${fecha}</span>`;
 }
 
 
@@ -774,7 +821,7 @@ function renderEjecutiva(visibles){
       </td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.fase)||'—'}</td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.factores)||'—'}</td>
-      <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.riesgos)||'—'}</td>
+      <td class="ejec-col-interv" rowspan="${nHitos}">${chipRiesgos(interv.riesgos)}</td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.instancia)||'—'}</td>`;
     if(!hitos.length){
       html+=`<tr class="ejec-primera">${celdaInterv}<td class="ejec-col-hito" colspan="3" style="color:var(--text-3);font-size:12px;">Sin hitos registrados.</td></tr>`;
@@ -784,7 +831,7 @@ function renderEjecutiva(visibles){
         html+=`<tr${idx===0?' class="ejec-primera"':''}>
           ${idx===0?celdaInterv:''}
           <td class="ejec-col-hito ejec-hito-nombre">${escapeHtml(h.hito)||'—'}</td>
-          <td class="ejec-col-hito" style="white-space:nowrap;">${fmtFechaConEmoji(h.fechaCump, h.estado)}</td>
+          <td class="ejec-col-hito" style="white-space:nowrap;">${fmtFechaChip(h.fechaCump, h.estado)}</td>
           <td class="ejec-col-hito" style="text-align:center; padding:6px;">
             <button class="btn-ico" onclick="abrirEjecSit('${codEsc}')" title="Ver estado situacional">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
