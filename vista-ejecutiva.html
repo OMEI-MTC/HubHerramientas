@@ -100,6 +100,18 @@
   .ejec-empty { text-align:center; padding:30px; color:var(--text-3); font-size:13px; }
   .ejec-uei-tag { font-size:11.5px; font-weight:700; color:var(--blue); margin-top:3px; margin-bottom:1px; }
   .ejec-cui { font-size:11px; color:var(--text); margin-top:2px; }
+
+  /* Toggle prioridad */
+  .prio-wrap { display:flex; align-items:center; gap:6px; margin-top:5px; }
+  .prio-star { font-size:14px; line-height:1; transition:transform .15s; }
+  .prio-toggle { position:relative; width:36px; height:20px; flex-shrink:0; }
+  .prio-toggle input { opacity:0; width:0; height:0; }
+  .prio-slider { position:absolute; inset:0; background:#d1d5db; border-radius:20px; cursor:pointer; transition:background .2s; }
+  .prio-slider::before { content:''; position:absolute; width:14px; height:14px; left:3px; top:3px; background:#fff; border-radius:50%; transition:transform .2s; }
+  .prio-toggle input:checked + .prio-slider { background:#C8102E; }
+  .prio-toggle input:checked + .prio-slider::before { transform:translateX(16px); }
+  .prio-label { font-size:11px; color:var(--text-3); font-weight:600; white-space:nowrap; }
+  .prio-toggle input:checked ~ .prio-label { color:var(--red); }
   /* Celdas de hito: fondo blanco */
   #tablaEjec tbody td.ejec-col-hito { background:#fff; border-bottom:1px solid #eef0f3; vertical-align:top; padding:8px 12px; }
   #tablaEjec tbody tr.ejec-primera td.ejec-col-hito { border-top:2px solid #c4c8ce; }
@@ -291,7 +303,10 @@ const E  = { corte:0, codHito:1, hito:2, categoria:3, codInterno:4, cui:5, nombr
 // Índices columnas Maestro
 const M  = { codInterno:0, codHito:2, dpto:5, estatus:6, modalidad:7, uei:8, vicem:9, tipoInfra:10, cui:11 };
 // Índices columnas Estado Intervenciones
-const EI = { codInterno:0, cui:1, nombre:2, fase:3, factores:4, riesgos:5, instancia:6, estadoActual:7 };
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxSgvtxdB2Y4VTaFOBzIkmscjhpVwJHdgw22hWBMEYhwACmhUdYZEjQm4laGJDo4k6d/exec'; // reemplaza con tu URL publicada
+const TOKEN_WEB   = 'ogame_2026';
+
+const EI = { codInterno:0, cui:1, nombre:2, fase:3, factores:4, riesgos:5, instancia:6, estadoActual:7, priorizado:8 };
 
 let HITOS = [], CLASIF = {}, INTERNO_A_HITOS = {};
 let DEPTOS = {}, DEPTOS_LISTA = [];
@@ -411,7 +426,8 @@ function parseIntervenciones(tsv){
     const c=lineas[i].split('\t'); const cod=(c[EI.codInterno]||'').trim(); if(!cod) continue;
     INTERVENCIONES.push({ codInterno:cod, cui:(c[EI.cui]||'').trim(), nombre:(c[EI.nombre]||'').trim(),
       fase:(c[EI.fase]||'').trim(), factores:(c[EI.factores]||'').trim(), riesgos:(c[EI.riesgos]||'').trim(),
-      instancia:(c[EI.instancia]||'').trim(), estadoActual:(c[EI.estadoActual]||'').trim() });
+      instancia:(c[EI.instancia]||'').trim(), estadoActual:(c[EI.estadoActual]||'').trim(),
+      priorizado:(c[EI.priorizado]||'').trim().toUpperCase()==='SÍ' || (c[EI.priorizado]||'').trim().toUpperCase()==='SI' });
   }
 }
 
@@ -560,7 +576,7 @@ function hitosDeIntervencion(interv){
 
 function intervencionesFiltradas(){
   const fNombre=document.getElementById('eFNombre').value.trim().toLowerCase();
-  return INTERVENCIONES.filter(interv=>{
+  const resultado = INTERVENCIONES.filter(interv=>{
     if(fNombre && !interv.nombre.toLowerCase().includes(fNombre)) return false;
     if(eFSets.fase.size>0     && !eFSets.fase.has(interv.fase))         return false;
     if(eFSets.factores.size>0 && !eFSets.factores.has(interv.factores)) return false;
@@ -568,6 +584,8 @@ function intervencionesFiltradas(){
     if(!campoContieneAlguno(interv.instancia, eFSets.instancia))        return false;
     return hitosDeIntervencion(interv).length > 0;
   });
+  // Priorizadas al tope
+  return resultado.sort((a,b)=> (b.priorizado?1:0)-(a.priorizado?1:0));
 }
 
 // ====== CASCADA ======
@@ -721,6 +739,14 @@ function renderEjecutiva(visibles){
         ${uei?`<div class="ejec-uei-tag">${escapeHtml(uei)}</div>`:''}
         ${modalidad?`<div class="ejec-cui">${escapeHtml(modalidad)}</div>`:''}
         ${interv.cui?`<div class="ejec-cui">CUI: ${escapeHtml(interv.cui)}</div>`:''}
+        <div class="prio-wrap">
+          <span class="prio-star">${interv.priorizado?'⭐':''}</span>
+          <label class="prio-toggle" title="Priorizar intervención">
+            <input type="checkbox" ${interv.priorizado?'checked':''} onchange="guardarPrioridad('${escapeHtml(interv.codInterno)}',this.checked,this)">
+            <span class="prio-slider"></span>
+          </label>
+          <span class="prio-label">${interv.priorizado?'Priorizada':'Priorizar'}</span>
+        </div>
       </td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.fase)||'—'}</td>
       <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.factores)||'—'}</td>
@@ -976,6 +1002,46 @@ function exportarPDFEjec(){
   });
 
   doc.save('vista_ejecutiva_'+new Date().toISOString().slice(0,10)+'.pdf');
+}
+
+// ====== PRIORIDAD ======
+async function guardarPrioridad(codInterno, priorizado, checkbox){
+  // Feedback visual inmediato
+  const wrap  = checkbox.closest('.prio-wrap');
+  const star  = wrap.querySelector('.prio-star');
+  const label = wrap.querySelector('.prio-label');
+  star.textContent  = priorizado ? '⭐' : '';
+  label.textContent = priorizado ? 'Priorizada' : 'Priorizar';
+  checkbox.disabled = true;
+
+  // Actualizar en memoria
+  const interv = INTERVENCIONES.find(i=>i.codInterno===codInterno);
+  if(interv) interv.priorizado = priorizado;
+
+  try {
+    const res = await fetch(BACKEND_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ token:TOKEN_WEB, accion:'setPrioridad', codInterno, priorizado })
+    });
+    const data = await res.json();
+    if(!data.ok){
+      // Revertir si falla
+      checkbox.checked  = !priorizado;
+      star.textContent  = priorizado ? '' : '⭐';
+      label.textContent = priorizado ? 'Priorizar' : 'Priorizada';
+      if(interv) interv.priorizado = !priorizado;
+      alert('No se pudo guardar: ' + data.mensaje);
+    }
+  } catch(e){
+    checkbox.checked  = !priorizado;
+    star.textContent  = priorizado ? '' : '⭐';
+    label.textContent = priorizado ? 'Priorizar' : 'Priorizada';
+    if(interv) interv.priorizado = !priorizado;
+    alert('Error de conexión al guardar la prioridad.');
+  } finally {
+    checkbox.disabled = false;
+  }
 }
 
 // ====== INICIO ======
