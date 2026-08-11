@@ -316,7 +316,7 @@ const CORS_PROXIES = [ url=>url, url=>'https://corsproxy.io/?'+encodeURIComponen
 // Índices columnas Estado (hitos)
 const E  = { corte:0, codHito:1, hito:2, categoria:3, codInterno:4, cui:5, nombre:6, fechaCump:7, estado:8, avance:9, situacional:10 };
 // Índices columnas Maestro
-const M  = { codInterno:0, codHito:2, dpto:5, estatus:6, modalidad:7, uei:8, vicem:9, tipoInfra:10, cui:11 };
+const M  = { codInterno:0, codHito:2, dpto:5, estatus:6, modalidad:7, uei:8, vicem:9, tipoInfra:10, cui:11, discurso:13 };
 // Índices columnas Estado Intervenciones
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxSgvtxdB2Y4VTaFOBzIkmscjhpVwJHdgw22hWBMEYhwACmhUdYZEjQm4laGJDo4k6d/exec';
 const TOKEN_WEB   = 'ogame_2026';
@@ -327,6 +327,7 @@ let HITOS = [], CLASIF = {}, INTERNO_A_HITOS = {};
 let DEPTOS = {}, DEPTOS_LISTA = [];
 let INTERVENCIONES = [];
 let ULTIMO_CORTE = '';
+let INTERNOS_DISCURSO = new Set(); // codInterno mencionados en el discurso 28 jul
 
 // Sets para cada filtro multi-select
 const eFSets = {
@@ -375,13 +376,19 @@ async function fetchProxy(url) {
 }
 
 function parseMaestro(tsv) {
-  const lineas = tsv.split('\n').filter(l=>l.trim()); CLASIF={}; INTERNO_A_HITOS={};
+  const lineas = tsv.split('\n').filter(l=>l.trim()); CLASIF={}; INTERNO_A_HITOS={}; INTERNOS_DISCURSO=new Set();
   for (let i=1;i<lineas.length;i++){
     const c=lineas[i].split('\t'); const cod=(c[M.codHito]||'').trim(); if(!cod) continue;
     if((c[M.estatus]||'').trim().toUpperCase()!=='VIGENTE') continue;
     CLASIF[cod]={ vicem:(c[M.vicem]||'').trim(), uei:(c[M.uei]||'').trim(), tipoInfra:(c[M.tipoInfra]||'').trim(), modalidad:(c[M.modalidad]||'').trim(), dpto:(c[M.dpto]||'').trim(), cui:(c[M.cui]||'').trim() };
     const interno=(c[M.codInterno]||'').trim();
-    if(interno){ if(!INTERNO_A_HITOS[interno]) INTERNO_A_HITOS[interno]=[]; INTERNO_A_HITOS[interno].push(cod); }
+    if(interno){
+      if(!INTERNO_A_HITOS[interno]) INTERNO_A_HITOS[interno]=[];
+      INTERNO_A_HITOS[interno].push(cod);
+      if((c[M.discurso]||'').trim().toUpperCase()==='SI' || (c[M.discurso]||'').trim().toUpperCase()==='SÍ'){
+        INTERNOS_DISCURSO.add(interno);
+      }
+    }
   }
 }
 
@@ -592,8 +599,10 @@ function hitosDeIntervencion(interv){
 function intervencionesFiltradas(){
   const fNombre=document.getElementById('eFNombre').value.trim().toLowerCase();
   const soloPriorizadas=document.getElementById('eFSoloPriorizadas').checked;
+  const soloDiscurso=document.getElementById('eFDiscurso').checked;
   const resultado = INTERVENCIONES.filter(interv=>{
     if(soloPriorizadas && !interv.priorizado) return false;
+    if(soloDiscurso && !INTERNOS_DISCURSO.has(interv.codInterno)) return false;
     if(fNombre && !interv.nombre.toLowerCase().includes(fNombre)) return false;
     if(eFSets.fase.size>0     && !eFSets.fase.has(interv.fase))         return false;
     if(eFSets.factores.size>0 && !eFSets.factores.has(interv.factores)) return false;
