@@ -91,14 +91,16 @@
   .ejec-meta-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
   .ejec-meta-bar .ejec-contador { margin-bottom:0; }
   /* Columnas de intervención: fondo azul muy suave */
-  #tablaEjec thead th.ejec-col-interv { background:#dce8f7; color:var(--blue-dk); border-bottom:2px solid #b3cde8; border-right:1px solid #b3cde8; }
-  #tablaEjec thead th:not(.ejec-col-interv) { border-right:1px solid var(--border); }
+  #tablaEjec thead th.ejec-col-interv { background:#b8d0e8; color:#002a5c; border-bottom:2px solid #8aaece; border-right:1px solid #8aaece; }
+  #tablaEjec thead th:not(.ejec-col-interv) { border-right:none; }
   #tablaEjec tbody td.ejec-col-interv { background:#eef4fc; border-bottom:1px solid #d0e2f4; border-right:1px solid #d0e2f4; vertical-align:top; }
-  #tablaEjec tbody tr.ejec-primera td.ejec-col-interv { background:#e4eff9; border-top:2px solid #b3cde8; }
-  #tablaEjec tbody td.ejec-col-hito { background:#fff; border-bottom:1px solid #eef0f3; border-right:1px solid #eef0f3; vertical-align:top; padding:8px 12px; }
-  #tablaEjec tbody tr.ejec-primera td.ejec-col-hito { border-top:2px solid #b3cde8; }
+  #tablaEjec tbody tr.ejec-primera td.ejec-col-interv { background:#e4eff9; border-top:2px solid #8aaece; }
+  #tablaEjec tbody td.ejec-col-hito { background:#fff; border-bottom:1px solid #eef0f3; border-right:none; vertical-align:top; padding:8px 12px; }
+  #tablaEjec tbody tr.ejec-primera td.ejec-col-hito { border-top:2px solid #8aaece; }
   #tablaEjec tbody tr:hover td.ejec-col-hito { background:#f7f9ff; }
   #tablaEjec tbody tr:hover td.ejec-col-interv { background:#e0ecf8; }
+  /* Toggle alineado arriba-centro */
+  #tablaEjec tbody td.ejec-col-interv.prio-cell { text-align:center; vertical-align:top; padding-top:10px; }
 
   .ejec-nombre-interv { font-weight:700; font-size:13px; color:#003F7D; line-height:1.35; }
   .ejec-hito-nombre { font-weight:400; font-size:13px; color:var(--text); }
@@ -813,7 +815,7 @@ function renderEjecutiva(visibles){
         ${modalidad?`<div class="ejec-cui">${escapeHtml(modalidad)}</div>`:''}
         ${interv.cui?`<div class="ejec-cui">CUI: ${escapeHtml(interv.cui)}</div>`:''}
       </td>
-      <td class="ejec-col-interv" rowspan="${nHitos}" style="text-align:center;vertical-align:middle;">
+      <td class="ejec-col-interv prio-cell" rowspan="${nHitos}">
         <label class="prio-toggle" title="${interv.priorizado?'Quitar prioridad':'Priorizar intervención'}">
           <input type="checkbox" ${interv.priorizado?'checked':''} onchange="guardarPrioridad('${escapeHtml(interv.codInterno)}',this.checked,this)">
           <span class="prio-slider"></span>
