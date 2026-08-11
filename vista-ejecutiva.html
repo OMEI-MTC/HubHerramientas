@@ -303,7 +303,7 @@ const E  = { corte:0, codHito:1, hito:2, categoria:3, codInterno:4, cui:5, nombr
 // Índices columnas Maestro
 const M  = { codInterno:0, codHito:2, dpto:5, estatus:6, modalidad:7, uei:8, vicem:9, tipoInfra:10, cui:11 };
 // Índices columnas Estado Intervenciones
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxkI_DP73L9gbJ-yd4xdYuHCDxAH9lz0-nh4F6GGmKsAJM6Yv5HMuqFqKfVZBpH0oS/exec'; // reemplaza con tu URL publicada
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxSgvtxdB2Y4VTaFOBzIkmscjhpVwJHdgw22hWBMEYhwACmhUdYZEjQm4laGJDo4k6d/exec';
 const TOKEN_WEB   = 'ogame_2026';
 
 const EI = { codInterno:0, cui:1, nombre:2, fase:3, factores:4, riesgos:5, instancia:6, estadoActual:7, priorizado:8 };
@@ -1021,7 +1021,7 @@ async function guardarPrioridad(codInterno, priorizado, checkbox){
   try {
     const res = await fetch(BACKEND_URL, {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({ token:TOKEN_WEB, accion:'setPrioridad', codInterno, priorizado })
     });
     const data = await res.json();
