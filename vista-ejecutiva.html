@@ -3,1110 +3,2143 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vista Ejecutiva · Cartera Priorizada · OGAME · MTC</title>
+<title>Hoja de Ruta Estratégica · OGAME</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <style>
-  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  /* ── TOKENS (paleta institucional del Registro) ── */
   :root {
-    --red:#C8102E; --blue:#0055A5; --blue-dk:#003F7D; --blue-lt:#EEF4FF;
-    --white:#fff; --bg:#F2F2F2; --card:#fff; --border:rgba(0,0,0,0.09);
-    --text:#1a1a1a; --text-2:#4a5568; --text-3:#8a9ab0;
-    --green:#1D9E75; --green-dk:#0F6E56;
-    --amber-bg:#FFF8E6; --amber-bd:#E6A817; --amber-tx:#8a6200; --red-bg:#FDECEE;
-    --sans:'DM Sans',system-ui,sans-serif; --serif:'DM Serif Display',serif; --r:12px;
+    --rojo:      #C8102E;
+    --rojo-dark: #A50D26;
+    --navy:      #003F7D;
+    --navy-mid:  #0055A5;
+    --blanco:    #FFFFFF;
+    --gris-bg:   #F2F2F2;
+    --gris-borde:rgba(0,0,0,0.09);
+    --gris-texto:#8a9ab0;
+    --verde:     #1D9E75;
+    --verde-bg:  #E6F6F0;
+    --amarillo:  #E6A817;
+    --amarillo-bg:#FFF8E6;
+    --azul:      #0055A5;
+    --azul-dk:   #003F7D;
+    --azul-bg:   #EEF4FF;
+    --texto:     #1a1a1a;
+    --texto-2:   #4a5568;
+    --radio:     12px;
+    --sans:      'DM Sans', system-ui, sans-serif;
+    --serif:     'DM Serif Display', serif;
+    --sombra:    0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
   }
-  body { font-family:var(--sans); background:var(--bg); color:var(--text); font-size:14px; line-height:1.5; min-height:100vh; }
-  .layout { min-height:100vh; display:grid; grid-template-rows:auto 1fr; }
-  .topbar { background:var(--red); display:flex; align-items:center; justify-content:space-between; padding:0 28px; min-height:68px; }
-  .topbar-brand { display:flex; align-items:center; gap:12px; }
-  .topbar-logo { width:40px; height:40px; border-radius:7px; overflow:hidden; flex-shrink:0; box-shadow:0 1px 6px rgba(0,0,0,0.25); }
-  .topbar-logo img { width:100%; height:100%; object-fit:cover; display:block; }
-  .topbar-name { font-size:21px; font-weight:700; color:var(--white); line-height:1.15; letter-spacing:-0.01em; }
-  .topbar-sub { font-size:12px; color:rgba(255,255,255,0.85); margin-top:2px; }
-  .btn-back { display:flex; align-items:center; gap:7px; background:#003F7D; color:#fff; border:2px solid #003F7D; border-radius:24px; padding:8px 18px; font-family:var(--sans); font-size:15px; font-weight:700; cursor:pointer; white-space:nowrap; text-decoration:none; transition:background .12s; }
-  .btn-back:hover { background:#002D5C; border-color:#002D5C; }
-  .main { padding:28px; }
-  .panel { max-width:1900px; margin:0 auto; background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:28px 32px; }
-  .panel-title { font-family:var(--sans); font-weight:700; font-size:30px; color:var(--blue); line-height:1.1; letter-spacing:-0.01em; }
-  .panel-sub { font-size:15px; color:var(--text-2); margin-top:4px; }
-  .panel-week { font-size:13px; color:var(--text-3); margin-top:2px; padding-bottom:18px; border-bottom:1px solid var(--border); margin-bottom:20px; }
-  label { display:block; font-size:13px; font-weight:600; margin:0 0 5px; color:var(--text); }
-  select, input[type=text] {
-    width:100%; padding:9px 11px; font-size:14px; font-family:inherit; color:var(--text);
-    border:1px solid var(--border); border-radius:8px; background:#fff;
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--gris-bg);
+    color: var(--texto);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
   }
-  .filtros { background:#eef3fa; border:1px solid #c9d6ea; border-top:3px solid var(--blue); border-radius:10px; padding:16px 18px 16px; margin-bottom:14px; box-shadow:0 2px 10px rgba(0,63,125,0.07); }
-  .filtros-tit { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--blue); font-weight:700; margin:0 0 12px; }
-  .filtros-3col { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:14px; align-items:start; }
-  .filtros-3col .field { margin-bottom:0; }
-  .field { margin-bottom:14px; }
-  /* Dropdown multi-select (checks) */
-  .meses-dropdown { position:relative; }
-  .meses-btn { width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:8px; background:#fff; font-family:inherit; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:var(--text); }
-  .meses-btn:hover { border-color:var(--blue); }
-  .meses-lista { display:none; position:absolute; top:calc(100% + 4px); left:0; min-width:100%; width:max-content; max-width:320px; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.15); z-index:200; max-height:260px; overflow-y:auto; padding:6px; }
-  .meses-dropdown.abierto .meses-lista { display:block; }
-  .meses-dropdown.abre-arriba .meses-lista { top:auto; bottom:calc(100% + 4px); box-shadow:0 -4px 16px rgba(0,0,0,0.15); }
-  .mes-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:13px; }
-  .mes-item:hover { background:var(--bg); }
-  .mes-item input { width:auto; cursor:pointer; accent-color:var(--blue); }
-  .chips { display:flex; gap:8px; flex-wrap:wrap; }
-  .chip { padding:8px 14px; border:1px solid var(--border); background:#fff; border-radius:20px; cursor:pointer; font-size:12.5px; font-weight:600; color:var(--text-2); user-select:none; transition:all .12s; }
-  .chip:hover { border-color:#b9c5d6; }
-  .chip.on { background:var(--blue); border-color:var(--blue); color:#fff; }
-  .filtros-foot { display:flex; justify-content:flex-end; }
-  .btn-limpiar { padding:8px 16px; border:1px solid var(--border); background:#fff; border-radius:8px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:600; color:var(--text-2); }
-  .btn-limpiar:hover { background:#eef0f3; }
-  .btn-export { display:flex; align-items:center; gap:7px; padding:8px 16px; border:none; background:var(--green); color:#fff; border-radius:8px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:700; }
-  .btn-export:hover { background:var(--green-dk); }
-  .badge { display:inline-block; padding:3px 9px; border-radius:12px; font-size:11px; font-weight:700; white-space:nowrap; }
-  .b-proc { background:#FFF3D6; color:#8a6200; }
 
-  .b-cump { background:#E0F3EA; color:#0c6647; }
-  .btn-ico { background:none; border:none; cursor:pointer; color:var(--blue); padding:5px; border-radius:6px; }
-  .btn-ico:hover { background:var(--blue-lt); }
-  .tabla-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  thead th { background:#f4f6f9; text-align:left; padding:10px 12px; font-weight:700; color:var(--text-2); border-bottom:1px solid var(--border); white-space:nowrap; }
-  .loading { text-align:center; color:var(--text-2); padding:40px; }
-  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:50; align-items:center; justify-content:center; padding:20px; }
-  .overlay.show { display:flex; }
-  .modal { background:#fff; border-radius:var(--r); width:100%; max-width:640px; padding:24px 26px; max-height:90vh; overflow-y:auto; }
-  .modal-lg { max-width:860px; }
-  .modal-head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:18px; }
-  .modal-title { font-size:17px; font-weight:700; color:var(--blue); }
-  .modal-interv { font-size:13px; color:var(--text-2); margin-top:4px; line-height:1.4; }
-  .modal-hito { font-size:13.5px; color:var(--text); font-weight:600; margin-top:3px; }
-  .modal-x { background:none; border:none; font-size:22px; line-height:1; color:var(--text-3); cursor:pointer; }
-  /* Subgrupos de filtros */
-  .ejec-filtros-grupo { margin-bottom:14px; }
-  .ejec-filtros-grupo:last-child { margin-bottom:0; }
-  .ejec-grupo-tit { font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--blue-dk); background:#dce8f7; border-radius:5px; padding:4px 10px; display:inline-block; margin-bottom:10px; }
-  /* Barra meta */
-  .ejec-meta-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-  .ejec-meta-bar .ejec-contador { margin-bottom:0; }
-  /* Columnas de intervención: fondo azul muy suave */
-  #tablaEjec thead th.ejec-col-interv { background:#b8d0e8; color:#002a5c; border-bottom:2px solid #8aaece; border-right:1px solid #8aaece; }
-  #tablaEjec thead th:not(.ejec-col-interv) { border-right:none; }
-  #tablaEjec tbody td.ejec-col-interv { background:#eef4fc; border-bottom:1px solid #d0e2f4; border-right:1px solid #d0e2f4; vertical-align:top; }
-  #tablaEjec tbody tr.ejec-primera td.ejec-col-interv { background:#e4eff9; border-top:2px solid #8aaece; }
-  #tablaEjec tbody td.ejec-col-hito { background:#fff; border-bottom:1px solid #eef0f3; border-right:none; vertical-align:top; padding:8px 12px; }
-  #tablaEjec tbody tr.ejec-primera td.ejec-col-hito { border-top:2px solid #8aaece; }
-  #tablaEjec tbody tr:hover td.ejec-col-hito { background:#f7f9ff; }
-  #tablaEjec tbody tr:hover td.ejec-col-interv { background:#e0ecf8; }
-  /* Toggle alineado arriba-centro */
-  #tablaEjec tbody td.ejec-col-interv.prio-cell { text-align:center; vertical-align:top; padding-top:10px; }
+  /* ── HEADER (topbar registro) ── */
+  .header {
+    background: var(--rojo);
+    color: var(--blanco);
+    padding: 0 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 75px;
+  }
+  .header-logo {
+    width: 40px; height: 40px;
+    border-radius: 8px; overflow: hidden; flex-shrink: 0;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.25);
+  }
+  .header-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .header-title { font-size: 21px; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; }
+  .header-sub   { font-size: 12px; color: rgba(255,255,255,0.85); margin-top: 2px; }
 
-  .ejec-nombre-interv { font-weight:700; font-size:13px; color:#003F7D; line-height:1.35; }
-  .ejec-hito-nombre { font-weight:400; font-size:13px; color:var(--text); }
-  .ejec-empty { text-align:center; padding:30px; color:var(--text-3); font-size:13px; }
-  .ejec-uei-tag { font-size:11.5px; font-weight:700; color:var(--text); margin-top:3px; margin-bottom:1px; }
-  .ejec-cui { font-size:11px; color:var(--text-3); margin-top:2px; }
+  /* ── VISTA OGAME ── */
+  .btn-ogame {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    padding: 8px 16px; border-radius: 8px;
+    background: var(--blanco); color: var(--azul);
+    border: 1.5px solid var(--azul); cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    transition: all .15s;
+  }
+  .btn-ogame:hover { background: var(--azul); color: #fff; }
+  .banner-ogame {
+    background: var(--azul); color: #fff;
+    padding: 12px 20px; border-radius: 10px; margin-bottom: 18px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    font-size: 13px;
+  }
+  .btn-salir-ogame {
+    padding: 6px 14px; border-radius: 8px;
+    background: rgba(255,255,255,0.15); color: #fff;
+    border: 1px solid rgba(255,255,255,0.4); cursor: pointer;
+    font-family: inherit; font-size: 12px; font-weight: 600; flex-shrink: 0;
+  }
+  .btn-salir-ogame:hover { background: rgba(255,255,255,0.25); }
+  /* fondo tintado cuando la vista OGAME está activa */
+  .card.ogame-activa { background: #F5F9FF; border-color: #BFD9F2; }
+  /* columna solo-OGAME: oculta por defecto */
+  .col-ogame { display: none; }
+  .card.ogame-activa .col-ogame { display: table-cell; }
 
-  /* Toggle prioridad */
-  .prio-wrap { display:flex; align-items:center; gap:6px; margin-top:5px; }
-  .prio-star { font-size:14px; line-height:1; transition:transform .15px; }
-  .prio-toggle { position:relative; width:36px; height:20px; flex-shrink:0; }
-  .prio-toggle input { opacity:0; width:0; height:0; }
-  .prio-slider { position:absolute; inset:0; background:#d1d5db; border-radius:20px; cursor:pointer; transition:background .2s; }
-  .prio-slider::before { content:''; position:absolute; width:14px; height:14px; left:3px; top:3px; background:#fff; border-radius:50%; transition:transform .2s; }
-  .prio-toggle input:checked + .prio-slider { background:#C8102E; }
-  .prio-toggle input:checked + .prio-slider::before { transform:translateX(16px); }
-  .prio-label { font-size:11px; color:var(--text-3); font-weight:600; white-space:nowrap; }
-  .prio-toggle input:checked ~ .prio-label { color:var(--red); }
 
-  /* Chip de fecha según estado */
-  .fecha-chip { display:inline-block; padding:2px 8px; border-radius:20px; font-size:11.5px; font-weight:600; white-space:nowrap; }
-  .fecha-chip.cumplido { background:#E0F3EA; color:#0c6647; }
-  .fecha-chip.en-proceso { background:#EEF4FF; color:#0055A5; }
-  .fecha-chip.sd { background:#f0f1f3; color:#8a9ab0; }
+  /* ── PAGE TITLE ── */
+  .page-header { margin-bottom: 20px; }
+  .page-header h1 { font-size: 30px; font-weight: 700; color: var(--azul); line-height: 1.1; letter-spacing: -0.01em; }
+  .page-header p  { font-size: 15px; color: var(--texto-2); margin-top: 4px; }
 
-  /* Chips de riesgo */
-  .riesgo-chips { display:flex; flex-wrap:wrap; gap:4px; }
-  .rc { display:inline-block; padding:2px 7px; border-radius:10px; font-size:11px; font-weight:600; white-space:nowrap; }
-  .rc-controversia  { background:#ede7f6; color:#5e35b1; }
-  .rc-insumos       { background:#fff3e0; color:#e65100; }
-  .rc-interferencias{ background:#fffde7; color:#f57f17; }
-  .rc-prediales     { background:#fce4ec; color:#b71c1c; }
-  .rc-retraso       { background:#fce4ec; color:#880e4f; }
-  .rc-administrativo{ background:#fff8e1; color:#ff6f00; }
-  .rc-climatico     { background:#e0f7fa; color:#006064; }
-  .rc-ejecucion     { background:#fbe9e7; color:#bf360c; }
-  .rc-financiero    { background:#ffebee; color:#c62828; }
-  .rc-sin-riesgo    { background:#f1f8e9; color:#33691e; }
-  .rc-otro          { background:#f5f5f5; color:#616161; }
+  /* ── CARD ── */
+  .card {
+    max-width: 1600px; margin: 0 auto;
+    background: var(--blanco);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    border: 1px solid var(--gris-borde);
+    padding: 28px 32px;
+  }
 
+  /* ── FILTROS (estilo registro) ── */
+  .filtros {
+    margin-bottom: 22px;
+  }
+  .filtros-box {
+    background: #EAF1FB;
+    border: 1px solid #B8D0EC;
+    border-left: 4px solid var(--azul);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .filtros-label {
+    font-size: 12px; font-weight: 700; letter-spacing: .05em;
+    color: var(--azul-dk); text-transform: uppercase; margin-bottom: 12px;
+  }
+  .filtros-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .filtros-grid.seis { grid-template-columns: repeat(6, 1fr); }
+  .filtros-grid.cinco { grid-template-columns: repeat(5, 1fr); }
+  .filtro-group label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--texto-2); margin-bottom: 5px;
+  }
+  .filtro-group select, .filtro-group input {
+    width: 100%; padding: 9px 11px;
+    border: 1px solid var(--gris-borde);
+    border-radius: 8px;
+    font-size: 14px; color: var(--texto); font-family: inherit;
+    background: var(--blanco);
+  }
+  .filtro-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a9ab0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    cursor: pointer;
+  }
+  .filtro-group select:focus, .filtro-group input:focus {
+    outline: none; border-color: var(--azul);
+  }
+  .filtros-foot { display: flex; justify-content: flex-end; }
+
+  /* checkbox "solo último hito" — alineado con los demás campos de la fila */
+  .check-ultimo {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 11px; border: 1px solid var(--gris-borde);
+    border-radius: 8px; background: #fff; cursor: pointer;
+    font-size: 13px; color: var(--texto); font-weight: 400;
+  }
+  .check-ultimo:hover { border-color: var(--azul); }
+  .check-ultimo input { width: auto; cursor: pointer; accent-color: var(--azul); flex-shrink: 0; }
+  .btn-limpiar {
+    padding: 8px 16px; border: 1px solid var(--gris-borde);
+    background: #fff; border-radius: 8px; cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 600; color: var(--texto-2);
+  }
+  .btn-limpiar:hover { background: #eef0f3; }
+
+  /* ── DROPDOWN DE MESES (fecha de cumplimiento) ── */
+  .meses-dropdown { position: relative; }
+  .meses-btn {
+    width: 100%; padding: 9px 11px;
+    border: 1px solid var(--gris-borde); border-radius: 8px;
+    background: #fff; font-family: inherit; font-size: 14px;
+    cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+    color: var(--texto);
+  }
+  .meses-btn:hover { border-color: var(--azul); }
+  .meses-lista {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: #fff; border: 1px solid var(--gris-borde); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 20;
+    max-height: 240px; overflow-y: auto; padding: 6px;
+  }
+  .meses-dropdown.abierto .meses-lista { display: block; }
+  .mes-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  }
+  .mes-item:hover { background: var(--gris-bg); }
+  .mes-item input { width: auto; cursor: pointer; accent-color: var(--azul); }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    padding: 0 0 16px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+  }
+  .toolbar-info { font-size: 14px; color: var(--texto-2); }
+  .toolbar-info strong { color: var(--texto); }
+  .toolbar-right { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+
+  /* ── PAGINACIÓN ── */
+  .paginacion { display: flex; align-items: center; gap: 6px; }
+  .pag-btn {
+    padding: 7px 14px; border-radius: 8px;
+    border: 1px solid var(--gris-borde);
+    background: var(--blanco); cursor: pointer;
+    font-size: 13px; color: var(--texto); font-family: inherit;
+    transition: background .15s;
+  }
+  .pag-btn:hover:not(:disabled) { background: var(--gris-bg); }
+  .pag-btn:disabled { opacity: .4; cursor: default; }
+  .pag-info { font-size: 13px; color: var(--texto-2); font-weight: 700; padding: 0 6px; }
+
+  /* ── BTN EXCEL ── */
+  .btn-excel {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px;
+    background: var(--verde); color: var(--blanco);
+    border: none; cursor: pointer; font-size: 13px; font-weight: 700; font-family: inherit;
+    transition: background .15s;
+  }
+  .btn-excel:hover { background: var(--green-dk, #0F6E56); }
+
+  .btn-resumen {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px;
+    background: var(--blanco); color: var(--azul);
+    border: 1.5px solid var(--azul); cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    transition: all .15s;
+  }
+  .btn-resumen:hover { background: var(--azul); color: #fff; }
+
+  /* tabla resumen (modal) */
+  .tabla-resumen { width: 100%; border-collapse: collapse; }
+  .tabla-resumen th {
+    background: #f7f9fc; color: var(--texto-2);
+    font-size: 12px; font-weight: 700; padding: 10px 12px;
+    text-align: left; border-bottom: 2px solid #e3e9f2;
+  }
+  .tabla-resumen td {
+    padding: 9px 12px; border-bottom: 1px solid var(--gris-borde);
+    font-size: 13px;
+  }
+  .tabla-resumen tbody tr:hover { background: #f7f9fc; }
+  .tabla-resumen tr.fila-subtotal td {
+    background: #E8EEF7; font-size: 12px;
+    border-top: 1px solid var(--azul); border-bottom: 1px solid var(--azul);
+    color: var(--azul-dk);
+  }
+  .tabla-resumen tr.fila-subtotal:hover td { background: #E8EEF7; }
+  .tabla-resumen tfoot td {
+    background: var(--azul-bg); border-top: 2px solid var(--azul);
+    padding: 11px 12px; font-size: 13px;
+  }
+
+  /* ── TABLA ── */
+  .tabla-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--gris-borde); }
+  thead th {
+    background: #f7f9fc;
+    color: var(--texto-2);
+    font-size: 12px; font-weight: 700;
+    padding: 11px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e3e9f2;
+    white-space: nowrap;
+  }
+  thead tr:nth-child(2) th {
+    background: #f7f9fc;
+    color: var(--gris-texto);
+    font-size: 11px; font-weight: 500;
+    padding-top: 0; padding-bottom: 9px;
+    border-bottom: 1px solid #e3e9f2;
+  }
+
+  /* fila intervención */
+  .fila-intervencion td {
+    background: #FFFFFF;
+    padding: 10px 12px;
+    border-bottom: 1px solid #E5E7EB;
+    vertical-align: top;
+  }
+  /* columnas resaltadas: Última Actualización, Intervención, Hitos */
+  .col-resalte { background: #F8FAFF !important; }
+  .fila-intervencion .interv-nombre {
+    font-weight: 600; color: var(--navy); font-size: 13px;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .interv-codigo {
+    display: inline-block;
+    background: var(--navy); color: var(--blanco);
+    font-size: 10px; font-weight: 700;
+    padding: 2px 6px; border-radius: 3px;
+    white-space: nowrap; margin-top: 1px; flex-shrink: 0;
+  }
+  .interv-meta {
+    font-size: 11px; color: var(--gris-texto); margin-top: 4px;
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .interv-meta span { display: flex; align-items: center; gap: 3px; }
+
+  /* badge priorizado */
+  .badge-priorizado {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: var(--amarillo-bg); color: var(--amarillo-tx, #8a6200);
+    border: 1px solid var(--amarillo);
+    font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge-sin-datos {
+    display: inline-flex; align-items: center;
+    background: #F3F4F6; color: var(--gris-texto);
+    font-size: 10px; padding: 1px 7px; border-radius: 20px;
+  }
+
+  /* financiero chips */
+  .fin-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .fin-chip {
+    background: var(--blanco);
+    border: 1px solid var(--gris-borde);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+  .fin-chip .fc-label { color: var(--gris-texto); }
+  .fin-chip .fc-val   { font-weight: 700; color: var(--navy); margin-left: 4px; }
+
+  /* estado situacional */
+  .estado-situacional {
+    font-size: 12px; color: var(--texto);
+    margin-top: 6px; line-height: 1.4;
+    max-width: 480px;
+  }
+  .estado-vacio { color: var(--gris-texto); font-style: italic; font-size: 12px; margin-top: 4px; }
+
+  /* btn lápiz */
+  .btn-lapiz {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 8px;
+    background: var(--azul-dk); color: var(--blanco);
+    border: none; cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-lapiz:hover { background: var(--azul); }
+
+  /* toggle priorización (columna, interactivo) */
+  .toggle-prio {
+    display: inline-block; width: 34px; height: 19px; border-radius: 10px;
+    background: #cfd6e0; position: relative; vertical-align: middle;
+    border: none; cursor: pointer; padding: 0; transition: background .2s;
+  }
+  .toggle-prio::after {
+    content: ''; position: absolute; top: 2.5px; left: 3px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #fff; transition: left .2s;
+  }
+  .toggle-prio.on { background: var(--verde); }
+  .toggle-prio.on::after { left: 17px; }
+  .toggle-prio:disabled { opacity: .5; cursor: wait; }
+  /* toggle en modo consulta (vista usuario): visible pero no interactivo */
+  span.toggle-prio.deshab { cursor: default; opacity: .55; }
+
+  /* fila hito */
+  .fila-hito td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--gris-borde);
+    font-size: 13px; vertical-align: middle;
+    background: #FFFFFF;
+  }
+  .fila-hito:last-child td { border-bottom: none; }
+  .hito-nombre { color: var(--texto); line-height: 1.35; font-size: 12px; }
+
+  /* fecha cumplimiento */
+  .fecha-chip {
+    display: inline-block;
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .fecha-chip.con-fecha { background: var(--azul-bg); color: var(--azul); }
+  .fecha-chip.sin-fecha { background: var(--gris-bg); color: var(--gris-texto); }
+
+  /* actualizado */
+  .actualizado-chip {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .actualizado-chip.si { background: var(--verde-bg); color: var(--verde); }
+  .actualizado-chip.no { background: #FEE2E2; color: #991B1B; }
+
+  /* ── ESTADO CARGA ── */
+  .estado-carga {
+    padding: 48px; text-align: center;
+    color: var(--gris-texto); font-size: 14px;
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--gris-borde);
+    border-top-color: var(--rojo);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 100;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.activo { display: flex; }
+
+  .modal {
+    background: var(--blanco);
+    border-radius: 12px;
+    width: 100%; max-width: 720px;
+    max-height: 90vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  }
+  .modal-header {
+    background: var(--navy);
+    color: var(--blanco);
+    padding: 18px 24px;
+    border-radius: 12px 12px 0 0;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  }
+  .modal-header h2 { font-size: 15px; font-weight: 700; line-height: 1.3; }
+  .modal-header p  { font-size: 12px; opacity: .75; margin-top: 3px; }
+  .modal-close {
+    background: none; border: none; color: var(--blanco);
+    cursor: pointer; font-size: 20px; line-height: 1;
+    opacity: .7; padding: 2px; flex-shrink: 0;
+  }
+  .modal-close:hover { opacity: 1; }
+
+  .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* secciones modal */
+  .modal-seccion-titulo {
+    font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--azul);
+    margin-bottom: 14px; padding-bottom: 6px;
+    border-bottom: 2px solid var(--azul-bg);
+  }
+  .modal-seccion { margin-bottom: 24px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid.triple { grid-template-columns: 1fr 1fr 1fr; }
+  .form-full { grid-column: 1 / -1; }
+
+  .form-group label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--gris-texto); margin-bottom: 5px;
+  }
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%; padding: 8px 12px;
+    border: 1px solid var(--gris-borde); border-radius: var(--radio);
+    font-size: 13px; color: var(--texto); font-family: inherit;
+    transition: border-color .15s;
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    outline: none; border-color: var(--azul);
+    box-shadow: 0 0 0 3px rgba(29,78,216,.1);
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+
+  /* toggle priorizado */
+  .toggle-wrap {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: var(--gris-bg); border-radius: var(--radio);
+    border: 1px solid var(--gris-borde);
+  }
+  .toggle-wrap label { font-size: 13px; font-weight: 600; color: var(--texto); cursor: pointer; }
+  .toggle {
+    width: 36px; height: 20px; border-radius: 10px;
+    background: var(--gris-borde); position: relative;
+    cursor: pointer; border: none; flex-shrink: 0;
+    transition: background .2s;
+  }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--blanco); transition: left .2s;
+  }
+  .toggle.activo { background: var(--verde); }
+  .toggle.activo::after { left: 19px; }
+
+  /* tabla hitos en modal */
+  .hitos-tabla { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .hitos-tabla th {
+    background: var(--gris-bg); font-size: 11px; font-weight: 700;
+    color: var(--gris-texto); padding: 8px 12px; text-align: left;
+    border-bottom: 1px solid var(--gris-borde);
+  }
+  .hitos-tabla td {
+    padding: 8px 12px; border-bottom: 1px solid var(--gris-borde);
+    font-size: 12px; vertical-align: middle;
+  }
+  .hitos-tabla tr:last-child td { border-bottom: none; }
+  .hitos-tabla input[type="date"] {
+    padding: 5px 8px; font-size: 12px;
+    border: 1px solid var(--gris-borde); border-radius: 4px;
+    color: var(--texto);
+  }
+  .hitos-tabla input[type="date"]:focus {
+    outline: none; border-color: var(--azul);
+  }
+  .hitos-tabla select {
+    padding: 5px 6px; font-size: 12px;
+    border: 1px solid var(--gris-borde); border-radius: 4px;
+    color: var(--texto); background: #fff; cursor: pointer;
+  }
+  .hitos-tabla select:focus { outline: none; border-color: var(--azul); }
+  .hito-estado { width: 100%; }
+
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--gris-borde);
+    display: flex; justify-content: flex-end; gap: 10px;
+    border-radius: 0 0 12px 12px;
+  }
+  .btn-cancelar {
+    padding: 8px 18px; border-radius: var(--radio);
+    border: 1px solid var(--gris-borde); background: var(--blanco);
+    cursor: pointer; font-size: 13px; font-weight: 600;
+    color: var(--gris-texto); transition: background .15s;
+  }
+  .btn-cancelar:hover { background: var(--gris-bg); }
+  .btn-guardar {
+    padding: 8px 22px; border-radius: var(--radio);
+    border: none; background: var(--rojo); color: var(--blanco);
+    cursor: pointer; font-size: 13px; font-weight: 700;
+    transition: background .15s; display: flex; align-items: center; gap: 6px;
+  }
+  .btn-guardar:hover { background: var(--rojo-dark); }
+  .btn-guardar:disabled { opacity: .6; cursor: default; }
+
+  /* toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 200;
+    background: var(--navy); color: var(--blanco);
+    padding: 12px 20px; border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,.3);
+    transform: translateY(80px); opacity: 0;
+    transition: transform .3s, opacity .3s;
+    max-width: 340px;
+  }
+  .toast.visible { transform: translateY(0); opacity: 1; }
+  .toast.exito { border-left: 4px solid var(--verde); }
+  .toast.error { border-left: 4px solid var(--rojo); }
+
+  /* col widths */
+  .col-hito    { width: 38%; }
+  .col-fecha   { width: 15%; }
+  .col-upd     { width: 14%; text-align: center; }
 </style>
 </head>
 <body>
-<div class="layout">
-  <header class="topbar">
-    <div class="topbar-brand">
-      <div class="topbar-logo"><img src="mtc.jpg" alt="Logo MTC"></div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo"><img src="mtc.jpg" alt="Logo MTC"></div>
+  <div>
+    <div class="header-title">Hub de Herramientas · OGAME</div>
+    <div class="header-sub">Oficina General de Articulación, Monitoreo, y Evaluación de Impacto</div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="card" id="card-principal">
+    <!-- Banner Vista OGAME (oculto por defecto) -->
+    <div class="banner-ogame" id="banner-ogame" style="display:none">
+      <div style="display:flex;align-items:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        <span><strong>Vista OGAME activa</strong> — edición de priorización y habilitación de hitos disponible</span>
+      </div>
+      <button class="btn-salir-ogame" onclick="salirOGAME()">Salir de Vista OGAME</button>
+    </div>
+
+    <div class="page-header">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+        <div>
+          <h1>Hoja de Ruta Estratégica 2026–2027</h1>
+          <p>Transferencia de gestión · Registro de estado de intervenciones e hitos clave</p>
+        </div>
+        <button class="btn-ogame" id="btn-ogame" onclick="abrirLoginOGAME()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Vista OGAME
+        </button>
+      </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="filtros">
+      <div class="filtros-box">
+        <div class="filtros-label">Filtros</div>
+
+        <!-- Fila 1: Grupo, Viceministerio, Órgano, Priorizado, Discurso -->
+        <div class="filtros-grid cinco">
+          <div class="filtro-group">
+            <label>Grupo</label>
+            <select id="f-grupo"><option value="">Todos</option></select>
+          </div>
+          <div class="filtro-group">
+            <label>Viceministerio</label>
+            <select id="f-vice"><option value="">Todos</option></select>
+          </div>
+          <div class="filtro-group">
+            <label>Órgano</label>
+            <select id="f-organo"><option value="">Todos</option></select>
+          </div>
+          <div class="filtro-group">
+            <label>Priorizado</label>
+            <select id="f-priorizado">
+              <option value="">Todos</option>
+              <option value="si">Sí</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+          <div class="filtro-group">
+            <label>Discurso de 28 de julio</label>
+            <label class="check-ultimo">
+              <input type="checkbox" id="f-discurso" onchange="aplicarFiltros()">
+              <span>Solo mencionadas</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Fila 2: Eje, Línea, Área de influencia, Estado de cumplimiento (4 de 5) -->
+        <div class="filtros-grid cinco">
+          <div class="filtro-group">
+            <label>Eje prioritario</label>
+            <select id="f-eje"><option value="">Todos</option></select>
+          </div>
+          <div class="filtro-group">
+            <label>Línea de interés</label>
+            <select id="f-linea"><option value="">Todos</option></select>
+          </div>
+          <div class="filtro-group">
+            <label>Área de influencia</label>
+            <input type="text" id="f-area" placeholder="Escribe para buscar…">
+          </div>
+          <div class="filtro-group">
+            <label>Estado de cumplimiento</label>
+            <select id="f-estado-cumpl">
+              <option value="">Todos</option>
+              <option value="Cumplido">✅ Cumplido</option>
+              <option value="En proceso">🔄 En proceso</option>
+              <option value="Reprogramado">📅 Reprogramado</option>
+              <option value="__sin__">Sin estado</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Fila 3: CUI, Intervención, Hito, Fecha de cumplimiento, Hito final -->
+        <div class="filtros-grid cinco">
+          <div class="filtro-group">
+            <label>CUI</label>
+            <input type="text" id="f-cui" placeholder="Escribe para buscar…">
+          </div>
+          <div class="filtro-group">
+            <label>Intervención</label>
+            <input type="text" id="f-buscar" placeholder="Escribe para buscar…">
+          </div>
+          <div class="filtro-group">
+            <label>Hito</label>
+            <input type="text" id="f-hito" placeholder="Escribe para buscar…">
+          </div>
+          <div class="filtro-group">
+            <label>Fecha de cumplimiento</label>
+            <div class="meses-dropdown" id="meses-panel">
+              <button type="button" class="meses-btn" onclick="abrirMesesDropdown(event)">
+                <span id="meses-btn-label">Todos</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="meses-lista" id="meses-lista"></div>
+            </div>
+          </div>
+          <div class="filtro-group">
+            <label>Hito final</label>
+            <label class="check-ultimo">
+              <input type="checkbox" id="f-ultimo" onchange="aplicarFiltros()">
+              <span>Mostrar solo el último hito</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Fila 4: Limpiar -->
+        <div class="filtros-foot" style="justify-content:flex-end">
+          <button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar filtros</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="toolbar-info" id="resumen-info">Cargando...</div>
+      <div class="paginacion">
+        <button class="pag-btn" id="btn-anterior" onclick="cambiarPagina(-1)" disabled>‹ Anterior</button>
+        <span class="pag-info" id="pag-info">Página 1</span>
+        <button class="pag-btn" id="btn-siguiente" onclick="cambiarPagina(1)">Siguiente ›</button>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn-resumen" onclick="abrirResumen()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Ver resumen
+        </button>
+        <button class="btn-excel" onclick="exportarExcel()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="tabla-wrap">
+      <table id="tabla-principal">
+        <thead>
+          <tr>
+            <th style="width:6%; text-align:center; vertical-align:middle">Última<br>Actualización</th>
+            <th style="width:22%; vertical-align:middle">Intervención estratégica</th>
+            <th style="width:8%; vertical-align:middle">Responsable</th>
+            <th style="width:9%; vertical-align:middle">Área de influencia</th>
+            <th style="width:5%; text-align:center; vertical-align:middle">Priorización</th>
+            <th class="col-ogame" style="width:5%; text-align:center; vertical-align:middle">Habilitar<br>hitos</th>
+            <th style="width:18%; vertical-align:middle">Estado situacional</th>
+            <th style="width:5%; text-align:center; vertical-align:middle">Avance</th>
+            <th style="width:16%; vertical-align:middle">Hitos claves</th>
+            <th style="width:7%; text-align:center; vertical-align:middle">Fecha de<br>Cumplimiento</th>
+            <th style="width:8%; text-align:center; vertical-align:middle">Estado de<br>cumplimiento</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body">
+          <tr><td colspan="10"><div class="estado-carga"><div class="spinner"></div>Cargando datos...</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL RESUMEN POR EQUIPO -->
+<div class="modal-overlay" id="resumen-overlay">
+  <div class="modal" style="max-width:1080px">
+    <div class="modal-header">
       <div>
-        <div class="topbar-name">Hub de Herramientas · OGAME</div>
-        <div class="topbar-sub">Oficina General de Articulación, Monitoreo, y Evaluación de Impacto</div>
+        <h2>Resumen por equipo</h2>
+        <p id="resumen-subtitulo">Total de intervenciones agrupadas por equipo</p>
       </div>
+      <button class="modal-close" onclick="cerrarResumen()">✕</button>
     </div>
-    <div>
-      <a class="btn-back" href="index.html">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-        Regresar a página principal
-      </a>
+    <div class="modal-body">
+      <div id="resumen-tabla-wrap"></div>
     </div>
-  </header>
-
-  <main class="main">
-    <div class="panel">
-      <div class="panel-title">VISTA EJECUTIVA · CARTERA PRIORIZADA</div>
-      <div class="panel-sub">Caracterización de intervenciones y estado de sus hitos</div>
-      <div class="panel-week" id="ejecSemanaLabel">—</div>
-
-      <!-- FILTROS -->
-      <div class="filtros" id="eFBoxFiltros" style="margin-bottom:14px;">
-        <p class="filtros-tit">Filtrar</p>
-
-        <!-- GRUPO INTERVENCIONES -->
-        <div class="ejec-filtros-grupo" style="margin-top:14px;">
-          <span class="ejec-grupo-tit">Intervenciones</span>
-          <!-- Fila 1: 5 columnas -->
-          <div class="filtros-3col" style="grid-template-columns:repeat(5,1fr);">
-            <div class="field"><label>Viceministerio</label><select id="eFVicem" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
-            <div class="field"><label>Unidad Responsable</label>
-              <div class="meses-dropdown" id="eFUeiPanel">
-                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFUeiPanel')"><span id="eFUeiLabel">Todas</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-                <div class="meses-lista" id="eFUeiLista"></div>
-              </div>
-            </div>
-            <div class="field"><label>Tipo de infraestructura</label><select id="eFTipo" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
-            <div class="field"><label style="color:var(--blue);font-weight:800;">Discurso de 28 de julio</label>
-              <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-weight:400;font-size:13px;cursor:pointer;">
-                <input type="checkbox" id="eFDiscurso" onchange="onFiltroEjec()" style="width:auto;accent-color:var(--blue);">
-                Solo mencionadas
-              </label>
-            </div>
-            <div class="field"><label style="font-weight:800;">Destacadas</label>
-              <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-weight:400;font-size:13px;cursor:pointer;">
-                <input type="checkbox" id="eFSoloPriorizadas" onchange="onFiltroEjec()" style="width:auto;accent-color:var(--red);">
-                Solo priorizadas
-              </label>
-            </div>
-          </div>
-          <!-- Fila 2: 5 columnas -->
-          <div class="filtros-3col" style="grid-template-columns:repeat(5,1fr);">
-            <div class="field"><label>Departamento</label><select id="eFDepto" onchange="onFiltroEjec()"><option value="">Todos</option></select></div>
-            <div class="field"><label>CUI</label><input type="text" id="eFCui" list="eFCuiList" placeholder="Escribe o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFCuiList"></datalist></div>
-            <div class="field"><label>Nombre de la Intervención</label><input type="text" id="eFNombre" list="eFNombreList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFNombreList"></datalist></div>
-            <div class="field"><label>Modalidad de Ejecución</label>
-              <div class="meses-dropdown" id="eFModPanel">
-                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFModPanel')"><span id="eFModLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-                <div class="meses-lista" id="eFModLista"></div>
-              </div>
-            </div>
-            <div class="field"><label>Fase de la Intervención</label>
-              <div class="meses-dropdown" id="eFFasePanel">
-                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFFasePanel')"><span id="eFFaseLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-                <div class="meses-lista" id="eFFaseLista"></div>
-              </div>
-            </div>
-          </div>
-          <!-- Fila 3: 3 columnas (resto vacío) -->
-          <div class="filtros-3col" style="grid-template-columns:repeat(5,1fr);">
-            <div class="field"><label>Problemática</label>
-              <div class="meses-dropdown" id="eFFactoresPanel">
-                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFFactoresPanel')"><span id="eFFactoresLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-                <div class="meses-lista" id="eFFactoresLista"></div>
-              </div>
-            </div>
-            <div class="field"><label>Riesgos</label>
-              <div class="meses-dropdown" id="eFRiesgosPanel">
-                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFRiesgosPanel')"><span id="eFRiesgosLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-                <div class="meses-lista" id="eFRiesgosLista"></div>
-              </div>
-            </div>
-            <div class="field"><label>Responsable del destrabe</label>
-              <div class="meses-dropdown" id="eFInstanciaPanel">
-                <button type="button" class="meses-btn" onclick="abrirMultiEjec(event,'eFInstanciaPanel')"><span id="eFInstanciaLabel">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-                <div class="meses-lista" id="eFInstanciaLista"></div>
-              </div>
-            </div>
-            <div class="field"></div>
-            <div class="field"></div>
-          </div>
-        </div>
-
-        <hr style="border:none; border-top:1px solid #c9d6ea; margin:4px 0 14px;">
-
-        <!-- GRUPO HITOS -->
-        <div class="ejec-filtros-grupo">
-          <span class="ejec-grupo-tit">Hitos</span>
-          <div class="filtros-3col" style="grid-template-columns:repeat(5,1fr); align-items:start;">
-            <div class="field"><label>Hito</label><input type="text" id="eFHito" list="eFHitoList" placeholder="Escribe parte del nombre o elige…" autocomplete="off" oninput="onFiltroEjec()"><datalist id="eFHitoList"></datalist></div>
-            <div class="field"><label>Categoría de hito</label><select id="eFCategoria" onchange="onFiltroEjec()"><option value="">Todas</option></select></div>
-            <div class="field"><label>Estado de cumplimiento del hito</label>
-              <div class="chips">
-                <span class="chip" data-estado="EN PROCESO" onclick="toggleChipEjec(this)">EN PROCESO</span>
-                <span class="chip" data-estado="CUMPLIDO" onclick="toggleChipEjec(this)">CUMPLIDO</span>
-              </div>
-            </div>
-            <div class="field"><label>Fecha de cumplimiento</label>
-              <div class="meses-dropdown" id="eMesesPanel">
-                <button type="button" class="meses-btn" onclick="abrirMesesEjec(event)">
-                  <span id="eMesesBtnLabel">Todos</span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                </button>
-                <div class="meses-lista" id="eMesesLista"></div>
-              </div>
-            </div>
-            <div class="field"></div>
-          </div>
-        </div>
-
-        <div class="filtros-foot"><button class="btn-limpiar" onclick="limpiarFiltrosEjec()">Limpiar filtros</button></div>
-      </div>
-
-      <!-- Barra: contador + botones de descarga -->
-      <div class="ejec-meta-bar">
-        <span class="ejec-contador" id="ejecContador">—</span>
-        <div style="display:flex; gap:8px;">
-          <button class="btn-export" onclick="exportarXLSXEjec()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Descargar Excel
-          </button>
-          <button class="btn-export" style="background:#C8102E;" onmouseover="this.style.background='#a00d24'" onmouseout="this.style.background='#C8102E'" onclick="exportarPDFEjec()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-            Descargar PDF
-          </button>
-        </div>
-      </div>
-
-      <div id="loadingMsg" class="loading">Cargando intervenciones…</div>
-
-      <div class="tabla-wrap" id="tablaWrap" style="display:none;">
-        <table id="tablaEjec">
-          <thead>
-            <tr>
-              <th class="ejec-col-interv" style="width:18%">Intervención</th>
-              <th class="ejec-col-interv" style="width:5%;text-align:center;">Priorizar</th>
-              <th class="ejec-col-interv" style="width:6%">Fase</th>
-              <th class="ejec-col-interv" style="width:12%">Problemática</th>
-              <th class="ejec-col-interv" style="width:11%">Riesgos</th>
-              <th class="ejec-col-interv" style="width:11%">Responsable del destrabe</th>
-              <th style="width:27%">Hito</th>
-              <th style="width:8%">Fecha de Cumplimiento</th>
-              <th style="width:2%"></th>
-            </tr>
-          </thead>
-          <tbody id="tbodyEjec"></tbody>
-        </table>
-      </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="cerrarResumen()">Cerrar</button>
+      <button class="btn-guardar" style="background:var(--verde)" onclick="descargarResumen()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar resumen
+      </button>
     </div>
-  </main>
-</div>
-
-<!-- MODAL ESTADO SITUACIONAL -->
-<div class="overlay" id="overlayEjecSit">
-  <div class="modal modal-lg">
-    <div class="modal-head">
-      <div>
-        <div class="modal-title">Estado situacional</div>
-        <div class="modal-interv" id="ejecSitInterv">—</div>
-        <div class="modal-hito" id="ejecSitHito">—</div>
-      </div>
-      <button class="modal-x" onclick="cerrarEjecSit()" aria-label="Cerrar">&times;</button>
-    </div>
-    <div style="display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
-      <span id="ejecSitBadge"></span>
-      <span style="font-size:13px; color:var(--text-2);">Fecha de cumplimiento: <strong id="ejecSitFecha">—</strong></span>
-      <span style="font-size:13px; color:var(--text-2);">Avance: <strong id="ejecSitAvance">—</strong></span>
-    </div>
-    <div style="background:#f4f6f9; border-radius:8px; padding:16px 18px; font-size:14px; color:var(--text); line-height:1.65; white-space:pre-wrap;" id="ejecSitTexto">—</div>
   </div>
 </div>
 
+<!-- MODAL LOGIN OGAME -->
+<div class="modal-overlay" id="login-overlay">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div>
+        <h2>Vista OGAME</h2>
+        <p>Ingresa la contraseña para habilitar la edición</p>
+      </div>
+      <button class="modal-close" onclick="cerrarLoginOGAME()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Contraseña</label>
+        <div style="position:relative">
+          <input type="password" id="login-password" placeholder="Contraseña OGAME" style="padding-right:40px" onkeydown="if(event.key==='Enter')validarOGAME()">
+          <button type="button" id="btn-ojo" onclick="toggleVerPassword()" title="Mostrar contraseña"
+                  style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gris-texto);padding:4px;display:flex">
+            <svg id="ojo-abierto" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg id="ojo-cerrado" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+        <div id="login-error" style="color:var(--rojo);font-size:12px;margin-top:6px;display:none">Contraseña incorrecta</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="cerrarLoginOGAME()">Cancelar</button>
+      <button class="btn-guardar" onclick="validarOGAME()">Ingresar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE REGISTRO -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modal-titulo">Registrar actualización</h2>
+        <p id="modal-subtitulo"></p>
+      </div>
+      <button class="modal-close" onclick="cerrarModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- SECCIÓN INTERVENCIÓN -->
+      <div class="modal-seccion">
+        <div class="modal-seccion-titulo">Estado de la intervención</div>
+        <div class="form-grid" style="margin-bottom:14px">
+          <div class="form-group form-full">
+            <label>Estado situacional</label>
+            <textarea id="m-estado" rows="3" placeholder="Describe el estado actual de la intervención…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Avance físico (%)</label>
+            <input type="number" id="m-avance" placeholder="0" step="0.1" min="0" max="100">
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN HITOS -->
+      <div class="modal-seccion">
+        <div class="modal-seccion-titulo">Hitos clave</div>
+        <div id="modal-aviso-hitos" style="display:none;background:var(--amarillo-bg);border:1px solid var(--amarillo);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#8a6200">
+          🔒 La actualización de hitos está deshabilitada para esta intervención. Puedes registrar el estado y el avance, pero las fechas de cumplimiento no pueden modificarse.
+        </div>
+        <table class="hitos-tabla" id="modal-hitos-tabla">
+          <thead>
+            <tr>
+              <th style="width:50%">Hito</th>
+              <th style="width:28%">Fecha de cumplimiento</th>
+              <th style="width:22%">Estado de Cumplimiento</th>
+            </tr>
+          </thead>
+          <tbody id="modal-hitos-body"></tbody>
+        </table>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-guardar" id="btn-guardar" onclick="guardarRegistro()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Guardar registro
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script>
-// ====== CONFIGURACIÓN ======
-const ESTADO_TSV  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=734960726&single=true&output=tsv';
-const MAESTRO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=279418764&single=true&output=tsv';
-const DEPTO_TSV   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=1441170985&single=true&output=tsv';
-const EJEC_TSV    = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=1061211372&single=true&output=tsv';
+// ── CONFIGURACIÓN ──────────────────────────────────────────────────────────────
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxFySD-V9iYZMMwYql2090TDajXnMDg7Sz2l_0rrep3UPmPPWDT4TbiCRl6t51E1AZZpw/exec';
 
-const CORS_PROXIES = [ url=>url, url=>'https://corsproxy.io/?'+encodeURIComponent(url), url=>'https://api.allorigins.win/raw?url='+encodeURIComponent(url) ];
+const TSV_MAESTRO_INTERV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=839870935&single=true&output=tsv';
+const TSV_MAESTRO_HITOS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=819717629&single=true&output=tsv';
+const TSV_ESTADO_INTERV= 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=1274731330&single=true&output=tsv';
+const TSV_ESTADO_HITOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=1161068484&single=true&output=tsv';
 
-// Índices columnas Estado (hitos)
-const E  = { corte:0, codHito:1, hito:2, categoria:3, codInterno:4, cui:5, nombre:6, fechaCump:7, estado:8, avance:9, situacional:10 };
-// Índices columnas Maestro
-const M  = { codInterno:0, codHito:2, dpto:5, estatus:6, modalidad:7, uei:8, vicem:9, tipoInfra:10, cui:11, discurso:13 };
-// Índices columnas Estado Intervenciones
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxSgvtxdB2Y4VTaFOBzIkmscjhpVwJHdgw22hWBMEYhwACmhUdYZEjQm4laGJDo4k6d/exec';
-const TOKEN_WEB   = 'ogame_2026';
+const POR_PAGINA = 8; // intervenciones por página
 
-const EI = { codInterno:0, cui:1, nombre:2, fase:3, factores:4, riesgos:5, instancia:6, estadoActual:7, priorizado:8 };
+// ── ESTADO GLOBAL ──────────────────────────────────────────────────────────────
+let maestro      = []; // filas crudas del TSV maestro
+let intervenciones = []; // objetos agrupados { codigo, nombre, organo, eje, linea, hitos[] }
+let estadoInterv = {}; // { codigo → { estadoSituacional, costo, pim, devengado, priorizado, fechaReg } }
+let estadoHitos  = {}; // { codhito → { fechaCumplimiento, fechaReg } }
+let filtradas    = []; // intervenciones después de filtros
+let paginaActual = 1;
+let vistaOGAME   = sessionStorage.getItem('hdr_vista_ogame') === '1'; // recuerda tras recargar
+const PASSWORD_OGAME = 'ogame.2026';
+let intervModal  = null; // intervención abierta en modal
 
-let HITOS = [], CLASIF = {}, INTERNO_A_HITOS = {};
-let DEPTOS = {}, DEPTOS_LISTA = [];
-let INTERVENCIONES = [];
-let ULTIMO_CORTE = '';
-let INTERNOS_DISCURSO = new Set(); // codInterno mencionados en el discurso 28 jul
-
-// Sets para cada filtro multi-select
-const eFSets = {
-  uei:      new Set(),
-  mod:      new Set(),
-  fase:     new Set(),
-  factores: new Set(),
-  riesgos:  new Set(),
-  instancia:new Set()
-};
-let eEstadosActivos = new Set();
-let eMesesSeleccion = new Set();
-
-const MULTI_CFG = [
-  { panel:'eFUeiPanel',       lista:'eFUeiLista',       label:'eFUeiLabel',       key:'uei' },
-  { panel:'eFModPanel',       lista:'eFModLista',       label:'eFModLabel',       key:'mod' },
-  { panel:'eFFasePanel',      lista:'eFFaseLista',      label:'eFFaseLabel',      key:'fase' },
-  { panel:'eFFactoresPanel',  lista:'eFFactoresLista',  label:'eFFactoresLabel',  key:'factores' },
-  { panel:'eFRiesgosPanel',   lista:'eFRiesgosLista',   label:'eFRiesgosLabel',   key:'riesgos' },
-  { panel:'eFInstanciaPanel', lista:'eFInstanciaLista', label:'eFInstanciaLabel', key:'instancia' }
-];
-
-// ====== CARGA ======
-async function cargar() {
-  try {
-    const [estadoTxt, maestroTxt, deptoTxt, ejecTxt] = await Promise.all([
-      fetchProxy(ESTADO_TSV), fetchProxy(MAESTRO_TSV), fetchProxy(DEPTO_TSV), fetchProxy(EJEC_TSV)
-    ]);
-    parseMaestro(maestroTxt);
-    parseDeptos(deptoTxt);
-    parseEstado(estadoTxt);
-    parseIntervenciones(ejecTxt);
-    iniciar();
-  } catch(e) {
-    document.getElementById('loadingMsg').innerHTML = '<span style="color:#C8102E;">No se pudo cargar la información.<br><small>Verifica que las hojas estén publicadas como TSV. Error: '+e.message+'</small></span>';
+// ── FETCH TSV ──────────────────────────────────────────────────────────────────
+async function fetchTSV(url) {
+  const proxies = [url,
+    'https://corsproxy.io/?' + encodeURIComponent(url),
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(url)];
+  for (const p of proxies) {
+    try {
+      const r = await fetch(p);
+      if (!r.ok) continue;
+      const txt = await r.text();
+      if (txt.trim()) return txt;
+    } catch {}
   }
+  throw new Error('No se pudo cargar: ' + url);
 }
 
-async function fetchProxy(url) {
-  let lastErr = null;
-  for (const fn of CORS_PROXIES) {
-    try { const res=await fetch(fn(url),{cache:'no-cache'}); if(!res.ok) throw new Error('HTTP '+res.status); const t=await res.text(); if(!t||t.length<10) throw new Error('Respuesta vacía'); return t; }
-    catch(e){ lastErr=e; }
-  }
-  throw lastErr || new Error('Sin respuesta');
-}
-
-function parseMaestro(tsv) {
-  const lineas = tsv.split('\n').filter(l=>l.trim()); CLASIF={}; INTERNO_A_HITOS={}; INTERNOS_DISCURSO=new Set();
-  for (let i=1;i<lineas.length;i++){
-    const c=lineas[i].split('\t'); const cod=(c[M.codHito]||'').trim(); if(!cod) continue;
-    if((c[M.estatus]||'').trim().toUpperCase()!=='VIGENTE') continue;
-    CLASIF[cod]={ vicem:(c[M.vicem]||'').trim(), uei:(c[M.uei]||'').trim(), tipoInfra:(c[M.tipoInfra]||'').trim(), modalidad:(c[M.modalidad]||'').trim(), dpto:(c[M.dpto]||'').trim(), cui:(c[M.cui]||'').trim() };
-    const interno=(c[M.codInterno]||'').trim();
-    if(interno){
-      if(!INTERNO_A_HITOS[interno]) INTERNO_A_HITOS[interno]=[];
-      INTERNO_A_HITOS[interno].push(cod);
-      if((c[M.discurso]||'').trim().toUpperCase()==='SI' || (c[M.discurso]||'').trim().toUpperCase()==='SÍ'){
-        INTERNOS_DISCURSO.add(interno);
-      }
-    }
-  }
-}
-
-function parseDeptos(tsv){
-  const lineas = tsv.split('\n').filter(l=>l.trim()); DEPTOS={}; const set=new Set();
-  for (let i=1;i<lineas.length;i++){
-    const c=lineas[i].split('\t'); const dep=(c[0]||'').trim(); const interno=(c[1]||'').trim();
-    if(!dep||!interno) continue;
-    set.add(dep);
-    const hitos = INTERNO_A_HITOS[interno]||[];
-    hitos.forEach(codHito=>{ if(!DEPTOS[codHito]) DEPTOS[codHito]=[]; if(!DEPTOS[codHito].includes(dep)) DEPTOS[codHito].push(dep); });
-  }
-  DEPTOS_LISTA=[...set].sort((a,b)=>a.localeCompare(b,'es'));
-}
-
-function deptosDe(codHito){ return DEPTOS[codHito]||[]; }
-
-function parseEstado(tsv) {
-  const lineas = tsv.split('\n').filter(l=>l.trim()); HITOS=[];
-  let maxCorte=0; let maxCorteStr='';
-  for (let i=1;i<lineas.length;i++){
-    const c=lineas[i].split('\t'); const cod=(c[E.codHito]||'').trim(); if(!cod) continue; if(!CLASIF[cod]) continue;
-    let estado=(c[E.estado]||'').trim().toUpperCase();
-    if(estado==='REPROGRAMADO') estado='EN PROCESO';
-    const corteRaw=(c[E.corte]||'').trim();
-    // Parsear corte para comparar (formato dd/mm/yyyy o yyyy-mm-dd)
-    const pc=parseFechaCorte(corteRaw);
-    if(pc>maxCorte){ maxCorte=pc; maxCorteStr=corteRaw; }
-    HITOS.push({ codHito:cod, hito:(c[E.hito]||'').trim(), nombre:(c[E.nombre]||'').trim(), cui:(c[E.cui]||'').trim(), categoria:(c[E.categoria]||'').trim(),
-      corte:corteRaw, fechaCump:(c[E.fechaCump]||'').trim(), estado, avance:(c[E.avance]||'').trim(), situacional:(c[E.situacional]||'').trim() });
-  }
-  ULTIMO_CORTE=maxCorteStr;
-}
-
-function parseFechaCorte(s){
-  if(!s) return 0;
-  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if(m) return parseInt(m[3])*10000+parseInt(m[2])*100+parseInt(m[1]);
-  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m) return parseInt(m[1])*10000+parseInt(m[2])*100+parseInt(m[3]);
-  return 0;
-}
-
-function fmtCorte(s){
-  if(!s) return '—';
-  const MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if(m) return parseInt(m[1])+'-'+MESES[parseInt(m[2])-1]+'-'+String(m[3]).slice(-2);
-  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m) return parseInt(m[3])+'-'+MESES[parseInt(m[2])-1]+'-'+String(m[1]).slice(-2);
-  return s;
-}
-
-function parseIntervenciones(tsv){
-  const lineas = tsv.split('\n').filter(l=>l.trim()); INTERVENCIONES=[];
-  for(let i=1; i<lineas.length; i++){
-    const c=lineas[i].split('\t'); const cod=(c[EI.codInterno]||'').trim(); if(!cod) continue;
-    INTERVENCIONES.push({ codInterno:cod, cui:(c[EI.cui]||'').trim(), nombre:(c[EI.nombre]||'').trim(),
-      fase:(c[EI.fase]||'').trim(), factores:(c[EI.factores]||'').trim(), riesgos:(c[EI.riesgos]||'').trim(),
-      instancia:(c[EI.instancia]||'').trim(), estadoActual:(c[EI.estadoActual]||'').trim(),
-      priorizado:(c[EI.priorizado]||'').trim().toUpperCase()==='SÍ' || (c[EI.priorizado]||'').trim().toUpperCase()==='SI' });
-  }
-}
-
-function filtrarIntervencionesPorEstado(){
-  // Construir set de codInterno que tienen al menos un hito en la hoja Estado
-  const codsConEstado = new Set(HITOS.map(h=>h.codInterno).filter(Boolean));
-  // También buscar codInterno desde INTERNO_A_HITOS inverso: hito → interno
-  // HITOS no tiene codInterno directamente; lo sacamos de INTERNO_A_HITOS
-  const codsConHitos = new Set();
-  Object.entries(INTERNO_A_HITOS).forEach(([interno, hitos])=>{
-    if(hitos.some(codHito=> HITOS.find(h=>h.codHito===codHito)))
-      codsConHitos.add(interno);
+function parseTSV(txt) {
+  const lineas = txt.trim().split('\n');
+  const headers = lineas[0].split('\t').map(h => h.trim());
+  return lineas.slice(1).map(l => {
+    const celdas = l.split('\t');
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (celdas[i] || '').trim());
+    return obj;
   });
-  INTERVENCIONES = INTERVENCIONES.filter(i=> codsConHitos.has(i.codInterno));
 }
 
-function iniciar(){
-  filtrarIntervencionesPorEstado();
-  document.getElementById('loadingMsg').style.display = 'none';
-  document.getElementById('tablaWrap').style.display  = 'block';
-  document.getElementById('ejecSemanaLabel').textContent = 'Último corte registrado: ' + fmtCorte(ULTIMO_CORTE);
-  recalcEjec();
-  aplicarFiltrosEjec();
+// ── CARGA INICIAL ──────────────────────────────────────────────────────────────
+async function cargarDatos() {
+  try {
+    const [tsvMaestroInterv, tsvMaestroHitos, tsvInterv, tsvHitos] = await Promise.all([
+      fetchTSV(TSV_MAESTRO_INTERV),
+      fetchTSV(TSV_MAESTRO_HITOS),
+      fetchTSV(TSV_ESTADO_INTERV),
+      fetchTSV(TSV_ESTADO_HITOS)
+    ]);
+
+    // 1) Maestro de intervenciones (una fila por intervención)
+    // cols: Código, Grupo, Viceministerios, Órgano, Ejes prioritarios de la gestión,
+    //       Línea de interés, Intervención Estratégica, Detalle de Intervención,
+    //       Relevancia sectorial, Área de Influencia
+    const mapa = {};
+    parseTSV(tsvMaestroInterv).forEach(f => {
+      const cod = f['Código'];
+      if (!cod) return;
+      mapa[cod] = {
+        codigo:     cod,
+        id:         f['ID'] || cod,   // agrupa variantes (DGPRTM-28-1/-2/-3 → DGPRTM-28)
+        grupo:      f['Grupo'] || '',
+        vice:       f['Viceministerios'] || '',
+        organo:     f['Órgano'] || '',
+        eje:        f['Ejes prioritarios de la gestión'] || '',
+        linea:      f['Línea de interés'] || '',
+        nombre:     f['Intervención Estratégica'] || '',
+        detalle:    f['Detalle de Intervención'] || '',
+        relevancia: f['Relevancia sectorial'] || '',
+        area:       f['Área de Influencia'] || '',
+        equipo:     f['EQUIPO'] || '',
+        director:   f['DIRECTOR(A)'] || '',
+        resumenGrupo: f['RESUMEN'] || '',
+        cui:        f['CUI'] || '',
+        discurso:   (f['Discurso'] || '').trim().toLowerCase() === 'si' ||
+                    (f['Discurso'] || '').trim().toLowerCase() === 'sí',
+        hitos:      []
+      };
+    });
+
+    // 2) Maestro de hitos (una fila por hito) — se cruza por Código
+    // cols: Código, Intervención Estratégica, Departamento, CODHITOS, Hito(s) clave(s)
+    parseTSV(tsvMaestroHitos).forEach(f => {
+      const cod = f['Código'];
+      if (!cod || !f['CODHITOS']) return;
+      if (!mapa[cod]) return; // hito sin intervención en el maestro: se ignora
+      mapa[cod].hitos.push({
+        codhito: f['CODHITOS'],
+        nombre:  f['Hito(s) clave(s)'] || '',
+        ultimo:  (f['Último'] || f['Ultimo'] || '').trim().toLowerCase() === 'si' ||
+                 (f['Último'] || f['Ultimo'] || '').trim().toLowerCase() === 'sí'
+      });
+    });
+
+    intervenciones = Object.values(mapa);
+
+    // procesar estado actual intervenciones
+    // cols: Fecha de registro, Código, Intervención Estratégica, Estado situacional, Avance, Priorizado
+    estadoInterv = {};
+    parseTSV(tsvInterv).forEach(f => {
+      const cod = f['Código'];
+      if (!cod) return;
+      estadoInterv[cod] = {
+        fechaReg:   f['Fecha de registro'],
+        estado:     f['Estado situacional'],
+        avance:     f['Avance'] || '',
+        priorizado: (f['Priorizado'] || '').toLowerCase() === 'sí' || (f['Priorizado'] || '').toLowerCase() === 'si',
+        // Por defecto habilitado: solo se bloquea si dice explícitamente "No"
+        hitosHabilitados: (f['HitosHabilitados'] || '').toLowerCase() !== 'no'
+      };
+    });
+
+    // procesar estado actual hitos
+    // cols: Fecha de registro, Código, Intervención Estratégica, CODHITOS, Hito(s) clave(s), Fecha de Cumplimiento, Estado de Cumplimiento
+    estadoHitos = {};
+    parseTSV(tsvHitos).forEach(f => {
+      const cod = f['CODHITOS'];
+      if (!cod) return;
+      estadoHitos[cod] = {
+        fechaReg:           f['Fecha de registro'],
+        fechaCumplimiento:  f['Fecha de Cumplimiento'],
+        estadoCumplimiento: f['Estado de Cumplimiento'] || ''
+      };
+    });
+
+    poblarFiltros();
+    aplicarFiltros();
+
+  } catch (e) {
+    document.getElementById('tabla-body').innerHTML =
+      `<tr><td colspan="10"><div class="estado-carga">⚠️ Error al cargar datos. Verifica tu conexión e intenta recargar la página.</div></td></tr>`;
+    document.getElementById('resumen-info').textContent = 'Error al cargar';
+    console.error(e);
+  }
 }
 
-// ====== UTILIDADES ======
-function clasifDe(h){ return CLASIF[h.codHito]||{}; }
-function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function avancePct(raw){ if(raw===null||raw===undefined) return NaN; let s=String(raw).trim(); const t=s.includes('%'); s=s.replace('%','').replace(',','.').trim(); let n=parseFloat(s); if(isNaN(n)) return NaN; if(t) return n; if(n<=1) return n*100; return n; }
-function fmtAvance(raw){ const n=avancePct(raw); if(isNaN(n)) return '—'; const r=Math.round(n*10)/10; return (Number.isInteger(r)?r:r.toFixed(1))+'%'; }
+// ── VISTA OGAME ─────────────────────────────────────────────────────────────────
+function abrirLoginOGAME() {
+  const inp = document.getElementById('login-password');
+  inp.value = '';
+  inp.type = 'password';
+  document.getElementById('ojo-abierto').style.display = 'block';
+  document.getElementById('ojo-cerrado').style.display = 'none';
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('login-overlay').classList.add('activo');
+  inp.focus();
+}
+function cerrarLoginOGAME() {
+  document.getElementById('login-overlay').classList.remove('activo');
+}
+function toggleVerPassword() {
+  const inp = document.getElementById('login-password');
+  const abierto = document.getElementById('ojo-abierto');
+  const cerrado = document.getElementById('ojo-cerrado');
+  const mostrar = inp.type === 'password';
+  inp.type = mostrar ? 'text' : 'password';
+  abierto.style.display = mostrar ? 'none' : 'block';
+  cerrado.style.display = mostrar ? 'block' : 'none';
+}
+function validarOGAME() {
+  const val = document.getElementById('login-password').value;
+  if (val === PASSWORD_OGAME) {
+    vistaOGAME = true;
+    sessionStorage.setItem('hdr_vista_ogame', '1');
+    cerrarLoginOGAME();
+    aplicarVistaOGAME();
+    renderTabla();
+    mostrarToast('Vista OGAME activada', 'exito');
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+function salirOGAME() {
+  vistaOGAME = false;
+  sessionStorage.removeItem('hdr_vista_ogame');
+  aplicarVistaOGAME();
+  renderTabla();
+}
+// Aplica el estado visual (banner, botón, fondo) según la vista actual
+function aplicarVistaOGAME() {
+  document.getElementById('banner-ogame').style.display = vistaOGAME ? 'flex' : 'none';
+  document.getElementById('btn-ogame').style.display = vistaOGAME ? 'none' : 'flex';
+  document.getElementById('card-principal').classList.toggle('ogame-activa', vistaOGAME);
+}
 
+// ── FILTROS ────────────────────────────────────────────────────────────────────
+
+// Utilidades de fecha de cumplimiento (formato "mmm-aa" en español)
 const MESES_ABR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+// Años disponibles en el selector mes-año del modal (2025 a 2030)
+const ANIOS_SELECT = [2025, 2026, 2027, 2028, 2029, 2030];
 
-function fmtMesAnio(s){
-  if(!s) return 'S/D'; s=String(s).trim();
-  let mes, anio;
-  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if(m){ mes=parseInt(m[2],10); anio=m[3]; }
-  else { m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m){ mes=parseInt(m[2],10); anio=m[1]; } }
-  if(!mes||mes<1||mes>12||!anio) return escapeHtml(s);
-  return MESES_ABR[mes-1]+'-'+String(anio).slice(-2);
+// Variantes de abreviatura que apuntan al mismo mes canónico (índice 0-11).
+// Cubre "sept"/"set"/"setiembre" para septiembre y nombres completos comunes.
+const ALIAS_MESES = {
+  ene:0, enero:0, feb:1, febrero:1, mar:2, marzo:2, abr:3, abril:3,
+  may:4, mayo:4, jun:5, junio:5, jul:6, julio:6, ago:7, agosto:7,
+  sep:8, sept:8, set:8, setiembre:8, septiembre:8,
+  oct:9, octubre:9, nov:10, noviembre:10, dic:11, diciembre:11
+};
+
+// "ago-26" / "sept-26" -> { mes, anio, orden, trimestre, label } (label canónico "sep-26")
+function parseCumplimiento(valor) {
+  if (!valor) return null;
+  const limpio = valor.trim().toLowerCase();
+  const m = limpio.match(/^([a-zé]+)[-\/]?(\d{2,4})$/); // letras (variables) + año
+  if (!m) return null;
+  const idxMes = ALIAS_MESES[m[1]];
+  if (idxMes === undefined) return null;
+  let anio = parseInt(m[2], 10);
+  if (anio < 100) anio += 2000;
+  return {
+    label: `${MESES_ABR[idxMes]}-${String(anio).slice(-2)}`, // siempre canónico
+    mes: idxMes + 1,
+    anio: anio,
+    orden: anio * 12 + idxMes,
+    trimestre: Math.floor(idxMes / 3) + 1  // 1..4
+  };
 }
 
-function parseCumpl(s){
-  if(!s) return null; s=String(s).trim();
-  let mes, anio;
-  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if(m){ mes=parseInt(m[2],10); anio=parseInt(m[3],10); }
-  else { m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m){ mes=parseInt(m[2],10); anio=parseInt(m[1],10); } }
-  if(!mes||mes<1||mes>12||!anio) return null;
-  return { label: MESES_ABR[mes-1]+'-'+String(anio).slice(-2), orden: anio*12+(mes-1) };
+let mesesDisponibles = [];   // [{label, orden, trimestre, anio}] ordenados
+let mesesSeleccion   = new Set(); // labels de meses activos
+
+// Construye la lista de meses a partir de los hitos de las intervenciones
+// que pasan los demás filtros (cascada). Respeta también el checkbox "solo
+// último hito": si está activo, solo considera los hitos marcados como último.
+function construirFechasCumplimiento() {
+  const set = new Map(); // label -> obj
+  const base = intervenciones.length
+    ? intervenciones.filter(i => pasaFiltrosExcepto(i, '__meses__'))
+    : [];
+  const soloUltimo = document.getElementById('f-ultimo')?.checked;
+  const vHito = document.getElementById('f-hito')?.value.trim().toLowerCase();
+  base.forEach(i => {
+    var hitosBase = soloUltimo ? i.hitos.filter(h => h.ultimo) : i.hitos;
+    if (vHito) hitosBase = hitosBase.filter(h => (h.nombre || '').toLowerCase().includes(vHito));
+    hitosBase.forEach(h => {
+      const eh = estadoHitos[h.codhito];
+      if (!eh) return;
+      const p = parseCumplimiento(eh.fechaCumplimiento);
+      if (p) set.set(p.label, p);
+    });
+  });
+  mesesDisponibles = [...set.values()].sort((a, b) => a.orden - b.orden);
 }
 
-function badgeEstado(est){
-  if(est==='EN PROCESO') return '<span class="badge b-proc">EN PROCESO</span>';
-  if(est==='CUMPLIDO')   return '<span class="badge b-cump">CUMPLIDO</span>';
-  return '<span class="badge">'+escapeHtml(est)+'</span>';
+function poblarFiltros() {
+  ['f-grupo','f-vice','f-organo','f-eje','f-linea'].forEach(id => {
+    document.getElementById(id).addEventListener('change', aplicarFiltros);
+  });
+  document.getElementById('f-priorizado').addEventListener('change', aplicarFiltros);
+  document.getElementById('f-buscar').addEventListener('input', aplicarFiltros);
+  document.getElementById('f-area').addEventListener('input', aplicarFiltros);
+  document.getElementById('f-cui').addEventListener('input', aplicarFiltros);
+  document.getElementById('f-hito').addEventListener('input', aplicarFiltros);
+  document.getElementById('f-estado-cumpl').addEventListener('change', aplicarFiltros);
+
+  refrescarOpcionesFiltros();
 }
 
-function emojiEstado(est){
-  if(est==='CUMPLIDO') return '✅ ';
+// Devuelve true si la intervención pasa todos los filtros EXCEPTO el indicado.
+// Se usa para calcular qué opciones tiene sentido mostrar en cada dropdown.
+function pasaFiltrosExcepto(i, excepto) {
+  const v = {
+    grupo:      document.getElementById('f-grupo').value,
+    vice:       document.getElementById('f-vice').value,
+    organo:     document.getElementById('f-organo').value,
+    eje:        document.getElementById('f-eje').value,
+    linea:      document.getElementById('f-linea').value,
+    priorizado: document.getElementById('f-priorizado').value,
+    buscar:     document.getElementById('f-buscar').value.trim().toLowerCase(),
+    area:       document.getElementById('f-area').value.trim().toLowerCase(),
+    cui:        document.getElementById('f-cui').value.trim().toLowerCase(),
+    discurso:   document.getElementById('f-discurso').checked
+  };
+  if (excepto !== 'grupo'  && v.grupo  && i.grupo  !== v.grupo)  return false;
+  if (excepto !== 'vice'   && v.vice   && i.vice   !== v.vice)   return false;
+  if (excepto !== 'organo' && v.organo && i.organo !== v.organo) return false;
+  if (excepto !== 'eje'    && v.eje    && i.eje    !== v.eje)    return false;
+  if (excepto !== 'linea'  && v.linea  && i.linea  !== v.linea)  return false;
+  if (excepto !== 'priorizado' && v.priorizado) {
+    const esPrior = estadoInterv[i.codigo]?.priorizado;
+    if (v.priorizado === 'si' && !esPrior) return false;
+    if (v.priorizado === 'no' && esPrior)  return false;
+  }
+  if (excepto !== 'buscar' && v.buscar && !i.nombre.toLowerCase().includes(v.buscar)) return false;
+  if (excepto !== 'area'   && v.area   && !(i.area || '').toLowerCase().includes(v.area)) return false;
+  if (excepto !== 'cui'    && v.cui    && !(i.cui || '').toLowerCase().includes(v.cui)) return false;
+  if (excepto !== 'discurso' && v.discurso && !i.discurso) return false;
+  return true;
+}
+
+// Reconstruye las opciones de cada dropdown según los demás filtros activos.
+// Conserva la selección actual aunque ya no esté entre las opciones.
+function refrescarOpcionesFiltros() {
+  const campos = [
+    { id: 'f-grupo',  campo: 'grupo'  },
+    { id: 'f-vice',   campo: 'vice'   },
+    { id: 'f-organo', campo: 'organo' },
+    { id: 'f-eje',    campo: 'eje'    },
+    { id: 'f-linea',  campo: 'linea'  }
+  ];
+  campos.forEach(({ id, campo }) => {
+    const sel = document.getElementById(id);
+    const valorActual = sel.value;
+    const disponibles = [...new Set(
+      intervenciones.filter(i => pasaFiltrosExcepto(i, campo)).map(i => i[campo]).filter(Boolean)
+    )].sort();
+    // si hay algo seleccionado que ya no aparece, lo mantenemos para no perder el filtro
+    if (valorActual && !disponibles.includes(valorActual)) disponibles.push(valorActual);
+    sel.innerHTML = '<option value="">Todos</option>' +
+      disponibles.map(v => `<option value="${esc(v)}"${v === valorActual ? ' selected' : ''}>${esc(v)}</option>`).join('');
+  });
+
+  // los meses también se filtran en cascada
+  construirFechasCumplimiento();
+  // si un mes seleccionado ya no existe entre los disponibles, se descarta
+  const labelsDisp = new Set(mesesDisponibles.map(m => m.label));
+  labelsDisp.add('__sinfecha__');
+  [...mesesSeleccion].forEach(l => { if (!labelsDisp.has(l)) mesesSeleccion.delete(l); });
+  renderMesesDropdown();
+}
+
+// Dropdown de meses con checkboxes
+function renderMesesDropdown() {
+  const cont = document.getElementById('meses-lista');
+  if (mesesDisponibles.length === 0) {
+    cont.innerHTML = '<div style="padding:10px;color:var(--gris-texto);font-size:12px">Sin fechas registradas</div>';
+  } else {
+    cont.innerHTML = mesesDisponibles.map(m => `
+      <label class="mes-item">
+        <input type="checkbox" value="${m.label}" ${mesesSeleccion.has(m.label) ? 'checked' : ''}
+               onchange="toggleMes('${m.label}', this.checked)">
+        <span>${m.label}</span>
+      </label>`).join('') +
+      `<label class="mes-item" style="border-top:1px solid var(--gris-borde);margin-top:4px;padding-top:6px">
+        <input type="checkbox" value="__sinfecha__" ${mesesSeleccion.has('__sinfecha__') ? 'checked' : ''}
+               onchange="toggleMes('__sinfecha__', this.checked)">
+        <span style="font-style:italic;color:var(--gris-texto)">Sin fecha</span>
+      </label>`;
+  }
+  actualizarBotonMeses();
+}
+
+function actualizarBotonMeses() {
+  const btn = document.getElementById('meses-btn-label');
+  const n = mesesSeleccion.size;
+  if (n === 0) { btn.textContent = 'Todos'; btn.style.color = 'var(--texto)'; }
+  else { btn.textContent = `${n} seleccionado${n > 1 ? 's' : ''}`; btn.style.color = 'var(--azul)'; }
+}
+
+function toggleMes(label, activo) {
+  if (activo) mesesSeleccion.add(label);
+  else mesesSeleccion.delete(label);
+  actualizarBotonMeses();
+  aplicarFiltros();
+}
+
+function abrirMesesDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('meses-panel').classList.toggle('abierto');
+}
+
+// Hitos de una intervención que pasan los filtros de hito (Opción B: recorta).
+// Combina: filtro de meses, "solo último hito", y búsqueda de texto en el hito.
+function hitosVisibles(interv) {
+  let lista = interv.hitos;
+
+  // solo el hito marcado como último en el maestro
+  const soloUltimo = document.getElementById('f-ultimo')?.checked;
+  if (soloUltimo) lista = lista.filter(h => h.ultimo);
+
+  // búsqueda de texto en el nombre del hito
+  const vHito = document.getElementById('f-hito')?.value.trim().toLowerCase();
+  if (vHito) lista = lista.filter(h => (h.nombre || '').toLowerCase().includes(vHito));
+
+  // filtro por estado de cumplimiento del hito
+  const vEstadoCumpl = document.getElementById('f-estado-cumpl')?.value;
+  if (vEstadoCumpl) {
+    lista = lista.filter(h => {
+      const eh = estadoHitos[h.codhito] || {};
+      const est = eh.estadoCumplimiento || '';
+      if (vEstadoCumpl === '__sin__') return est === '';
+      return est === vEstadoCumpl;
+    });
+  }
+
+  // filtro por mes de cumplimiento
+  if (mesesSeleccion.size > 0) {
+    lista = lista.filter(h => {
+      const eh = estadoHitos[h.codhito] || {};
+      const p = parseCumplimiento(eh.fechaCumplimiento);
+      if (!p) return mesesSeleccion.has('__sinfecha__');
+      return mesesSeleccion.has(p.label);
+    });
+  }
+  return lista;
+}
+
+function aplicarFiltros() {
+  // Primero sincroniza qué meses son válidos (respeta demás filtros y el
+  // checkbox de último hito) y descarta selecciones de meses que ya no aplican.
+  // Esto evita que la tabla quede vacía por un mes que dejó de ser posible.
+  construirFechasCumplimiento();
+  const labelsValidos = new Set(mesesDisponibles.map(m => m.label));
+  labelsValidos.add('__sinfecha__');
+  [...mesesSeleccion].forEach(l => { if (!labelsValidos.has(l)) mesesSeleccion.delete(l); });
+
+  const vGrupo      = document.getElementById('f-grupo').value;
+  const vVice       = document.getElementById('f-vice').value;
+  const vOrgano     = document.getElementById('f-organo').value;
+  const vEje        = document.getElementById('f-eje').value;
+  const vLinea      = document.getElementById('f-linea').value;
+  const vPriorizado = document.getElementById('f-priorizado').value;
+  const vBuscar     = document.getElementById('f-buscar').value.trim().toLowerCase();
+  const vArea       = document.getElementById('f-area').value.trim().toLowerCase();
+  const vCui        = document.getElementById('f-cui').value.trim().toLowerCase();
+  const vDiscurso   = document.getElementById('f-discurso').checked;
+  const vHito       = document.getElementById('f-hito').value.trim().toLowerCase();
+
+  filtradas = intervenciones.filter(i => {
+    if (vGrupo  && i.grupo !== vGrupo)  return false;
+    if (vVice   && i.vice  !== vVice)   return false;
+    if (vOrgano && i.organo !== vOrgano) return false;
+    if (vEje    && i.eje   !== vEje)    return false;
+    if (vLinea  && i.linea !== vLinea)  return false;
+    if (vPriorizado) {
+      const esPrior = estadoInterv[i.codigo]?.priorizado;
+      if (vPriorizado === 'si' && !esPrior) return false;
+      if (vPriorizado === 'no' && esPrior)  return false;
+    }
+    if (vBuscar && !i.nombre.toLowerCase().includes(vBuscar)) return false;
+    if (vArea && !(i.area || '').toLowerCase().includes(vArea)) return false;
+    if (vCui && !(i.cui || '').toLowerCase().includes(vCui)) return false;
+    if (vDiscurso && !i.discurso) return false;
+    // Filtros de hito (mes, último, y/o texto de hito): la intervención pasa
+    // solo si le queda al menos un hito visible
+    const filtrandoHitos = mesesSeleccion.size > 0 ||
+                           document.getElementById('f-ultimo').checked ||
+                           vHito !== '' ||
+                           document.getElementById('f-estado-cumpl').value !== '';
+    if (filtrandoHitos && hitosVisibles(i).length === 0) return false;
+    return true;
+  });
+
+  paginaActual = 1;
+  refrescarOpcionesFiltros();
+  renderTabla();
+}
+
+function limpiarFiltros() {
+  ['f-grupo','f-vice','f-organo','f-eje','f-linea','f-priorizado','f-buscar','f-area','f-cui','f-hito','f-estado-cumpl'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-ultimo').checked = false;
+  document.getElementById('f-discurso').checked = false;
+  mesesSeleccion.clear();
+  renderMesesDropdown();
+  aplicarFiltros();
+}
+
+// ── RENDER TABLA ───────────────────────────────────────────────────────────────
+function renderTabla() {
+  // Display: cuenta IDs únicos (las variantes DGPRTM-28-1/-2/-3 son una sola)
+  const totalInterv = new Set(filtradas.map(i => i.id)).size;
+  const totalHitos  = filtradas.reduce((s, i) => s + hitosVisibles(i).length, 0);
+  // Paginación: sobre filas reales, no sobre IDs agrupados
+  const totalPags   = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
+
+  document.getElementById('resumen-info').innerHTML =
+    `<strong>${totalInterv}</strong> intervenciones &mdash; <strong>${totalHitos}</strong> hitos`;
+  document.getElementById('pag-info').textContent = `Página ${paginaActual} de ${totalPags}`;
+  document.getElementById('btn-anterior').disabled = paginaActual <= 1;
+  document.getElementById('btn-siguiente').disabled = paginaActual >= totalPags;
+
+  const inicio = (paginaActual - 1) * POR_PAGINA;
+  const pagina = filtradas.slice(inicio, inicio + POR_PAGINA);
+
+  const tbody = document.getElementById('tabla-body');
+
+  if (pagina.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="estado-carga">No hay intervenciones que coincidan con los filtros aplicados.</div></td></tr>`;
+    return;
+  }
+
+  let html = '';
+  pagina.forEach(interv => {
+    const est = estadoInterv[interv.codigo] || {};
+    const tieneRegistro = !!est.fechaReg;
+
+    const estadoHtml = est.estado
+      ? `<div class="estado-situacional">${esc(est.estado)}</div>`
+      : `<div class="estado-vacio">Sin registro</div>`;
+
+    // Avance físico (registrado a mano)
+    const avanceFisHtml = (est.avance !== undefined && est.avance !== '' && est.avance !== null)
+      ? `<span style="font-weight:700;color:var(--texto)">${fmtAvance(est.avance)}</span>`
+      : '—';
+
+    // Priorización: editable solo en Vista OGAME; en vista usuario, gris y no clickeable
+    const prioHtml = vistaOGAME
+      ? `<button class="toggle-prio ${est.priorizado ? 'on' : ''}" onclick="togglePriorizacion('${esc(interv.codigo)}', this)" title="${est.priorizado ? 'Priorizada' : 'No priorizada'}"></button>`
+      : `<span class="toggle-prio ${est.priorizado ? 'on' : ''} deshab" title="${est.priorizado ? 'Priorizada' : 'No priorizada'}"></span>`;
+
+    // Habilitar hitos (solo columna OGAME): candado editable por OGAME
+    const habil = est.hitosHabilitados !== false; // por defecto true
+    const habilHtml = `<button class="toggle-prio ${habil ? 'on' : ''}" onclick="toggleHitosHabilitados('${esc(interv.codigo)}', this)" title="${habil ? 'Hitos habilitados' : 'Hitos bloqueados'}"></button>`;
+
+    const hitosMostrar = hitosVisibles(interv);
+    const nHitos = hitosMostrar.length;
+
+    // columna Última Actualización: fecha + ícono lápiz, alineada arriba
+    const colActualizado = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        ${tieneRegistro
+          ? `<span style="font-size:11px;color:var(--texto);font-weight:700">${esc(est.fechaReg)}</span>`
+          : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro</span>`}
+        <button class="btn-lapiz" onclick="abrirModal('${esc(interv.codigo)}')" title="Registrar actualización">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
+      </div>`;
+
+    html += `
+    <tr class="fila-intervencion">
+      <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;text-align:center;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding-top:12px">
+        ${colActualizado}
+      </td>
+      <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
+        <div style="padding-left:9px;border-left:3px solid var(--azul)">
+          <div style="font-weight:700;color:var(--azul);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
+          ${interv.detalle ? `<div style="margin-top:4px;font-size:11px;color:var(--azul);font-style:italic;line-height:1.4">${esc(interv.detalle)}</div>` : ''}
+        </div>
+        ${interv.relevancia ? `<div style="margin-top:7px;font-size:11px;color:var(--texto-2);display:flex;align-items:flex-start;gap:5px;line-height:1.35">🎯 <span>${esc(interv.relevancia)}</span></div>` : ''}
+      </td>
+      <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>
+      <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.area) || "—"}</td>
+      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${prioHtml}</td>
+      <td class="col-ogame" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${habilHtml}</td>
+      <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
+        ${estadoHtml}
+      </td>
+      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:10px 12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${avanceFisHtml}</td>`;
+
+    hitosMostrar.forEach((h, idx) => {
+      const eh = estadoHitos[h.codhito] || {};
+      const pFecha = parseCumplimiento(eh.fechaCumplimiento);
+      const fechaTexto = pFecha ? pFecha.label : eh.fechaCumplimiento;
+      const fechaChip = eh.fechaCumplimiento
+        ? `<span class="fecha-chip con-fecha">${esc(fechaTexto)}</span>`
+        : `<span class="fecha-chip sin-fecha">Sin fecha</span>`;
+      const estadoChip = chipEstadoCumpl(eh.estadoCumplimiento);
+
+      const esUltimo = idx === hitosMostrar.length - 1;
+      const bordeInferior = esUltimo ? 'border-bottom:2px solid #CBD5E1' : 'border-bottom:1px solid #E5E7EB';
+
+      if (idx === 0) {
+        html += `
+      <td class="col-resalte" style="padding:8px 12px;${bordeInferior};vertical-align:middle;font-size:12px;border-left:1px solid #E5E7EB">
+        <div class="hito-nombre">${esc(h.nombre)}</div>
+      </td>
+      <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${fechaChip}</td>
+      <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${estadoChip}</td>
+    </tr>`;
+      } else {
+        html += `
+    <tr class="fila-hito">
+      <td class="col-resalte" style="padding:8px 12px;${bordeInferior};vertical-align:middle;font-size:12px;border-left:1px solid #E5E7EB">
+        <div class="hito-nombre">${esc(h.nombre)}</div>
+      </td>
+      <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${fechaChip}</td>
+      <td style="text-align:center;padding:8px 12px;${bordeInferior};vertical-align:middle">${estadoChip}</td>
+    </tr>`;
+      }
+    });
+
+    if (nHitos === 0) {
+      html += `<td class="col-resalte">—</td><td>—</td></tr>`;
+    }
+  });
+
+  tbody.innerHTML = html;
+}
+
+function fmt(v) {
+  if (!v && v !== 0) return '—';
+  const n = parseFloat(v);
+  return isNaN(n) ? v : n.toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+// Muestra el avance como porcentaje, tolerando datos ya con "%" o con coma decimal.
+// Acepta "25", "25%", "25,00%", "25.00%" → muestra "25%".
+function fmtAvance(v) {
+  var limpio = String(v).replace(/%/g, '').replace(',', '.').trim();
+  var n = parseFloat(limpio);
+  if (isNaN(n)) return esc(String(v)); // si no es número, lo muestra tal cual
+  // sin decimales si es entero, con un decimal si los tiene
+  var texto = Number.isInteger(n) ? String(n) : n.toFixed(1);
+  return texto + '%';
+}
+
+// Devuelve un chip de color según el estado de cumplimiento del hito
+function chipEstadoCumpl(estado) {
+  const mapa = {
+    'Cumplido':     { ico: '✅', bg: '#E3F5EC', color: '#1D9E75' },
+    'En proceso':   { ico: '🔄', bg: '#E8F0FB', color: '#0055A5' },
+    'Reprogramado': { ico: '📅', bg: '#FDF0E3', color: '#B5651D' }
+  };
+  const e = mapa[estado];
+  if (!e) return '<span style="color:var(--gris-texto);font-size:11px">—</span>';
+  return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:600;background:${e.bg};color:${e.color};white-space:nowrap">${e.ico} ${esc(estado)}</span>`;
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function cambiarPagina(delta) {
+  const total = Math.ceil(filtradas.length / POR_PAGINA);
+  paginaActual = Math.max(1, Math.min(total, paginaActual + delta));
+  renderTabla();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── MODAL ──────────────────────────────────────────────────────────────────────
+function abrirModal(codigo) {
+  intervModal = intervenciones.find(i => i.codigo === codigo);
+  if (!intervModal) return;
+
+  const est = estadoInterv[codigo] || {};
+
+  document.getElementById('modal-titulo').textContent = intervModal.nombre;
+  document.getElementById('modal-subtitulo').textContent = intervModal.organo;
+
+  document.getElementById('m-estado').value   = est.estado   || '';
+  document.getElementById('m-avance').value   = est.avance ? String(est.avance).replace(/%/g,'').replace(',','.').trim() : '';
+
+  // ¿Están habilitados los hitos para esta intervención?
+  const hitosBloqueados = est.hitosHabilitados === false;
+  const avisoHitos = document.getElementById('modal-aviso-hitos');
+  avisoHitos.style.display = hitosBloqueados ? 'block' : 'none';
+  // ocultar la tabla completa de hitos si están bloqueados
+  document.getElementById('modal-hitos-tabla').style.display = hitosBloqueados ? 'none' : 'table';
+
+  // hitos
+  const tbody = document.getElementById('modal-hitos-body');
+  tbody.innerHTML = hitosBloqueados ? '' : intervModal.hitos.map(h => {
+    const eh = estadoHitos[h.codhito] || {};
+    // precarga el mes-año actual (ej. "oct-26") descomponiéndolo
+    const p = parseCumplimiento(eh.fechaCumplimiento);
+    const mesSel = p ? p.mes : '';
+    const anioSel = p ? p.anio : '';
+    const estadoSel = eh.estadoCumplimiento || '';
+
+    const opcionesMes = MESES_ABR.map((m, idx) =>
+      `<option value="${idx + 1}" ${mesSel === idx + 1 ? 'selected' : ''}>${m}</option>`
+    ).join('');
+    const opcionesAnio = ANIOS_SELECT.map(a =>
+      `<option value="${a}" ${anioSel === a ? 'selected' : ''}>${a}</option>`
+    ).join('');
+    const opcionesEstado = [
+      { v: '', label: '—' },
+      { v: 'Cumplido', label: '✅ Cumplido' },
+      { v: 'En proceso', label: '🔄 En proceso' },
+      { v: 'Reprogramado', label: '📅 Reprogramado' }
+    ].map(e =>
+      `<option value="${e.v}" ${estadoSel === e.v ? 'selected' : ''}>${e.label}</option>`
+    ).join('');
+
+    return `
+    <tr>
+      <td>
+        <div style="font-size:12px;color:var(--texto)">${esc(h.nombre)}</div>
+      </td>
+      <td>
+        <div style="display:flex;gap:5px" data-codhito="${esc(h.codhito)}" data-nombre="${esc(h.nombre || '')}">
+          <select class="hito-mes" style="flex:1;min-width:0"><option value="">mes</option>${opcionesMes}</select>
+          <select class="hito-anio" style="width:64px"><option value="">año</option>${opcionesAnio}</select>
+        </div>
+      </td>
+      <td>
+        <select class="hito-estado">${opcionesEstado}</select>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('modal-overlay').classList.add('activo');
+  document.getElementById('m-estado').focus();
+}
+
+function cerrarModal() {
+  document.getElementById('modal-overlay').classList.remove('activo');
+  intervModal = null;
+}
+
+// Guardado independiente de priorización (solo Estado Actual, sin histórico ni fecha)
+async function togglePriorizacion(codigo, btn) {
+  const est = estadoInterv[codigo] || (estadoInterv[codigo] = {});
+  const nuevoValor = !est.priorizado;
+
+  // feedback visual inmediato + bloqueo mientras guarda
+  btn.disabled = true;
+  btn.classList.toggle('on', nuevoValor);
+
+  const payload = {
+    accion:     'actualizarPriorizacion',
+    codigo:     codigo,
+    priorizado: nuevoValor ? 'Sí' : 'No'
+  };
+
+  try {
+    const resp = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS en Apps Script
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      est.priorizado = nuevoValor;
+      btn.title = nuevoValor ? 'Priorizada' : 'No priorizada';
+    } else {
+      // revertir si el backend rechaza
+      btn.classList.toggle('on', !nuevoValor);
+      mostrarToast('No se pudo actualizar la priorización', 'error');
+    }
+  } catch (e) {
+    btn.classList.toggle('on', !nuevoValor);
+    mostrarToast('No se pudo conectar con el servidor', 'error');
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Candado de habilitación de hitos (solo OGAME): guardado independiente en Estado Actual
+async function toggleHitosHabilitados(codigo, btn) {
+  const est = estadoInterv[codigo] || (estadoInterv[codigo] = {});
+  const nuevoValor = est.hitosHabilitados === false ? true : false; // alterna
+  btn.disabled = true;
+  btn.classList.toggle('on', nuevoValor);
+
+  const payload = {
+    accion:  'actualizarHitosHabilitados',
+    codigo:  codigo,
+    habilitados: nuevoValor ? 'Sí' : 'No'
+  };
+
+  try {
+    const resp = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS en Apps Script
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      est.hitosHabilitados = nuevoValor;
+      btn.title = nuevoValor ? 'Hitos habilitados' : 'Hitos bloqueados';
+    } else {
+      btn.classList.toggle('on', !nuevoValor);
+      mostrarToast('No se pudo actualizar la habilitación de hitos', 'error');
+    }
+  } catch (e) {
+    btn.classList.toggle('on', !nuevoValor);
+    mostrarToast('No se pudo conectar con el servidor', 'error');
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// fecha ISO desde formato dd/mm/yyyy o yyyy-mm-dd
+function isoFecha(f) {
+  if (!f) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(f)) return f;
+  const p = f.split('/');
+  if (p.length === 3) return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
   return '';
 }
 
-function chipRiesgos(riesgosStr){
-  if(!riesgosStr||!riesgosStr.trim()) return '—';
-  const MAP = {
-    'controversia técnica':'rc-controversia',
-    'falta de insumos':'rc-insumos',
-    'interferencias':'rc-interferencias',
-    'problemas prediales':'rc-prediales',
-    'retraso contractual':'rc-retraso',
-    'riesgo administrativo':'rc-administrativo',
-    'riesgo climático':'rc-climatico',
-    'riesgo de ejecución':'rc-ejecucion',
-    'riesgo financiero':'rc-financiero',
-    'sin riesgos relevantes':'rc-sin-riesgo'
-  };
-  const chips = riesgosStr.split(';').map(r=>r.trim()).filter(Boolean).map(r=>{
-    const cls = MAP[r.toLowerCase()] || 'rc-otro';
-    return `<span class="rc ${cls}">${escapeHtml(r)}</span>`;
-  }).join('');
-  return `<div class="riesgo-chips">${chips}</div>`;
+function fechaDisplay(iso) {
+  if (!iso) return '';
+  const p = iso.split('-');
+  if (p.length !== 3) return iso;
+  return `${p[2]}/${p[1]}/${p[0]}`;
 }
 
-function fmtFechaChip(fechaCump, estado){
-  const fecha = fmtMesAnio(fechaCump);
-  if(fecha==='S/D') return `<span class="fecha-chip sd">S/D</span>`;
-  if(estado==='CUMPLIDO') return `<span class="fecha-chip cumplido">✅ ${fecha}</span>`;
-  return `<span class="fecha-chip en-proceso">${fecha}</span>`;
-}
+// ── GUARDAR ────────────────────────────────────────────────────────────────────
+async function guardarRegistro() {
+  if (!intervModal) return;
 
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Guardando…';
 
-function uniqSort(arr){ return [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')); }
-function valoresUnicos(arr){ const s=new Set(); arr.forEach(v=>{ if(!v) return; v.split(';').forEach(p=>{ const t=p.trim(); if(t) s.add(t); }); }); return [...s].sort((a,b)=>a.localeCompare(b,'es')); }
-function uniqSortDep(hitos){ const s=new Set(); hitos.forEach(h=>deptosDe(h.codHito).forEach(d=>s.add(d))); return [...s].sort((a,b)=>a.localeCompare(b,'es')); }
-
-// ====== FILTROS ======
-function campoContieneAlguno(campo, set){
-  if(!set.size) return true;
-  const partes=(campo||'').split(';').map(p=>p.trim()).filter(Boolean);
-  return partes.some(p=>set.has(p));
-}
-
-function hitosBaseExcepto(excluir){
-  const fVicem=document.getElementById('eFVicem').value;
-  const fTipo =document.getElementById('eFTipo').value;
-  const fDepto=document.getElementById('eFDepto').value;
-  const fCui  =document.getElementById('eFCui').value.trim();
-  const fHito =document.getElementById('eFHito').value.trim().toLowerCase();
-  const fCat  =document.getElementById('eFCategoria').value;
-  return HITOS.filter(h=>{
-    const cl=clasifDe(h);
-    if(excluir!=='vicem' && fVicem && cl.vicem!==fVicem) return false;
-    if(excluir!=='uei'   && eFSets.uei.size>0  && !eFSets.uei.has(cl.uei))       return false;
-    if(excluir!=='tipo'  && fTipo  && cl.tipoInfra!==fTipo)                       return false;
-    if(excluir!=='mod'   && eFSets.mod.size>0  && !eFSets.mod.has(cl.modalidad))  return false;
-    if(excluir!=='depto' && fDepto && !deptosDe(h.codHito).includes(fDepto))      return false;
-    if(excluir!=='cui'   && fCui   && cl.cui!==fCui)                              return false;
-    if(excluir!=='hito'  && fHito  && !h.hito.toLowerCase().includes(fHito))      return false;
-    if(excluir!=='cat'   && fCat   && h.categoria!==fCat)                         return false;
-    if(excluir!=='estado'&& eEstadosActivos.size>0 && !eEstadosActivos.has(h.estado)) return false;
-    if(excluir!=='meses' && eMesesSeleccion.size>0){
-      const p=parseCumpl(h.fechaCump); const lab=p?p.label:null;
-      if(!(lab&&eMesesSeleccion.has(lab))&&!(!lab&&eMesesSeleccion.has('__sinfecha__'))) return false;
-    }
-    return true;
-  });
-}
-
-function intervBaseExcepto(excluir){
-  const fNombre=document.getElementById('eFNombre').value.trim().toLowerCase();
-  return INTERVENCIONES.filter(interv=>{
-    if(excluir!=='nombre'   && fNombre && !interv.nombre.toLowerCase().includes(fNombre)) return false;
-    if(excluir!=='fase'     && eFSets.fase.size>0     && !eFSets.fase.has(interv.fase))   return false;
-    if(excluir!=='factores' && eFSets.factores.size>0 && !eFSets.factores.has(interv.factores)) return false;
-    if(excluir!=='riesgos'  && !campoContieneAlguno(interv.riesgos,   excluir==='riesgos'  ? new Set() : eFSets.riesgos))   return false;
-    if(excluir!=='instancia'&& !campoContieneAlguno(interv.instancia, excluir==='instancia'? new Set() : eFSets.instancia)) return false;
-    return hitosDeIntervencion(interv).length > 0;
-  });
-}
-
-function hitosDeIntervencion(interv){
-  const codHitos=INTERNO_A_HITOS[interv.codInterno]||[];
-  const fVicem=document.getElementById('eFVicem').value;
-  const fTipo =document.getElementById('eFTipo').value;
-  const fDepto=document.getElementById('eFDepto').value;
-  const fCui  =document.getElementById('eFCui').value.trim();
-  const fHito =document.getElementById('eFHito').value.trim().toLowerCase();
-  const fCat  =document.getElementById('eFCategoria').value;
-  return HITOS.filter(h=>{
-    if(!codHitos.includes(h.codHito)) return false;
-    const cl=clasifDe(h);
-    if(fVicem && cl.vicem!==fVicem)  return false;
-    if(eFSets.uei.size>0  && !eFSets.uei.has(cl.uei))      return false;
-    if(fTipo  && cl.tipoInfra!==fTipo) return false;
-    if(eFSets.mod.size>0  && !eFSets.mod.has(cl.modalidad)) return false;
-    if(fDepto && !deptosDe(h.codHito).includes(fDepto)) return false;
-    if(fCui   && cl.cui!==fCui)      return false;
-    if(fHito  && !h.hito.toLowerCase().includes(fHito)) return false;
-    if(fCat   && h.categoria!==fCat) return false;
-    if(eEstadosActivos.size>0 && !eEstadosActivos.has(h.estado)) return false;
-    if(eMesesSeleccion.size>0){
-      const p=parseCumpl(h.fechaCump); const lab=p?p.label:null;
-      if(!(lab&&eMesesSeleccion.has(lab))&&!(!lab&&eMesesSeleccion.has('__sinfecha__'))) return false;
-    }
-    return true;
-  });
-}
-
-function intervencionesFiltradas(){
-  const fNombre=document.getElementById('eFNombre').value.trim().toLowerCase();
-  const soloPriorizadas=document.getElementById('eFSoloPriorizadas').checked;
-  const soloDiscurso=document.getElementById('eFDiscurso').checked;
-  const resultado = INTERVENCIONES.filter(interv=>{
-    if(soloPriorizadas && !interv.priorizado) return false;
-    if(soloDiscurso && !INTERNOS_DISCURSO.has(interv.codInterno)) return false;
-    if(fNombre && !interv.nombre.toLowerCase().includes(fNombre)) return false;
-    if(eFSets.fase.size>0     && !eFSets.fase.has(interv.fase))         return false;
-    if(eFSets.factores.size>0 && !eFSets.factores.has(interv.factores)) return false;
-    if(!campoContieneAlguno(interv.riesgos,   eFSets.riesgos))          return false;
-    if(!campoContieneAlguno(interv.instancia, eFSets.instancia))        return false;
-    return hitosDeIntervencion(interv).length > 0;
-  });
-  return resultado.sort((a,b)=> (b.priorizado?1:0)-(a.priorizado?1:0));
-}
-
-// ====== CASCADA ======
-function recalcEjec(){
-  const hVicem  =hitosBaseExcepto('vicem');
-  const hUei    =hitosBaseExcepto('uei');
-  const hTipo   =hitosBaseExcepto('tipo');
-  const hMod    =hitosBaseExcepto('mod');
-  const hDepto  =hitosBaseExcepto('depto');
-  const hCui    =hitosBaseExcepto('cui');
-  const hHito   =hitosBaseExcepto('hito');
-  const hCat    =hitosBaseExcepto('cat');
-  const hMeses  =hitosBaseExcepto('meses');
-  const iNombre  =intervBaseExcepto('nombre');
-  const iFase    =intervBaseExcepto('fase');
-  const iFactores=intervBaseExcepto('factores');
-  const iRiesgos =intervBaseExcepto('riesgos');
-  const iInstancia=intervBaseExcepto('instancia');
-
-  poblarSelectEjec('eFVicem',    uniqSort(hVicem.map(h=>clasifDe(h).vicem)),    'Todos');
-  poblarSelectEjec('eFTipo',     uniqSort(hTipo.map(h=>clasifDe(h).tipoInfra)), 'Todos');
-  poblarSelectEjec('eFDepto',    uniqSortDep(hDepto),                           'Todos');
-  poblarSelectEjec('eFCategoria',uniqSort(hCat.map(h=>h.categoria)),            'Todas');
-  poblarDatalistEjec('eFCuiList',    uniqSort(hCui.map(h=>clasifDe(h).cui)));
-  poblarDatalistEjec('eFNombreList', uniqSort(iNombre.map(i=>i.nombre)));
-  poblarDatalistEjec('eFHitoList',   uniqSort(hHito.map(h=>h.hito)));
-  renderMultiDropdown(MULTI_CFG[0], uniqSort(hUei.map(h=>clasifDe(h).uei)));
-  renderMultiDropdown(MULTI_CFG[1], uniqSort(hMod.map(h=>clasifDe(h).modalidad)));
-  renderMultiDropdown(MULTI_CFG[2], uniqSort(iFase.map(i=>i.fase)));
-  renderMultiDropdown(MULTI_CFG[3], uniqSort(iFactores.map(i=>i.factores)));
-  renderMultiDropdown(MULTI_CFG[4], valoresUnicos(iRiesgos.map(i=>i.riesgos)));
-  renderMultiDropdown(MULTI_CFG[5], valoresUnicos(iInstancia.map(i=>i.instancia)));
-  construirMesesEjecDesde(hMeses);
-}
-
-function poblarSelectEjec(id, valores, etiqueta){
-  const sel=document.getElementById(id); if(!sel) return;
-  const actual=sel.value; sel.innerHTML='<option value="">'+etiqueta+'</option>';
-  valores.forEach(v=>{const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o);});
-  if(valores.includes(actual)) sel.value=actual;
-}
-function poblarDatalistEjec(id, valores){
-  const dl=document.getElementById(id); if(!dl) return;
-  dl.innerHTML=''; valores.forEach(v=>{const o=document.createElement('option'); o.value=v; dl.appendChild(o);});
-}
-
-// ====== DROPDOWNS MULTI ======
-function abrirDropdownEjec(e, panelId){
-  e.stopPropagation();
-  document.querySelectorAll('.meses-dropdown.abierto').forEach(p=>{ if(p.id!==panelId) p.classList.remove('abierto'); });
-  const panel=document.getElementById(panelId);
-  panel.classList.toggle('abierto');
-  if(panel.classList.contains('abierto')){
-    const rect=panel.getBoundingClientRect();
-    const espacioAbajo=window.innerHeight-rect.bottom;
-    if(espacioAbajo<280) panel.classList.add('abre-arriba'); else panel.classList.remove('abre-arriba');
-  }
-}
-function abrirMultiEjec(e, panelId){ abrirDropdownEjec(e, panelId); }
-function abrirMesesEjec(e){ abrirDropdownEjec(e,'eMesesPanel'); }
-
-function renderMultiDropdown(cfg, valores){
-  const cont=document.getElementById(cfg.lista); const sel=eFSets[cfg.key];
-  if(!valores.length){ cont.innerHTML='<div style="padding:10px;color:#8a9ab0;font-size:12px">Sin opciones</div>'; }
-  else {
-    cont.innerHTML=valores.map(v=>`
-      <label class="mes-item">
-        <input type="checkbox" value="${escapeHtml(v)}" ${sel.has(v)?'checked':''} onchange="toggleMultiEjec('${cfg.key}',this.value,this.checked)">
-        <span>${escapeHtml(v)}</span>
-      </label>`).join('');
-  }
-  const lbl=document.getElementById(cfg.label); const n=sel.size;
-  lbl.textContent=n===0?(cfg.key==='uei'?'Todas':'Todos'):(n+' seleccionado'+(n>1?'s':''));
-  lbl.style.color=n===0?'var(--text)':'var(--blue)';
-}
-
-function toggleMultiEjec(key, valor, activo){
-  if(activo) eFSets[key].add(valor); else eFSets[key].delete(valor);
-  recalcEjec(); aplicarFiltrosEjec();
-}
-
-document.addEventListener('click', e=>{
-  document.querySelectorAll('.meses-dropdown.abierto').forEach(p=>{
-    if(!p.contains(e.target)) p.classList.remove('abierto');
-  });
-});
-
-// ====== FILTRO DE MESES ======
-function construirMesesEjecDesde(hitosBase){
-  const map=new Map();
-  hitosBase.forEach(h=>{ const p=parseCumpl(h.fechaCump); if(p) map.set(p.label,p.orden); });
-  const lista=[...map.entries()].map(([label,orden])=>({label,orden})).sort((a,b)=>a.orden-b.orden);
-  const disp=new Set(lista.map(m=>m.label)); disp.add('__sinfecha__');
-  [...eMesesSeleccion].forEach(l=>{ if(!disp.has(l)) eMesesSeleccion.delete(l); });
-  const cont=document.getElementById('eMesesLista'); if(!cont) return;
-  if(!lista.length){ cont.innerHTML='<div style="padding:10px;color:#8a9ab0;font-size:12px">Sin fechas registradas</div>'; }
-  else {
-    cont.innerHTML=lista.map(m=>`<label class="mes-item"><input type="checkbox" value="${m.label}" ${eMesesSeleccion.has(m.label)?'checked':''} onchange="toggleMesEjec('${m.label}',this.checked)"><span>${m.label}</span></label>`).join('')+
-      `<label class="mes-item" style="border-top:1px solid var(--border);margin-top:4px;padding-top:6px"><input type="checkbox" value="__sinfecha__" ${eMesesSeleccion.has('__sinfecha__')?'checked':''} onchange="toggleMesEjec('__sinfecha__',this.checked)"><span style="font-style:italic;color:#8a9ab0">Sin fecha</span></label>`;
-  }
-  const btn=document.getElementById('eMesesBtnLabel'); if(!btn) return;
-  const n=eMesesSeleccion.size;
-  btn.textContent=n===0?'Todos':(n+' seleccionado'+(n>1?'s':''));
-  btn.style.color=n===0?'var(--text)':'var(--blue)';
-}
-
-function toggleMesEjec(label, activo){ if(activo) eMesesSeleccion.add(label); else eMesesSeleccion.delete(label); recalcEjec(); aplicarFiltrosEjec(); }
-
-// ====== CHIPS DE ESTADO ======
-function toggleChipEjec(el){
-  const est=el.getAttribute('data-estado');
-  if(eEstadosActivos.has(est)){ eEstadosActivos.delete(est); el.classList.remove('on'); }
-  else { eEstadosActivos.add(est); el.classList.add('on'); }
-  recalcEjec(); aplicarFiltrosEjec();
-}
-
-// ====== APLICAR / LIMPIAR ======
-function onFiltroEjec(){ recalcEjec(); aplicarFiltrosEjec(); }
-
-function aplicarFiltrosEjec(){
-  const visibles=intervencionesFiltradas();
-  document.getElementById('ejecContador').textContent=visibles.length+(visibles.length===1?' intervención':' intervenciones');
-  renderEjecutiva(visibles);
-}
-
-function limpiarFiltrosEjec(){
-  ['eFVicem','eFTipo','eFDepto','eFCui','eFNombre','eFHito','eFCategoria'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  ['eFDiscurso','eFSoloPriorizadas'].forEach(id=>{ const el=document.getElementById(id); if(el) el.checked=false; });
-  Object.values(eFSets).forEach(s=>s.clear());
-  eEstadosActivos.clear(); eMesesSeleccion.clear();
-  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
-  recalcEjec(); aplicarFiltrosEjec();
-}
-
-// ====== RENDER TABLA ======
-function renderEjecutiva(visibles){
-  const tbody=document.getElementById('tbodyEjec');
-  if(!visibles||!visibles.length){
-    tbody.innerHTML='<tr><td colspan="10" class="ejec-empty">No hay intervenciones con estos filtros.</td></tr>';
-    return;
-  }
-  let html='';
-  visibles.forEach(interv=>{
-    const hitos=hitosDeIntervencion(interv);
-    const nHitos=hitos.length||1;
-    const cl=clasifDe(hitos[0]||{codHito:''});
-    const uei=cl.uei||'—';
-    const modalidad=cl.modalidad||'';
-    const celdaInterv=`
-      <td class="ejec-col-interv" rowspan="${nHitos}">
-        <div class="ejec-nombre-interv">${escapeHtml(interv.nombre)||'—'}</div>
-        ${uei?`<div class="ejec-uei-tag">${escapeHtml(uei)}</div>`:''}
-        ${modalidad?`<div class="ejec-cui">${escapeHtml(modalidad)}</div>`:''}
-        ${interv.cui?`<div class="ejec-cui">CUI: ${escapeHtml(interv.cui)}</div>`:''}
-      </td>
-      <td class="ejec-col-interv prio-cell" rowspan="${nHitos}">
-        <label class="prio-toggle" title="${interv.priorizado?'Quitar prioridad':'Priorizar intervención'}">
-          <input type="checkbox" ${interv.priorizado?'checked':''} onchange="guardarPrioridad('${escapeHtml(interv.codInterno)}',this.checked,this)">
-          <span class="prio-slider"></span>
-        </label>
-      </td>
-      <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.fase)||'—'}</td>
-      <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.factores)||'—'}</td>
-      <td class="ejec-col-interv" rowspan="${nHitos}">${chipRiesgos(interv.riesgos)}</td>
-      <td class="ejec-col-interv" rowspan="${nHitos}">${escapeHtml(interv.instancia)||'—'}</td>`;
-    if(!hitos.length){
-      html+=`<tr class="ejec-primera">${celdaInterv}<td class="ejec-col-hito" colspan="3" style="color:var(--text-3);font-size:12px;">Sin hitos registrados.</td></tr>`;
-    } else {
-      hitos.forEach((h,idx)=>{
-        const codEsc=escapeHtml(h.codHito);
-        html+=`<tr${idx===0?' class="ejec-primera"':''}>
-          ${idx===0?celdaInterv:''}
-          <td class="ejec-col-hito ejec-hito-nombre">${escapeHtml(h.hito)||'—'}</td>
-          <td class="ejec-col-hito" style="white-space:nowrap;">${fmtFechaChip(h.fechaCump, h.estado)}</td>
-          <td class="ejec-col-hito" style="text-align:center; padding:6px;">
-            <button class="btn-ico" onclick="abrirEjecSit('${codEsc}')" title="Ver estado situacional">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            </button>
-          </td>
-        </tr>`;
-      });
-    }
-  });
-  tbody.innerHTML=html;
-}
-
-// ====== MODAL ESTADO SITUACIONAL ======
-function abrirEjecSit(codHito){
-  const h=HITOS.find(x=>x.codHito===codHito); if(!h) return;
-  document.getElementById('ejecSitInterv').textContent=h.nombre||'—';
-  document.getElementById('ejecSitHito').textContent  =h.hito  ||'—';
-  document.getElementById('ejecSitBadge').innerHTML   =badgeEstado(h.estado);
-  document.getElementById('ejecSitFecha').textContent =fmtMesAnio(h.fechaCump)||'—';
-  document.getElementById('ejecSitAvance').textContent=fmtAvance(h.avance);
-  document.getElementById('ejecSitTexto').textContent =h.situacional||'(Sin detalle registrado)';
-  document.getElementById('overlayEjecSit').classList.add('show');
-  document.body.style.overflow='hidden';
-}
-function cerrarEjecSit(){
-  document.getElementById('overlayEjecSit').classList.remove('show');
-  document.body.style.overflow='';
-}
-let _downEjecSit=false;
-document.getElementById('overlayEjecSit').addEventListener('mousedown',function(e){ _downEjecSit=(e.target===this); });
-document.getElementById('overlayEjecSit').addEventListener('click',    function(e){ if(e.target===this&&_downEjecSit) cerrarEjecSit(); _downEjecSit=false; });
-
-// ====== RESUMEN DE FILTROS ACTIVOS ======
-function resumenFiltrosActivos(){
-  const partes=[];
-  const fVicem=document.getElementById('eFVicem').value;       if(fVicem) partes.push('Viceministerio: '+fVicem);
-  const fTipo =document.getElementById('eFTipo').value;        if(fTipo)  partes.push('Tipo: '+fTipo);
-  const fDepto=document.getElementById('eFDepto').value;       if(fDepto) partes.push('Depto.: '+fDepto);
-  const fCui  =document.getElementById('eFCui').value.trim();  if(fCui)   partes.push('CUI: '+fCui);
-  const fNombre=document.getElementById('eFNombre').value.trim(); if(fNombre) partes.push('Intervención: "'+fNombre+'"');
-  const fHito =document.getElementById('eFHito').value.trim(); if(fHito)  partes.push('Hito: "'+fHito+'"');
-  const fCat  =document.getElementById('eFCategoria').value;   if(fCat)   partes.push('Categoría: '+fCat);
-  if(eFSets.uei.size)      partes.push('U. Responsable: '+[...eFSets.uei].join(', '));
-  if(eFSets.mod.size)      partes.push('Modalidad: '+[...eFSets.mod].join(', '));
-  if(eFSets.fase.size)     partes.push('Fase: '+[...eFSets.fase].join(', '));
-  if(eFSets.factores.size) partes.push('Problemática: '+[...eFSets.factores].join(', '));
-  if(eFSets.riesgos.size)  partes.push('Riesgos: '+[...eFSets.riesgos].join(', '));
-  if(eFSets.instancia.size)partes.push('Resp. destrabe: '+[...eFSets.instancia].join(', '));
-  if(eEstadosActivos.size) partes.push('Estado: '+[...eEstadosActivos].join(', '));
-  if(eMesesSeleccion.size) partes.push('Meses: '+[...eMesesSeleccion].filter(m=>m!=='__sinfecha__').join(', '));
-  return partes.length ? 'Filtros aplicados: '+partes.join(' · ') : 'Sin filtros aplicados';
-}
-
-// ====== EXPORTAR XLSX (con celdas combinadas) ======
-function exportarXLSXEjec(){
-  if(typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
-  const visibles=intervencionesFiltradas();
-  if(!visibles.length){ alert('No hay intervenciones para exportar con los filtros actuales.'); return; }
-
-  // Mismas columnas que el PDF:
-  const headers=['Intervención (Unidad Responsable · CUI)','Departamento','Modalidad de Ejecución','Problemática','Riesgos','Responsable del destrabe','Hito','Fecha de cumplimiento'];
-
-  // Fila 1: título con corte
-  const tituloCorte='Cartera Priorizada MTC al '+fmtCorte(ULTIMO_CORTE);
-  // Fila 2: filtros
-  const filtroTextoXlsx=resumenFiltrosActivos();
-
-  const rows=[[tituloCorte,'','','','','','',''],
-              [filtroTextoXlsx,'','','','','','',''],
-              headers];
-  const merges=[];
-  let fila=3; // fila 0=título, 1=filtros, 2=encabezado → datos desde fila 3
-
-  visibles.forEach(interv=>{
-    const hitos=hitosDeIntervencion(interv);
-    const hcl=hitos.length?clasifDe(hitos[0]):{};
-    const hdep=hitos.length?(DEPTOS[hitos[0].codHito]||[]).join(', '):'';
-    const intervTexto=interv.nombre+(hcl.uei?'\n'+hcl.uei:'')+(interv.cui?'\nCUI: '+interv.cui:'');
-    const n=hitos.length||1;
-
-    if(!hitos.length){
-      rows.push([intervTexto, hdep, hcl.modalidad||'', interv.factores, interv.riesgos, interv.instancia, '', '']);
-      fila++;
-    } else {
-      hitos.forEach((h,idx)=>{
-        rows.push([
-          idx===0?intervTexto:'',
-          idx===0?hdep:'',
-          idx===0?(hcl.modalidad||''):'',
-          idx===0?interv.factores:'',
-          idx===0?interv.riesgos:'',
-          idx===0?interv.instancia:'',
-          h.hito,
-          fmtMesAnio(h.fechaCump)
-        ]);
-      });
-      if(n>1){
-        for(let c=0;c<=5;c++){
-          merges.push({s:{r:fila,c}, e:{r:fila+n-1,c}});
-        }
+  // recoger datos del modal
+  const estActual = estadoInterv[intervModal.codigo] || {};
+  const hitosBloqueados = estActual.hitosHabilitados === false;
+  const hitos = [];
+  if (!hitosBloqueados) {
+    document.querySelectorAll('#modal-hitos-body tr').forEach(tr => {
+      const cont = tr.querySelector('[data-codhito]');
+      if (!cont) return;
+      const mes = tr.querySelector('.hito-mes').value;
+      const anio = tr.querySelector('.hito-anio').value;
+      // compone "oct-26" solo si ambos están seleccionados
+      let fecha = '';
+      if (mes && anio) {
+        fecha = `${MESES_ABR[parseInt(mes, 10) - 1]}-${String(anio).slice(-2)}`;
       }
-      fila+=n;
-    }
-  });
-
-  const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!merges']=merges;
-  ws['!cols']=[{wch:38},{wch:18},{wch:18},{wch:24},{wch:24},{wch:28},{wch:40},{wch:14}];
-
-  // Estilo fila título
-  const estTitulo={ font:{bold:true,color:{rgb:'C8102E'},sz:13}, alignment:{horizontal:'left',vertical:'center'} };
-  ws[XLSX.utils.encode_cell({r:0,c:0})].s=estTitulo;
-
-  // Estilo fila filtros
-  const estFiltros={ font:{italic:true,color:{rgb:'444444'},sz:9}, alignment:{horizontal:'left',vertical:'center',wrapText:true} };
-  ws[XLSX.utils.encode_cell({r:1,c:0})].s=estFiltros;
-
-  // Merge título y filtros a lo largo de todas las columnas
-  merges.push({s:{r:0,c:0},e:{r:0,c:7}});
-  merges.push({s:{r:1,c:0},e:{r:1,c:7}});
-  ws['!merges']=merges;
-
-  // Estilo encabezado columnas (fila 2)
-  const estHead={ font:{bold:true,color:{rgb:'FFFFFF'},sz:11}, fill:{fgColor:{rgb:'0055A5'}}, alignment:{horizontal:'center',vertical:'center',wrapText:true} };
-  headers.forEach((_,ci)=>{ const ref=XLSX.utils.encode_cell({r:2,c:ci}); if(ws[ref]) ws[ref].s=estHead; });
-
-  // Estilo celdas de intervención (cols 0–5, filas de datos): alineación top, wrap
-  const estInterv={ alignment:{vertical:'top',wrapText:true}, font:{sz:10} };
-  // Estilo celdas de hito (col 6): wrap para leer texto completo
-  const estHito={ alignment:{vertical:'top',wrapText:true}, font:{sz:10} };
-  for(let r=3;r<rows.length;r++){
-    for(let c=0;c<=5;c++){
-      const ref=XLSX.utils.encode_cell({r,c}); if(ws[ref]) ws[ref].s=estInterv;
-    }
-    const refH=XLSX.utils.encode_cell({r,c:6}); if(ws[refH]) ws[refH].s=estHito;
-  }
-
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Vista Ejecutiva');
-  XLSX.writeFile(wb,'vista_ejecutiva_'+new Date().toISOString().slice(0,10)+'.xlsx');
-}
-
-// ====== EXPORTAR PDF ======
-function exportarPDFEjec(){
-  if(typeof window.jspdf==='undefined'){ alert('No se pudo cargar el componente PDF.'); return; }
-  const visibles=intervencionesFiltradas();
-  if(!visibles.length){ alert('No hay intervenciones para exportar con los filtros actuales.'); return; }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a3' });
-
-  const fechaCorte=fmtCorte(ULTIMO_CORTE);
-  const filtroTexto=resumenFiltrosActivos();
-
-  const pw=doc.internal.pageSize.getWidth();
-  const MARGIN=8;
-  const ANCHO_UTIL=pw-(MARGIN*2);
-
-  // El encabezado tiene 3 líneas: título, corte+filtros (puede ser largo → wrap manual)
-  // Altura fija del encabezado: 26mm
-  const ALT_HEADER=26;
-
-  function dibujarEncabezado(){
-    doc.setFillColor(200,16,46);
-    doc.rect(0,0,pw,ALT_HEADER,'F');
-    doc.setTextColor(255,255,255);
-
-    // Línea 1: título
-    doc.setFontSize(10); doc.setFont('helvetica','bold');
-    doc.text('CARTERA PRIORIZADA MTC', pw/2, 9, {align:'center'});
-
-    // Línea 2: corte
-    doc.setFontSize(10); doc.setFont('helvetica','normal');
-    doc.text('VISTA EJECUTIVA \u2013 Último corte: '+fechaCorte, pw/2, 16, {align:'center'});
-
-    // Línea 3: filtros (puede ser largo, truncar si no cabe)
-    doc.setFontSize(10);
-    const maxAncho=pw-20;
-    const lineas=doc.splitTextToSize(filtroTexto, maxAncho);
-    doc.text(lineas[0], pw/2, 23, {align:'center'});
-
-    doc.setTextColor(0,0,0);
-  }
-
-  dibujarEncabezado();
-
-  // Proporciones de columna (suman 1.0)
-  const PROPS=[0.22, 0.08, 0.09, 0.11, 0.11, 0.11, 0.20, 0.08];
-  const ANCHOS=PROPS.map(p=>Math.round(p*ANCHO_UTIL*10)/10);
-
-  const headers=[['Intervención\n(Unidad Responsable · CUI)','Departamento','Modalidad','Problemática','Riesgos','Responsable del destrabe','Hito','Fecha cumpl.']];
-  const body=[];
-  visibles.forEach(interv=>{
-    const hitos=hitosDeIntervencion(interv);
-    if(!hitos.length){
-      const cl=clasifDe({codHito:''});
-      const intervTexto=interv.nombre+(cl.uei?'\n'+cl.uei:'')+(interv.cui?'\nCUI: '+interv.cui:'');
-      body.push([intervTexto,'',cl.modalidad||'',interv.factores,interv.riesgos,interv.instancia,'','']);
-    } else {
-      hitos.forEach((h,idx)=>{
-        const hcl=clasifDe(h);
-        const hdep=(DEPTOS[h.codHito]||[]).join(', ');
-        const intervTexto=interv.nombre+(hcl.uei?'\n'+hcl.uei:'')+(interv.cui?'\nCUI: '+interv.cui:'');
-        body.push([
-          idx===0?intervTexto:'',
-          idx===0?hdep:'', idx===0?(hcl.modalidad||''):'',
-          idx===0?interv.factores:'', idx===0?interv.riesgos:'', idx===0?interv.instancia:'',
-          h.hito, fmtMesAnio(h.fechaCump)
-        ]);
+      hitos.push({
+        codhito: cont.dataset.codhito,
+        nombre: cont.dataset.nombre,
+        fechaCumplimiento: fecha,
+        estadoCumplimiento: tr.querySelector('.hito-estado').value
       });
-    }
-  });
+    });
+  }
 
-  const colStyles={};
-  ANCHOS.forEach((w,i)=>{ colStyles[i]={cellWidth:w}; });
-
-  doc.autoTable({
-    head: headers,
-    body: body,
-    startY: ALT_HEADER+2,
-    tableWidth: ANCHO_UTIL,
-    styles: { fontSize:12, cellPadding:3, valign:'top', overflow:'linebreak' },
-    headStyles: { fillColor:[0,85,165], textColor:255, fontStyle:'bold', halign:'center', fontSize:10 },
-    columnStyles: colStyles,
-    alternateRowStyles: { fillColor:[245,247,250] },
-    margin: { top:ALT_HEADER+2, left:MARGIN, right:MARGIN, bottom:10 },
-    didDrawPage: (data)=>{
-      // En TODAS las páginas redibujar encabezado (página 1 ya lo tiene, pero didDrawPage
-      // se llama antes de que autoTable empiece a pintar, así que en pág >1 lo dibujamos
-      // después del salto de página)
-      if(data.pageNumber>1) dibujarEncabezado();
-      // Pie de página
-      const ph=doc.internal.pageSize.getHeight();
-      doc.setFontSize(8); doc.setTextColor(150);
-      doc.text('Pág. '+data.pageNumber, pw-MARGIN, ph-4, {align:'right'});
-      doc.text('OGAME · MTC', MARGIN, ph-4);
-      doc.setTextColor(0,0,0);
-    }
-  });
-
-  doc.save('vista_ejecutiva_'+new Date().toISOString().slice(0,10)+'.pdf');
-}
-
-// ====== PRIORIDAD ======
-async function guardarPrioridad(codInterno, priorizado, checkbox){
-  checkbox.disabled = true;
-
-  const interv = INTERVENCIONES.find(i=>i.codInterno===codInterno);
-  if(interv) interv.priorizado = priorizado;
+  const payload = {
+    accion:    'registrarHojaRuta',
+    timestamp: new Date().toISOString(),
+    codigo:    intervModal.codigo,
+    nombre:    intervModal.nombre,
+    organo:    intervModal.organo,
+    estado:    document.getElementById('m-estado').value.trim(),
+    avance:    document.getElementById('m-avance').value.trim(),
+    hitos:     hitos
+  };
 
   try {
-    const res = await fetch(BACKEND_URL, {
-      method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ token:TOKEN_WEB, accion:'setPrioridad', codInterno, priorizado })
+    const resp = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS en Apps Script
+      body: JSON.stringify(payload)
     });
-    const data = await res.json();
-    if(!data.ok){
-      checkbox.checked = !priorizado;
-      if(interv) interv.priorizado = !priorizado;
-      alert('No se pudo guardar: ' + data.mensaje);
+    const data = await resp.json();
+
+    if (data.ok) {
+      // actualizar estado local sin recargar (usa la fecha real del backend)
+      estadoInterv[intervModal.codigo] = {
+        fechaReg:   data.fechaRegistro || fechaDisplay(new Date().toISOString().split('T')[0]),
+        estado:     payload.estado,
+        avance:     payload.avance,
+        priorizado: estadoInterv[intervModal.codigo]?.priorizado || false,
+        hitosHabilitados: estadoInterv[intervModal.codigo]?.hitosHabilitados !== false
+      };
+      hitos.forEach(h => {
+        estadoHitos[h.codhito] = {
+          fechaReg:           estadoInterv[intervModal.codigo].fechaReg,
+          fechaCumplimiento:  h.fechaCumplimiento,
+          estadoCumplimiento: h.estadoCumplimiento
+        };
+      });
+
+      cerrarModal();
+      renderTabla();
+      mostrarToast('Registro guardado correctamente', 'exito');
+    } else {
+      mostrarToast('Error al guardar: ' + (data.mensaje || 'intenta de nuevo'), 'error');
     }
-  } catch(e){
-    checkbox.checked = !priorizado;
-    if(interv) interv.priorizado = !priorizado;
-    alert('Error de conexión al guardar la prioridad.');
+  } catch (e) {
+    {
+      mostrarToast('No se pudo conectar con el servidor. Intenta de nuevo.', 'error');
+      console.error(e);
+    }
   } finally {
-    checkbox.disabled = false;
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar registro';
   }
 }
 
-// ====== INICIO ======
-cargar();
+// ── TOAST ──────────────────────────────────────────────────────────────────────
+function mostrarToast(msg, tipo = 'exito') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${tipo} visible`;
+  setTimeout(() => { t.classList.remove('visible'); }, 3500);
+}
+
+// ── EXPORT EXCEL ───────────────────────────────────────────────────────────────
+// ── RESUMEN POR EQUIPO ──────────────────────────────────────────────────────────
+// Agrupa las intervenciones FILTRADAS por equipo, contando IDs únicos.
+// Orden: VMT primero, luego VMC, luego el resto en el orden del maestro.
+function calcularResumen() {
+  const grupos = new Map();
+  filtradas.forEach((i, idx) => {
+    const clave = i.equipo || '(Sin equipo)';
+    if (!grupos.has(clave)) {
+      grupos.set(clave, {
+        equipo: clave, vice: i.vice || '', director: i.director || '',
+        resumenGrupo: i.resumenGrupo || '(Sin grupo)',
+        ids: new Set(), totalHitos: 0, ordenMaestro: idx
+      });
+    }
+    const g = grupos.get(clave);
+    g.ids.add(i.id);
+    g.totalHitos += i.hitos.length;
+  });
+
+  const arr = [...grupos.values()].map(g => ({
+    equipo: g.equipo, vice: g.vice, director: g.director,
+    resumenGrupo: g.resumenGrupo,
+    total: g.ids.size, totalHitos: g.totalHitos, ordenMaestro: g.ordenMaestro
+  }));
+
+  // Orden de los grupos de RESUMEN según su primera aparición en el maestro
+  const ordenGrupo = new Map();
+  arr.forEach(r => {
+    if (!ordenGrupo.has(r.resumenGrupo)) ordenGrupo.set(r.resumenGrupo, r.ordenMaestro);
+  });
+
+  arr.sort((a, b) => {
+    const ga = ordenGrupo.get(a.resumenGrupo), gb = ordenGrupo.get(b.resumenGrupo);
+    if (ga !== gb) return ga - gb;             // primero agrupa por RESUMEN
+    return a.ordenMaestro - b.ordenMaestro;     // dentro del grupo, orden del maestro
+  });
+  return arr;
+}
+
+function abrirResumen() {
+  const datos = calcularResumen();
+  const totalGeneral = datos.reduce((s, r) => s + r.total, 0);
+
+  // construye filas insertando subtotal tras el último equipo de VMT y de VMC
+  let filas = '';
+  let numero = 0;
+  const subtotalHtml = (grupo, sumaInterv, sumaHitos) => `
+    <tr class="fila-subtotal">
+      <td></td>
+      <td colspan="3" style="text-align:right;font-weight:700">TOTAL ${esc(grupo)}</td>
+      <td style="text-align:center;font-weight:700">${sumaInterv}</td>
+      <td style="text-align:center;font-weight:700">${sumaHitos}</td>
+    </tr>`;
+
+  datos.forEach((r, idx) => {
+    numero++;
+    filas += `
+    <tr>
+      <td style="text-align:center">${numero}</td>
+      <td style="text-align:center">${esc(r.vice)}</td>
+      <td>${esc(r.equipo)}</td>
+      <td>${esc(r.director)}</td>
+      <td style="text-align:center;font-weight:700">${r.total}</td>
+      <td style="text-align:center">${r.totalHitos}</td>
+    </tr>`;
+
+    // subtotal tras el último equipo de cada grupo de RESUMEN
+    const grupoActual = r.resumenGrupo;
+    const grupoSiguiente = datos[idx + 1] ? datos[idx + 1].resumenGrupo : null;
+    if (grupoActual !== grupoSiguiente) {
+      const bloque = datos.filter(d => d.resumenGrupo === grupoActual);
+      const sumaInterv = bloque.reduce((s, d) => s + d.total, 0);
+      const sumaHitos  = bloque.reduce((s, d) => s + d.totalHitos, 0);
+      filas += subtotalHtml(grupoActual, sumaInterv, sumaHitos);
+    }
+  });
+
+  const totalHitosGeneral = datos.reduce((s, r) => s + r.totalHitos, 0);
+
+  document.getElementById('resumen-tabla-wrap').innerHTML = `
+    <table class="tabla-resumen">
+      <thead>
+        <tr>
+          <th style="width:5%;text-align:center">N°</th>
+          <th style="width:12%;text-align:center">Órgano de<br>Alta Dirección</th>
+          <th style="width:37%">Instancia Responsable</th>
+          <th style="width:24%">Titular de la instancia responsable</th>
+          <th style="width:11%;text-align:center">Total<br>intervenciones</th>
+          <th style="width:11%;text-align:center">Total<br>hitos</th>
+        </tr>
+      </thead>
+      <tbody>${filas}</tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" style="text-align:right;font-weight:700">TOTAL</td>
+          <td style="text-align:center;font-weight:700">${totalGeneral}</td>
+          <td style="text-align:center;font-weight:700">${totalHitosGeneral}</td>
+        </tr>
+      </tfoot>
+    </table>`;
+
+  const hayFiltros = filtradas.length !== intervenciones.length;
+  document.getElementById('resumen-subtitulo').textContent = hayFiltros
+    ? 'Total de intervenciones por equipo (según filtros aplicados)'
+    : 'Total de intervenciones por equipo';
+
+  document.getElementById('resumen-overlay').classList.add('activo');
+}
+
+function cerrarResumen() {
+  document.getElementById('resumen-overlay').classList.remove('activo');
+}
+
+function descargarResumen() {
+  const datos = calcularResumen();
+  const totalGeneral = datos.reduce((s, r) => s + r.total, 0);
+
+  const rows = [['N°', 'Órgano de Alta Dirección', 'Instancia Responsable',
+                 'Titular de la instancia responsable', 'Total intervenciones', 'Total hitos']];
+  const filasSubtotal = [];
+  let numero = 0;
+
+  datos.forEach((r, idx) => {
+    numero++;
+    rows.push([numero, r.vice, r.equipo, r.director, r.total, r.totalHitos]);
+
+    const grupoActual = r.resumenGrupo;
+    const grupoSiguiente = datos[idx + 1] ? datos[idx + 1].resumenGrupo : null;
+    if (grupoActual !== grupoSiguiente) {
+      const bloque = datos.filter(d => d.resumenGrupo === grupoActual);
+      const sumaInterv = bloque.reduce((s, d) => s + d.total, 0);
+      const sumaHitos  = bloque.reduce((s, d) => s + d.totalHitos, 0);
+      rows.push(['', '', 'TOTAL ' + grupoActual, '', sumaInterv, sumaHitos]);
+      filasSubtotal.push(rows.length - 1);
+    }
+  });
+  const totalHitosGeneral = datos.reduce((s, r) => s + r.totalHitos, 0);
+  rows.push(['', '', '', 'TOTAL', totalGeneral, totalHitosGeneral]);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  for (let c = 0; c < 6; c++) {
+    const ref = XLSX.utils.encode_cell({ r: 0, c });
+    if (ws[ref]) ws[ref].s = {
+      fill: { patternType: 'solid', fgColor: { rgb: '003F7D' } },
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      alignment: { vertical: 'center', horizontal: 'center', wrapText: true },
+      border: { bottom: { style: 'thin', color: { rgb: 'C8102E' } } }
+    };
+  }
+  // subtotales resaltados
+  filasSubtotal.forEach(fila => {
+    for (let c = 0; c < 6; c++) {
+      const ref = XLSX.utils.encode_cell({ r: fila, c });
+      if (ws[ref]) ws[ref].s = {
+        fill: { patternType: 'solid', fgColor: { rgb: 'E8EEF7' } },
+        font: { bold: true, sz: 11, color: { rgb: '003F7D' } }
+      };
+    }
+  });
+  // total general
+  const filaTotal = rows.length - 1;
+  for (let c = 0; c < 6; c++) {
+    const ref = XLSX.utils.encode_cell({ r: filaTotal, c });
+    if (ws[ref]) ws[ref].s = {
+      fill: { patternType: 'solid', fgColor: { rgb: 'EEF4FF' } },
+      font: { bold: true, sz: 11 }
+    };
+  }
+  ws['!cols'] = [6, 8, 50, 30, 16, 12].map(w => ({ wch: w }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Resumen por equipo');
+  const fecha = new Date().toLocaleDateString('es-PE').replace(/\//g, '-');
+  XLSX.writeFile(wb, `ResumenEquipos_OGAME_${fecha}.xlsx`);
+}
+
+// Arma un texto legible con los filtros activos, para la cabecera del Excel.
+function resumenFiltrosActivos() {
+  const partes = [];
+  const val = (id) => document.getElementById(id).value.trim();
+
+  if (val('f-grupo'))  partes.push('Grupo: ' + val('f-grupo'));
+  if (val('f-vice'))   partes.push('Viceministerio: ' + val('f-vice'));
+  if (val('f-organo')) partes.push('Órgano: ' + val('f-organo'));
+  if (val('f-eje'))    partes.push('Eje: ' + val('f-eje'));
+  if (val('f-linea'))  partes.push('Línea de interés: ' + val('f-linea'));
+  const prio = val('f-priorizado');
+  if (prio) partes.push('Priorizado: ' + (prio === 'si' ? 'Sí' : 'No'));
+  if (document.getElementById('f-discurso').checked) partes.push('Mencionadas en el discurso 28 julio');
+  if (val('f-area'))   partes.push('Área de influencia: "' + val('f-area') + '"');
+  if (val('f-cui'))    partes.push('CUI: "' + val('f-cui') + '"');
+  if (val('f-buscar')) partes.push('Intervención: "' + val('f-buscar') + '"');
+  if (val('f-hito'))   partes.push('Hito: "' + val('f-hito') + '"');
+  if (mesesSeleccion.size > 0) {
+    const meses = [...mesesSeleccion].map(m => m === '__sinfecha__' ? 'Sin fecha' : m).join(', ');
+    partes.push('Fecha de cumplimiento: ' + meses);
+  }
+  if (document.getElementById('f-ultimo').checked) partes.push('Solo el último hito');
+  const estadoC = val('f-estado-cumpl');
+  if (estadoC) partes.push('Estado de cumplimiento: ' + (estadoC === '__sin__' ? 'Sin estado' : estadoC));
+
+  return partes.length ? partes.join('  ·  ') : 'Ninguno (todas las intervenciones)';
+}
+
+function exportarExcel() {
+  // Columnas de visualización (se retiraron Código, CODHITOS, Priorizado,
+  // Grupo, Avance físico e Hito final por ser internas/técnicas).
+  const encabezados = ['Fecha de registro', 'Discurso 28 julio', 'Viceministerio',
+    'Responsable', 'Área de influencia', 'CUI', 'Línea de Intervención',
+    'Intervención Estratégica', 'Relevancia sectorial', 'Estado situacional',
+    'Hito(s) clave(s)', 'Fecha de cumplimiento', 'Estado de cumplimiento'];
+
+  const NCOLS = encabezados.length;
+  const textoFiltros = resumenFiltrosActivos();
+
+  // Filas de cabecera del documento: título, filtros, blanco. Los datos empiezan
+  // después, así que todos los índices de fila se desplazan por OFFSET.
+  const OFFSET = 3;           // filas 0,1,2 = título / filtros / blanco
+  const FILA_ENCABEZADO = 3;  // fila 3 = encabezados de columna
+  const rows = [
+    ['Hoja de Ruta Estratégica'],
+    ['Filtros aplicados: ' + textoFiltros],
+    [],
+    encabezados
+  ];
+  // rangos por Código (para Intervención, Relevancia, Estado y las columnas repetidas de código)
+  const bloquesCodigo = []; // { inicio, fin }
+  // rangos por ID (para Detalle de Intervención)
+  const bloquesId = [];     // { inicio, fin }
+
+  // control de bloques por ID: acumula filas mientras el ID no cambie
+  let idActual = null, idInicio = null;
+
+  const cerrarBloqueId = (finFila) => {
+    if (idActual !== null && finFila > idInicio) {
+      bloquesId.push({ inicio: idInicio, fin: finFila });
+    }
+  };
+
+  filtradas.forEach(interv => {
+    const est = estadoInterv[interv.codigo] || {};
+    const hitos = hitosVisibles(interv);
+    if (hitos.length === 0) return;
+
+    const idInterv = interv.id || interv.codigo;
+    // ¿cambió el ID respecto a la intervención anterior? cierra el bloque previo
+    if (idInterv !== idActual) {
+      cerrarBloqueId(rows.length - 1);
+      idActual = idInterv;
+      idInicio = rows.length; // primera fila de este nuevo ID
+    }
+
+    const filaInicio = rows.length; // primera fila de este Código
+    hitos.forEach(h => {
+      const eh = estadoHitos[h.codhito] || {};
+      const p = parseCumplimiento(eh.fechaCumplimiento);
+      rows.push([
+        est.fechaReg || '', interv.discurso ? 'Sí' : '', interv.vice || '',
+        interv.organo, interv.area || '', interv.cui || '',
+        interv.detalle || '', interv.nombre, interv.relevancia || '', est.estado || '',
+        h.nombre, p ? p.label : (eh.fechaCumplimiento || ''), eh.estadoCumplimiento || ''
+      ]);
+    });
+    const filaFin = rows.length - 1;
+    if (filaFin > filaInicio) bloquesCodigo.push({ inicio: filaInicio, fin: filaFin });
+  });
+  cerrarBloqueId(rows.length - 1); // cerrar el último bloque de ID
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  // ── Título (fila 0) ──
+  const refTitulo = XLSX.utils.encode_cell({ r: 0, c: 0 });
+  if (ws[refTitulo]) ws[refTitulo].s = {
+    font: { bold: true, sz: 16, color: { rgb: '003F7D' } }
+  };
+  // ── Línea de filtros (fila 1) ──
+  const refFiltros = XLSX.utils.encode_cell({ r: 1, c: 0 });
+  if (ws[refFiltros]) ws[refFiltros].s = {
+    font: { italic: true, sz: 10, color: { rgb: '6B7280' } }
+  };
+
+  // ── Encabezados (fila 3): gris solo para "Fecha de registro", azul el resto ──
+  for (let c = 0; c < NCOLS; c++) {
+    const ref = XLSX.utils.encode_cell({ r: FILA_ENCABEZADO, c });
+    if (!ws[ref]) continue;
+    const esInterna = c === 0; // solo Fecha de registro
+    ws[ref].s = {
+      fill: { patternType: 'solid', fgColor: { rgb: esInterna ? '6B7280' : '003F7D' } },
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      alignment: { vertical: 'center', horizontal: 'center', wrapText: true },
+      border: { bottom: { style: 'thin', color: { rgb: 'C8102E' } } }
+    };
+  }
+
+  // ── Estilo de celdas de datos (desde la fila siguiente al encabezado) ──
+  for (let r = FILA_ENCABEZADO + 1; r < rows.length; r++) {
+    for (let c = 0; c < NCOLS; c++) {
+      const ref = XLSX.utils.encode_cell({ r, c });
+      if (!ws[ref]) ws[ref] = { t: 's', v: '' };
+      ws[ref].s = {
+        alignment: { vertical: 'top', wrapText: true },
+        border: { bottom: { style: 'hair', color: { rgb: 'D0D0D0' } } }
+      };
+    }
+  }
+
+  // ── Combinar celdas en dos niveles ──
+  ws['!merges'] = ws['!merges'] || [];
+
+  // Nivel Código: Intervención(7), Relevancia(8), Estado(9)
+  const colsPorCodigo = [7, 8, 9];
+  bloquesCodigo.forEach(b => {
+    colsPorCodigo.forEach(c => {
+      ws['!merges'].push({ s: { r: b.inicio, c }, e: { r: b.fin, c } });
+    });
+  });
+
+  // Nivel ID: Línea de Intervención(6) + columnas comunes a todo el ID
+  //   Comunes por ID: Discurso(1), Viceministerio(2), Responsable(3), Área(4), CUI(5)
+  const colsPorId = [6, 1, 2, 3, 4, 5];
+  bloquesId.forEach(b => {
+    colsPorId.forEach(c => {
+      ws['!merges'].push({ s: { r: b.inicio, c }, e: { r: b.fin, c } });
+    });
+  });
+
+  // ── Anchos de columna ──
+  ws['!cols'] = [14, 10, 14, 12, 18, 12, 34, 34, 30, 40, 40, 16, 16]
+    .map(w => ({ wch: w }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Hoja de Ruta');
+
+  const fecha = new Date().toLocaleDateString('es-PE').replace(/\//g,'-');
+  XLSX.writeFile(wb, `HojaDeRuta_OGAME_${fecha}.xlsx`);
+}
+
+// ── CERRAR MODAL CON ESC ───────────────────────────────────────────────────────
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarModal(); cerrarLoginOGAME(); cerrarResumen(); } });
+
+let clicIniciadoEnResumen = false;
+document.getElementById('resumen-overlay').addEventListener('mousedown', e => {
+  clicIniciadoEnResumen = (e.target === document.getElementById('resumen-overlay'));
+});
+document.getElementById('resumen-overlay').addEventListener('click', e => {
+  if (clicIniciadoEnResumen && e.target === document.getElementById('resumen-overlay')) cerrarResumen();
+  clicIniciadoEnResumen = false;
+});
+// Cerrar modal solo si el clic EMPIEZA y TERMINA en el overlay.
+// Evita que se cierre al seleccionar texto arrastrando desde dentro hacia fuera.
+let clicIniciadoEnOverlay = false;
+document.getElementById('modal-overlay').addEventListener('mousedown', e => {
+  clicIniciadoEnOverlay = (e.target === document.getElementById('modal-overlay'));
+});
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (clicIniciadoEnOverlay && e.target === document.getElementById('modal-overlay')) cerrarModal();
+  clicIniciadoEnOverlay = false;
+});
+
+let clicIniciadoEnLogin = false;
+document.getElementById('login-overlay').addEventListener('mousedown', e => {
+  clicIniciadoEnLogin = (e.target === document.getElementById('login-overlay'));
+});
+document.getElementById('login-overlay').addEventListener('click', e => {
+  if (clicIniciadoEnLogin && e.target === document.getElementById('login-overlay')) cerrarLoginOGAME();
+  clicIniciadoEnLogin = false;
+});
+document.addEventListener('click', e => {
+  const panel = document.getElementById('meses-panel');
+  if (panel && panel.classList.contains('abierto') && !panel.contains(e.target)) {
+    panel.classList.remove('abierto');
+  }
+});
+
+// ── INICIO ────────────────────────────────────────────────────────────────────
+aplicarVistaOGAME();
+cargarDatos();
 </script>
 </body>
 </html>
