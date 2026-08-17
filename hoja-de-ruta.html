@@ -240,6 +240,16 @@
   }
   .btn-resumen:hover { background: var(--azul); color: #fff; }
 
+  .btn-pdf {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px;
+    background: var(--blanco); color: var(--rojo);
+    border: 1.5px solid var(--rojo); cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    transition: all .15s;
+  }
+  .btn-pdf:hover { background: var(--rojo); color: #fff; }
+
   /* tabla resumen (modal) */
   .tabla-resumen { width: 100%; border-collapse: collapse; }
   .tabla-resumen th {
@@ -725,6 +735,10 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           Ver resumen
         </button>
+        <button class="btn-pdf" onclick="exportarPDF()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          Descargar PDF
+        </button>
         <button class="btn-excel" onclick="exportarExcel()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Descargar Excel
@@ -872,6 +886,8 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <script>
 // ── CONFIGURACIÓN ──────────────────────────────────────────────────────────────
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxFySD-V9iYZMMwYql2090TDajXnMDg7Sz2l_0rrep3UPmPPWDT4TbiCRl6t51E1AZZpw/exec';
@@ -1965,6 +1981,88 @@ function resumenFiltrosActivos() {
   if (estadoC) partes.push('Estado de cumplimiento: ' + (estadoC === '__sin__' ? 'Sin estado' : estadoC));
 
   return partes.length ? partes.join('  ·  ') : 'Ninguno (todas las intervenciones)';
+}
+
+// ── EXPORTAR PDF (A3 horizontal, formato institucional) ─────────────────────────
+function exportarPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
+
+  const pw = doc.internal.pageSize.getWidth();
+  const MARGIN = 8;
+  const ANCHO_UTIL = pw - (MARGIN * 2);
+  const ALT_HEADER = 26;
+
+  const filtroTexto = resumenFiltrosActivos();
+
+  function dibujarEncabezado() {
+    doc.setFillColor(200, 16, 46); // #C8102E
+    doc.rect(0, 0, pw, ALT_HEADER, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+    doc.text('HOJA DE RUTA ESTRATÉGICA 2026–2027', pw / 2, 9, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.text('Transferencia de gestión · Registro de estado de intervenciones e hitos clave', pw / 2, 16, { align: 'center' });
+    const lineas = doc.splitTextToSize('Filtros aplicados: ' + filtroTexto, pw - 20);
+    doc.text(lineas[0], pw / 2, 23, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+  }
+
+  dibujarEncabezado();
+
+  // Construir filas: los datos de la intervención solo en la primera fila de sus
+  // hitos; las demás quedan en blanco (como en la Vista Ejecutiva).
+  const body = [];
+  filtradas.forEach(interv => {
+    const est = estadoInterv[interv.codigo] || {};
+    const hitos = hitosVisibles(interv);
+    if (hitos.length === 0) return;
+    hitos.forEach((h, idx) => {
+      const eh = estadoHitos[h.codhito] || {};
+      const p = parseCumplimiento(eh.fechaCumplimiento);
+      const fecha = p ? p.label : (eh.fechaCumplimiento || '');
+      const esPrimera = idx === 0;
+      body.push([
+        esPrimera ? interv.nombre : '',
+        esPrimera ? interv.organo : '',
+        esPrimera ? (interv.area || '') : '',
+        esPrimera ? (est.estado || '') : '',
+        h.nombre,
+        fecha
+      ]);
+    });
+  });
+
+  // Proporciones de columna (suman 1.0)
+  const PROPS = [0.24, 0.09, 0.11, 0.24, 0.24, 0.08];
+  const ANCHOS = PROPS.map(p => Math.round(p * ANCHO_UTIL * 10) / 10);
+  const colStyles = {};
+  ANCHOS.forEach((w, i) => { colStyles[i] = { cellWidth: w }; });
+  // columna de fecha centrada
+  colStyles[5] = { cellWidth: ANCHOS[5], halign: 'center' };
+
+  doc.autoTable({
+    head: [['Intervención estratégica', 'Responsable', 'Área de influencia',
+            'Estado situacional', 'Hito(s) clave(s)', 'Fecha cumpl.']],
+    body: body,
+    startY: ALT_HEADER + 2,
+    tableWidth: ANCHO_UTIL,
+    styles: { fontSize: 12, cellPadding: 3, valign: 'top', overflow: 'linebreak' },
+    headStyles: { fillColor: [0, 85, 165], textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 10 },
+    columnStyles: colStyles,
+    alternateRowStyles: { fillColor: [245, 247, 250] },
+    margin: { top: ALT_HEADER + 2, left: MARGIN, right: MARGIN, bottom: 10 },
+    didDrawPage: (data) => {
+      if (data.pageNumber > 1) dibujarEncabezado();
+      const ph = doc.internal.pageSize.getHeight();
+      doc.setFontSize(8); doc.setTextColor(150);
+      doc.text('Pág. ' + data.pageNumber, pw - MARGIN, ph - 4, { align: 'right' });
+      doc.text('OGAME · MTC', MARGIN, ph - 4);
+      doc.setTextColor(0, 0, 0);
+    }
+  });
+
+  doc.save('HojaDeRuta_OGAME_' + new Date().toISOString().slice(0, 10) + '.pdf');
 }
 
 function exportarExcel() {
