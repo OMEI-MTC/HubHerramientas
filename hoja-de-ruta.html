@@ -284,6 +284,7 @@
     text-align: left;
     border-bottom: 1px solid #e3e9f2;
     white-space: nowrap;
+    position: sticky; top: 0; z-index: 5;
   }
   thead tr:nth-child(2) th {
     background: #f7f9fc;
@@ -731,11 +732,6 @@
     <!-- TOOLBAR -->
     <div class="toolbar">
       <div class="toolbar-info" id="resumen-info">Cargando...</div>
-      <div class="paginacion">
-        <button class="pag-btn" id="btn-anterior" onclick="cambiarPagina(-1)" disabled>‹ Anterior</button>
-        <span class="pag-info" id="pag-info">Página 1</span>
-        <button class="pag-btn" id="btn-siguiente" onclick="cambiarPagina(1)">Siguiente ›</button>
-      </div>
       <div class="toolbar-right">
         <button class="btn-resumen" onclick="abrirResumen()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -908,7 +904,6 @@ const TSV_ESTADO_INTERV= 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2
 const TSV_ESTADO_HITOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=1161068484&single=true&output=tsv';
 const TSV_ACCESOS      = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=478159955&single=true&output=tsv';
 
-const POR_PAGINA = 8; // intervenciones por página
 
 // ── ESTADO GLOBAL ──────────────────────────────────────────────────────────────
 let maestro      = []; // filas crudas del TSV maestro
@@ -916,7 +911,6 @@ let intervenciones = []; // objetos agrupados { codigo, nombre, organo, eje, lin
 let estadoInterv = {}; // { codigo → { estadoSituacional, costo, pim, devengado, priorizado, fechaReg } }
 let estadoHitos  = {}; // { codhito → { fechaCumplimiento, fechaReg } }
 let filtradas    = []; // intervenciones después de filtros
-let paginaActual = 1;
 // Modos de la aplicación (mutuamente excluyentes):
 //   'general'     → solo lectura, sin lápiz ni toggles
 //   'edicion'     → una oficina edita SUS intervenciones (lápiz habilitado)
@@ -1053,6 +1047,7 @@ async function cargarDatos() {
     });
 
     poblarFiltros();
+    aplicarModo(); // reaplica para fijar el filtro de órgano una vez poblado
     aplicarFiltros();
 
   } catch (e) {
@@ -1168,11 +1163,14 @@ function aplicarModo() {
   const bannerTexto = document.getElementById('banner-modo-texto');
   const botones = document.getElementById('botones-modo');
   const card = document.getElementById('card-principal');
+  const selOrgano = document.getElementById('f-organo');
 
   if (modoApp === 'general') {
     banner.style.display = 'none';
     botones.style.display = 'flex';
     card.classList.remove('ogame-activa', 'modo-priorizacion');
+    // liberar el filtro de órgano
+    if (selOrgano) { selOrgano.disabled = false; selOrgano.style.opacity = ''; }
   } else {
     banner.style.display = 'flex';
     botones.style.display = 'none';
@@ -1181,6 +1179,17 @@ function aplicarModo() {
     bannerTexto.innerHTML = modoApp === 'edicion'
       ? `<strong>Modo edición — ${esc(oficinaEdicion)}</strong> · editando solo las intervenciones de tu oficina`
       : `<strong>Modo priorización activo</strong> · marca las intervenciones prioritarias`;
+    // en edición: fijar el filtro de órgano a la oficina y bloquearlo
+    if (selOrgano) {
+      if (modoApp === 'edicion') {
+        selOrgano.value = oficinaEdicion;
+        selOrgano.disabled = true;
+        selOrgano.style.opacity = '.65';
+      } else {
+        selOrgano.disabled = false;
+        selOrgano.style.opacity = '';
+      }
+    }
   }
 }
 
@@ -1449,7 +1458,6 @@ function aplicarFiltros() {
     return true;
   });
 
-  paginaActual = 1;
   refrescarOpcionesFiltros();
   renderTabla();
 }
@@ -1470,17 +1478,12 @@ function renderTabla() {
   // Display: cuenta IDs únicos (las variantes DGPRTM-28-1/-2/-3 son una sola)
   const totalInterv = new Set(filtradas.map(i => i.id)).size;
   const totalHitos  = filtradas.reduce((s, i) => s + hitosVisibles(i).length, 0);
-  // Paginación: sobre filas reales, no sobre IDs agrupados
-  const totalPags   = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
 
   document.getElementById('resumen-info').innerHTML =
     `<strong>${totalInterv}</strong> intervenciones &mdash; <strong>${totalHitos}</strong> hitos`;
-  document.getElementById('pag-info').textContent = `Página ${paginaActual} de ${totalPags}`;
-  document.getElementById('btn-anterior').disabled = paginaActual <= 1;
-  document.getElementById('btn-siguiente').disabled = paginaActual >= totalPags;
 
-  const inicio = (paginaActual - 1) * POR_PAGINA;
-  const pagina = filtradas.slice(inicio, inicio + POR_PAGINA);
+  // Sin paginación: se muestran todas las intervenciones filtradas
+  const pagina = filtradas;
 
   const tbody = document.getElementById('tabla-body');
 
@@ -1624,13 +1627,6 @@ function chipEstadoCumpl(estado) {
 
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function cambiarPagina(delta) {
-  const total = Math.ceil(filtradas.length / POR_PAGINA);
-  paginaActual = Math.max(1, Math.min(total, paginaActual + delta));
-  renderTabla();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ── MODAL ──────────────────────────────────────────────────────────────────────
