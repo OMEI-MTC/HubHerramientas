@@ -88,9 +88,9 @@
   .btn-salir-ogame:hover { background: rgba(255,255,255,0.25); }
   /* fondo tintado cuando la vista OGAME está activa */
   .card.ogame-activa { background: #F5F9FF; border-color: #BFD9F2; }
-  /* columna solo-OGAME: oculta por defecto */
+  /* columna "Habilitar hitos" solo visible en modo priorización */
   .col-ogame { display: none; }
-  .card.ogame-activa .col-ogame { display: table-cell; }
+  .card.modo-priorizacion .col-ogame { display: table-cell; }
 
 
   /* ── PAGE TITLE ── */
@@ -598,13 +598,13 @@
 <!-- MAIN -->
 <main class="main">
   <div class="card" id="card-principal">
-    <!-- Banner Vista OGAME (oculto por defecto) -->
-    <div class="banner-ogame" id="banner-ogame" style="display:none">
+    <!-- Banner de modo activo (oculto en vista general) -->
+    <div class="banner-ogame" id="banner-modo" style="display:none">
       <div style="display:flex;align-items:center;gap:8px">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-        <span><strong>Vista OGAME activa</strong> — edición de priorización y habilitación de hitos disponible</span>
+        <span id="banner-modo-texto"></span>
       </div>
-      <button class="btn-salir-ogame" onclick="salirOGAME()">Salir de Vista OGAME</button>
+      <button class="btn-salir-ogame" onclick="salirModo()">Salir</button>
     </div>
 
     <div class="page-header">
@@ -613,10 +613,16 @@
           <h1>Hoja de Ruta Estratégica 2026–2027</h1>
           <p>Transferencia de gestión · Registro de estado de intervenciones e hitos clave</p>
         </div>
-        <button class="btn-ogame" id="btn-ogame" onclick="abrirLoginOGAME()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-          Vista OGAME
-        </button>
+        <div style="display:flex;gap:10px;flex-shrink:0" id="botones-modo">
+          <button class="btn-ogame" id="btn-edicion" onclick="abrirLoginEdicion()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Modo edición
+          </button>
+          <button class="btn-ogame" id="btn-priorizacion" onclick="abrirLoginPriorizacion()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            Priorización
+          </button>
+        </div>
       </div>
     </div>
 
@@ -795,21 +801,25 @@
   </div>
 </div>
 
-<!-- MODAL LOGIN OGAME -->
+<!-- MODAL LOGIN (edición / priorización) -->
 <div class="modal-overlay" id="login-overlay">
-  <div class="modal" style="max-width:420px">
+  <div class="modal" style="max-width:440px">
     <div class="modal-header">
       <div>
-        <h2>Vista OGAME</h2>
-        <p>Ingresa la contraseña para habilitar la edición</p>
+        <h2 id="login-titulo">Modo edición</h2>
+        <p id="login-subtitulo">Elige tu oficina e ingresa la contraseña</p>
       </div>
-      <button class="modal-close" onclick="cerrarLoginOGAME()">✕</button>
+      <button class="modal-close" onclick="cerrarLogin()">✕</button>
     </div>
     <div class="modal-body">
+      <div class="form-group" id="login-oficina-group" style="margin-bottom:14px">
+        <label>Oficina</label>
+        <select id="login-oficina"><option value="">Selecciona tu oficina…</option></select>
+      </div>
       <div class="form-group">
         <label>Contraseña</label>
         <div style="position:relative">
-          <input type="password" id="login-password" placeholder="Contraseña OGAME" style="padding-right:40px" onkeydown="if(event.key==='Enter')validarOGAME()">
+          <input type="password" id="login-password" placeholder="Contraseña" style="padding-right:40px" onkeydown="if(event.key==='Enter')validarLogin()">
           <button type="button" id="btn-ojo" onclick="toggleVerPassword()" title="Mostrar contraseña"
                   style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gris-texto);padding:4px;display:flex">
             <svg id="ojo-abierto" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -820,8 +830,8 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-cancelar" onclick="cerrarLoginOGAME()">Cancelar</button>
-      <button class="btn-guardar" onclick="validarOGAME()">Ingresar</button>
+      <button class="btn-cancelar" onclick="cerrarLogin()">Cancelar</button>
+      <button class="btn-guardar" onclick="validarLogin()">Ingresar</button>
     </div>
   </div>
 </div>
@@ -896,6 +906,7 @@ const TSV_MAESTRO_INTERV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51
 const TSV_MAESTRO_HITOS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=819717629&single=true&output=tsv';
 const TSV_ESTADO_INTERV= 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=1274731330&single=true&output=tsv';
 const TSV_ESTADO_HITOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=1161068484&single=true&output=tsv';
+const TSV_ACCESOS      = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT51m2KSYVvRmhjdmeUBosY9xX1w8xytwyegvFFg0kuAWICKcen2th8Nfoo7-bhEXn5RSB1RI3TJDAH/pub?gid=478159955&single=true&output=tsv';
 
 const POR_PAGINA = 8; // intervenciones por página
 
@@ -906,8 +917,18 @@ let estadoInterv = {}; // { codigo → { estadoSituacional, costo, pim, devengad
 let estadoHitos  = {}; // { codhito → { fechaCumplimiento, fechaReg } }
 let filtradas    = []; // intervenciones después de filtros
 let paginaActual = 1;
-let vistaOGAME   = sessionStorage.getItem('hdr_vista_ogame') === '1'; // recuerda tras recargar
+// Modos de la aplicación (mutuamente excluyentes):
+//   'general'     → solo lectura, sin lápiz ni toggles
+//   'edicion'     → una oficina edita SUS intervenciones (lápiz habilitado)
+//   'priorizacion'→ toggles de priorización/habilitar hitos (antes Vista OGAME)
+let modoApp = sessionStorage.getItem('hdr_modo') || 'general';
+let oficinaEdicion = sessionStorage.getItem('hdr_oficina') || ''; // órgano activo en modo edición
 const PASSWORD_OGAME = 'ogame.2026';
+let accesos = {}; // { 'DGPPT': 'DGPPT-0403', ... } cargado de la hoja Accesos
+
+// Compatibilidad: varias partes del código consultan si estamos en modo priorización
+function esPriorizacion() { return modoApp === 'priorizacion'; }
+function esEdicion() { return modoApp === 'edicion'; }
 let intervModal  = null; // intervención abierta en modal
 
 // ── FETCH TSV ──────────────────────────────────────────────────────────────────
@@ -940,12 +961,21 @@ function parseTSV(txt) {
 // ── CARGA INICIAL ──────────────────────────────────────────────────────────────
 async function cargarDatos() {
   try {
-    const [tsvMaestroInterv, tsvMaestroHitos, tsvInterv, tsvHitos] = await Promise.all([
+    const [tsvMaestroInterv, tsvMaestroHitos, tsvInterv, tsvHitos, tsvAccesos] = await Promise.all([
       fetchTSV(TSV_MAESTRO_INTERV),
       fetchTSV(TSV_MAESTRO_HITOS),
       fetchTSV(TSV_ESTADO_INTERV),
-      fetchTSV(TSV_ESTADO_HITOS)
+      fetchTSV(TSV_ESTADO_HITOS),
+      fetchTSV(TSV_ACCESOS)
     ]);
+
+    // Hoja Accesos: Órgano → Contraseña
+    accesos = {};
+    parseTSV(tsvAccesos).forEach(f => {
+      const org = (f['Órgano'] || '').trim();
+      const pass = (f['Contraseña'] || '').trim();
+      if (org) accesos[org] = pass;
+    });
 
     // 1) Maestro de intervenciones (una fila por intervención)
     // cols: Código, Grupo, Viceministerios, Órgano, Ejes prioritarios de la gestión,
@@ -1033,20 +1063,46 @@ async function cargarDatos() {
   }
 }
 
-// ── VISTA OGAME ─────────────────────────────────────────────────────────────────
-function abrirLoginOGAME() {
+// ── MODOS (edición por oficina / priorización) ──────────────────────────────────
+let modoLoginActual = null; // 'edicion' | 'priorizacion' mientras el modal está abierto
+
+function abrirLoginEdicion() {
+  modoLoginActual = 'edicion';
+  document.getElementById('login-titulo').textContent = 'Modo edición';
+  document.getElementById('login-subtitulo').textContent = 'Elige tu oficina e ingresa la contraseña';
+  document.getElementById('login-oficina-group').style.display = 'block';
+  // poblar oficinas desde la hoja Accesos
+  const sel = document.getElementById('login-oficina');
+  sel.innerHTML = '<option value="">Selecciona tu oficina…</option>' +
+    Object.keys(accesos).sort().map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
+  prepararLogin('Contraseña de tu oficina');
+}
+
+function abrirLoginPriorizacion() {
+  modoLoginActual = 'priorizacion';
+  document.getElementById('login-titulo').textContent = 'Priorización';
+  document.getElementById('login-subtitulo').textContent = 'Ingresa la contraseña para habilitar la priorización';
+  document.getElementById('login-oficina-group').style.display = 'none';
+  prepararLogin('Contraseña');
+}
+
+function prepararLogin(placeholder) {
   const inp = document.getElementById('login-password');
   inp.value = '';
   inp.type = 'password';
+  inp.placeholder = placeholder;
   document.getElementById('ojo-abierto').style.display = 'block';
   document.getElementById('ojo-cerrado').style.display = 'none';
   document.getElementById('login-error').style.display = 'none';
   document.getElementById('login-overlay').classList.add('activo');
-  inp.focus();
+  if (modoLoginActual === 'edicion') document.getElementById('login-oficina').focus();
+  else inp.focus();
 }
-function cerrarLoginOGAME() {
+
+function cerrarLogin() {
   document.getElementById('login-overlay').classList.remove('activo');
 }
+
 function toggleVerPassword() {
   const inp = document.getElementById('login-password');
   const abierto = document.getElementById('ojo-abierto');
@@ -1056,31 +1112,80 @@ function toggleVerPassword() {
   abierto.style.display = mostrar ? 'none' : 'block';
   cerrado.style.display = mostrar ? 'block' : 'none';
 }
-function validarOGAME() {
-  const val = document.getElementById('login-password').value;
-  if (val === PASSWORD_OGAME) {
-    vistaOGAME = true;
-    sessionStorage.setItem('hdr_vista_ogame', '1');
-    cerrarLoginOGAME();
-    aplicarVistaOGAME();
-    renderTabla();
-    mostrarToast('Vista OGAME activada', 'exito');
+
+function validarLogin() {
+  const pass = document.getElementById('login-password').value;
+  const errDiv = document.getElementById('login-error');
+
+  if (modoLoginActual === 'priorizacion') {
+    if (pass === PASSWORD_OGAME) {
+      entrarModo('priorizacion', '');
+    } else {
+      errDiv.textContent = 'Contraseña incorrecta';
+      errDiv.style.display = 'block';
+    }
+    return;
+  }
+
+  // modo edición: valida oficina + contraseña de la hoja Accesos
+  const oficina = document.getElementById('login-oficina').value;
+  if (!oficina) {
+    errDiv.textContent = 'Selecciona tu oficina';
+    errDiv.style.display = 'block';
+    return;
+  }
+  if (accesos[oficina] && pass === accesos[oficina]) {
+    entrarModo('edicion', oficina);
   } else {
-    document.getElementById('login-error').style.display = 'block';
+    errDiv.textContent = 'Contraseña incorrecta para esta oficina';
+    errDiv.style.display = 'block';
   }
 }
-function salirOGAME() {
-  vistaOGAME = false;
-  sessionStorage.removeItem('hdr_vista_ogame');
-  aplicarVistaOGAME();
-  renderTabla();
+
+function entrarModo(modo, oficina) {
+  modoApp = modo;
+  oficinaEdicion = oficina;
+  sessionStorage.setItem('hdr_modo', modo);
+  sessionStorage.setItem('hdr_oficina', oficina);
+  cerrarLogin();
+  aplicarModo();
+  aplicarFiltros(); // en edición, filtra a la oficina
+  mostrarToast(modo === 'edicion' ? `Modo edición: ${oficina}` : 'Modo priorización activado', 'exito');
 }
-// Aplica el estado visual (banner, botón, fondo) según la vista actual
-function aplicarVistaOGAME() {
-  document.getElementById('banner-ogame').style.display = vistaOGAME ? 'flex' : 'none';
-  document.getElementById('btn-ogame').style.display = vistaOGAME ? 'none' : 'flex';
-  document.getElementById('card-principal').classList.toggle('ogame-activa', vistaOGAME);
+
+function salirModo() {
+  modoApp = 'general';
+  oficinaEdicion = '';
+  sessionStorage.removeItem('hdr_modo');
+  sessionStorage.removeItem('hdr_oficina');
+  aplicarModo();
+  aplicarFiltros();
 }
+
+// Aplica el estado visual (banner, botones, fondo) según el modo actual
+function aplicarModo() {
+  const banner = document.getElementById('banner-modo');
+  const bannerTexto = document.getElementById('banner-modo-texto');
+  const botones = document.getElementById('botones-modo');
+  const card = document.getElementById('card-principal');
+
+  if (modoApp === 'general') {
+    banner.style.display = 'none';
+    botones.style.display = 'flex';
+    card.classList.remove('ogame-activa', 'modo-priorizacion');
+  } else {
+    banner.style.display = 'flex';
+    botones.style.display = 'none';
+    card.classList.add('ogame-activa');
+    card.classList.toggle('modo-priorizacion', modoApp === 'priorizacion');
+    bannerTexto.innerHTML = modoApp === 'edicion'
+      ? `<strong>Modo edición — ${esc(oficinaEdicion)}</strong> · editando solo las intervenciones de tu oficina`
+      : `<strong>Modo priorización activo</strong> · marca las intervenciones prioritarias`;
+  }
+}
+
+// Compatibilidad con código que aún llame aplicarVistaOGAME
+function aplicarVistaOGAME() { aplicarModo(); }
 
 // ── FILTROS ────────────────────────────────────────────────────────────────────
 
@@ -1318,6 +1423,8 @@ function aplicarFiltros() {
   const vHito       = document.getElementById('f-hito').value.trim().toLowerCase();
 
   filtradas = intervenciones.filter(i => {
+    // En modo edición, solo las intervenciones de la oficina activa (match por Órgano)
+    if (esEdicion() && i.organo !== oficinaEdicion) return false;
     if (vGrupo  && i.grupo !== vGrupo)  return false;
     if (vVice   && i.vice  !== vVice)   return false;
     if (vOrgano && i.organo !== vOrgano) return false;
@@ -1396,30 +1503,33 @@ function renderTabla() {
       ? `<span style="font-weight:700;color:var(--texto)">${fmtAvance(est.avance)}</span>`
       : '—';
 
-    // Priorización: editable solo en Vista OGAME; en vista usuario, gris y no clickeable
-    const prioHtml = vistaOGAME
+    // Priorización: editable solo en modo Priorización; en otros modos, gris/consulta
+    const prioHtml = esPriorizacion()
       ? `<button class="toggle-prio ${est.priorizado ? 'on' : ''}" onclick="togglePriorizacion('${esc(interv.codigo)}', this)" title="${est.priorizado ? 'Priorizada' : 'No priorizada'}"></button>`
       : `<span class="toggle-prio ${est.priorizado ? 'on' : ''} deshab" title="${est.priorizado ? 'Priorizada' : 'No priorizada'}"></span>`;
 
-    // Habilitar hitos (solo columna OGAME): candado editable por OGAME
+    // Habilitar hitos (columna solo visible en modo priorización)
     const habil = est.hitosHabilitados !== false; // por defecto true
     const habilHtml = `<button class="toggle-prio ${habil ? 'on' : ''}" onclick="toggleHitosHabilitados('${esc(interv.codigo)}', this)" title="${habil ? 'Hitos habilitados' : 'Hitos bloqueados'}"></button>`;
+
+    // El lápiz de edición solo aparece en modo edición
+    const mostrarLapiz = esEdicion();
 
     const hitosMostrar = hitosVisibles(interv);
     const nHitos = hitosMostrar.length;
 
-    // columna Última Actualización: fecha + ícono lápiz, alineada arriba
+    // columna Última Actualización: fecha + ícono lápiz (solo en modo edición)
     const colActualizado = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
         ${tieneRegistro
           ? `<span style="font-size:11px;color:var(--texto);font-weight:700">${esc(est.fechaReg)}</span>`
           : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro</span>`}
-        <button class="btn-lapiz" onclick="abrirModal('${esc(interv.codigo)}')" title="Registrar actualización">
+        ${mostrarLapiz ? `<button class="btn-lapiz" onclick="abrirModal('${esc(interv.codigo)}')" title="Registrar actualización">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
-        </button>
+        </button>` : ''}
       </div>`;
 
     html += `
@@ -1527,6 +1637,12 @@ function cambiarPagina(delta) {
 function abrirModal(codigo) {
   intervModal = intervenciones.find(i => i.codigo === codigo);
   if (!intervModal) return;
+  // Seguridad: el modal de edición solo se abre en modo edición y para una
+  // intervención de la oficina activa.
+  if (!esEdicion() || intervModal.organo !== oficinaEdicion) {
+    mostrarToast('Solo puedes editar las intervenciones de tu oficina', 'error');
+    return;
+  }
 
   const est = estadoInterv[codigo] || {};
 
@@ -2199,7 +2315,7 @@ function exportarExcel() {
 }
 
 // ── CERRAR MODAL CON ESC ───────────────────────────────────────────────────────
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarModal(); cerrarLoginOGAME(); cerrarResumen(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarModal(); cerrarLogin(); cerrarResumen(); } });
 
 let clicIniciadoEnResumen = false;
 document.getElementById('resumen-overlay').addEventListener('mousedown', e => {
@@ -2225,7 +2341,7 @@ document.getElementById('login-overlay').addEventListener('mousedown', e => {
   clicIniciadoEnLogin = (e.target === document.getElementById('login-overlay'));
 });
 document.getElementById('login-overlay').addEventListener('click', e => {
-  if (clicIniciadoEnLogin && e.target === document.getElementById('login-overlay')) cerrarLoginOGAME();
+  if (clicIniciadoEnLogin && e.target === document.getElementById('login-overlay')) cerrarLogin();
   clicIniciadoEnLogin = false;
 });
 document.addEventListener('click', e => {
@@ -2236,7 +2352,7 @@ document.addEventListener('click', e => {
 });
 
 // ── INICIO ────────────────────────────────────────────────────────────────────
-aplicarVistaOGAME();
+aplicarModo();
 cargarDatos();
 </script>
 </body>
