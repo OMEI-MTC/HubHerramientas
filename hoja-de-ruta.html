@@ -629,18 +629,18 @@
 
     <!-- FILTROS -->
     <div class="filtros">
-      <div class="filtros-box" style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; align-items:start;">
+      <div class="filtros-box" style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; align-items:start; background:#F3F4F6; border:none; border-radius:12px; padding:18px;">
 
-        <!-- GRUPO 1: RESPONSABLES (azul) -->
-        <div style="background:#EEF4FF; border:1.5px solid #b3cde8; border-top:3px solid #0055A5; border-radius:10px; padding:14px 16px;">
+        <!-- GRUPO 1: RESPONSABLES -->
+        <div style="background:#EEF4FF; border-radius:10px; padding:14px 16px;">
           <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#0055A5; margin-bottom:12px;">Responsables</div>
           <div class="filtro-group"><label>Grupo</label><select id="f-grupo" onchange="aplicarFiltros()"><option value="">Todos</option></select></div>
           <div class="filtro-group"><label>Viceministerio</label><select id="f-vice" onchange="aplicarFiltros()"><option value="">Todos</option></select></div>
           <div class="filtro-group" style="margin-bottom:0"><label>Órgano</label><select id="f-organo" onchange="aplicarFiltros()"><option value="">Todos</option></select></div>
         </div>
 
-        <!-- GRUPO 2: INTERVENCIONES (naranja/ámbar) -->
-        <div style="background:#FFFBF0; border:1.5px solid #f0d080; border-top:3px solid #D97706; border-radius:10px; padding:14px 16px;">
+        <!-- GRUPO 2: INTERVENCIONES -->
+        <div style="background:#FFFBF0; border-radius:10px; padding:14px 16px;">
           <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#D97706; margin-bottom:12px;">Intervenciones</div>
           <div class="filtro-group">
             <label>Priorizadas</label>
@@ -650,8 +650,8 @@
           <div class="filtro-group" style="margin-bottom:0"><label>CUI</label><input type="text" id="f-cui" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
         </div>
 
-        <!-- GRUPO 3: OTRAS CATEGORÍAS (verde) -->
-        <div style="background:#F0FBF4; border:1.5px solid #a8d5b5; border-top:3px solid #1D9E75; border-radius:10px; padding:14px 16px;">
+        <!-- GRUPO 3: OTRAS CATEGORÍAS -->
+        <div style="background:#F0FBF4; border-radius:10px; padding:14px 16px;">
           <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#1D9E75; margin-bottom:12px;">Otras categorías</div>
           <div class="filtro-group"><label>Área de influencia</label><input type="text" id="f-area" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
           <div class="filtro-group"><label>Estado de cumplimiento</label>
@@ -674,29 +674,30 @@
           </div>
         </div>
 
-        <!-- GRUPO 4: EXPORTABLES -->
-        <div style="background:#F8F9FA; border:1.5px solid #dee2e6; border-top:3px solid #6B7280; border-radius:10px; padding:14px 16px;">
-          <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#6B7280; margin-bottom:12px;">Exportables</div>
-          <button class="btn-export-pdf" onclick="exportarPDF()" style="width:100%; margin-bottom:8px; display:flex; align-items:center; justify-content:center; gap:7px; padding:9px; border:1.5px solid #C8102E; background:#fff; color:#C8102E; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px; font-family:inherit;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Descargar PDF
+        <!-- GRUPO 4: ACCIONES -->
+        <div style="background:#F8F9FA; border-radius:10px; padding:14px 16px; display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#6B7280; margin-bottom:4px;">Acciones</div>
+
+          <!-- Limpiar filtros primero -->
+          <button onclick="limpiarFiltros()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px; border:1.5px solid #D1D5DB; background:#fff; color:#374151; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px; font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.01"/></svg>
+            Limpiar filtros
           </button>
-          <button class="btn-export-excel" onclick="exportarExcel()" style="width:100%; margin-bottom:8px; display:flex; align-items:center; justify-content:center; gap:7px; padding:9px; border:none; background:#1D9E75; color:#fff; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px; font-family:inherit;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Descargar Excel
-          </button>
-          <button onclick="mostrarResumen()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:7px; padding:9px; border:1.5px solid #dee2e6; background:#fff; color:#374151; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px; font-family:inherit;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            Ver resumen
-          </button>
-          <div style="margin-top:12px; padding-top:12px; border-top:1px solid #dee2e6;">
-            <label class="check-ultimo" style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; color:#374151;">
-              <input type="checkbox" id="f-ultimo" onchange="aplicarFiltros()">
-              <span>Solo último hito</span>
-            </label>
-          </div>
-          <div style="margin-top:8px;">
-            <button class="btn-limpiar" onclick="limpiarFiltros()" style="width:100%; padding:7px; font-size:12px;">Limpiar filtros</button>
+
+          <div style="border-top:1px solid #E5E7EB; padding-top:8px; margin-top:2px;">
+            <div style="font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#9CA3AF; margin-bottom:8px;">Exportables</div>
+            <button onclick="exportarPDF()" style="width:100%; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:7px; padding:9px; border:1.5px solid #C8102E; background:#fff; color:#C8102E; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px; font-family:inherit;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Descargar PDF
+            </button>
+            <button onclick="exportarExcel()" style="width:100%; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:7px; padding:9px; border:none; background:#1D9E75; color:#fff; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px; font-family:inherit;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Descargar Excel
+            </button>
+            <button onclick="mostrarResumen()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:7px; padding:9px; border:1.5px solid #D1D5DB; background:#fff; color:#374151; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px; font-family:inherit;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              Ver resumen
+            </button>
           </div>
         </div>
 
