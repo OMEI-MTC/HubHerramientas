@@ -336,7 +336,12 @@ const MAESTRO_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpc
 const DEPTO_TSV   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=1441170985&single=true&output=tsv';
 const EJEC_TSV    = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRef-oG5tpcxkFzaqZ7b4xA8G8Thr4lBPiU9HTEicEQEbWvpeiE8qx2UwDTG83dHjgjRLKrtYZIjtel/pub?gid=1061211372&single=true&output=tsv';
 
-const CORS_PROXIES = [ url=>url, url=>'https://corsproxy.io/?'+encodeURIComponent(url), url=>'https://api.allorigins.win/raw?url='+encodeURIComponent(url) ];
+const CORS_PROXIES = [
+  url => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
+  url => 'https://corsproxy.io/?' + encodeURIComponent(url),
+  url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+  url => url  // intento directo al final
+];
 
 // Índices columnas Estado (hitos)
 const E  = { corte:0, codHito:1, hito:2, categoria:3, codInterno:4, cui:5, nombre:6, fechaCump:7, estado:8, avance:9, situacional:10 };
