@@ -2326,7 +2326,7 @@ document.getElementById('resumen-overlay').addEventListener('click', e => {
   if (clicIniciadoEnResumen && e.target === document.getElementById('resumen-overlay')) cerrarResumen();
   clicIniciadoEnResumen = false;
 });
-// Cerrar modal solo si el clic EMPIEZA y    TERMINA en el overlay.
+// Cerrar modal solo si el clic EMPIEZA y TERMINA en el overlay.
 // Evita que se cierre al seleccionar texto arrastrando desde dentro hacia fuera.
 let clicIniciadoEnOverlay = false;
 document.getElementById('modal-overlay').addEventListener('mousedown', e => {
