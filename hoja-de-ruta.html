@@ -1473,7 +1473,7 @@ function aplicarFiltros() {
     // Filtros de hito (mes, último, y/o texto de hito): la intervención pasa
     // solo si le queda al menos un hito visible
     const filtrandoHitos = mesesSeleccion.size > 0 ||
-                           document.getElementById('f-ultimo').checked ||
+                           (document.getElementById('f-ultimo') && document.getElementById('f-ultimo').checked) ||
                            vHito !== '' ||
                            document.getElementById('f-estado-cumpl').value !== '';
     if (filtrandoHitos && hitosVisibles(i).length === 0) return false;
@@ -2093,7 +2093,7 @@ function resumenFiltrosActivos() {
     const meses = [...mesesSeleccion].map(m => m === '__sinfecha__' ? 'Sin fecha' : m).join(', ');
     partes.push('Fecha de cumplimiento: ' + meses);
   }
-  if (document.getElementById('f-ultimo').checked) partes.push('Solo el último hito');
+  if (document.getElementById('f-ultimo')?.checked) partes.push('Solo el último hito');
   const estadoC = val('f-estado-cumpl');
   if (estadoC) partes.push('Estado de cumplimiento: ' + (estadoC === '__sin__' ? 'Sin estado' : estadoC));
 
