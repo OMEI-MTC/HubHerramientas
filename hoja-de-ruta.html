@@ -896,7 +896,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <script>
 // ── CONFIGURACIÓN ──────────────────────────────────────────────────────────────
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbybphOTs9ZZJnFDG9qDwYYdQ-Pumtvi6dX8DpSzSQHPdJd9J6B7C-o_U8CvhcYq6YAW/exec';
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxFySD-V9iYZMMwYql2090TDajXnMDg7Sz2l_0rrep3UPmPPWDT4TbiCRl6t51E1AZZpw/exec';
 
 const TSV_MAESTRO_INTERV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=352174490&single=true&output=tsv';
 const TSV_MAESTRO_HITOS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=739633342&single=true&output=tsv';
@@ -924,6 +924,62 @@ let accesos = {}; // { 'DGPPT': 'DGPPT-0403', ... } cargado de la hoja Accesos
 function esPriorizacion() { return modoApp === 'priorizacion'; }
 function esEdicion() { return modoApp === 'edicion'; }
 let intervModal  = null; // intervención abierta en modal
+
+// ── POST AL BACKEND (Apps Script) ──────────────────────────────────────────────
+// Centraliza las 3 llamadas de escritura y, sobre todo, distingue POR QUÉ falla.
+// El error genérico "no se pudo conectar" ocultaba tres causas muy distintas.
+async function postBackend(payload) {
+  let resp;
+  try {
+    resp = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS
+      redirect: 'follow',
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    // fetch ni siquiera devolvió respuesta: el navegador bloqueó la petición.
+    throw new Error(
+      'CORS/RED: el navegador bloqueó la petición. Lo más probable es que la ' +
+      'implementación del Apps Script no tenga acceso "Cualquier usuario". ' +
+      'Detalle: ' + e.message
+    );
+  }
+
+  const texto = await resp.text();
+
+  if (!resp.ok) {
+    throw new Error('HTTP ' + resp.status + ' — ' + texto.slice(0, 300));
+  }
+
+  // Si Apps Script devuelve un login o una página de error, esto NO es JSON.
+  try {
+    return JSON.parse(texto);
+  } catch {
+    throw new Error(
+      'El servidor respondió algo que no es JSON (probablemente una pantalla de ' +
+      'inicio de sesión de Google o un error de Apps Script). Inicio de la ' +
+      'respuesta: ' + texto.slice(0, 300)
+    );
+  }
+}
+
+// Ejecutable desde la consola del navegador para aislar el problema:  diagnosticarBackend()
+async function diagnosticarBackend() {
+  console.log('URL del backend:', BACKEND_URL);
+  try {
+    const r = await fetch(BACKEND_URL, { method: 'GET' });
+    const t = await r.text();
+    console.log('GET → HTTP', r.status);
+    console.log('GET → cuerpo:', t.slice(0, 500));
+    if (t.trim().startsWith('<')) {
+      console.warn('El GET devolvió HTML. La implementación NO es pública: ' +
+                   'cámbiala a "Cualquier usuario" y vuelve a implementar.');
+    }
+  } catch (e) {
+    console.error('El GET falló por CORS/red:', e.message);
+  }
+}
 
 // ── FETCH TSV ──────────────────────────────────────────────────────────────────
 async function fetchTSV(url) {
@@ -1722,23 +1778,18 @@ async function togglePriorizacion(codigo, btn) {
   };
 
   try {
-    const resp = await fetch(BACKEND_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS en Apps Script
-      body: JSON.stringify(payload)
-    });
-    const data = await resp.json();
+    const data = await postBackend(payload);
     if (data.ok) {
       est.priorizado = nuevoValor;
       btn.title = nuevoValor ? 'Priorizada' : 'No priorizada';
     } else {
       // revertir si el backend rechaza
       btn.classList.toggle('on', !nuevoValor);
-      mostrarToast('No se pudo actualizar la priorización', 'error');
+      mostrarToast('El backend rechazó el cambio: ' + (data.mensaje || 'sin detalle'), 'error');
     }
   } catch (e) {
     btn.classList.toggle('on', !nuevoValor);
-    mostrarToast('No se pudo conectar con el servidor', 'error');
+    mostrarToast(e.message, 'error');
     console.error(e);
   } finally {
     btn.disabled = false;
@@ -1759,22 +1810,17 @@ async function toggleHitosHabilitados(codigo, btn) {
   };
 
   try {
-    const resp = await fetch(BACKEND_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS en Apps Script
-      body: JSON.stringify(payload)
-    });
-    const data = await resp.json();
+    const data = await postBackend(payload);
     if (data.ok) {
       est.hitosHabilitados = nuevoValor;
       btn.title = nuevoValor ? 'Hitos habilitados' : 'Hitos bloqueados';
     } else {
       btn.classList.toggle('on', !nuevoValor);
-      mostrarToast('No se pudo actualizar la habilitación de hitos', 'error');
+      mostrarToast('El backend rechazó el cambio: ' + (data.mensaje || 'sin detalle'), 'error');
     }
   } catch (e) {
     btn.classList.toggle('on', !nuevoValor);
-    mostrarToast('No se pudo conectar con el servidor', 'error');
+    mostrarToast(e.message, 'error');
     console.error(e);
   } finally {
     btn.disabled = false;
@@ -1841,12 +1887,7 @@ async function guardarRegistro() {
   };
 
   try {
-    const resp = await fetch(BACKEND_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS en Apps Script
-      body: JSON.stringify(payload)
-    });
-    const data = await resp.json();
+    const data = await postBackend(payload);
 
     if (data.ok) {
       // actualizar estado local sin recargar (usa la fecha real del backend)
@@ -1872,10 +1913,9 @@ async function guardarRegistro() {
       mostrarToast('Error al guardar: ' + (data.mensaje || 'intenta de nuevo'), 'error');
     }
   } catch (e) {
-    {
-      mostrarToast('No se pudo conectar con el servidor. Intenta de nuevo.', 'error');
-      console.error(e);
-    }
+    mostrarToast(e.message, 'error');
+    console.error('[guardarRegistro] payload enviado:', payload);
+    console.error('[guardarRegistro] error:', e);
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar registro';
@@ -1887,7 +1927,8 @@ function mostrarToast(msg, tipo = 'exito') {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = `toast ${tipo} visible`;
-  setTimeout(() => { t.classList.remove('visible'); }, 3500);
+  // los mensajes de error ahora son diagnósticos y largos: más tiempo en pantalla
+  setTimeout(() => { t.classList.remove('visible'); }, tipo === 'error' ? 12000 : 3500);
 }
 
 // ── EXPORT EXCEL ───────────────────────────────────────────────────────────────
