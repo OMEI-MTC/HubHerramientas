@@ -629,57 +629,33 @@
 
     <!-- FILTROS -->
     <div class="filtros">
-      <div class="filtros-box">
-        <div class="filtros-label">Filtros</div>
+      <div class="filtros-box" style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; align-items:start;">
 
-        <!-- Fila 1: Grupo, Viceministerio, Órgano, Priorizado, Discurso -->
-        <div class="filtros-grid cinco">
-          <div class="filtro-group">
-            <label>Grupo</label>
-            <select id="f-grupo"><option value="">Todos</option></select>
-          </div>
-          <div class="filtro-group">
-            <label>Viceministerio</label>
-            <select id="f-vice"><option value="">Todos</option></select>
-          </div>
-          <div class="filtro-group">
-            <label>Órgano</label>
-            <select id="f-organo"><option value="">Todos</option></select>
-          </div>
-          <div class="filtro-group">
-            <label>Priorizado</label>
-            <select id="f-priorizado">
-              <option value="">Todos</option>
-              <option value="si">Sí</option>
-              <option value="no">No</option>
-            </select>
-          </div>
-          <div class="filtro-group">
-            <label>Discurso de 28 de julio</label>
-            <label class="check-ultimo">
-              <input type="checkbox" id="f-discurso" onchange="aplicarFiltros()">
-              <span>Solo mencionadas</span>
-            </label>
-          </div>
+        <!-- GRUPO 1: RESPONSABLES (azul) -->
+        <div style="background:#EEF4FF; border:1.5px solid #b3cde8; border-top:3px solid #0055A5; border-radius:10px; padding:14px 16px;">
+          <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#0055A5; margin-bottom:12px;">Responsables</div>
+          <div class="filtro-group"><label>Grupo</label><select id="f-grupo" onchange="aplicarFiltros()"><option value="">Todos</option></select></div>
+          <div class="filtro-group"><label>Viceministerio</label><select id="f-vice" onchange="aplicarFiltros()"><option value="">Todos</option></select></div>
+          <div class="filtro-group" style="margin-bottom:0"><label>Órgano</label><select id="f-organo" onchange="aplicarFiltros()"><option value="">Todos</option></select></div>
         </div>
 
-        <!-- Fila 2: Eje, Línea, Área de influencia, Estado de cumplimiento (4 de 5) -->
-        <div class="filtros-grid cinco">
+        <!-- GRUPO 2: INTERVENCIONES (naranja/ámbar) -->
+        <div style="background:#FFFBF0; border:1.5px solid #f0d080; border-top:3px solid #D97706; border-radius:10px; padding:14px 16px;">
+          <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#D97706; margin-bottom:12px;">Intervenciones</div>
           <div class="filtro-group">
-            <label>Eje prioritario</label>
-            <select id="f-eje"><option value="">Todos</option></select>
+            <label>Priorizadas</label>
+            <select id="f-priorizadas" onchange="aplicarFiltros()"><option value="">Todas</option></select>
           </div>
-          <div class="filtro-group">
-            <label>Línea de interés</label>
-            <select id="f-linea"><option value="">Todos</option></select>
-          </div>
-          <div class="filtro-group">
-            <label>Área de influencia</label>
-            <input type="text" id="f-area" placeholder="Escribe para buscar…">
-          </div>
-          <div class="filtro-group">
-            <label>Estado de cumplimiento</label>
-            <select id="f-estado-cumpl">
+          <div class="filtro-group"><label>Intervención</label><input type="text" id="f-buscar" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
+          <div class="filtro-group" style="margin-bottom:0"><label>CUI</label><input type="text" id="f-cui" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
+        </div>
+
+        <!-- GRUPO 3: OTRAS CATEGORÍAS (verde) -->
+        <div style="background:#F0FBF4; border:1.5px solid #a8d5b5; border-top:3px solid #1D9E75; border-radius:10px; padding:14px 16px;">
+          <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#1D9E75; margin-bottom:12px;">Otras categorías</div>
+          <div class="filtro-group"><label>Área de influencia</label><input type="text" id="f-area" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
+          <div class="filtro-group"><label>Estado de cumplimiento</label>
+            <select id="f-estado-cumpl" onchange="aplicarFiltros()">
               <option value="">Todos</option>
               <option value="Cumplido">✅ Cumplido</option>
               <option value="En proceso">🔄 En proceso</option>
@@ -687,24 +663,7 @@
               <option value="__sin__">Sin estado</option>
             </select>
           </div>
-        </div>
-
-        <!-- Fila 3: CUI, Intervención, Hito, Fecha de cumplimiento, Hito final -->
-        <div class="filtros-grid cinco">
-          <div class="filtro-group">
-            <label>CUI</label>
-            <input type="text" id="f-cui" placeholder="Escribe para buscar…">
-          </div>
-          <div class="filtro-group">
-            <label>Intervención</label>
-            <input type="text" id="f-buscar" placeholder="Escribe para buscar…">
-          </div>
-          <div class="filtro-group">
-            <label>Hito</label>
-            <input type="text" id="f-hito" placeholder="Escribe para buscar…">
-          </div>
-          <div class="filtro-group">
-            <label>Fecha de cumplimiento</label>
+          <div class="filtro-group" style="margin-bottom:0"><label>Fecha de cumplimiento</label>
             <div class="meses-dropdown" id="meses-panel">
               <button type="button" class="meses-btn" onclick="abrirMesesDropdown(event)">
                 <span id="meses-btn-label">Todos</span>
@@ -713,19 +672,34 @@
               <div class="meses-lista" id="meses-lista"></div>
             </div>
           </div>
-          <div class="filtro-group">
-            <label>Hito final</label>
-            <label class="check-ultimo">
+        </div>
+
+        <!-- GRUPO 4: EXPORTABLES -->
+        <div style="background:#F8F9FA; border:1.5px solid #dee2e6; border-top:3px solid #6B7280; border-radius:10px; padding:14px 16px;">
+          <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#6B7280; margin-bottom:12px;">Exportables</div>
+          <button class="btn-export-pdf" onclick="exportarPDF()" style="width:100%; margin-bottom:8px; display:flex; align-items:center; justify-content:center; gap:7px; padding:9px; border:1.5px solid #C8102E; background:#fff; color:#C8102E; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px; font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Descargar PDF
+          </button>
+          <button class="btn-export-excel" onclick="exportarExcel()" style="width:100%; margin-bottom:8px; display:flex; align-items:center; justify-content:center; gap:7px; padding:9px; border:none; background:#1D9E75; color:#fff; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px; font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar Excel
+          </button>
+          <button onclick="mostrarResumen()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:7px; padding:9px; border:1.5px solid #dee2e6; background:#fff; color:#374151; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px; font-family:inherit;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            Ver resumen
+          </button>
+          <div style="margin-top:12px; padding-top:12px; border-top:1px solid #dee2e6;">
+            <label class="check-ultimo" style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; color:#374151;">
               <input type="checkbox" id="f-ultimo" onchange="aplicarFiltros()">
-              <span>Mostrar solo el último hito</span>
+              <span>Solo último hito</span>
             </label>
+          </div>
+          <div style="margin-top:8px;">
+            <button class="btn-limpiar" onclick="limpiarFiltros()" style="width:100%; padding:7px; font-size:12px;">Limpiar filtros</button>
           </div>
         </div>
 
-        <!-- Fila 4: Limpiar -->
-        <div class="filtros-foot" style="justify-content:flex-end">
-          <button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar filtros</button>
-        </div>
       </div>
     </div>
 
@@ -896,7 +870,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <script>
 // ── CONFIGURACIÓN ──────────────────────────────────────────────────────────────
-const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbybphOTs9ZZJnFDG9qDwYYdQ-Pumtvi6dX8DpSzSQHPdJd9J6B7C-o_U8CvhcYq6YAW/exec';
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxFySD-V9iYZMMwYql2090TDajXnMDg7Sz2l_0rrep3UPmPPWDT4TbiCRl6t51E1AZZpw/exec';
 
 const TSV_MAESTRO_INTERV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=352174490&single=true&output=tsv';
 const TSV_MAESTRO_HITOS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=739633342&single=true&output=tsv';
@@ -1051,8 +1025,7 @@ async function cargarDatos() {
         director:   f['DIRECTOR(A)'] || '',
         resumenGrupo: f['RESUMEN'] || '',
         cui:        f['CUI'] || '',
-        discurso:   (f['Discurso'] || '').trim().toLowerCase() === 'si' ||
-                    (f['Discurso'] || '').trim().toLowerCase() === 'sí',
+        priorizadas: (f['Priorizadas'] || f['Discurso'] || '').split(';').map(s => s.trim()).filter(Boolean),
         hitos:      []
       };
     });
@@ -1314,15 +1287,13 @@ function construirFechasCumplimiento() {
 }
 
 function poblarFiltros() {
-  ['f-grupo','f-vice','f-organo','f-eje','f-linea'].forEach(id => {
-    document.getElementById(id).addEventListener('change', aplicarFiltros);
+  ['f-grupo','f-vice','f-organo','f-priorizadas','f-estado-cumpl'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.addEventListener('change', aplicarFiltros);
   });
-  document.getElementById('f-priorizado').addEventListener('change', aplicarFiltros);
-  document.getElementById('f-buscar').addEventListener('input', aplicarFiltros);
-  document.getElementById('f-area').addEventListener('input', aplicarFiltros);
-  document.getElementById('f-cui').addEventListener('input', aplicarFiltros);
-  document.getElementById('f-hito').addEventListener('input', aplicarFiltros);
-  document.getElementById('f-estado-cumpl').addEventListener('change', aplicarFiltros);
+  ['f-buscar','f-area','f-cui'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.addEventListener('input', aplicarFiltros);
+  });
+  const fHito = document.getElementById('f-hito'); if(fHito) fHito.addEventListener('input', aplicarFiltros);
 
   refrescarOpcionesFiltros();
 }
@@ -1331,31 +1302,25 @@ function poblarFiltros() {
 // Se usa para calcular qué opciones tiene sentido mostrar en cada dropdown.
 function pasaFiltrosExcepto(i, excepto) {
   const v = {
-    grupo:      document.getElementById('f-grupo').value,
-    vice:       document.getElementById('f-vice').value,
-    organo:     document.getElementById('f-organo').value,
-    eje:        document.getElementById('f-eje').value,
-    linea:      document.getElementById('f-linea').value,
-    priorizado: document.getElementById('f-priorizado').value,
-    buscar:     document.getElementById('f-buscar').value.trim().toLowerCase(),
-    area:       document.getElementById('f-area').value.trim().toLowerCase(),
-    cui:        document.getElementById('f-cui').value.trim().toLowerCase(),
-    discurso:   document.getElementById('f-discurso').checked
+    grupo:       document.getElementById('f-grupo').value,
+    vice:        document.getElementById('f-vice').value,
+    organo:      document.getElementById('f-organo').value,
+    eje:         document.getElementById('f-eje') ? document.getElementById('f-eje').value : '',
+    linea:       document.getElementById('f-linea') ? document.getElementById('f-linea').value : '',
+    priorizadas: document.getElementById('f-priorizadas').value,
+    buscar:      document.getElementById('f-buscar').value.trim().toLowerCase(),
+    area:        document.getElementById('f-area').value.trim().toLowerCase(),
+    cui:         document.getElementById('f-cui').value.trim().toLowerCase(),
   };
   if (excepto !== 'grupo'  && v.grupo  && i.grupo  !== v.grupo)  return false;
   if (excepto !== 'vice'   && v.vice   && i.vice   !== v.vice)   return false;
   if (excepto !== 'organo' && v.organo && i.organo !== v.organo) return false;
   if (excepto !== 'eje'    && v.eje    && i.eje    !== v.eje)    return false;
   if (excepto !== 'linea'  && v.linea  && i.linea  !== v.linea)  return false;
-  if (excepto !== 'priorizado' && v.priorizado) {
-    const esPrior = estadoInterv[i.codigo]?.priorizado;
-    if (v.priorizado === 'si' && !esPrior) return false;
-    if (v.priorizado === 'no' && esPrior)  return false;
-  }
+  if (excepto !== 'priorizadas' && v.priorizadas && !(i.priorizadas||[]).includes(v.priorizadas)) return false;
   if (excepto !== 'buscar' && v.buscar && !i.nombre.toLowerCase().includes(v.buscar)) return false;
   if (excepto !== 'area'   && v.area   && !(i.area || '').toLowerCase().includes(v.area)) return false;
   if (excepto !== 'cui'    && v.cui    && !(i.cui || '').toLowerCase().includes(v.cui)) return false;
-  if (excepto !== 'discurso' && v.discurso && !i.discurso) return false;
   return true;
 }
 
@@ -1366,8 +1331,6 @@ function refrescarOpcionesFiltros() {
     { id: 'f-grupo',  campo: 'grupo'  },
     { id: 'f-vice',   campo: 'vice'   },
     { id: 'f-organo', campo: 'organo' },
-    { id: 'f-eje',    campo: 'eje'    },
-    { id: 'f-linea',  campo: 'linea'  }
   ];
   campos.forEach(({ id, campo }) => {
     const sel = document.getElementById(id);
@@ -1375,15 +1338,24 @@ function refrescarOpcionesFiltros() {
     const disponibles = [...new Set(
       intervenciones.filter(i => pasaFiltrosExcepto(i, campo)).map(i => i[campo]).filter(Boolean)
     )].sort();
-    // si hay algo seleccionado que ya no aparece, lo mantenemos para no perder el filtro
     if (valorActual && !disponibles.includes(valorActual)) disponibles.push(valorActual);
     sel.innerHTML = '<option value="">Todos</option>' +
       disponibles.map(v => `<option value="${esc(v)}"${v === valorActual ? ' selected' : ''}>${esc(v)}</option>`).join('');
   });
 
-  // los meses también se filtran en cascada
+  // Poblar dropdown de Priorizadas (valores únicos separados por ;)
+  const selPrior = document.getElementById('f-priorizadas');
+  const valorActualPrior = selPrior.value;
+  const todasEtiquetas = new Set();
+  intervenciones.filter(i => pasaFiltrosExcepto(i, 'priorizadas')).forEach(i => {
+    (i.priorizadas || []).forEach(p => todasEtiquetas.add(p));
+  });
+  const etiquetas = [...todasEtiquetas].sort();
+  if (valorActualPrior && !etiquetas.includes(valorActualPrior)) etiquetas.push(valorActualPrior);
+  selPrior.innerHTML = '<option value="">Todas</option>' +
+    etiquetas.map(v => `<option value="${esc(v)}"${v === valorActualPrior ? ' selected' : ''}>${esc(v)}</option>`).join('');
+
   construirFechasCumplimiento();
-  // si un mes seleccionado ya no existe entre los disponibles, se descarta
   const labelsDisp = new Set(mesesDisponibles.map(m => m.label));
   labelsDisp.add('__sinfecha__');
   [...mesesSeleccion].forEach(l => { if (!labelsDisp.has(l)) mesesSeleccion.delete(l); });
@@ -1478,32 +1450,25 @@ function aplicarFiltros() {
   const vGrupo      = document.getElementById('f-grupo').value;
   const vVice       = document.getElementById('f-vice').value;
   const vOrgano     = document.getElementById('f-organo').value;
-  const vEje        = document.getElementById('f-eje').value;
-  const vLinea      = document.getElementById('f-linea').value;
-  const vPriorizado = document.getElementById('f-priorizado').value;
+  const vEje        = document.getElementById('f-eje') ? document.getElementById('f-eje').value : '';
+  const vLinea      = document.getElementById('f-linea') ? document.getElementById('f-linea').value : '';
+  const vPriorizadas= document.getElementById('f-priorizadas').value;
   const vBuscar     = document.getElementById('f-buscar').value.trim().toLowerCase();
   const vArea       = document.getElementById('f-area').value.trim().toLowerCase();
   const vCui        = document.getElementById('f-cui').value.trim().toLowerCase();
-  const vDiscurso   = document.getElementById('f-discurso').checked;
-  const vHito       = document.getElementById('f-hito').value.trim().toLowerCase();
+  const vHito       = document.getElementById('f-hito') ? document.getElementById('f-hito').value.trim().toLowerCase() : '';
 
   filtradas = intervenciones.filter(i => {
-    // En modo edición, solo las intervenciones de la oficina activa (match por Órgano)
     if (esEdicion() && i.organo !== oficinaEdicion) return false;
     if (vGrupo  && i.grupo !== vGrupo)  return false;
     if (vVice   && i.vice  !== vVice)   return false;
     if (vOrgano && i.organo !== vOrgano) return false;
     if (vEje    && i.eje   !== vEje)    return false;
     if (vLinea  && i.linea !== vLinea)  return false;
-    if (vPriorizado) {
-      const esPrior = estadoInterv[i.codigo]?.priorizado;
-      if (vPriorizado === 'si' && !esPrior) return false;
-      if (vPriorizado === 'no' && esPrior)  return false;
-    }
+    if (vPriorizadas && !(i.priorizadas||[]).includes(vPriorizadas)) return false;
     if (vBuscar && !i.nombre.toLowerCase().includes(vBuscar)) return false;
     if (vArea && !(i.area || '').toLowerCase().includes(vArea)) return false;
     if (vCui && !(i.cui || '').toLowerCase().includes(vCui)) return false;
-    if (vDiscurso && !i.discurso) return false;
     // Filtros de hito (mes, último, y/o texto de hito): la intervención pasa
     // solo si le queda al menos un hito visible
     const filtrandoHitos = mesesSeleccion.size > 0 ||
@@ -1519,11 +1484,11 @@ function aplicarFiltros() {
 }
 
 function limpiarFiltros() {
-  ['f-grupo','f-vice','f-organo','f-eje','f-linea','f-priorizado','f-buscar','f-area','f-cui','f-hito','f-estado-cumpl'].forEach(id => {
-    document.getElementById(id).value = '';
+  ['f-grupo','f-vice','f-organo','f-priorizadas','f-buscar','f-area','f-cui','f-estado-cumpl'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
   });
-  document.getElementById('f-ultimo').checked = false;
-  document.getElementById('f-discurso').checked = false;
+  const fHito = document.getElementById('f-hito'); if(fHito) fHito.value = '';
+  const fUltimo = document.getElementById('f-ultimo'); if(fUltimo) fUltimo.checked = false;
   mesesSeleccion.clear();
   renderMesesDropdown();
   aplicarFiltros();
@@ -2116,15 +2081,13 @@ function resumenFiltrosActivos() {
   if (val('f-grupo'))  partes.push('Grupo: ' + val('f-grupo'));
   if (val('f-vice'))   partes.push('Viceministerio: ' + val('f-vice'));
   if (val('f-organo')) partes.push('Órgano: ' + val('f-organo'));
-  if (val('f-eje'))    partes.push('Eje: ' + val('f-eje'));
-  if (val('f-linea'))  partes.push('Línea de interés: ' + val('f-linea'));
-  const prio = val('f-priorizado');
-  if (prio) partes.push('Priorizado: ' + (prio === 'si' ? 'Sí' : 'No'));
-  if (document.getElementById('f-discurso').checked) partes.push('Mencionadas en el discurso 28 julio');
+  const prior = val('f-priorizadas');
+  if (prior) partes.push('Priorizadas: ' + prior);
   if (val('f-area'))   partes.push('Área de influencia: "' + val('f-area') + '"');
   if (val('f-cui'))    partes.push('CUI: "' + val('f-cui') + '"');
   if (val('f-buscar')) partes.push('Intervención: "' + val('f-buscar') + '"');
-  if (val('f-hito'))   partes.push('Hito: "' + val('f-hito') + '"');
+  const fHitoEl = document.getElementById('f-hito');
+  if (fHitoEl && fHitoEl.value.trim()) partes.push('Hito: "' + fHitoEl.value.trim() + '"');
   if (mesesSeleccion.size > 0) {
     const meses = [...mesesSeleccion].map(m => m === '__sinfecha__' ? 'Sin fecha' : m).join(', ');
     partes.push('Fecha de cumplimiento: ' + meses);
@@ -2271,7 +2234,7 @@ function exportarExcel() {
       const eh = estadoHitos[h.codhito] || {};
       const p = parseCumplimiento(eh.fechaCumplimiento);
       rows.push([
-        est.fechaReg || '', interv.discurso ? 'Sí' : '', interv.vice || '',
+        est.fechaReg || '', (interv.priorizadas||[]).join('; ') || '', interv.vice || '',
         interv.organo, interv.area || '', interv.cui || '',
         interv.detalle || '', interv.nombre, interv.relevancia || '', est.estado || '',
         h.nombre, p ? p.label : (eh.fechaCumplimiento || ''), eh.estadoCumplimiento || ''
