@@ -130,20 +130,18 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .f-warn { background:#fb923c; }
 .f-na   { background:rgba(0,0,0,0.2); }
 
-/* Body horizontal: 3 zonas */
-.mc-body-row { display:flex; flex-direction:row; min-height:120px; }
+/* Body horizontal: 3 zonas iguales */
+.mc-body-row { display:grid; grid-template-columns:1fr 1fr 1fr; min-height:130px; }
 .mc-desc-col {
   padding: 16px 20px;
-  width: 260px; min-width: 220px; flex-shrink: 0;
   border-right: 1px solid var(--border);
   display: flex; flex-direction: column; justify-content: flex-start;
 }
 .mc-desc-label { font-size:11px; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px; }
 .mc-desc { font-size:13px; color:var(--text-2); line-height:1.55; }
 
-/* Zona KPIs — ocupa el espacio central */
+/* Zona KPIs — columna central */
 .mc-kpis-zone {
-  flex: 1;
   border-right: 1px solid var(--border);
   display: flex; flex-direction: column; justify-content: center;
 }
@@ -152,7 +150,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
   text-transform:uppercase; letter-spacing:.06em;
   padding: 10px 14px 6px;
 }
-.mc-kpis { display:grid; grid-template-columns:1fr 1fr; }
+.mc-kpis { display:grid; grid-template-columns:1fr 1fr; flex:1; }
 .mc-kpi {
   padding:10px 14px;
   border-right:1px solid var(--border);
@@ -165,9 +163,8 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .mc-kpi-val { font-size:20px; font-weight:800; color:var(--text); line-height:1.1; }
 .mc-kpi-lbl { font-size:11px; color:var(--text-3); margin-top:3px; line-height:1.3; }
 
-/* Zona Herramientas derecha */
+/* Zona Herramientas — columna derecha */
 .mc-links-zone {
-  width: 280px; min-width: 240px; flex-shrink: 0;
   padding: 14px 16px;
   display: flex; flex-direction: column; gap: 7px; justify-content: center;
 }
@@ -293,11 +290,10 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
   .pub-grid { grid-template-columns:1fr; }
 }
 @media (max-width:960px) {
-  .mc-body-row { flex-direction:column; }
-  .mc-desc-col { width:100%; border-right:none; border-bottom:1px solid var(--border); }
+  .mc-body-row { grid-template-columns:1fr; }
+  .mc-desc-col  { border-right:none; border-bottom:1px solid var(--border); }
   .mc-kpis-zone { border-right:none; border-bottom:1px solid var(--border); }
-  .mc-links-zone { width:100%; }
-  .mc-links { flex-direction:row; flex-wrap:wrap; }
+  .mc-links { grid-template-columns:1fr 1fr; }
   .topbar { padding:12px 18px; min-height:auto; gap:10px; flex-wrap:wrap; }
   .main { padding:16px; }
 }
