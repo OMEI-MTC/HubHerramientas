@@ -150,23 +150,29 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .mc-kpis-label {
   font-size:11px; font-weight:700; color:var(--text-3);
   text-transform:uppercase; letter-spacing:.06em;
-  padding: 10px 14px 4px;
+  padding: 10px 14px 6px;
 }
-.mc-kpis { display:flex; flex-wrap:wrap; }
-.mc-kpi { padding:10px 14px; border-right:1px solid var(--border); display:flex; align-items:flex-start; gap:8px; flex:1; min-width:120px; }
-.mc-kpi:last-child { border-right:none; }
+.mc-kpis { display:grid; grid-template-columns:1fr 1fr; }
+.mc-kpi {
+  padding:10px 14px;
+  border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:flex-start; gap:8px;
+}
+.mc-kpi:nth-child(2n)        { border-right:none; }
+.mc-kpi:nth-last-child(-n+2) { border-bottom:none; }
 .mc-kpi-icon { width:28px; height:28px; object-fit:contain; flex-shrink:0; }
 .mc-kpi-val { font-size:20px; font-weight:800; color:var(--text); line-height:1.1; }
 .mc-kpi-lbl { font-size:11px; color:var(--text-3); margin-top:3px; line-height:1.3; }
 
 /* Zona Herramientas derecha */
 .mc-links-zone {
-  width: 220px; min-width: 180px; flex-shrink: 0;
+  width: 280px; min-width: 240px; flex-shrink: 0;
   padding: 14px 16px;
   display: flex; flex-direction: column; gap: 7px; justify-content: center;
 }
 .mc-links-label { font-size:11px; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.06em; margin-bottom:2px; }
-.mc-links { display:flex; flex-direction:column; gap:7px; }
+.mc-links { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
 .mc-btn { font-size:13px; font-weight:700; padding:7px 14px; border-radius:20px; border:1px solid var(--border); color:var(--text-2); cursor:pointer; background:var(--bg); font-family:var(--sans); text-decoration:none; display:inline-block; transition:background .12s, color .12s; text-align:center; white-space:nowrap; }
 .mc-btn:hover { background:#1a1a1a; color:#fff; border-color:#1a1a1a; }
 .mc-btn.primary { background:#1D9E75; color:#fff; border-color:#1D9E75; }
@@ -554,10 +560,8 @@ function renderCards() {
       const links = cfg.links;
 
       const meta = DATA.meta[cfg.seccion] || {};
-      const showCorte = meta.corte && meta.corte !== '';
       const showFreq  = meta.periodicidad && meta.periodicidad !== 'No aplica';
       const pillsHtml = `<div class="mc-pills">
-        ${showCorte ? `<span class="pill-date">${meta.corte}</span>` : ''}
         ${showFreq  ? `<span class="pill-freq">${meta.periodicidad}</span>` : ''}
       </div>`;
 
