@@ -1439,7 +1439,7 @@ let vistaInterv = estadoInterv;
 let vistaHitos  = estadoHitos;
 
 function activarVistaSegunModo() {
-  if (esValidacion()) {
+  if (esEdicion() || esValidacion()) {
     vistaInterv = prevInterv;
     vistaHitos  = prevHitos;
   } else {
