@@ -91,6 +91,8 @@
   /* columna "Habilitar hitos" solo visible en modo priorización */
   .col-ogame { display: none; }
   .card.modo-priorizacion .col-ogame { display: table-cell; }
+  /* columna "Priorización" oculta en modo validación */
+  .card.modo-validacion .col-prio { display: none; }
 
 
   /* ── PAGE TITLE ── */
@@ -668,7 +670,7 @@
     <div class="page-header">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
         <div>
-          <h1>Hoja de Ruta Estratégica</h1>
+          <h1>Hoja de Ruta Estratégica 2026–2027</h1>
           <p id="header-contadores" style="font-size:15px;color:var(--texto-2);margin-top:4px">Cargando…</p>
         </div>
         <div style="display:flex;gap:10px;flex-shrink:0" id="botones-modo">
@@ -775,7 +777,7 @@
             <th style="width:22%; vertical-align:middle">Intervención estratégica</th>
             <th style="width:8%; vertical-align:middle">Responsable</th>
             <th style="width:9%; vertical-align:middle">Área de influencia</th>
-            <th style="width:5%; text-align:center; vertical-align:middle">Priorización</th>
+            <th class="col-prio" style="width:5%; text-align:center; vertical-align:middle">Priorización</th>
             <th class="col-ogame" style="width:5%; text-align:center; vertical-align:middle">Habilitar<br>hitos</th>
             <th style="width:18%; vertical-align:middle">Estado situacional</th>
             <th style="width:5%; text-align:center; vertical-align:middle">Avance</th>
@@ -904,15 +906,14 @@
         </table>
       </div>
 
-    </div>
-    <!-- SECCIÓN VALIDACIÓN (solo visible para Viceministerios) -->
-    <div class="modal-seccion" id="seccion-validacion" style="display:none">
-      <div class="modal-seccion-titulo">Validación</div>
-      <div class="validar-wrap">
-        <input type="checkbox" id="m-validado">
-        <label for="m-validado">Validar este registro y publicarlo en la vista principal</label>
+      <!-- SECCIÓN VALIDACIÓN (solo visible para Viceministerios) -->
+      <div class="modal-seccion" id="seccion-validacion" style="display:none">
+        <div class="modal-seccion-titulo">Validación</div>
+        <div class="validar-wrap">
+          <input type="checkbox" id="m-validado">
+          <label for="m-validado">Validar este registro y publicarlo en la vista principal</label>
+        </div>
       </div>
-    </div>
 
     </div>
     <div class="modal-footer">
@@ -1359,7 +1360,7 @@ function aplicarModo() {
   if (modoApp === 'general') {
     banner.style.display = 'none';
     botones.style.display = 'flex';
-    card.classList.remove('ogame-activa', 'modo-priorizacion');
+    card.classList.remove('ogame-activa', 'modo-priorizacion', 'modo-validacion');
     // liberar el filtro de órgano
     if (selOrgano) { selOrgano.disabled = false; selOrgano.style.opacity = ''; }
   } else {
@@ -1367,6 +1368,7 @@ function aplicarModo() {
     botones.style.display = 'none';
     card.classList.add('ogame-activa');
     card.classList.toggle('modo-priorizacion', modoApp === 'priorizacion');
+    card.classList.toggle('modo-validacion', modoApp === 'validacion');
     bannerTexto.innerHTML = modoApp === 'edicion'
       ? `<strong>Modo edición — ${esc(oficinaEdicion)}</strong> · editando solo las intervenciones de tu oficina`
       : modoApp === 'validacion'
@@ -1724,12 +1726,17 @@ function renderTabla() {
     const hitosMostrar = hitosVisibles(interv);
     const nHitos = hitosMostrar.length;
 
-    // Badge de validación (solo visible en modo validación)
-    const esPendiente = tieneRegistro && !est.validado;
+    // Badge/checkbox de validación en la columna de Última Actualización
     const badgeVal = esValidacion() && tieneRegistro
-      ? (est.validado
-          ? `<span class="badge-validado">✓ Validado</span>`
-          : `<span class="badge-pendiente">⏳ Pendiente</span>`)
+      ? `<label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;margin-top:2px"
+               title="${est.validado ? 'Validado — haz clic para revocar' : 'Pendiente — haz clic para validar'}">
+           <input type="checkbox" ${est.validado ? 'checked' : ''}
+                  onchange="toggleValidacion('${esc(interv.codigo)}', this)"
+                  style="width:15px;height:15px;accent-color:var(--verde);cursor:pointer">
+           <span style="font-size:10px;font-weight:700;color:${est.validado ? 'var(--verde)' : '#8a6200'}">
+             ${est.validado ? 'Validado' : 'Pendiente'}
+           </span>
+         </label>`
       : '';
 
     // columna Última Actualización: fecha + badge + ícono lápiz
@@ -1747,6 +1754,8 @@ function renderTabla() {
         </button>` : ''}
       </div>`;
 
+    const esPendiente = tieneRegistro && !est.validado;
+
     html += `
     <tr class="fila-intervencion${esPendiente && esValidacion() ? ' fila-pendiente-val' : ''}">
       <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;text-align:center;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding-top:12px">
@@ -1761,7 +1770,7 @@ function renderTabla() {
       </td>
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.area) || "—"}</td>
-      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${prioHtml}</td>
+      <td class="col-prio" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${prioHtml}</td>
       <td class="col-ogame" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${habilHtml}</td>
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
         ${estadoHtml}
@@ -1930,6 +1939,36 @@ function abrirModal(codigo) {
 function cerrarModal() {
   document.getElementById('modal-overlay').classList.remove('activo');
   intervModal = null;
+}
+
+// Validación directa desde la tabla (sin abrir modal)
+async function toggleValidacion(codigo, chk) {
+  const est = estadoInterv[codigo] || (estadoInterv[codigo] = {});
+  const nuevoValor = chk.checked;
+  chk.disabled = true;
+
+  const payload = {
+    accion:   'validarRegistro',
+    codigo:   codigo,
+    validado: nuevoValor ? 'Sí' : 'No'
+  };
+
+  try {
+    const data = await postBackend(payload);
+    if (data.ok) {
+      est.validado = nuevoValor;
+      renderTabla(); // refresca badge y color de fila
+      mostrarToast(nuevoValor ? 'Registro validado ✓' : 'Validación removida', 'exito');
+    } else {
+      chk.checked = !nuevoValor; // revertir
+      mostrarToast('Error: ' + (data.mensaje || 'intenta de nuevo'), 'error');
+    }
+  } catch (e) {
+    chk.checked = !nuevoValor;
+    mostrarToast(e.message, 'error');
+  } finally {
+    chk.disabled = false;
+  }
 }
 
 // Guardado independiente de priorización (solo Estado Actual, sin histórico ni fecha)
