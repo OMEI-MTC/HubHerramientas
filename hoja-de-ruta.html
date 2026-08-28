@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hoja de Ruta Estratégica · OGAME</title>
+<title>Hoja de Ruta · OGAME</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
@@ -671,7 +671,7 @@
     <div class="page-header">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
         <div>
-          <h1>Hoja de Ruta Estratégica 2026–2027</h1>
+          <h1>Hoja de Ruta</h1>
           <p id="header-contadores" style="font-size:15px;color:var(--texto-2);margin-top:4px">Cargando…</p>
         </div>
         <div style="display:flex;gap:10px;flex-shrink:0" id="botones-modo">
@@ -942,13 +942,17 @@ const TSV_MAESTRO_HITOS  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHT
 const TSV_ESTADO_INTERV= 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=969719958&single=true&output=tsv';
 const TSV_ESTADO_HITOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=560017280&single=true&output=tsv';
 const TSV_ACCESOS      = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=1230572390&single=true&output=tsv';
+const TSV_PREV_INTERV  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=205553859&single=true&output=tsv';
+const TSV_PREV_HITOS   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=1758672642&single=true&output=tsv';
 
 
 // ── ESTADO GLOBAL ──────────────────────────────────────────────────────────────
 let maestro      = []; // filas crudas del TSV maestro
 let intervenciones = []; // objetos agrupados { codigo, nombre, organo, eje, linea, hitos[] }
-let estadoInterv = {}; // { codigo → { estadoSituacional, costo, pim, devengado, priorizado, fechaReg } }
-let estadoHitos  = {}; // { codhito → { fechaCumplimiento, fechaReg } }
+let estadoInterv = {}; // { codigo → { ... } } — Estado Actual (validado)
+let estadoHitos  = {}; // { codhito → { ... } } — Estado Actual (validado)
+let prevInterv   = {}; // { codigo → { ... } } — Prev (pendiente de validación)
+let prevHitos    = {}; // { codhito → { ... } } — Prev (pendiente de validación)
 let filtradas    = []; // intervenciones después de filtros
 // Modos de la aplicación (mutuamente excluyentes):
 //   'general'     → solo lectura, sin lápiz ni toggles
@@ -1058,12 +1062,15 @@ function parseTSV(txt) {
 // ── CARGA INICIAL ──────────────────────────────────────────────────────────────
 async function cargarDatos() {
   try {
-    const [tsvMaestroInterv, tsvMaestroHitos, tsvInterv, tsvHitos, tsvAccesos] = await Promise.all([
+    const [tsvMaestroInterv, tsvMaestroHitos, tsvInterv, tsvHitos, tsvAccesos,
+           tsvPrevInterv, tsvPrevHitos] = await Promise.all([
       fetchTSV(TSV_MAESTRO_INTERV),
       fetchTSV(TSV_MAESTRO_HITOS),
       fetchTSV(TSV_ESTADO_INTERV),
       fetchTSV(TSV_ESTADO_HITOS),
-      fetchTSV(TSV_ACCESOS)
+      fetchTSV(TSV_ACCESOS),
+      fetchTSV(TSV_PREV_INTERV),
+      fetchTSV(TSV_PREV_HITOS)
     ]);
 
     // Hoja Accesos: Órgano → Contraseña
@@ -1158,6 +1165,32 @@ async function cargarDatos() {
       const cod = f['CODHITOS'];
       if (!cod) return;
       estadoHitos[cod] = {
+        fechaReg:           f['Fecha de registro'],
+        fechaCumplimiento:  f['Fecha de Cumplimiento'],
+        estadoCumplimiento: f['Estado de Cumplimiento'] || ''
+      };
+    });
+
+    // Guardar datos de Prev en variables globales para usarlos al entrar en modo validación
+    prevInterv = {};
+    parseTSV(tsvPrevInterv).forEach(f => {
+      const cod = f['Código'];
+      if (!cod) return;
+      prevInterv[cod] = {
+        fechaReg:  f['Fecha de registro'],
+        estado:    f['Estado situacional'],
+        avance:    f['Avance'] || '',
+        validado:  (f['Validado'] || '').toLowerCase() === 'sí' || (f['Validado'] || '').toLowerCase() === 'si',
+        priorizado: (f['Priorizado'] || '').toLowerCase() === 'sí' || (f['Priorizado'] || '').toLowerCase() === 'si',
+        hitosHabilitados: (f['HitosHabilitados'] || '').toLowerCase() !== 'no'
+      };
+    });
+
+    prevHitos = {};
+    parseTSV(tsvPrevHitos).forEach(f => {
+      const cod = f['CODHITOS'];
+      if (!cod) return;
+      prevHitos[cod] = {
         fechaReg:           f['Fecha de registro'],
         fechaCumplimiento:  f['Fecha de Cumplimiento'],
         estadoCumplimiento: f['Estado de Cumplimiento'] || ''
@@ -1362,6 +1395,9 @@ function salirModo() {
 }
 
 // Aplica el estado visual (banner, botones, fondo) según el modo actual
+// Compatibilidad con código que aún llame aplicarVistaOGAME
+function aplicarVistaOGAME() { aplicarModo(); }
+
 function aplicarModo() {
   const banner = document.getElementById('banner-modo');
   const bannerTexto = document.getElementById('banner-modo-texto');
@@ -1398,10 +1434,23 @@ function aplicarModo() {
       }
     }
   }
+  activarVistaSegunModo();
 }
 
-// Compatibilidad con código que aún llame aplicarVistaOGAME
-function aplicarVistaOGAME() { aplicarModo(); }
+// Variables de vista activa: apuntan a estadoInterv/prevInterv según el modo.
+// Todo el código de render y modal las usa en vez de acceder directo.
+let vistaInterv = estadoInterv;
+let vistaHitos  = estadoHitos;
+
+function activarVistaSegunModo() {
+  if (esValidacion()) {
+    vistaInterv = prevInterv;
+    vistaHitos  = prevHitos;
+  } else {
+    vistaInterv = estadoInterv;
+    vistaHitos  = estadoHitos;
+  }
+}
 
 // ── FILTROS ────────────────────────────────────────────────────────────────────
 
@@ -1455,7 +1504,7 @@ function construirFechasCumplimiento() {
     var hitosBase = soloUltimo ? i.hitos.filter(h => h.ultimo) : i.hitos;
     if (vHito) hitosBase = hitosBase.filter(h => (h.nombre || '').toLowerCase().includes(vHito));
     hitosBase.forEach(h => {
-      const eh = estadoHitos[h.codhito];
+      const eh = vistaHitos[h.codhito];
       if (!eh) return;
       const p = parseCumplimiento(eh.fechaCumplimiento);
       if (p) set.set(p.label, p);
@@ -1597,7 +1646,7 @@ function hitosVisibles(interv) {
   const vEstadoCumpl = document.getElementById('f-estado-cumpl')?.value;
   if (vEstadoCumpl) {
     lista = lista.filter(h => {
-      const eh = estadoHitos[h.codhito] || {};
+      const eh = vistaHitos[h.codhito] || {};
       const est = eh.estadoCumplimiento || '';
       if (vEstadoCumpl === '__sin__') return est === '';
       return est === vEstadoCumpl;
@@ -1607,7 +1656,7 @@ function hitosVisibles(interv) {
   // filtro por mes de cumplimiento
   if (mesesSeleccion.size > 0) {
     lista = lista.filter(h => {
-      const eh = estadoHitos[h.codhito] || {};
+      const eh = vistaHitos[h.codhito] || {};
       const p = parseCumplimiento(eh.fechaCumplimiento);
       if (!p) return mesesSeleccion.has('__sinfecha__');
       return mesesSeleccion.has(p.label);
@@ -1711,7 +1760,7 @@ function renderTabla() {
 
   let html = '';
   pagina.forEach(interv => {
-    const est = estadoInterv[interv.codigo] || {};
+    const est = vistaInterv[interv.codigo] || {};
     const tieneRegistro = !!est.fechaReg;
 
     const estadoHtml = est.estado
@@ -1790,7 +1839,7 @@ function renderTabla() {
       <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:10px 12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${avanceFisHtml}</td>`;
 
     hitosMostrar.forEach((h, idx) => {
-      const eh = estadoHitos[h.codhito] || {};
+      const eh = vistaHitos[h.codhito] || {};
       const pFecha = parseCumplimiento(eh.fechaCumplimiento);
       const fechaTexto = pFecha ? pFecha.label : eh.fechaCumplimiento;
       const fechaChip = eh.fechaCumplimiento
@@ -1880,14 +1929,14 @@ function abrirModal(codigo) {
   const chkVal = document.getElementById('m-validado');
   if (esValidacion()) {
     secVal.style.display = 'block';
-    const est0 = estadoInterv[codigo] || {};
+    const est0 = vistaInterv[codigo] || {};
     chkVal.checked = est0.validado === true;
   } else {
     secVal.style.display = 'none';
     chkVal.checked = false;
   }
 
-  const est = estadoInterv[codigo] || {};
+  const est = vistaInterv[codigo] || {};
 
   document.getElementById('modal-titulo').textContent = intervModal.nombre;
   document.getElementById('modal-subtitulo').textContent = intervModal.organo;
@@ -1905,7 +1954,7 @@ function abrirModal(codigo) {
   // hitos
   const tbody = document.getElementById('modal-hitos-body');
   tbody.innerHTML = hitosBloqueados ? '' : intervModal.hitos.map(h => {
-    const eh = estadoHitos[h.codhito] || {};
+    const eh = vistaHitos[h.codhito] || {};
     // precarga el mes-año actual (ej. "oct-26") descomponiéndolo
     const p = parseCumplimiento(eh.fechaCumplimiento);
     const mesSel = p ? p.mes : '';
@@ -1968,8 +2017,10 @@ async function toggleValidacion(codigo, chk) {
   try {
     const data = await postBackend(payload);
     if (data.ok) {
-      est.validado = nuevoValor;
-      renderTabla(); // refresca badge y color de fila
+      prevInterv[codigo] = prevInterv[codigo] || {};
+      prevInterv[codigo].validado = nuevoValor;
+      vistaInterv[codigo] = prevInterv[codigo]; // vistaInterv apunta a prevInterv en validación
+      renderTabla();
       mostrarToast(nuevoValor ? 'Registro validado ✓' : 'Validación removida', 'exito');
     } else {
       chk.checked = !nuevoValor; // revertir
@@ -2073,7 +2124,7 @@ async function guardarRegistro() {
   btn.innerHTML = '⏳ Guardando…';
 
   // recoger datos del modal
-  const estActual = estadoInterv[intervModal.codigo] || {};
+  const estActual = vistaInterv[intervModal.codigo] || {};
   const hitosBloqueados = estActual.hitosHabilitados === false;
   const hitos = [];
   if (!hitosBloqueados) {
@@ -2115,17 +2166,18 @@ async function guardarRegistro() {
 
     if (data.ok) {
       // actualizar estado local sin recargar (usa la fecha real del backend)
-      estadoInterv[intervModal.codigo] = {
+      // escribe en la vista activa (Prev si es validación, Estado Actual si es edición)
+      vistaInterv[intervModal.codigo] = {
         fechaReg:   data.fechaRegistro || fechaDisplay(new Date().toISOString().split('T')[0]),
         estado:     payload.estado,
         avance:     payload.avance,
-        priorizado: estadoInterv[intervModal.codigo]?.priorizado || false,
-        hitosHabilitados: estadoInterv[intervModal.codigo]?.hitosHabilitados !== false,
+        priorizado: vistaInterv[intervModal.codigo]?.priorizado || false,
+        hitosHabilitados: vistaInterv[intervModal.codigo]?.hitosHabilitados !== false,
         validado:   validado
       };
       hitos.forEach(h => {
-        estadoHitos[h.codhito] = {
-          fechaReg:           estadoInterv[intervModal.codigo].fechaReg,
+        vistaHitos[h.codhito] = {
+          fechaReg:           vistaInterv[intervModal.codigo].fechaReg,
           fechaCumplimiento:  h.fechaCumplimiento,
           estadoCumplimiento: h.estadoCumplimiento
         };
@@ -2390,11 +2442,11 @@ function exportarPDF() {
   // hitos; las demás quedan en blanco (como en la Vista Ejecutiva).
   const body = [];
   filtradas.forEach(interv => {
-    const est = estadoInterv[interv.codigo] || {};
+    const est = vistaInterv[interv.codigo] || {};
     const hitos = hitosVisibles(interv);
     if (hitos.length === 0) return;
     hitos.forEach((h, idx) => {
-      const eh = estadoHitos[h.codhito] || {};
+      const eh = vistaHitos[h.codhito] || {};
       const p = parseCumplimiento(eh.fechaCumplimiento);
       const fecha = p ? p.label : (eh.fechaCumplimiento || '');
       const esPrimera = idx === 0;
@@ -2477,7 +2529,7 @@ function exportarExcel() {
   };
 
   filtradas.forEach(interv => {
-    const est = estadoInterv[interv.codigo] || {};
+    const est = vistaInterv[interv.codigo] || {};
     const hitos = hitosVisibles(interv);
     if (hitos.length === 0) return;
 
@@ -2491,7 +2543,7 @@ function exportarExcel() {
 
     const filaInicio = rows.length; // primera fila de este Código
     hitos.forEach(h => {
-      const eh = estadoHitos[h.codhito] || {};
+      const eh = vistaHitos[h.codhito] || {};
       const p = parseCumplimiento(eh.fechaCumplimiento);
       rows.push([
         est.fechaReg || '', (interv.priorizadas||[]).join('; ') || '', interv.vice || '',
