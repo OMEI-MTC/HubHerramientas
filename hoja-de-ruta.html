@@ -583,6 +583,63 @@
   .col-hito    { width: 38%; }
   .col-fecha   { width: 15%; }
   .col-upd     { width: 14%; text-align: center; }
+
+  /* ── BUSCADOR DE USUARIO (login) ── */
+  .usuario-search-wrap { position: relative; }
+  .usuario-search-input {
+    width: 100%; padding: 9px 11px;
+    border: 1px solid var(--gris-borde); border-radius: 8px;
+    font-size: 14px; color: var(--texto); font-family: inherit;
+    background: var(--blanco);
+  }
+  .usuario-search-input:focus { outline: none; border-color: var(--azul); }
+  .usuario-dropdown {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: #fff; border: 1px solid var(--gris-borde); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.12); z-index: 30;
+    max-height: 260px; overflow-y: auto; padding: 6px;
+  }
+  .usuario-dropdown.abierto { display: block; }
+  .usuario-grupo-label {
+    font-size: 10px; font-weight: 800; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--gris-texto);
+    padding: 6px 8px 4px; margin-top: 2px;
+  }
+  .usuario-item {
+    padding: 8px 10px; border-radius: 6px; cursor: pointer;
+    font-size: 13px; color: var(--texto);
+  }
+  .usuario-item:hover { background: var(--gris-bg); }
+  .usuario-item.seleccionado { background: var(--azul-bg); color: var(--azul); font-weight: 700; }
+  .usuario-separador { border: none; border-top: 1px solid var(--gris-borde); margin: 4px 0; }
+
+  /* ── BADGE VALIDACIÓN ── */
+  .badge-validado {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: var(--verde-bg); color: var(--verde);
+    border: 1px solid var(--verde);
+    font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 20px; white-space: nowrap;
+  }
+  .badge-pendiente {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: var(--amarillo-bg); color: #8a6200;
+    border: 1px solid var(--amarillo);
+    font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 20px; white-space: nowrap;
+  }
+  /* fila con registro pendiente de validación: tinte sutil */
+  .fila-pendiente-val td { background: #FFFDF0 !important; }
+
+  /* ── CHECKBOX VALIDAR en modal ── */
+  .validar-wrap {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border-radius: 8px;
+    background: var(--verde-bg); border: 1px solid var(--verde);
+    cursor: pointer; margin-top: 4px;
+  }
+  .validar-wrap input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--verde); cursor: pointer; }
+  .validar-wrap label { font-size: 13px; font-weight: 600; color: var(--verde); cursor: pointer; }
 </style>
 </head>
 <body>
@@ -611,7 +668,7 @@
     <div class="page-header">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
         <div>
-          <h1>Hoja de Ruta Estratégica</h1>
+          <h1>Hoja de Ruta Estratégica 2026–2027</h1>
           <p id="header-contadores" style="font-size:15px;color:var(--texto-2);margin-top:4px">Cargando…</p>
         </div>
         <div style="display:flex;gap:10px;flex-shrink:0" id="botones-modo">
@@ -770,8 +827,17 @@
     </div>
     <div class="modal-body">
       <div class="form-group" id="login-oficina-group" style="margin-bottom:14px">
-        <label>Oficina</label>
-        <select id="login-oficina"><option value="">Selecciona tu oficina…</option></select>
+        <label>Usuario</label>
+        <div class="usuario-search-wrap">
+          <input type="text" id="login-usuario-input" class="usuario-search-input"
+                 placeholder="Busca tu oficina…"
+                 autocomplete="off"
+                 oninput="filtrarUsuarios()"
+                 onfocus="abrirUsuarioDropdown()"
+                 onkeydown="navegarUsuarios(event)">
+          <input type="hidden" id="login-oficina">
+          <div class="usuario-dropdown" id="usuario-dropdown"></div>
+        </div>
       </div>
       <div class="form-group">
         <label>Contraseña</label>
@@ -839,6 +905,16 @@
       </div>
 
     </div>
+    <!-- SECCIÓN VALIDACIÓN (solo visible para Viceministerios) -->
+    <div class="modal-seccion" id="seccion-validacion" style="display:none">
+      <div class="modal-seccion-titulo">Validación</div>
+      <div class="validar-wrap">
+        <input type="checkbox" id="m-validado">
+        <label for="m-validado">Validar este registro y publicarlo en la vista principal</label>
+      </div>
+    </div>
+
+    </div>
     <div class="modal-footer">
       <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
       <button class="btn-guardar" id="btn-guardar" onclick="guardarRegistro()">
@@ -883,8 +959,16 @@ let accesos = {}; // { 'DGPPT': 'DGPPT-0403', ... } cargado de la hoja Accesos
 
 // Compatibilidad: varias partes del código consultan si estamos en modo priorización
 function esPriorizacion() { return modoApp === 'priorizacion'; }
-function esEdicion() { return modoApp === 'edicion'; }
+function esEdicion()      { return modoApp === 'edicion'; }
+function esValidacion()   { return modoApp === 'validacion'; }
 let intervModal  = null; // intervención abierta en modal
+
+// Viceministerios detectados al cargar accesos: { 'VMT': true, 'VMC': true }
+// Un usuario es Viceministerio si su código aparece como valor en la columna
+// "Viceministerios" del maestro de intervenciones.
+let viceSet = new Set(); // se rellena en cargarDatos()
+// Órganos subordinados de cada Viceministerio: { 'VMT': Set{...}, 'VMC': Set{...} }
+let viceOrganos = {};
 
 // ── POST AL BACKEND (Apps Script) ──────────────────────────────────────────────
 // Centraliza las 3 llamadas de escritura y, sobre todo, distingue POR QUÉ falla.
@@ -1034,6 +1118,18 @@ async function cargarDatos() {
 
     intervenciones = Object.values(mapa);
 
+    // Construir mapa Viceministerio → Set de órganos subordinados
+    viceSet = new Set();
+    viceOrganos = {};
+    intervenciones.forEach(i => {
+      const v = (i.vice || '').trim();
+      const o = (i.organo || '').trim();
+      if (!v || !o) return;
+      if (!viceOrganos[v]) viceOrganos[v] = new Set();
+      viceOrganos[v].add(o);
+      viceSet.add(v);
+    });
+
     // procesar estado actual intervenciones
     // cols: Fecha de registro, Código, Intervención Estratégica, Estado situacional, Avance, Priorizado
     estadoInterv = {};
@@ -1046,7 +1142,10 @@ async function cargarDatos() {
         avance:     f['Avance'] || '',
         priorizado: (f['Priorizado'] || '').toLowerCase() === 'sí' || (f['Priorizado'] || '').toLowerCase() === 'si',
         // Por defecto habilitado: solo se bloquea si dice explícitamente "No"
-        hitosHabilitados: (f['HitosHabilitados'] || '').toLowerCase() !== 'no'
+        hitosHabilitados: (f['HitosHabilitados'] || '').toLowerCase() !== 'no',
+        // Validado: 'Sí' = publicado, cualquier otro valor = pendiente
+        // Si la columna no existe aún (registros legacy), se trata como validado
+        validado: f['Validado'] === undefined || (f['Validado'] || '').toLowerCase() === 'sí' || (f['Validado'] || '').toLowerCase() === 'si'
       };
     });
 
@@ -1080,14 +1179,84 @@ let modoLoginActual = null; // 'edicion' | 'priorizacion' mientras el modal est�
 
 function abrirLoginEdicion() {
   modoLoginActual = 'edicion';
-  document.getElementById('login-titulo').textContent = 'Modo edición';
-  document.getElementById('login-subtitulo').textContent = 'Elige tu oficina e ingresa la contraseña';
+  document.getElementById('login-titulo').textContent = 'Modo edición / validación';
+  document.getElementById('login-subtitulo').textContent = 'Busca tu usuario e ingresa la contraseña';
   document.getElementById('login-oficina-group').style.display = 'block';
-  // poblar oficinas desde la hoja Accesos
-  const sel = document.getElementById('login-oficina');
-  sel.innerHTML = '<option value="">Selecciona tu oficina…</option>' +
-    Object.keys(accesos).sort().map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
-  prepararLogin('Contraseña de tu oficina');
+  // limpiar buscador
+  document.getElementById('login-usuario-input').value = '';
+  document.getElementById('login-oficina').value = '';
+  document.getElementById('usuario-dropdown').classList.remove('abierto');
+  prepararLogin('Contraseña de tu usuario');
+}
+
+// ── BUSCADOR DE USUARIO ────────────────────────────────────────────────────────
+let usuarioSeleccionado = ''; // valor interno seleccionado
+
+function abrirUsuarioDropdown() {
+  filtrarUsuarios();
+  document.getElementById('usuario-dropdown').classList.add('abierto');
+}
+
+function filtrarUsuarios() {
+  const q = document.getElementById('login-usuario-input').value.trim().toLowerCase();
+  const drop = document.getElementById('usuario-dropdown');
+  drop.classList.add('abierto');
+
+  // Separar Viceministerios de Órganos
+  const vices   = Object.keys(accesos).filter(o => viceSet.has(o));
+  const organos = Object.keys(accesos).filter(o => !viceSet.has(o));
+
+  const coincide = o => o.toLowerCase().includes(q);
+
+  const vicesFilt   = vices.filter(coincide);
+  const organosFilt = organos.filter(coincide);
+
+  let html = '';
+
+  if (vicesFilt.length) {
+    html += `<div class="usuario-grupo-label">Viceministerios</div>`;
+    vicesFilt.forEach(o => {
+      html += `<div class="usuario-item" data-valor="${esc(o)}" onclick="seleccionarUsuario('${esc(o)}')">${esc(o)}</div>`;
+    });
+  }
+  if (vicesFilt.length && organosFilt.length) {
+    html += `<hr class="usuario-separador">`;
+  }
+  if (organosFilt.length) {
+    html += `<div class="usuario-grupo-label">Órganos</div>`;
+    organosFilt.forEach(o => {
+      html += `<div class="usuario-item" data-valor="${esc(o)}" onclick="seleccionarUsuario('${esc(o)}')">${esc(o)}</div>`;
+    });
+  }
+  if (!vicesFilt.length && !organosFilt.length) {
+    html = `<div style="padding:10px;color:var(--gris-texto);font-size:12px">Sin resultados</div>`;
+  }
+
+  drop.innerHTML = html;
+}
+
+function seleccionarUsuario(valor) {
+  usuarioSeleccionado = valor;
+  document.getElementById('login-usuario-input').value = valor;
+  document.getElementById('login-oficina').value = valor;
+  document.getElementById('usuario-dropdown').classList.remove('abierto');
+  // resaltar seleccionado
+  document.querySelectorAll('.usuario-item').forEach(el => {
+    el.classList.toggle('seleccionado', el.dataset.valor === valor);
+  });
+  document.getElementById('login-password').focus();
+}
+
+function navegarUsuarios(e) {
+  const drop = document.getElementById('usuario-dropdown');
+  const items = [...drop.querySelectorAll('.usuario-item')];
+  if (!items.length) return;
+  const activo = drop.querySelector('.usuario-item.seleccionado');
+  let idx = items.indexOf(activo);
+  if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(idx + 1, items.length - 1); items[idx].classList.add('seleccionado'); if (activo) activo.classList.remove('seleccionado'); }
+  if (e.key === 'ArrowUp')   { e.preventDefault(); idx = Math.max(idx - 1, 0); items[idx].classList.add('seleccionado'); if (activo) activo.classList.remove('seleccionado'); }
+  if (e.key === 'Enter')     { e.preventDefault(); if (activo) seleccionarUsuario(activo.dataset.valor); else if (items[0]) seleccionarUsuario(items[0].dataset.valor); }
+  if (e.key === 'Escape')    { drop.classList.remove('abierto'); }
 }
 
 function abrirLoginPriorizacion() {
@@ -1139,17 +1308,19 @@ function validarLogin() {
     return;
   }
 
-  // modo edición: valida oficina + contraseña de la hoja Accesos
+  // modo edición/validación: valida usuario + contraseña de la hoja Accesos
   const oficina = document.getElementById('login-oficina').value;
   if (!oficina) {
-    errDiv.textContent = 'Selecciona tu oficina';
+    errDiv.textContent = 'Selecciona tu usuario';
     errDiv.style.display = 'block';
     return;
   }
   if (accesos[oficina] && pass === accesos[oficina]) {
-    entrarModo('edicion', oficina);
+    // Si el usuario es un Viceministerio → modo validación; si no → edición
+    const modo = viceSet.has(oficina) ? 'validacion' : 'edicion';
+    entrarModo(modo, oficina);
   } else {
-    errDiv.textContent = 'Contraseña incorrecta para esta oficina';
+    errDiv.textContent = 'Contraseña incorrecta para este usuario';
     errDiv.style.display = 'block';
   }
 }
@@ -1162,7 +1333,10 @@ function entrarModo(modo, oficina) {
   cerrarLogin();
   aplicarModo();
   aplicarFiltros(); // en edición, filtra a la oficina
-  mostrarToast(modo === 'edicion' ? `Modo edición: ${oficina}` : 'Modo priorización activado', 'exito');
+  const toastMsg = modo === 'edicion'     ? `Modo edición: ${oficina}` :
+                   modo === 'validacion'  ? `Modo validación: ${oficina}` :
+                                           'Modo priorización activado';
+  mostrarToast(toastMsg, 'exito');
 }
 
 function salirModo() {
@@ -1195,8 +1369,10 @@ function aplicarModo() {
     card.classList.toggle('modo-priorizacion', modoApp === 'priorizacion');
     bannerTexto.innerHTML = modoApp === 'edicion'
       ? `<strong>Modo edición — ${esc(oficinaEdicion)}</strong> · editando solo las intervenciones de tu oficina`
+      : modoApp === 'validacion'
+      ? `<strong>Modo validación — ${esc(oficinaEdicion)}</strong> · revisando y validando registros de tus órganos subordinados`
       : `<strong>Modo priorización activo</strong> · marca las intervenciones prioritarias`;
-    // en edición: fijar el filtro de órgano a la oficina y bloquearlo
+    // en edición: fijar el filtro de órgano; en validación: liberar (ve todos sus subordinados)
     if (selOrgano) {
       if (modoApp === 'edicion') {
         selOrgano.value = oficinaEdicion;
@@ -1446,8 +1622,12 @@ function aplicarFiltros() {
   const vCui        = document.getElementById('f-cui').value.trim().toLowerCase();
   const vHito       = document.getElementById('f-hito') ? document.getElementById('f-hito').value.trim().toLowerCase() : '';
 
+  // Órganos visibles en modo validación: todos los subordinados al vice
+  const orgSubordinados = esValidacion() ? (viceOrganos[oficinaEdicion] || new Set()) : null;
+
   filtradas = intervenciones.filter(i => {
-    if (esEdicion() && i.organo !== oficinaEdicion) return false;
+    if (esEdicion()   && i.organo !== oficinaEdicion) return false;
+    if (esValidacion() && !orgSubordinados.has(i.organo)) return false;
     if (vGrupo  && i.grupo !== vGrupo)  return false;
     if (vVice   && i.vice  !== vVice)   return false;
     if (vOrgano && i.organo !== vOrgano) return false;
@@ -1538,19 +1718,28 @@ function renderTabla() {
     const habil = est.hitosHabilitados !== false; // por defecto true
     const habilHtml = `<button class="toggle-prio ${habil ? 'on' : ''}" onclick="toggleHitosHabilitados('${esc(interv.codigo)}', this)" title="${habil ? 'Hitos habilitados' : 'Hitos bloqueados'}"></button>`;
 
-    // El lápiz de edición solo aparece en modo edición
-    const mostrarLapiz = esEdicion();
+    // El lápiz de edición aparece en modo edición y validación
+    const mostrarLapiz = esEdicion() || esValidacion();
 
     const hitosMostrar = hitosVisibles(interv);
     const nHitos = hitosMostrar.length;
 
-    // columna Última Actualización: fecha + ícono lápiz (solo en modo edición)
+    // Badge de validación (solo visible en modo validación)
+    const esPendiente = tieneRegistro && !est.validado;
+    const badgeVal = esValidacion() && tieneRegistro
+      ? (est.validado
+          ? `<span class="badge-validado">✓ Validado</span>`
+          : `<span class="badge-pendiente">⏳ Pendiente</span>`)
+      : '';
+
+    // columna Última Actualización: fecha + badge + ícono lápiz
     const colActualizado = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
         ${tieneRegistro
           ? `<span style="font-size:11px;color:var(--texto);font-weight:700">${esc(est.fechaReg)}</span>`
           : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro</span>`}
-        ${mostrarLapiz ? `<button class="btn-lapiz" onclick="abrirModal('${esc(interv.codigo)}')" title="Registrar actualización">
+        ${badgeVal}
+        ${mostrarLapiz ? `<button class="btn-lapiz" onclick="abrirModal('${esc(interv.codigo)}')" title="${esValidacion() ? 'Revisar y validar' : 'Registrar actualización'}">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -1559,7 +1748,7 @@ function renderTabla() {
       </div>`;
 
     html += `
-    <tr class="fila-intervencion">
+    <tr class="fila-intervencion${esPendiente && esValidacion() ? ' fila-pendiente-val' : ''}">
       <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;text-align:center;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding-top:12px">
         ${colActualizado}
       </td>
@@ -1656,11 +1845,25 @@ function esc(s) {
 function abrirModal(codigo) {
   intervModal = intervenciones.find(i => i.codigo === codigo);
   if (!intervModal) return;
-  // Seguridad: el modal de edición solo se abre en modo edición y para una
-  // intervención de la oficina activa.
-  if (!esEdicion() || intervModal.organo !== oficinaEdicion) {
-    mostrarToast('Solo puedes editar las intervenciones de tu oficina', 'error');
+  // Seguridad: el modal solo se abre en modo edición (su propio órgano)
+  // o en modo validación (órganos subordinados al vice).
+  const puedeAbrir = (esEdicion() && intervModal.organo === oficinaEdicion) ||
+                     (esValidacion() && (viceOrganos[oficinaEdicion] || new Set()).has(intervModal.organo));
+  if (!puedeAbrir) {
+    mostrarToast('No tienes permiso para editar esta intervención', 'error');
     return;
+  }
+
+  // Sección de validación: visible solo en modo validación
+  const secVal = document.getElementById('seccion-validacion');
+  const chkVal = document.getElementById('m-validado');
+  if (esValidacion()) {
+    secVal.style.display = 'block';
+    const est0 = estadoInterv[codigo] || {};
+    chkVal.checked = est0.validado === true;
+  } else {
+    secVal.style.display = 'none';
+    chkVal.checked = false;
   }
 
   const est = estadoInterv[codigo] || {};
@@ -1842,6 +2045,8 @@ async function guardarRegistro() {
     });
   }
 
+  const validado = esValidacion() && document.getElementById('m-validado').checked;
+
   const payload = {
     accion:    'registrarHojaRuta',
     timestamp: new Date().toISOString(),
@@ -1850,6 +2055,7 @@ async function guardarRegistro() {
     organo:    intervModal.organo,
     estado:    document.getElementById('m-estado').value.trim(),
     avance:    document.getElementById('m-avance').value.trim(),
+    validado:  validado ? 'Sí' : 'No',
     hitos:     hitos
   };
 
@@ -1863,7 +2069,8 @@ async function guardarRegistro() {
         estado:     payload.estado,
         avance:     payload.avance,
         priorizado: estadoInterv[intervModal.codigo]?.priorizado || false,
-        hitosHabilitados: estadoInterv[intervModal.codigo]?.hitosHabilitados !== false
+        hitosHabilitados: estadoInterv[intervModal.codigo]?.hitosHabilitados !== false,
+        validado:   validado
       };
       hitos.forEach(h => {
         estadoHitos[h.codhito] = {
@@ -2350,6 +2557,11 @@ document.addEventListener('click', e => {
   const panel = document.getElementById('meses-panel');
   if (panel && panel.classList.contains('abierto') && !panel.contains(e.target)) {
     panel.classList.remove('abierto');
+  }
+  const dropU = document.getElementById('usuario-dropdown');
+  const wrapU = document.querySelector('.usuario-search-wrap');
+  if (dropU && dropU.classList.contains('abierto') && wrapU && !wrapU.contains(e.target)) {
+    dropU.classList.remove('abierto');
   }
 });
 
