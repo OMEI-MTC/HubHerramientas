@@ -596,11 +596,10 @@
   }
   .usuario-search-input:focus { outline: none; border-color: var(--azul); }
   .usuario-dropdown {
-    display: none; position: fixed;
+    display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
     background: #fff; border: 1px solid var(--gris-borde); border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0,0,0,.12); z-index: 200;
-    max-height: 260px; overflow-y: auto; padding: 6px;
-    min-width: 200px;
+    max-height: 240px; overflow-y: auto; padding: 6px;
   }
   .usuario-dropdown.abierto { display: block; }
   .usuario-grupo-label {
@@ -820,7 +819,7 @@
 
 <!-- MODAL LOGIN (edición / priorización) -->
 <div class="modal-overlay" id="login-overlay">
-  <div class="modal" style="max-width:440px">
+  <div class="modal" style="max-width:440px; min-height:420px">
     <div class="modal-header">
       <div>
         <h2 id="login-titulo">Modo edición</h2>
@@ -828,10 +827,7 @@
       </div>
       <button class="modal-close" onclick="cerrarLogin()">✕</button>
     </div>
-    <div class="modal-body">
-      <div class="form-group" id="login-oficina-group" style="margin-bottom:14px">
-        <label>Usuario</label>
-        <div class="usuario-search-wrap">
+    <div class="modal-body" style="overflow:visible">
           <input type="text" id="login-usuario-input" class="usuario-search-input"
                  placeholder="Busca tu oficina…"
                  autocomplete="off"
@@ -1228,24 +1224,13 @@ function abrirLoginEdicion() {
 let usuarioSeleccionado = ''; // valor interno seleccionado
 
 function abrirUsuarioDropdown() {
-  const input = document.getElementById('login-usuario-input');
-  const drop = document.getElementById('usuario-dropdown');
-  const rect = input.getBoundingClientRect();
-  drop.style.top  = (rect.bottom + 4) + 'px';
-  drop.style.left = rect.left + 'px';
-  drop.style.width = rect.width + 'px';
   filtrarUsuarios();
-  drop.classList.add('abierto');
+  document.getElementById('usuario-dropdown').classList.add('abierto');
 }
 
 function filtrarUsuarios() {
-  const input = document.getElementById('login-usuario-input');
+  const q = document.getElementById('login-usuario-input').value.trim().toLowerCase();
   const drop = document.getElementById('usuario-dropdown');
-  // recalcular posición por si el modal se desplazó
-  const rect = input.getBoundingClientRect();
-  drop.style.top   = (rect.bottom + 4) + 'px';
-  drop.style.left  = rect.left + 'px';
-  drop.style.width = rect.width + 'px';
   drop.classList.add('abierto');
 
   // Separar Viceministerios de Órganos
