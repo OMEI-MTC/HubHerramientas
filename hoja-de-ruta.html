@@ -1382,6 +1382,21 @@ function entrarModo(modo, oficina) {
 }
 
 function salirModo() {
+  // Si salimos de validación, sincronizar los registros validados
+  // a estadoInterv/estadoHitos para que la vista general los muestre
+  // sin esperar el caché del TSV de Google Sheets.
+  if (esValidacion()) {
+    Object.keys(prevInterv).forEach(cod => {
+      if (prevInterv[cod] && prevInterv[cod].validado) {
+        estadoInterv[cod] = Object.assign({}, prevInterv[cod]);
+      }
+    });
+    Object.keys(prevHitos).forEach(codhito => {
+      if (prevHitos[codhito]) {
+        estadoHitos[codhito] = Object.assign({}, prevHitos[codhito]);
+      }
+    });
+  }
   modoApp = 'general';
   oficinaEdicion = '';
   sessionStorage.removeItem('hdr_modo');
