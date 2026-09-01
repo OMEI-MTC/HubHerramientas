@@ -766,15 +766,12 @@
           <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#D97706; margin-bottom:12px;">Intervenciones</div>
           <div class="filtro-group">
             <label>Priorizadas</label>
-            <div class="filtro-group">
-              <label>Priorizadas</label>
-              <div class="meses-dropdown" id="priorizadas-panel">
-                <button type="button" class="meses-btn" onclick="abrirPriorizadasDropdown(event)">
-                  <span id="priorizadas-btn-label">Todas</span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-                </button>
-                <div class="meses-lista" id="priorizadas-lista"></div>
-              </div>
+            <div class="meses-dropdown" id="priorizadas-panel">
+              <button type="button" class="meses-btn" onclick="abrirPriorizadasDropdown(event)">
+                <span id="priorizadas-btn-label">Todas</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="meses-lista" id="priorizadas-lista"></div>
             </div>
           </div>
           <div class="filtro-group"><label>Intervención</label><input type="text" id="f-buscar" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
