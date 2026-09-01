@@ -93,6 +93,10 @@
   .card.modo-priorizacion .col-ogame { display: table-cell; }
   /* columna "Priorización" oculta en modo validación */
   .card.modo-validacion .col-prio { display: none; }
+  /* filtro y columna "Estado de validación" solo visible en modo validación */
+  .card.modo-validacion .col-val-filtro { display: block !important; }
+  .card.modo-validacion thead .col-val-filtro { display: table-cell !important; }
+  .card.modo-validacion tbody .col-val-filtro { display: table-cell !important; }
 
 
   /* ── PAGE TITLE ── */
@@ -740,6 +744,13 @@
               <div class="meses-lista" id="meses-lista"></div>
             </div>
           </div>
+          <div class="filtro-group col-val-filtro" style="margin-bottom:0;display:none"><label>Estado de validación</label>
+            <select id="f-estado-val" onchange="aplicarFiltros()">
+              <option value="">Todos</option>
+              <option value="pendiente">⏳ Pendiente</option>
+              <option value="validado">✓ Validado</option>
+            </select>
+          </div>
         </div>
 
         <!-- GRUPO 4: ACCIONES -->
@@ -790,9 +801,10 @@
             <th class="col-ogame" style="width:5%; text-align:center; vertical-align:middle">Habilitar<br>hitos</th>
             <th style="width:18%; vertical-align:middle">Estado situacional</th>
             <th style="width:5%; text-align:center; vertical-align:middle">Avance</th>
-            <th style="width:16%; vertical-align:middle">Hitos claves</th>
+            <th style="width:14%; vertical-align:middle">Hitos claves</th>
             <th style="width:7%; text-align:center; vertical-align:middle">Fecha de<br>Cumplimiento</th>
             <th style="width:8%; text-align:center; vertical-align:middle">Estado de<br>cumplimiento</th>
+            <th class="col-val-filtro" style="width:6%; text-align:center; vertical-align:middle; display:none">Estado de<br>validación</th>
           </tr>
         </thead>
         <tbody id="tabla-body">
@@ -1708,6 +1720,16 @@ function aplicarFiltros() {
     if (vEje    && i.eje   !== vEje)    return false;
     if (vLinea  && i.linea !== vLinea)  return false;
     if (vPriorizadas && !(i.priorizadas||[]).includes(vPriorizadas)) return false;
+    // Filtro Estado de validación (solo en modo validación)
+    if (esValidacion()) {
+      const vVal = document.getElementById('f-estado-val')?.value;
+      if (vVal) {
+        const estV = vistaInterv[i.codigo] || {};
+        const tieneReg = !!estV.fechaReg;
+        if (vVal === 'pendiente' && (!tieneReg || estV.validado))  return false;
+        if (vVal === 'validado'  && (!tieneReg || !estV.validado)) return false;
+      }
+    }
     if (vBuscar && !i.nombre.toLowerCase().includes(vBuscar)) return false;
     if (vArea && !(i.area || '').toLowerCase().includes(vArea)) return false;
     if (vCui && !(i.cui || '').toLowerCase().includes(vCui)) return false;
@@ -1726,7 +1748,7 @@ function aplicarFiltros() {
 }
 
 function limpiarFiltros() {
-  ['f-grupo','f-vice','f-organo','f-priorizadas','f-buscar','f-area','f-cui','f-estado-cumpl'].forEach(id => {
+  ['f-grupo','f-vice','f-organo','f-priorizadas','f-buscar','f-area','f-cui','f-estado-cumpl','f-estado-val'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value = '';
   });
   const fHito = document.getElementById('f-hito'); if(fHito) fHito.value = '';
@@ -1798,26 +1820,12 @@ function renderTabla() {
     const hitosMostrar = hitosVisibles(interv);
     const nHitos = hitosMostrar.length;
 
-    // Badge/checkbox de validación en la columna de Última Actualización
-    const badgeVal = esValidacion() && tieneRegistro
-      ? `<label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;margin-top:2px"
-               title="${est.validado ? 'Validado — haz clic para revocar' : 'Pendiente — haz clic para validar'}">
-           <input type="checkbox" ${est.validado ? 'checked' : ''}
-                  onchange="toggleValidacion('${esc(interv.codigo)}', this)"
-                  style="width:15px;height:15px;accent-color:var(--verde);cursor:pointer">
-           <span style="font-size:10px;font-weight:700;color:${est.validado ? 'var(--verde)' : '#8a6200'}">
-             ${est.validado ? 'Validado' : 'Pendiente'}
-           </span>
-         </label>`
-      : '';
-
-    // columna Última Actualización: fecha + badge + ícono lápiz
+    // columna Última Actualización: solo fecha + ícono lápiz
     const colActualizado = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
         ${tieneRegistro
           ? `<span style="font-size:11px;color:var(--texto);font-weight:700">${esc(est.fechaReg)}</span>`
           : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro</span>`}
-        ${badgeVal}
         ${mostrarLapiz ? `<button class="btn-lapiz" onclick="abrirModal('${esc(interv.codigo)}')" title="${esValidacion() ? 'Revisar y validar' : 'Registrar actualización'}">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -1825,6 +1833,23 @@ function renderTabla() {
           </svg>
         </button>` : ''}
       </div>`;
+
+    // celda independiente de validación (solo en modo validación)
+    const colValidacion = esValidacion()
+      ? `<td class="col-val-filtro" rowspan="${nHitos}" style="display:none;text-align:center;vertical-align:middle;padding:10px 8px;border-left:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">
+          ${tieneRegistro
+            ? `<label style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer"
+                     title="${est.validado ? 'Validado — haz clic para revocar' : 'Pendiente — haz clic para validar'}">
+                 <input type="checkbox" ${est.validado ? 'checked' : ''}
+                        onchange="toggleValidacion('${esc(interv.codigo)}', this)"
+                        style="width:16px;height:16px;accent-color:var(--verde);cursor:pointer">
+                 <span style="font-size:10px;font-weight:700;color:${est.validado ? 'var(--verde)' : '#8a6200'}">
+                   ${est.validado ? 'Validado' : 'Pendiente'}
+                 </span>
+               </label>`
+            : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro</span>`}
+        </td>`
+      : '';
 
     const esPendiente = tieneRegistro && !est.validado;
 
@@ -1847,7 +1872,8 @@ function renderTabla() {
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
         ${estadoHtml}
       </td>
-      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:10px 12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${avanceFisHtml}</td>`;
+      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:10px 12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${avanceFisHtml}</td>
+      ${colValidacion}`;
 
     hitosMostrar.forEach((h, idx) => {
       const eh = vistaHitos[h.codhito] || {};
