@@ -97,8 +97,9 @@
   /* columna "Responsable" oculta en modo edición y validación (se muestra dentro de intervención) */
   .card.modo-validacion .col-responsable,
   .card.modo-edicion .col-responsable { display: none; }
-  /* filtro y columna "Estado de validación" solo visible en modo validación */
-  .card.modo-validacion .col-val-filtro { display: block !important; }
+  /* filtro y columna "Estado de validación" visible en modo validación y edición */
+  .card.modo-validacion .col-val-filtro,
+  .card.modo-edicion .col-val-filtro { display: block !important; }
   .card.modo-validacion thead .col-val-filtro { display: table-cell !important; }
   .card.modo-validacion tbody .col-val-filtro { display: table-cell !important; }
   /* columna "Estado de validación" solo lectura en modo edición */
@@ -765,7 +766,16 @@
           <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#D97706; margin-bottom:12px;">Intervenciones</div>
           <div class="filtro-group">
             <label>Priorizadas</label>
-            <select id="f-priorizadas" onchange="aplicarFiltros()"><option value="">Todas</option></select>
+            <div class="filtro-group">
+              <label>Priorizadas</label>
+              <div class="meses-dropdown" id="priorizadas-panel">
+                <button type="button" class="meses-btn" onclick="abrirPriorizadasDropdown(event)">
+                  <span id="priorizadas-btn-label">Todas</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="meses-lista" id="priorizadas-lista"></div>
+              </div>
+            </div>
           </div>
           <div class="filtro-group"><label>Intervención</label><input type="text" id="f-buscar" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
           <div class="filtro-group" style="margin-bottom:0"><label>CUI</label><input type="text" id="f-cui" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
@@ -1566,6 +1576,8 @@ function parseCumplimiento(valor) {
 
 let mesesDisponibles = [];   // [{label, orden, trimestre, anio}] ordenados
 let mesesSeleccion   = new Set(); // labels de meses activos
+let priorizadasDisponibles = [];
+let priorizadasSeleccion   = new Set();
 
 // Construye la lista de meses a partir de los hitos de las intervenciones
 // que pasan los demás filtros (cascada). Respeta también el checkbox "solo
@@ -1591,7 +1603,7 @@ function construirFechasCumplimiento() {
 }
 
 function poblarFiltros() {
-  ['f-grupo','f-vice','f-organo','f-priorizadas','f-estado-cumpl'].forEach(id => {
+  ['f-grupo','f-vice','f-organo','f-estado-cumpl'].forEach(id => {
     const el = document.getElementById(id); if(el) el.addEventListener('change', aplicarFiltros);
   });
   ['f-buscar','f-area','f-cui'].forEach(id => {
@@ -1611,7 +1623,7 @@ function pasaFiltrosExcepto(i, excepto) {
     organo:      document.getElementById('f-organo').value,
     eje:         document.getElementById('f-eje') ? document.getElementById('f-eje').value : '',
     linea:       document.getElementById('f-linea') ? document.getElementById('f-linea').value : '',
-    priorizadas: document.getElementById('f-priorizadas').value,
+    priorizadas: '',  // manejado por priorizadasSeleccion
     buscar:      document.getElementById('f-buscar').value.trim().toLowerCase(),
     area:        document.getElementById('f-area').value.trim().toLowerCase(),
     cui:         document.getElementById('f-cui').value.trim().toLowerCase(),
@@ -1647,17 +1659,20 @@ function refrescarOpcionesFiltros() {
       disponibles.map(v => `<option value="${esc(v)}"${v === valorActual ? ' selected' : ''}>${esc(v)}</option>`).join('');
   });
 
-  // Poblar dropdown de Priorizadas (valores únicos separados por ;)
-  const selPrior = document.getElementById('f-priorizadas');
-  const valorActualPrior = selPrior.value;
+  // Rebuildar dropdown de Priorizadas con checkboxes
   const todasEtiquetas = new Set();
+  let hayVacias = false;
   intervenciones.filter(i => pasaFiltrosExcepto(i, 'priorizadas')).forEach(i => {
-    (i.priorizadas || []).forEach(p => todasEtiquetas.add(p));
+    const tags = i.priorizadas || [];
+    if (tags.length === 0) hayVacias = true;
+    else tags.forEach(p => todasEtiquetas.add(p));
   });
-  const etiquetas = [...todasEtiquetas].sort();
-  if (valorActualPrior && !etiquetas.includes(valorActualPrior)) etiquetas.push(valorActualPrior);
-  selPrior.innerHTML = '<option value="">Todas</option>' +
-    etiquetas.map(v => `<option value="${esc(v)}"${v === valorActualPrior ? ' selected' : ''}>${esc(v)}</option>`).join('');
+  priorizadasDisponibles = [...todasEtiquetas].sort();
+  [...priorizadasSeleccion].forEach(p => {
+    if (p === '__noaplica__') { if (!hayVacias) priorizadasSeleccion.delete(p); }
+    else if (!todasEtiquetas.has(p)) priorizadasSeleccion.delete(p);
+  });
+  renderPriorizadasDropdown(hayVacias);
 
   construirFechasCumplimiento();
   const labelsDisp = new Set(mesesDisponibles.map(m => m.label));
@@ -1692,6 +1707,43 @@ function actualizarBotonMeses() {
   const n = mesesSeleccion.size;
   if (n === 0) { btn.textContent = 'Todos'; btn.style.color = 'var(--texto)'; }
   else { btn.textContent = `${n} seleccionado${n > 1 ? 's' : ''}`; btn.style.color = 'var(--azul)'; }
+}
+
+function renderPriorizadasDropdown(hayVacias) {
+  const cont = document.getElementById('priorizadas-lista');
+  if (!cont) return;
+  cont.innerHTML = priorizadasDisponibles.map(v => `
+    <label class="mes-item">
+      <input type="checkbox" value="${esc(v)}" ${priorizadasSeleccion.has(v) ? 'checked' : ''}
+             onchange="togglePriorizada('${esc(v)}', this.checked)">
+      <span>${esc(v)}</span>
+    </label>`).join('') +
+    (hayVacias ? `<label class="mes-item" style="border-top:1px solid var(--gris-borde);margin-top:4px;padding-top:6px">
+      <input type="checkbox" value="__noaplica__" ${priorizadasSeleccion.has('__noaplica__') ? 'checked' : ''}
+             onchange="togglePriorizada('__noaplica__', this.checked)">
+      <span style="font-style:italic;color:var(--gris-texto)">No aplica</span>
+    </label>` : '');
+  actualizarBotonPriorizadas();
+}
+
+function actualizarBotonPriorizadas() {
+  const btn = document.getElementById('priorizadas-btn-label');
+  if (!btn) return;
+  const n = priorizadasSeleccion.size;
+  if (n === 0) { btn.textContent = 'Todas'; btn.style.color = 'var(--texto)'; }
+  else { btn.textContent = `${n} seleccionada${n > 1 ? 's' : ''}`; btn.style.color = 'var(--azul)'; }
+}
+
+function togglePriorizada(valor, activo) {
+  if (activo) priorizadasSeleccion.add(valor);
+  else priorizadasSeleccion.delete(valor);
+  actualizarBotonPriorizadas();
+  aplicarFiltros();
+}
+
+function abrirPriorizadasDropdown(e) {
+  e.stopPropagation();
+  document.getElementById('priorizadas-panel').classList.toggle('abierto');
 }
 
 function toggleMes(label, activo) {
@@ -1756,7 +1808,6 @@ function aplicarFiltros() {
   const vOrgano     = document.getElementById('f-organo').value;
   const vEje        = document.getElementById('f-eje') ? document.getElementById('f-eje').value : '';
   const vLinea      = document.getElementById('f-linea') ? document.getElementById('f-linea').value : '';
-  const vPriorizadas= document.getElementById('f-priorizadas').value;
   const vBuscar     = document.getElementById('f-buscar').value.trim().toLowerCase();
   const vArea       = document.getElementById('f-area').value.trim().toLowerCase();
   const vCui        = document.getElementById('f-cui').value.trim().toLowerCase();
@@ -1773,9 +1824,16 @@ function aplicarFiltros() {
     if (vOrgano && i.organo !== vOrgano) return false;
     if (vEje    && i.eje   !== vEje)    return false;
     if (vLinea  && i.linea !== vLinea)  return false;
-    if (vPriorizadas && !(i.priorizadas||[]).includes(vPriorizadas)) return false;
-    // Filtro Estado de validación (solo en modo validación)
-    if (esValidacion()) {
+    if (priorizadasSeleccion.size > 0) {
+      const tags = i.priorizadas || [];
+      const sinTag = tags.length === 0;
+      const ok = priorizadasSeleccion.has('__noaplica__')
+        ? (sinTag || tags.some(p => priorizadasSeleccion.has(p)))
+        : tags.some(p => priorizadasSeleccion.has(p));
+      if (!ok) return false;
+    }
+    // Filtro Estado de validación (en modo validación y edición)
+    if (esValidacion() || esEdicion()) {
       const vVal = document.getElementById('f-estado-val')?.value;
       if (vVal) {
         const estV = vistaInterv[i.codigo] || {};
@@ -1802,13 +1860,15 @@ function aplicarFiltros() {
 }
 
 function limpiarFiltros() {
-  ['f-grupo','f-vice','f-organo','f-priorizadas','f-buscar','f-area','f-cui','f-estado-cumpl','f-estado-val'].forEach(id => {
+  ['f-grupo','f-vice','f-organo','f-buscar','f-area','f-cui','f-estado-cumpl','f-estado-val'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value = '';
   });
   const fHito = document.getElementById('f-hito'); if(fHito) fHito.value = '';
   const fUltimo = document.getElementById('f-ultimo'); if(fUltimo) fUltimo.checked = false;
   mesesSeleccion.clear();
+  priorizadasSeleccion.clear();
   renderMesesDropdown();
+  renderPriorizadasDropdown(false);
   aplicarFiltros();
 }
 
@@ -2568,8 +2628,10 @@ function resumenFiltrosActivos() {
   if (val('f-grupo'))  partes.push('Grupo: ' + val('f-grupo'));
   if (val('f-vice'))   partes.push('Viceministerio: ' + val('f-vice'));
   if (val('f-organo')) partes.push('Órgano: ' + val('f-organo'));
-  const prior = val('f-priorizadas');
-  if (prior) partes.push('Priorizadas: ' + prior);
+  if (priorizadasSeleccion.size > 0) {
+    const tags = [...priorizadasSeleccion].map(p => p === '__noaplica__' ? 'No aplica' : p).join(', ');
+    partes.push('Priorizadas: ' + tags);
+  }
   if (val('f-area'))   partes.push('Área de influencia: "' + val('f-area') + '"');
   if (val('f-cui'))    partes.push('CUI: "' + val('f-cui') + '"');
   if (val('f-buscar')) partes.push('Intervención: "' + val('f-buscar') + '"');
@@ -2835,6 +2897,10 @@ document.addEventListener('click', e => {
   const panel = document.getElementById('meses-panel');
   if (panel && panel.classList.contains('abierto') && !panel.contains(e.target)) {
     panel.classList.remove('abierto');
+  }
+  const panelP = document.getElementById('priorizadas-panel');
+  if (panelP && panelP.classList.contains('abierto') && !panelP.contains(e.target)) {
+    panelP.classList.remove('abierto');
   }
   const dropU = document.getElementById('usuario-dropdown');
   const wrapU = document.querySelector('.usuario-search-wrap');
