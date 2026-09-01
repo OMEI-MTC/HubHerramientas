@@ -2185,8 +2185,11 @@ async function guardarObservacion() {
   }
 }
 
-document.getElementById('obs-overlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('obs-overlay')) cerrarObsModal();
+document.addEventListener('DOMContentLoaded', () => {
+  const obsOverlay = document.getElementById('obs-overlay');
+  if (obsOverlay) obsOverlay.addEventListener('click', e => {
+    if (e.target === obsOverlay) cerrarObsModal();
+  });
 });
 
 // Guardado independiente de priorización (solo Estado Actual, sin histórico ni fecha)
