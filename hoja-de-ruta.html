@@ -91,8 +91,9 @@
   /* columna "Habilitar hitos" solo visible en modo priorización */
   .col-ogame { display: none; }
   .card.modo-priorizacion .col-ogame { display: table-cell; }
-  /* columna "Priorización" oculta en modo validación */
-  .card.modo-validacion .col-prio { display: none; }
+  /* columna "Priorización" oculta en modo validación y edición */
+  .card.modo-validacion .col-prio,
+  .card.modo-edicion .col-prio { display: none; }
   /* columna "Responsable" oculta en modo edición y validación (se muestra dentro de intervención) */
   .card.modo-validacion .col-responsable,
   .card.modo-edicion .col-responsable { display: none; }
@@ -843,8 +844,8 @@
         <thead>
           <tr>
             <th style="width:6%; text-align:center; vertical-align:middle">Corte</th>
-            <th class="col-val-filtro" style="width:12%; text-align:center; vertical-align:middle; display:none">Estado de<br>validación</th>
             <th style="width:22%; vertical-align:middle">Intervención estratégica</th>
+            <th class="col-val-filtro"  style="width:12%; text-align:center; vertical-align:middle; display:none">Estado de<br>validación</th>
             <th class="col-val-edicion" style="width:12%; text-align:center; vertical-align:middle; display:none">Estado de<br>validación</th>
             <th class="col-responsable" style="width:8%; vertical-align:middle">Responsable</th>
             <th style="width:9%; vertical-align:middle">Área de influencia</th>
@@ -1917,7 +1918,6 @@ function renderTabla() {
       <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;text-align:center;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding-top:12px">
         ${colActualizado}
       </td>
-      ${colValidacion}
       <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
         ${(esValidacion() || esEdicion())
           ? `<div style="font-size:11px;font-weight:700;color:var(--texto);margin-bottom:4px">${esc(interv.organo)}</div>
@@ -1929,13 +1929,14 @@ function renderTabla() {
              </div>`}
         ${interv.relevancia ? `<div style="margin-top:7px;font-size:11px;color:var(--texto-2);display:flex;align-items:flex-start;gap:5px;line-height:1.35">🎯 <span>${esc(interv.relevancia)}</span></div>` : ''}
       </td>
-      ${(esValidacion() || esEdicion()) ? '' : `<td class="col-responsable" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>`}
+      ${colValidacion}
       ${esEdicion() ? `<td class="col-val-edicion" rowspan="${nHitos}" style="display:none;vertical-align:top;padding:10px 8px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;text-align:center">
         ${tieneRegistro && est.estadoVal
           ? `<div style="font-size:13px;margin-bottom:6px">${est.estadoVal === 'Validado' ? '🟢' : est.estadoVal === 'Observado' ? '🔴' : '🟡'} <strong>${esc(est.estadoVal)}</strong></div>
              ${est.observacion ? `<div style="font-size:11px;color:#6B7280;font-style:italic;text-align:left;border-left:2px solid #D97706;padding-left:6px;line-height:1.4">${esc(est.observacion)}</div>` : ''}`
           : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin revisión</span>`}
       </td>` : ''}
+      ${(esValidacion() || esEdicion()) ? '' : `<td class="col-responsable" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>`}
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.area) || "—"}</td>
       <td class="col-prio" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${prioHtml}</td>
       <td class="col-ogame" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${habilHtml}</td>
