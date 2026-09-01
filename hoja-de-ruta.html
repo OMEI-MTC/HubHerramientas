@@ -794,6 +794,7 @@
         <thead>
           <tr>
             <th style="width:6%; text-align:center; vertical-align:middle">Última<br>Actualización</th>
+            <th class="col-val-filtro" style="width:6%; text-align:center; vertical-align:middle; display:none">Estado de<br>validación</th>
             <th style="width:22%; vertical-align:middle">Intervención estratégica</th>
             <th style="width:8%; vertical-align:middle">Responsable</th>
             <th style="width:9%; vertical-align:middle">Área de influencia</th>
@@ -804,7 +805,7 @@
             <th style="width:14%; vertical-align:middle">Hitos claves</th>
             <th style="width:7%; text-align:center; vertical-align:middle">Fecha de<br>Cumplimiento</th>
             <th style="width:8%; text-align:center; vertical-align:middle">Estado de<br>cumplimiento</th>
-            <th class="col-val-filtro" style="width:6%; text-align:center; vertical-align:middle; display:none">Estado de<br>validación</th>
+          </tr>
           </tr>
         </thead>
         <tbody id="tabla-body">
@@ -1858,6 +1859,7 @@ function renderTabla() {
       <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;text-align:center;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding-top:12px">
         ${colActualizado}
       </td>
+      ${colValidacion}
       <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
         <div style="padding-left:9px;border-left:3px solid var(--azul)">
           <div style="font-weight:700;color:var(--azul);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
@@ -1872,8 +1874,7 @@ function renderTabla() {
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
         ${estadoHtml}
       </td>
-      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:10px 12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${avanceFisHtml}</td>
-      ${colValidacion}`;
+      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:10px 12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${avanceFisHtml}</td>`;
 
     hitosMostrar.forEach((h, idx) => {
       const eh = vistaHitos[h.codhito] || {};
