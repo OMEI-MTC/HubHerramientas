@@ -271,48 +271,43 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .eval-badge-proceso   { background:#DBEAFE; color:#1E40AF; }
 .eval-badge-default   { background:#F3F4F6; color:#374151; }
 
-/* Body: 3 zonas — reutiliza mc-body-row */
-.eval-card-body { display:grid; grid-template-columns:1fr 1fr 1fr; min-height:110px; }
+/* Body: 2 zonas — descripción+botón | KPIs 2 columnas */
+.eval-card-body { display:grid; grid-template-columns:1fr 2fr; min-height:110px; }
 .eval-desc-col {
   padding: 14px 18px;
   border-right: 1px solid var(--border);
-  display: flex; flex-direction:column;
+  display: flex; flex-direction:column; gap:12px;
 }
-.eval-desc-label { font-size:11px; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px; }
-.eval-desc-text { font-size:13px; color:var(--text-2); line-height:1.55; }
+.eval-desc-label { font-size:11px; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.06em; }
+.eval-desc-text { font-size:13px; color:var(--text-2); line-height:1.55; flex:1; }
 
-/* KPIs zona central: lista vertical de filas (etiqueta + caja) */
+/* KPIs zona derecha: grid 2 columnas */
 .eval-kpis-zone {
-  border-right: 1px solid var(--border);
-  display: flex; flex-direction:column; justify-content:center;
+  display: grid; grid-template-columns:1fr 1fr;
 }
 .eval-kpi-row {
   display: flex; align-items:center; justify-content:space-between;
-  padding: 8px 14px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border);
-  gap: 12px;
+  border-right: 1px solid var(--border);
+  gap: 10px;
 }
-.eval-kpi-row:last-child { border-bottom:none; }
-.eval-kpi-lbl { font-size:13px; color:var(--text-2); flex:1; line-height:1.3; }
+.eval-kpi-row:nth-child(2n) { border-right:none; }
+.eval-kpi-row:nth-last-child(-n+2) { border-bottom:none; }
+.eval-kpi-lbl { font-size:12px; color:var(--text-2); flex:1; line-height:1.3; }
 .eval-kpi-box {
   background: #F0F2F5; border-radius:8px;
-  padding: 6px 12px; text-align:center;
-  min-width: 80px; flex-shrink:0;
+  padding: 6px 10px; text-align:center;
+  min-width: 70px; flex-shrink:0;
 }
-.eval-kpi-box-val  { font-size:20px; font-weight:800; color:var(--text); line-height:1.1; }
-.eval-kpi-box-unit { font-size:11px; color:var(--text-3); margin-top:2px; line-height:1.2; }
-
-/* Zona derecha: solo el botón */
-.eval-links-zone {
-  padding: 14px 16px;
-  display: flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:8px;
-}
+.eval-kpi-box-val  { font-size:18px; font-weight:800; color:var(--text); line-height:1.1; }
+.eval-kpi-box-unit { font-size:10px; color:var(--text-3); margin-top:2px; line-height:1.2; }
 .eval-link-btn {
   background:#1D9E75; color:#fff; border:none;
   border-radius:20px; padding:8px 18px;
   font-size:13px; font-weight:700; white-space:nowrap;
   cursor:pointer; text-decoration:none; display:inline-block;
-  font-family:var(--sans); transition:background .12s;
+  font-family:var(--sans); transition:background .12s; align-self:flex-start;
 }
 .eval-link-btn:hover { background:#0F6E56; }
 
@@ -661,11 +656,9 @@ function renderCards() {
                     <div class="eval-desc-col">
                       <div class="eval-desc-label">Descripción</div>
                       ${p.descripcion ? `<div class="eval-desc-text">${p.descripcion}</div>` : ''}
-                    </div>
-                    <div class="eval-kpis-zone">${kpisHtml}</div>
-                    <div class="eval-links-zone">
                       ${p.enlace ? `<a class="eval-link-btn" href="${p.enlace}" target="_blank" rel="noopener">Ver publicación ↗</a>` : '<span style="font-size:11px;color:var(--text-3)">Sin enlace</span>'}
                     </div>
+                    <div class="eval-kpis-zone">${kpisHtml}</div>
                   </div>
                 </div>`;
               evalIdx++;
