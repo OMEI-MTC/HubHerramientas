@@ -1527,8 +1527,8 @@ function activarVistaSegunModo() {
 
 // Utilidades de fecha de cumplimiento (formato "mmm-aa" en español)
 const MESES_ABR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-// Años disponibles en el selector mes-año del modal (2025 a 2030)
-const ANIOS_SELECT = [2025, 2026, 2027, 2028, 2029, 2030];
+// Años disponibles en el selector mes-año del modal (2025 a 2035)
+const ANIOS_SELECT = [2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035];
 
 // Variantes de abreviatura que apuntan al mismo mes canónico (índice 0-11).
 // Cubre "sept"/"set"/"setiembre" para septiembre y nombres completos comunes.
@@ -1887,7 +1887,7 @@ function renderTabla() {
     const obsActual       = est.observacion || '';
 
     const colValidacion = esValidacion()
-      ? `<td class="col-val-filtro" rowspan="${nHitos}" style="display:none;text-align:center;vertical-align:middle;padding:10px 8px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">
+      ? `<td class="col-val-filtro" rowspan="${nHitos}" style="display:none;text-align:center;vertical-align:top;padding:10px 8px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">
           ${tieneRegistro
             ? `<div class="val-selector">
                  <select class="val-select ${estadoValActual.toLowerCase()}"
