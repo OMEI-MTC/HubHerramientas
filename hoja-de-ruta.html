@@ -93,12 +93,16 @@
   .card.modo-priorizacion .col-ogame { display: table-cell; }
   /* columna "Priorización" oculta en modo validación */
   .card.modo-validacion .col-prio { display: none; }
-  /* columna "Responsable" oculta en modo validación (se muestra dentro de intervención) */
-  .card.modo-validacion .col-responsable { display: none; }
+  /* columna "Responsable" oculta en modo edición y validación (se muestra dentro de intervención) */
+  .card.modo-validacion .col-responsable,
+  .card.modo-edicion .col-responsable { display: none; }
   /* filtro y columna "Estado de validación" solo visible en modo validación */
   .card.modo-validacion .col-val-filtro { display: block !important; }
   .card.modo-validacion thead .col-val-filtro { display: table-cell !important; }
   .card.modo-validacion tbody .col-val-filtro { display: table-cell !important; }
+  /* columna "Estado de validación" solo lectura en modo edición */
+  .card.modo-edicion thead .col-val-edicion { display: table-cell !important; }
+  .card.modo-edicion tbody .col-val-edicion { display: table-cell !important; }
 
 
   /* ── PAGE TITLE ── */
@@ -791,9 +795,9 @@
           <div class="filtro-group col-val-filtro" style="margin-bottom:0;display:none"><label>Estado de validación</label>
             <select id="f-estado-val" onchange="aplicarFiltros()">
               <option value="">Todos</option>
-              <option value="Pendiente">⏳ Pendiente</option>
+              <option value="Pendiente">🟡 Pendiente</option>
               <option value="Observado">🔴 Observado</option>
-              <option value="Validado">✓ Validado</option>
+              <option value="Validado">🟢 Validado</option>
             </select>
           </div>
         </div>
@@ -839,7 +843,8 @@
         <thead>
           <tr>
             <th style="width:6%; text-align:center; vertical-align:middle">Corte</th>
-            <th class="col-val-filtro" style="width:12%; text-align:center; vertical-align:middle; display:none">Estado de<br>validación</th>
+            <th class="col-val-filtro"  style="width:12%; text-align:center; vertical-align:middle; display:none">Estado de<br>validación</th>
+            <th class="col-val-edicion" style="width:12%; text-align:center; vertical-align:middle; display:none">Estado de<br>validación</th>
             <th style="width:22%; vertical-align:middle">Intervención estratégica</th>
             <th class="col-responsable" style="width:8%; vertical-align:middle">Responsable</th>
             <th style="width:9%; vertical-align:middle">Área de influencia</th>
@@ -1479,7 +1484,7 @@ function aplicarModo() {
   if (modoApp === 'general') {
     banner.style.display = 'none';
     botones.style.display = 'flex';
-    card.classList.remove('ogame-activa', 'modo-priorizacion', 'modo-validacion');
+    card.classList.remove('ogame-activa', 'modo-priorizacion', 'modo-validacion', 'modo-edicion');
     // liberar el filtro de órgano
     if (selOrgano) { selOrgano.disabled = false; selOrgano.style.opacity = ''; }
   } else {
@@ -1487,7 +1492,8 @@ function aplicarModo() {
     botones.style.display = 'none';
     card.classList.add('ogame-activa');
     card.classList.toggle('modo-priorizacion', modoApp === 'priorizacion');
-    card.classList.toggle('modo-validacion', modoApp === 'validacion');
+    card.classList.toggle('modo-validacion',   modoApp === 'validacion');
+    card.classList.toggle('modo-edicion',      modoApp === 'edicion');
     bannerTexto.innerHTML = modoApp === 'edicion'
       ? `<strong>Modo edición — ${esc(oficinaEdicion)}</strong> · editando solo las intervenciones de tu oficina`
       : modoApp === 'validacion'
@@ -1892,9 +1898,9 @@ function renderTabla() {
             ? `<div class="val-selector">
                  <select class="val-select ${estadoValActual.toLowerCase()}"
                          onchange="cambiarEstadoVal('${esc(interv.codigo)}', this)">
-                   <option value="Pendiente"  ${estadoValActual==='Pendiente'  ? 'selected':''}>⏳ Pendiente</option>
+                   <option value="Pendiente"  ${estadoValActual==='Pendiente'  ? 'selected':''}>🟡 Pendiente</option>
                    <option value="Observado"  ${estadoValActual==='Observado'  ? 'selected':''}>🔴 Observado</option>
-                   <option value="Validado"   ${estadoValActual==='Validado'   ? 'selected':''}>✓ Validado</option>
+                   <option value="Validado"   ${estadoValActual==='Validado'   ? 'selected':''}>🟢 Validado</option>
                  </select>
                  <button class="val-obs-btn" onclick="abrirObsModal('${esc(interv.codigo)}')">
                    ✎ Registrar observación
@@ -1914,7 +1920,7 @@ function renderTabla() {
       </td>
       ${colValidacion}
       <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
-        ${esValidacion()
+        ${(esValidacion() || esEdicion())
           ? `<div style="font-size:11px;font-weight:700;color:var(--texto);margin-bottom:4px">${esc(interv.organo)}</div>
              <div style="font-weight:700;color:var(--azul);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
              ${interv.detalle ? `<div style="margin-top:4px;font-size:11px;color:var(--azul);font-style:italic;line-height:1.4">${esc(interv.detalle)}</div>` : ''}`
@@ -1924,7 +1930,13 @@ function renderTabla() {
              </div>`}
         ${interv.relevancia ? `<div style="margin-top:7px;font-size:11px;color:var(--texto-2);display:flex;align-items:flex-start;gap:5px;line-height:1.35">🎯 <span>${esc(interv.relevancia)}</span></div>` : ''}
       </td>
-      ${esValidacion() ? '' : `<td class="col-responsable" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>`}
+      ${(esValidacion() || esEdicion()) ? '' : `<td class="col-responsable" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>`}
+      ${esEdicion() ? `<td class="col-val-edicion" rowspan="${nHitos}" style="display:none;vertical-align:top;padding:10px 8px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;text-align:center">
+        ${tieneRegistro && est.estadoVal
+          ? `<div style="font-size:13px;margin-bottom:6px">${est.estadoVal === 'Validado' ? '🟢' : est.estadoVal === 'Observado' ? '🔴' : '🟡'} <strong>${esc(est.estadoVal)}</strong></div>
+             ${est.observacion ? `<div style="font-size:11px;color:#6B7280;font-style:italic;text-align:left;border-left:2px solid #D97706;padding-left:6px;line-height:1.4">${esc(est.observacion)}</div>` : ''}`
+          : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin revisión</span>`}
+      </td>` : ''}
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.area) || "—"}</td>
       <td class="col-prio" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${prioHtml}</td>
       <td class="col-ogame" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${habilHtml}</td>
@@ -2109,11 +2121,12 @@ async function cambiarEstadoVal(codigo, sel) {
   const esValidado  = nuevoEstado === 'Validado';
   sel.disabled = true;
   const payload = {
-    accion:      'validarRegistro',
-    codigo:      codigo,
-    estadoVal:   nuevoEstado,
-    validado:    esValidado ? 'Sí' : 'No',
-    observacion: (prevInterv[codigo] || {}).observacion || ''
+    accion:        'validarRegistro',
+    codigo:        codigo,
+    estadoVal:     nuevoEstado,
+    validado:      esValidado ? 'Sí' : 'No',
+    observacion:   (prevInterv[codigo] || {}).observacion || '',
+    registradoPor: oficinaEdicion
   };
   try {
     const data = await postBackend(payload);
@@ -2162,11 +2175,12 @@ async function guardarObservacion() {
   btn.disabled = true; btn.textContent = 'Guardando…';
   const estadoVal = (prevInterv[codigo] || {}).estadoVal || 'Pendiente';
   const payload = {
-    accion:      'validarRegistro',
-    codigo:      codigo,
-    estadoVal:   estadoVal,
-    validado:    estadoVal === 'Validado' ? 'Sí' : 'No',
-    observacion: texto
+    accion:        'validarRegistro',
+    codigo:        codigo,
+    estadoVal:     estadoVal,
+    validado:      estadoVal === 'Validado' ? 'Sí' : 'No',
+    observacion:   texto,
+    registradoPor: oficinaEdicion
   };
   try {
     const data = await postBackend(payload);
@@ -2281,7 +2295,7 @@ async function guardarRegistro() {
 
   const btn = document.getElementById('btn-guardar');
   btn.disabled = true;
-  btn.innerHTML = '⏳ Guardando…';
+  btn.innerHTML = 'Guardando…';
 
   // recoger datos del modal
   const estActual = vistaInterv[intervModal.codigo] || {};
@@ -2310,15 +2324,16 @@ async function guardarRegistro() {
   const validado = esValidacion() && document.getElementById('m-validado').checked;
 
   const payload = {
-    accion:    'registrarHojaRuta',
-    timestamp: new Date().toISOString(),
-    codigo:    intervModal.codigo,
-    nombre:    intervModal.nombre,
-    organo:    intervModal.organo,
-    estado:    document.getElementById('m-estado').value.trim(),
-    avance:    document.getElementById('m-avance').value.trim(),
-    validado:  validado ? 'Sí' : 'No',
-    hitos:     hitos
+    accion:        'registrarHojaRuta',
+    timestamp:     new Date().toISOString(),
+    codigo:        intervModal.codigo,
+    nombre:        intervModal.nombre,
+    organo:        intervModal.organo,
+    estado:        document.getElementById('m-estado').value.trim(),
+    avance:        document.getElementById('m-avance').value.trim(),
+    validado:      validado ? 'Sí' : 'No',
+    registradoPor: oficinaEdicion,
+    hitos:         hitos
   };
 
   try {
