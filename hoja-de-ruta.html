@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hoja de Ruta · OGAME</title>
+<title>HOJA DE RUTA MTC · OGAME</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
@@ -307,7 +307,7 @@
     border-bottom: 1px solid #E5E7EB;
     vertical-align: top;
   }
-  /* columnas resaltadas: Última Actualización, Intervención, Hitos */
+  /* columnas resaltadas: Corte, Intervención, Hitos */
   .col-resalte { background: #F8FAFF !important; }
   .fila-intervencion .interv-nombre {
     font-weight: 600; color: var(--navy); font-size: 13px;
@@ -646,7 +646,49 @@
   /* fila con registro pendiente de validación: tinte sutil */
   .fila-pendiente-val td { background: #FFFDF0 !important; }
 
-  /* ── CHECKBOX VALIDAR en modal ── */
+  /* ── SELECTOR DE ESTADO DE VALIDACIÓN ── */
+  .val-selector {
+    display: inline-flex; flex-direction: column; align-items: center; gap: 6px;
+    width: 100%;
+  }
+  .val-select {
+    width: 100%; padding: 6px 8px; border-radius: 7px; border: 2px solid;
+    font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer;
+    text-align: center; appearance: none; -webkit-appearance: none;
+  }
+  .val-select.pendiente  { border-color: #D97706; background: #FFFBEB; color: #92400E; }
+  .val-select.observado  { border-color: #DC2626; background: #FEF2F2; color: #991B1B; }
+  .val-select.validado   { border-color: #16A34A; background: #F0FDF4; color: #14532D; }
+  .val-obs-btn {
+    width: 100%; padding: 5px 8px; border-radius: 6px;
+    border: 1px solid #D1D5DB; background: #F9FAFB;
+    font-size: 11px; color: #6B7280; cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .val-obs-btn:hover { background: #F3F4F6; }
+  .val-obs-texto {
+    margin-top: 4px; font-size: 11px; color: #6B7280;
+    font-style: italic; line-height: 1.4; text-align: left;
+    border-left: 2px solid #D97706; padding-left: 6px; width: 100%;
+  }
+  /* ── MODAL DE OBSERVACIÓN ── */
+  .obs-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 500;
+    align-items: center; justify-content: center;
+  }
+  .obs-overlay.activo { display: flex; }
+  .obs-modal {
+    background: #fff; border-radius: 12px; width: 460px; max-width: 95vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25); overflow: hidden;
+  }
+  .obs-header {
+    background: var(--navy); color: #fff; padding: 16px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .obs-header h3 { font-size: 14px; font-weight: 700; }
+  .obs-body { padding: 20px; }
+  .obs-footer { padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #E5E7EB; }
   .validar-wrap {
     display: flex; align-items: center; gap: 10px;
     padding: 12px 14px; border-radius: 8px;
@@ -683,7 +725,7 @@
     <div class="page-header">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
         <div>
-          <h1>Hoja de Ruta</h1>
+          <h1>HOJA DE RUTA MTC</h1>
           <p id="header-contadores" style="font-size:15px;color:var(--texto-2);margin-top:4px">Cargando…</p>
         </div>
         <div style="display:flex;gap:10px;flex-shrink:0" id="botones-modo">
@@ -747,8 +789,9 @@
           <div class="filtro-group col-val-filtro" style="margin-bottom:0;display:none"><label>Estado de validación</label>
             <select id="f-estado-val" onchange="aplicarFiltros()">
               <option value="">Todos</option>
-              <option value="pendiente">⏳ Pendiente</option>
-              <option value="validado">✓ Validado</option>
+              <option value="Pendiente">⏳ Pendiente</option>
+              <option value="Observado">🔴 Observado</option>
+              <option value="Validado">✓ Validado</option>
             </select>
           </div>
         </div>
@@ -793,7 +836,7 @@
       <table id="tabla-principal">
         <thead>
           <tr>
-            <th style="width:6%; text-align:center; vertical-align:middle">Última<br>Actualización</th>
+            <th style="width:6%; text-align:center; vertical-align:middle">Corte</th>
             <th class="col-val-filtro" style="width:6%; text-align:center; vertical-align:middle; display:none">Estado de<br>validación</th>
             <th style="width:22%; vertical-align:middle">Intervención estratégica</th>
             <th style="width:8%; vertical-align:middle">Responsable</th>
@@ -1197,12 +1240,14 @@ async function cargarDatos() {
       const cod = f['Código'];
       if (!cod) return;
       prevInterv[cod] = {
-        fechaReg:  f['Fecha de registro'],
-        estado:    f['Estado situacional'],
-        avance:    f['Avance'] || '',
-        validado:  (f['Validado'] || '').toLowerCase() === 'sí' || (f['Validado'] || '').toLowerCase() === 'si',
-        priorizado: (f['Priorizado'] || '').toLowerCase() === 'sí' || (f['Priorizado'] || '').toLowerCase() === 'si',
-        hitosHabilitados: (f['HitosHabilitados'] || '').toLowerCase() !== 'no'
+        fechaReg:        f['Fecha de registro'],
+        estado:          f['Estado situacional'],
+        avance:          f['Avance'] || '',
+        validado:        (f['Validado'] || '').toLowerCase() === 'sí' || (f['Validado'] || '').toLowerCase() === 'si',
+        estadoVal:       f['Estado de Validación'] || 'Pendiente',
+        observacion:     f['Observación'] || '',
+        priorizado:      (f['Priorizado'] || '').toLowerCase() === 'sí' || (f['Priorizado'] || '').toLowerCase() === 'si',
+        hitosHabilitados:(f['HitosHabilitados'] || '').toLowerCase() !== 'no'
       };
     });
 
@@ -1727,8 +1772,8 @@ function aplicarFiltros() {
       if (vVal) {
         const estV = vistaInterv[i.codigo] || {};
         const tieneReg = !!estV.fechaReg;
-        if (vVal === 'pendiente' && (!tieneReg || estV.validado))  return false;
-        if (vVal === 'validado'  && (!tieneReg || !estV.validado)) return false;
+        const ev = tieneReg ? (estV.estadoVal || 'Pendiente') : null;
+        if (!tieneReg || ev !== vVal) return false;
       }
     }
     if (vBuscar && !i.nombre.toLowerCase().includes(vBuscar)) return false;
@@ -1821,7 +1866,7 @@ function renderTabla() {
     const hitosMostrar = hitosVisibles(interv);
     const nHitos = hitosMostrar.length;
 
-    // columna Última Actualización: solo fecha + ícono lápiz
+    // columna Corte: solo fecha + ícono lápiz
     const colActualizado = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
         ${tieneRegistro
@@ -1836,23 +1881,29 @@ function renderTabla() {
       </div>`;
 
     // celda independiente de validación (solo en modo validación)
+    const estadoValActual = est.estadoVal || 'Pendiente';
+    const obsActual       = est.observacion || '';
+
     const colValidacion = esValidacion()
-      ? `<td class="col-val-filtro" rowspan="${nHitos}" style="display:none;text-align:center;vertical-align:middle;padding:10px 8px;border-left:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">
+      ? `<td class="col-val-filtro" rowspan="${nHitos}" style="display:none;text-align:center;vertical-align:middle;padding:10px 8px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">
           ${tieneRegistro
-            ? `<label style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer"
-                     title="${est.validado ? 'Validado — haz clic para revocar' : 'Pendiente — haz clic para validar'}">
-                 <input type="checkbox" ${est.validado ? 'checked' : ''}
-                        onchange="toggleValidacion('${esc(interv.codigo)}', this)"
-                        style="width:16px;height:16px;accent-color:var(--verde);cursor:pointer">
-                 <span style="font-size:10px;font-weight:700;color:${est.validado ? 'var(--verde)' : '#8a6200'}">
-                   ${est.validado ? 'Validado' : 'Pendiente'}
-                 </span>
-               </label>`
+            ? `<div class="val-selector">
+                 <select class="val-select ${estadoValActual.toLowerCase()}"
+                         onchange="cambiarEstadoVal('${esc(interv.codigo)}', this)">
+                   <option value="Pendiente"  ${estadoValActual==='Pendiente'  ? 'selected':''}>⏳ Pendiente</option>
+                   <option value="Observado"  ${estadoValActual==='Observado'  ? 'selected':''}>🔴 Observado</option>
+                   <option value="Validado"   ${estadoValActual==='Validado'   ? 'selected':''}>✓ Validado</option>
+                 </select>
+                 <button class="val-obs-btn" onclick="abrirObsModal('${esc(interv.codigo)}')">
+                   ✎ Registrar observación
+                 </button>
+                 ${obsActual ? `<div class="val-obs-texto">${esc(obsActual)}</div>` : ''}
+               </div>`
             : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro</span>`}
         </td>`
       : '';
 
-    const esPendiente = tieneRegistro && !est.validado;
+    const esPendiente = tieneRegistro && estadoValActual !== 'Validado';
 
     html += `
     <tr class="fila-intervencion${esPendiente && esValidacion() ? ' fila-pendiente-val' : ''}">
@@ -1861,13 +1912,17 @@ function renderTabla() {
       </td>
       ${colValidacion}
       <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
-        <div style="padding-left:9px;border-left:3px solid var(--azul)">
-          <div style="font-weight:700;color:var(--azul);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
-          ${interv.detalle ? `<div style="margin-top:4px;font-size:11px;color:var(--azul);font-style:italic;line-height:1.4">${esc(interv.detalle)}</div>` : ''}
-        </div>
+        ${esValidacion()
+          ? `<div style="font-size:11px;font-weight:700;color:var(--texto);margin-bottom:4px">${esc(interv.organo)}</div>
+             <div style="font-weight:700;color:var(--azul);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
+             ${interv.detalle ? `<div style="margin-top:4px;font-size:11px;color:var(--azul);font-style:italic;line-height:1.4">${esc(interv.detalle)}</div>` : ''}`
+          : `<div style="padding-left:9px;border-left:3px solid var(--azul)">
+               <div style="font-weight:700;color:var(--azul);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
+               ${interv.detalle ? `<div style="margin-top:4px;font-size:11px;color:var(--azul);font-style:italic;line-height:1.4">${esc(interv.detalle)}</div>` : ''}
+             </div>`}
         ${interv.relevancia ? `<div style="margin-top:7px;font-size:11px;color:var(--texto-2);display:flex;align-items:flex-start;gap:5px;line-height:1.35">🎯 <span>${esc(interv.relevancia)}</span></div>` : ''}
       </td>
-      <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>
+      ${esValidacion() ? '' : `<td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>`}
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.area) || "—"}</td>
       <td class="col-prio" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${prioHtml}</td>
       <td class="col-ogame" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${habilHtml}</td>
@@ -2040,37 +2095,99 @@ function cerrarModal() {
   intervModal = null;
 }
 
-// Validación directa desde la tabla (sin abrir modal)
-async function toggleValidacion(codigo, chk) {
-  const est = estadoInterv[codigo] || (estadoInterv[codigo] = {});
-  const nuevoValor = chk.checked;
-  chk.disabled = true;
+// ── VALIDACIÓN DE TRES ESTADOS ──────────────────────────────────────────────
 
+function actualizarClaseSelect(sel) {
+  sel.className = 'val-select ' + sel.value.toLowerCase();
+}
+
+async function cambiarEstadoVal(codigo, sel) {
+  actualizarClaseSelect(sel);
+  const nuevoEstado = sel.value;
+  const esValidado  = nuevoEstado === 'Validado';
+  sel.disabled = true;
   const payload = {
-    accion:   'validarRegistro',
-    codigo:   codigo,
-    validado: nuevoValor ? 'Sí' : 'No'
+    accion:      'validarRegistro',
+    codigo:      codigo,
+    estadoVal:   nuevoEstado,
+    validado:    esValidado ? 'Sí' : 'No',
+    observacion: (prevInterv[codigo] || {}).observacion || ''
   };
-
   try {
     const data = await postBackend(payload);
     if (data.ok) {
       prevInterv[codigo] = prevInterv[codigo] || {};
-      prevInterv[codigo].validado = nuevoValor;
-      vistaInterv[codigo] = prevInterv[codigo]; // vistaInterv apunta a prevInterv en validación
+      prevInterv[codigo].estadoVal = nuevoEstado;
+      prevInterv[codigo].validado  = esValidado;
+      vistaInterv[codigo] = prevInterv[codigo];
+      if (esValidado) estadoInterv[codigo] = Object.assign({}, prevInterv[codigo]);
       renderTabla();
-      mostrarToast(nuevoValor ? 'Registro validado ✓' : 'Validación removida', 'exito');
+      mostrarToast('Estado actualizado: ' + nuevoEstado, 'exito');
     } else {
-      chk.checked = !nuevoValor; // revertir
+      mostrarToast('Error: ' + (data.mensaje || 'intenta de nuevo'), 'error');
+      renderTabla();
+    }
+  } catch (e) {
+    mostrarToast(e.message, 'error');
+    renderTabla();
+  } finally {
+    sel.disabled = false;
+  }
+}
+
+let _obsCodigoActual = '';
+
+function abrirObsModal(codigo) {
+  _obsCodigoActual = codigo;
+  const obs    = (prevInterv[codigo] || {}).observacion || '';
+  const nombre = intervenciones.find(i => i.codigo === codigo)?.nombre || codigo;
+  document.getElementById('obs-modal-titulo').textContent =
+    'Observación — ' + nombre.slice(0, 55) + (nombre.length > 55 ? '…' : '');
+  document.getElementById('obs-textarea').value = obs;
+  document.getElementById('obs-overlay').classList.add('activo');
+  setTimeout(() => document.getElementById('obs-textarea').focus(), 100);
+}
+
+function cerrarObsModal() {
+  document.getElementById('obs-overlay').classList.remove('activo');
+  _obsCodigoActual = '';
+}
+
+async function guardarObservacion() {
+  const codigo = _obsCodigoActual;
+  const texto  = document.getElementById('obs-textarea').value.trim();
+  const btn    = document.querySelector('#obs-overlay .btn-guardar');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const estadoVal = (prevInterv[codigo] || {}).estadoVal || 'Pendiente';
+  const payload = {
+    accion:      'validarRegistro',
+    codigo:      codigo,
+    estadoVal:   estadoVal,
+    validado:    estadoVal === 'Validado' ? 'Sí' : 'No',
+    observacion: texto
+  };
+  try {
+    const data = await postBackend(payload);
+    if (data.ok) {
+      prevInterv[codigo] = prevInterv[codigo] || {};
+      prevInterv[codigo].observacion = texto;
+      vistaInterv[codigo] = prevInterv[codigo];
+      cerrarObsModal();
+      renderTabla();
+      mostrarToast('Observación guardada', 'exito');
+    } else {
       mostrarToast('Error: ' + (data.mensaje || 'intenta de nuevo'), 'error');
     }
   } catch (e) {
-    chk.checked = !nuevoValor;
     mostrarToast(e.message, 'error');
   } finally {
-    chk.disabled = false;
+    btn.disabled = false; btn.textContent = 'Guardar observación';
   }
 }
+
+document.getElementById('obs-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('obs-overlay')) cerrarObsModal();
+});
 
 // Guardado independiente de priorización (solo Estado Actual, sin histórico ni fecha)
 async function togglePriorizacion(codigo, btn) {
@@ -2466,7 +2583,7 @@ function exportarPDF() {
     doc.rect(0, 0, pw, ALT_HEADER, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(10); doc.setFont('helvetica', 'bold');
-    doc.text('HOJA DE RUTA ESTRATÉGICA 2026–2027', pw / 2, 9, { align: 'center' });
+    doc.text('HOJA DE RUTA MTC', pw / 2, 9, { align: 'center' });
     doc.setFont('helvetica', 'normal');
     doc.text('Transferencia de gestión · Registro de estado de intervenciones e hitos clave', pw / 2, 16, { align: 'center' });
     const lineas = doc.splitTextToSize('Filtros aplicados: ' + filtroTexto, pw - 20);
@@ -2547,7 +2664,7 @@ function exportarExcel() {
   const OFFSET = 3;           // filas 0,1,2 = título / filtros / blanco
   const FILA_ENCABEZADO = 3;  // fila 3 = encabezados de columna
   const rows = [
-    ['Hoja de Ruta Estratégica'],
+    ['HOJA DE RUTA MTC'],
     ['Filtros aplicados: ' + textoFiltros],
     [],
     encabezados
@@ -2710,5 +2827,27 @@ document.addEventListener('click', e => {
 aplicarModo();
 cargarDatos();
 </script>
+<!-- MODAL OBSERVACIÓN (modo validación) -->
+<div class="obs-overlay" id="obs-overlay">
+  <div class="obs-modal">
+    <div class="obs-header">
+      <h3 id="obs-modal-titulo">Registrar observación</h3>
+      <button onclick="cerrarObsModal()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:18px;line-height:1">✕</button>
+    </div>
+    <div class="obs-body">
+      <label style="font-size:12px;font-weight:700;color:var(--texto);display:block;margin-bottom:6px">Observación para el órgano responsable</label>
+      <textarea id="obs-textarea" rows="5"
+                style="width:100%;padding:10px;border:1.5px solid var(--gris-borde);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box"
+                placeholder="Describe qué debe corregir o complementar el órgano…"></textarea>
+    </div>
+    <div class="obs-footer">
+      <button class="btn-cancelar" onclick="cerrarObsModal()">Cancelar</button>
+      <button class="btn-guardar" onclick="guardarObservacion()">
+        Guardar observación
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
