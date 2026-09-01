@@ -93,6 +93,8 @@
   .card.modo-priorizacion .col-ogame { display: table-cell; }
   /* columna "Priorización" oculta en modo validación */
   .card.modo-validacion .col-prio { display: none; }
+  /* columna "Responsable" oculta en modo validación (se muestra dentro de intervención) */
+  .card.modo-validacion .col-responsable { display: none; }
   /* filtro y columna "Estado de validación" solo visible en modo validación */
   .card.modo-validacion .col-val-filtro { display: block !important; }
   .card.modo-validacion thead .col-val-filtro { display: table-cell !important; }
@@ -837,9 +839,9 @@
         <thead>
           <tr>
             <th style="width:6%; text-align:center; vertical-align:middle">Corte</th>
-            <th class="col-val-filtro" style="width:6%; text-align:center; vertical-align:middle; display:none">Estado de<br>validación</th>
+            <th class="col-val-filtro" style="width:12%; text-align:center; vertical-align:middle; display:none">Estado de<br>validación</th>
             <th style="width:22%; vertical-align:middle">Intervención estratégica</th>
-            <th style="width:8%; vertical-align:middle">Responsable</th>
+            <th class="col-responsable" style="width:8%; vertical-align:middle">Responsable</th>
             <th style="width:9%; vertical-align:middle">Área de influencia</th>
             <th class="col-prio" style="width:5%; text-align:center; vertical-align:middle">Priorización</th>
             <th class="col-ogame" style="width:5%; text-align:center; vertical-align:middle">Habilitar<br>hitos</th>
@@ -1922,7 +1924,7 @@ function renderTabla() {
              </div>`}
         ${interv.relevancia ? `<div style="margin-top:7px;font-size:11px;color:var(--texto-2);display:flex;align-items:flex-start;gap:5px;line-height:1.35">🎯 <span>${esc(interv.relevancia)}</span></div>` : ''}
       </td>
-      ${esValidacion() ? '' : `<td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>`}
+      ${esValidacion() ? '' : `<td class="col-responsable" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>`}
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.area) || "—"}</td>
       <td class="col-prio" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${prioHtml}</td>
       <td class="col-ogame" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${habilHtml}</td>
