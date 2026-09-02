@@ -761,8 +761,8 @@
         <div style="background:#EEF4FF; border-radius:10px; padding:14px 16px;">
           <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#0055A5; margin-bottom:12px;">Responsables</div>
           <div class="filtro-group"><label>Grupo</label><select id="f-grupo" onchange="aplicarFiltros()"><option value="">Todos</option></select></div>
-          <div class="filtro-group"><label>Viceministerio</label><select id="f-vice" onchange="aplicarFiltros()"><option value="">Todos</option></select></div>
-          <div class="filtro-group" style="margin-bottom:0"><label>Órgano</label><select id="f-organo" onchange="aplicarFiltros()"><option value="">Todos</option></select></div>
+          <div class="filtro-group"><label>Órgano</label><select id="f-vice" onchange="aplicarFiltros()"><option value="">Todos</option></select></div>
+          <div class="filtro-group" style="margin-bottom:0"><label>Unidad / Oficina Responsable</label><select id="f-organo" onchange="aplicarFiltros()"><option value="">Todos</option></select></div>
         </div>
 
         <!-- GRUPO 2: INTERVENCIONES -->
@@ -834,7 +834,7 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Descargar Excel
             </button>
-            <button onclick="mostrarResumen()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:7px; padding:9px; border:1.5px solid #D1D5DB; background:#fff; color:#374151; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px; font-family:inherit;">
+            <button onclick="abrirResumen()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:7px; padding:9px; border:1.5px solid #D1D5DB; background:#fff; color:#374151; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px; font-family:inherit;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
               Ver resumen
             </button>
@@ -2714,7 +2714,7 @@ function resumenFiltrosActivos() {
   const val = (id) => document.getElementById(id).value.trim();
 
   if (val('f-grupo'))  partes.push('Grupo: ' + val('f-grupo'));
-  if (val('f-vice'))   partes.push('Viceministerio: ' + val('f-vice'));
+  if (val('f-vice'))   partes.push('Órgano: ' + val('f-vice'));
   if (val('f-organo')) partes.push('Órgano: ' + val('f-organo'));
   if (priorizadasSeleccion.size > 0) {
     const tags = [...priorizadasSeleccion].map(p => p === '__noaplica__' ? 'No aplica' : p).join(', ');
