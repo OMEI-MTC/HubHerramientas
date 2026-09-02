@@ -767,7 +767,7 @@
 
         <!-- GRUPO 2: INTERVENCIONES -->
         <div style="background:#FFFBF0; border-radius:10px; padding:14px 16px;">
-          <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#D97706; margin-bottom:12px;">Intervenciones</div>
+          <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#D97706; margin-bottom:12px;">Intervenciones / Políticas</div>
           <div class="filtro-group">
             <label>Priorizadas</label>
             <div class="meses-dropdown" id="priorizadas-panel">
@@ -778,7 +778,7 @@
               <div class="meses-lista" id="priorizadas-lista"></div>
             </div>
           </div>
-          <div class="filtro-group"><label>Intervención</label><input type="text" id="f-buscar" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
+          <div class="filtro-group"><label>Intervención / Política</label><input type="text" id="f-buscar" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
           <div class="filtro-group" style="margin-bottom:0"><label>CUI</label><input type="text" id="f-cui" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
         </div>
 
@@ -803,6 +803,13 @@
               </button>
               <div class="meses-lista" id="meses-lista"></div>
             </div>
+          </div>
+          <div class="filtro-group" style="margin-bottom:0"><label>Tipo de registro</label>
+            <select id="f-tipo" onchange="aplicarFiltros()">
+              <option value="">Todos</option>
+              <option value="Intervenciones">Intervenciones</option>
+              <option value="Normativa / Política">Políticas</option>
+            </select>
           </div>
           <div class="filtro-group col-val-filtro" style="margin-bottom:0;display:none"><label>Estado de validación</label>
             <select id="f-estado-val" onchange="aplicarFiltros()">
@@ -1933,6 +1940,9 @@ function aplicarFiltros() {
     if (vBuscar && !i.nombre.toLowerCase().includes(vBuscar)) return false;
     if (vArea && !(i.area || '').toLowerCase().includes(vArea)) return false;
     if (vCui && !(i.cui || '').toLowerCase().includes(vCui)) return false;
+    // Filtro Tipo de registro
+    const vTipo = document.getElementById('f-tipo')?.value;
+    if (vTipo && (i.tipo || 'Intervenciones') !== vTipo) return false;
     // Filtros de hito (mes, último, y/o texto de hito): la intervención pasa
     // solo si le queda al menos un hito visible
     const filtrandoHitos = mesesSeleccion.size > 0 ||
@@ -1948,7 +1958,7 @@ function aplicarFiltros() {
 }
 
 function limpiarFiltros() {
-  ['f-grupo','f-vice','f-organo','f-buscar','f-area','f-cui','f-estado-cumpl','f-estado-val'].forEach(id => {
+  ['f-grupo','f-vice','f-organo','f-buscar','f-area','f-cui','f-estado-cumpl','f-estado-val','f-tipo'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value = '';
   });
   const fHito = document.getElementById('f-hito'); if(fHito) fHito.value = '';
@@ -1975,7 +1985,7 @@ function renderTabla() {
   // Subtítulo dinámico bajo el título principal
   const partes = [];
   if (idsInterv.size)    partes.push(`<strong>${idsInterv.size}</strong> intervenciones`);
-  if (idsNormativa.size) partes.push(`<strong>${idsNormativa.size}</strong> normativas/políticas`);
+  if (idsNormativa.size) partes.push(`<strong>${idsNormativa.size}</strong> políticas`);
   document.getElementById('header-contadores').innerHTML =
     partes.length ? partes.join(' · ') : 'Sin resultados';
 
