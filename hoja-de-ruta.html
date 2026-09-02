@@ -905,23 +905,37 @@
   <div class="modal modal-login" style="max-width:440px">
     <div class="modal-header">
       <div>
-        <h2 id="login-titulo">Modo edición</h2>
-        <p id="login-subtitulo">Elige tu oficina e ingresa la contraseña</p>
+        <h2 id="login-titulo">Modo edición / validación</h2>
+        <p id="login-subtitulo">Busca tu oficina e ingresa la contraseña</p>
       </div>
       <button class="modal-close" onclick="cerrarLogin()">✕</button>
     </div>
     <div class="modal-body">
+      <!-- SECCIÓN 1: Oficina -->
       <div class="form-group" id="login-oficina-group" style="margin-bottom:14px">
+        <label>Oficina</label>
+        <div class="usuario-search-wrap">
+          <input type="text" id="login-oficina-input" class="usuario-search-input"
+                 placeholder="Busca tu oficina…" autocomplete="off"
+                 oninput="filtrarOficinas()" onfocus="abrirOficinasDropdown()"
+                 onkeydown="navegarOficinas(event)">
+          <input type="hidden" id="login-oficina">
+          <div class="usuario-dropdown" id="oficina-dropdown"></div>
+        </div>
+      </div>
+      <!-- SECCIÓN 2: Usuario (se muestra tras elegir oficina) -->
+      <div class="form-group" id="login-usuario-group" style="margin-bottom:14px;display:none">
         <label>Usuario</label>
         <div class="usuario-search-wrap">
           <input type="text" id="login-usuario-input" class="usuario-search-input"
-                 placeholder="Busca tu oficina…" autocomplete="off"
+                 placeholder="Selecciona tu usuario…" autocomplete="off"
                  oninput="filtrarUsuarios()" onfocus="abrirUsuarioDropdown()"
-                 onkeydown="navegarUsuarios(event)">
-          <input type="hidden" id="login-oficina">
+                 onkeydown="navegarUsuarios(event)" readonly>
+          <input type="hidden" id="login-usuario-val">
           <div class="usuario-dropdown" id="usuario-dropdown"></div>
         </div>
       </div>
+      <!-- SECCIÓN 3: Contraseña -->
       <div class="form-group">
         <label>Contraseña</label>
         <div style="position:relative">
@@ -1040,9 +1054,11 @@ let filtradas    = []; // intervenciones después de filtros
 //   'edicion'     → una oficina edita SUS intervenciones (lápiz habilitado)
 //   'priorizacion'→ toggles de priorización/habilitar hitos (antes Vista OGAME)
 let modoApp = sessionStorage.getItem('hdr_modo') || 'general';
-let oficinaEdicion = sessionStorage.getItem('hdr_oficina') || ''; // órgano activo en modo edición
+let oficinaEdicion = sessionStorage.getItem('hdr_oficina') || '';
+let usuarioActivo  = sessionStorage.getItem('hdr_usuario') || '';
 const PASSWORD_OGAME = 'ogame.2026';
-let accesos = {}; // { 'DGPPT': 'DGPPT-0403', ... } cargado de la hoja Accesos
+let accesos = {}; // legado, no se usa directamente
+let accesosPorOficina = {}; // { 'DGPPT': [{usuario:'DGPPT-1', clave:'DGPPT-0401'}, ...] }
 
 // Compatibilidad: varias partes del código consultan si estamos en modo priorización
 function esPriorizacion() { return modoApp === 'priorizacion'; }
@@ -1154,12 +1170,18 @@ async function cargarDatos() {
       fetchTSV(TSV_PREV_HITOS)
     ]);
 
-    // Hoja Accesos: Órgano → Contraseña
+    // Hoja Accesos: Órgano | Contraseña | Usuario | Tipo de Usuario
     accesos = {};
+    accesosPorOficina = {};
     parseTSV(tsvAccesos).forEach(f => {
-      const org = (f['Órgano'] || '').trim();
-      const pass = (f['Contraseña'] || '').trim();
-      if (org) accesos[org] = pass;
+      const org     = (f['Órgano']    || '').trim();
+      const clave   = (f['Contraseña'] || '').trim();
+      const usuario = (f['Usuario']   || '').trim();
+      if (!org) return;
+      // legado: para compatibilidad con viceSet (se sobreescribe si hay varios, no importa)
+      accesos[org] = clave;
+      if (!accesosPorOficina[org]) accesosPorOficina[org] = [];
+      accesosPorOficina[org].push({ usuario, clave });
     });
 
     // 1) Maestro de intervenciones (una fila por intervención)
@@ -1298,82 +1320,134 @@ let modoLoginActual = null; // 'edicion' | 'priorizacion' mientras el modal est�
 function abrirLoginEdicion() {
   modoLoginActual = 'edicion';
   document.getElementById('login-titulo').textContent = 'Modo edición / validación';
-  document.getElementById('login-subtitulo').textContent = 'Busca tu usuario e ingresa la contraseña';
+  document.getElementById('login-subtitulo').textContent = 'Busca tu oficina e ingresa la contraseña';
   document.getElementById('login-oficina-group').style.display = 'block';
-  // limpiar buscador
-  document.getElementById('login-usuario-input').value = '';
+  // Limpiar todo
+  document.getElementById('login-oficina-input').value = '';
   document.getElementById('login-oficina').value = '';
+  document.getElementById('login-usuario-group').style.display = 'none';
+  document.getElementById('login-usuario-input').value = '';
+  document.getElementById('login-usuario-val').value = '';
+  document.getElementById('oficina-dropdown').classList.remove('abierto');
   document.getElementById('usuario-dropdown').classList.remove('abierto');
   prepararLogin('Contraseña de tu usuario');
 }
 
-// ── BUSCADOR DE USUARIO ────────────────────────────────────────────────────────
-let usuarioSeleccionado = ''; // valor interno seleccionado
+// ── BUSCADOR DE OFICINA ────────────────────────────────────────────────────
+function abrirOficinasDropdown() {
+  filtrarOficinas();
+  document.getElementById('oficina-dropdown').classList.add('abierto');
+}
+
+function filtrarOficinas() {
+  const q    = document.getElementById('login-oficina-input').value.trim().toLowerCase();
+  const drop = document.getElementById('oficina-dropdown');
+  drop.classList.add('abierto');
+
+  const oficinas = Object.keys(accesosPorOficina);
+  const vices    = oficinas.filter(o => viceSet.has(o) && o.toLowerCase().includes(q));
+  const organos  = oficinas.filter(o => !viceSet.has(o) && o.toLowerCase().includes(q));
+
+  let html = '';
+  if (vices.length) {
+    html += `<div class="usuario-grupo-label">Viceministerios</div>`;
+    vices.forEach(o => { html += `<div class="usuario-item" data-valor="${esc(o)}" onclick="seleccionarOficina('${esc(o)}')">${esc(o)}</div>`; });
+  }
+  if (vices.length && organos.length) html += `<hr class="usuario-separador">`;
+  if (organos.length) {
+    html += `<div class="usuario-grupo-label">Órganos</div>`;
+    organos.forEach(o => { html += `<div class="usuario-item" data-valor="${esc(o)}" onclick="seleccionarOficina('${esc(o)}')">${esc(o)}</div>`; });
+  }
+  if (!vices.length && !organos.length) {
+    html = `<div style="padding:10px;color:var(--gris-texto);font-size:12px">Sin resultados</div>`;
+  }
+  drop.innerHTML = html;
+}
+
+function seleccionarOficina(oficina) {
+  document.getElementById('login-oficina-input').value = oficina;
+  document.getElementById('login-oficina').value = oficina;
+  document.getElementById('oficina-dropdown').classList.remove('abierto');
+
+  // Mostrar sección usuario y precargar si solo hay uno
+  const usuarios = accesosPorOficina[oficina] || [];
+  const grp = document.getElementById('login-usuario-group');
+  const inp = document.getElementById('login-usuario-input');
+  const hid = document.getElementById('login-usuario-val');
+
+  grp.style.display = 'block';
+  inp.value = '';
+  hid.value = '';
+  inp.removeAttribute('readonly');
+
+  if (usuarios.length === 1) {
+    inp.value = usuarios[0].usuario;
+    hid.value = usuarios[0].usuario;
+    inp.setAttribute('readonly', true);
+    document.getElementById('login-password').focus();
+  } else {
+    renderUsuariosDropdown(usuarios);
+    inp.removeAttribute('readonly');
+    inp.focus();
+  }
+}
+
+function navegarOficinas(e) {
+  const drop  = document.getElementById('oficina-dropdown');
+  const items = [...drop.querySelectorAll('.usuario-item')];
+  if (!items.length) return;
+  const activo = drop.querySelector('.usuario-item.seleccionado');
+  let idx = items.indexOf(activo);
+  if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(idx+1, items.length-1); items[idx].classList.add('seleccionado'); if(activo) activo.classList.remove('seleccionado'); }
+  if (e.key === 'ArrowUp')   { e.preventDefault(); idx = Math.max(idx-1, 0); items[idx].classList.add('seleccionado'); if(activo) activo.classList.remove('seleccionado'); }
+  if (e.key === 'Enter')     { e.preventDefault(); if(activo) seleccionarOficina(activo.dataset.valor); else if(items[0]) seleccionarOficina(items[0].dataset.valor); }
+  if (e.key === 'Escape')    { drop.classList.remove('abierto'); }
+}
+
+// ── BUSCADOR DE USUARIO (dentro de una oficina) ────────────────────────────
+function renderUsuariosDropdown(usuarios) {
+  const drop = document.getElementById('usuario-dropdown');
+  drop.innerHTML = usuarios.map(u =>
+    `<div class="usuario-item" data-valor="${esc(u.usuario)}" onclick="seleccionarUsuario('${esc(u.usuario)}')">${esc(u.usuario)}</div>`
+  ).join('');
+  drop.classList.add('abierto');
+}
 
 function abrirUsuarioDropdown() {
+  const oficina  = document.getElementById('login-oficina').value;
+  const usuarios = accesosPorOficina[oficina] || [];
+  if (usuarios.length <= 1) return;
   filtrarUsuarios();
   document.getElementById('usuario-dropdown').classList.add('abierto');
 }
 
 function filtrarUsuarios() {
-  const q = document.getElementById('login-usuario-input').value.trim().toLowerCase();
-  const drop = document.getElementById('usuario-dropdown');
+  const q       = document.getElementById('login-usuario-input').value.trim().toLowerCase();
+  const oficina = document.getElementById('login-oficina').value;
+  const drop    = document.getElementById('usuario-dropdown');
+  const lista   = (accesosPorOficina[oficina] || []).filter(u => u.usuario.toLowerCase().includes(q));
+  drop.innerHTML = lista.map(u =>
+    `<div class="usuario-item" data-valor="${esc(u.usuario)}" onclick="seleccionarUsuario('${esc(u.usuario)}')">${esc(u.usuario)}</div>`
+  ).join('') || `<div style="padding:10px;color:var(--gris-texto);font-size:12px">Sin resultados</div>`;
   drop.classList.add('abierto');
-
-  // Separar Viceministerios de Órganos
-  const vices   = Object.keys(accesos).filter(o => viceSet.has(o));
-  const organos = Object.keys(accesos).filter(o => !viceSet.has(o));
-
-  const coincide = o => o.toLowerCase().includes(q);
-
-  const vicesFilt   = vices.filter(coincide);
-  const organosFilt = organos.filter(coincide);
-
-  let html = '';
-
-  if (vicesFilt.length) {
-    html += `<div class="usuario-grupo-label">Viceministerios</div>`;
-    vicesFilt.forEach(o => {
-      html += `<div class="usuario-item" data-valor="${esc(o)}" onclick="seleccionarUsuario('${esc(o)}')">${esc(o)}</div>`;
-    });
-  }
-  if (vicesFilt.length && organosFilt.length) {
-    html += `<hr class="usuario-separador">`;
-  }
-  if (organosFilt.length) {
-    html += `<div class="usuario-grupo-label">Órganos</div>`;
-    organosFilt.forEach(o => {
-      html += `<div class="usuario-item" data-valor="${esc(o)}" onclick="seleccionarUsuario('${esc(o)}')">${esc(o)}</div>`;
-    });
-  }
-  if (!vicesFilt.length && !organosFilt.length) {
-    html = `<div style="padding:10px;color:var(--gris-texto);font-size:12px">Sin resultados</div>`;
-  }
-
-  drop.innerHTML = html;
 }
 
 function seleccionarUsuario(valor) {
-  usuarioSeleccionado = valor;
   document.getElementById('login-usuario-input').value = valor;
-  document.getElementById('login-oficina').value = valor;
+  document.getElementById('login-usuario-val').value   = valor;
   document.getElementById('usuario-dropdown').classList.remove('abierto');
-  // resaltar seleccionado
-  document.querySelectorAll('.usuario-item').forEach(el => {
-    el.classList.toggle('seleccionado', el.dataset.valor === valor);
-  });
   document.getElementById('login-password').focus();
 }
 
 function navegarUsuarios(e) {
-  const drop = document.getElementById('usuario-dropdown');
+  const drop  = document.getElementById('usuario-dropdown');
   const items = [...drop.querySelectorAll('.usuario-item')];
   if (!items.length) return;
   const activo = drop.querySelector('.usuario-item.seleccionado');
   let idx = items.indexOf(activo);
-  if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(idx + 1, items.length - 1); items[idx].classList.add('seleccionado'); if (activo) activo.classList.remove('seleccionado'); }
-  if (e.key === 'ArrowUp')   { e.preventDefault(); idx = Math.max(idx - 1, 0); items[idx].classList.add('seleccionado'); if (activo) activo.classList.remove('seleccionado'); }
-  if (e.key === 'Enter')     { e.preventDefault(); if (activo) seleccionarUsuario(activo.dataset.valor); else if (items[0]) seleccionarUsuario(items[0].dataset.valor); }
+  if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(idx+1, items.length-1); items[idx].classList.add('seleccionado'); if(activo) activo.classList.remove('seleccionado'); }
+  if (e.key === 'ArrowUp')   { e.preventDefault(); idx = Math.max(idx-1, 0); items[idx].classList.add('seleccionado'); if(activo) activo.classList.remove('seleccionado'); }
+  if (e.key === 'Enter')     { e.preventDefault(); if(activo) seleccionarUsuario(activo.dataset.valor); else if(items[0]) seleccionarUsuario(items[0].dataset.valor); }
   if (e.key === 'Escape')    { drop.classList.remove('abierto'); }
 }
 
@@ -1427,31 +1501,42 @@ function validarLogin() {
   }
 
   // modo edición/validación: valida usuario + contraseña de la hoja Accesos
-  const oficina = document.getElementById('login-oficina').value;
+  const oficina  = document.getElementById('login-oficina').value;
+  const usuario  = document.getElementById('login-usuario-val').value;
   if (!oficina) {
-    errDiv.textContent = 'Selecciona tu usuario';
-    errDiv.style.display = 'block';
-    return;
+    errDiv.textContent = 'Selecciona tu oficina';
+    errDiv.style.display = 'block'; return;
   }
-  if (accesos[oficina] && pass === accesos[oficina]) {
-    // Si el usuario es un Viceministerio → modo validación; si no → edición
+  if (!usuario) {
+    errDiv.textContent = 'Selecciona tu usuario';
+    errDiv.style.display = 'block'; return;
+  }
+  // Buscar la clave del usuario específico
+  const usuarios = accesosPorOficina[oficina] || [];
+  const match    = usuarios.find(u => u.usuario === usuario);
+  if (match && pass === match.clave) {
+    // El modo depende de si la oficina es Viceministerio
     const modo = viceSet.has(oficina) ? 'validacion' : 'edicion';
-    entrarModo(modo, oficina);
+    // oficinaEdicion = el usuario específico (para registradoPor)
+    // pero el filtro de organo debe seguir siendo la oficina
+    entrarModo(modo, oficina, usuario);
   } else {
     errDiv.textContent = 'Contraseña incorrecta para este usuario';
     errDiv.style.display = 'block';
   }
 }
 
-function entrarModo(modo, oficina) {
+function entrarModo(modo, oficina, usuario) {
   modoApp = modo;
   oficinaEdicion = oficina;
+  usuarioActivo  = usuario || oficina;
   sessionStorage.setItem('hdr_modo', modo);
   sessionStorage.setItem('hdr_oficina', oficina);
+  sessionStorage.setItem('hdr_usuario', usuarioActivo);
   cerrarLogin();
   aplicarModo();
-  aplicarFiltros(); // en edición, filtra a la oficina
-  const toastMsg = modo === 'edicion'     ? `Modo edición: ${oficina}` :
+  aplicarFiltros();
+  const toastMsg = modo === 'edicion'     ? `Modo edición: ${usuarioActivo}` :
                    modo === 'validacion'  ? `Modo validación: ${oficina}` :
                                            'Modo priorización activado';
   mostrarToast(toastMsg, 'exito');
@@ -1477,6 +1562,8 @@ function salirModo() {
   oficinaEdicion = '';
   sessionStorage.removeItem('hdr_modo');
   sessionStorage.removeItem('hdr_oficina');
+  sessionStorage.removeItem('hdr_usuario');
+  usuarioActivo = '';
   aplicarModo();
   aplicarFiltros();
 }
@@ -2187,7 +2274,7 @@ async function cambiarEstadoVal(codigo, sel) {
     estadoVal:     nuevoEstado,
     validado:      esValidado ? 'Sí' : 'No',
     observacion:   (prevInterv[codigo] || {}).observacion || '',
-    registradoPor: oficinaEdicion
+    registradoPor: usuarioActivo || oficinaEdicion
   };
   try {
     const data = await postBackend(payload);
@@ -2241,7 +2328,7 @@ async function guardarObservacion() {
     estadoVal:     estadoVal,
     validado:      estadoVal === 'Validado' ? 'Sí' : 'No',
     observacion:   texto,
-    registradoPor: oficinaEdicion
+    registradoPor: usuarioActivo || oficinaEdicion
   };
   try {
     const data = await postBackend(payload);
@@ -2393,7 +2480,7 @@ async function guardarRegistro() {
     estado:        document.getElementById('m-estado').value.trim(),
     avance:        document.getElementById('m-avance').value.trim(),
     validado:      validado ? 'Sí' : 'No',
-    registradoPor: oficinaEdicion,
+    registradoPor: usuarioActivo || oficinaEdicion,
     hitos:         hitos
   };
 
@@ -2903,8 +2990,13 @@ document.addEventListener('click', e => {
   if (panelP && panelP.classList.contains('abierto') && !panelP.contains(e.target)) {
     panelP.classList.remove('abierto');
   }
+  const dropO = document.getElementById('oficina-dropdown');
+  const wrapO = document.querySelector('.usuario-search-wrap');
+  if (dropO && dropO.classList.contains('abierto') && wrapO && !wrapO.contains(e.target)) {
+    dropO.classList.remove('abierto');
+  }
   const dropU = document.getElementById('usuario-dropdown');
-  const wrapU = document.querySelector('.usuario-search-wrap');
+  const wrapU = document.querySelectorAll('.usuario-search-wrap')[1];
   if (dropU && dropU.classList.contains('abierto') && wrapU && !wrapU.contains(e.target)) {
     dropU.classList.remove('abierto');
   }
