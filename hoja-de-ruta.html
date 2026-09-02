@@ -97,13 +97,16 @@
   /* columna "Responsable" oculta en modo edición y validación (se muestra dentro de intervención) */
   .card.modo-validacion .col-responsable,
   .card.modo-edicion .col-responsable { display: none; }
-  /* filtro "Estado de validación" visible en modo validación y edición */
+  /* filtro "Estado de validación" (div panel) visible en validación y edición */
   .card.modo-validacion .col-val-filtro,
   .card.modo-edicion .col-val-filtro { display: block !important; }
-  /* columna thead/tbody col-val-filtro SOLO en validación */
+  /* columna tabla col-val-filtro: solo en validación */
   .card.modo-validacion thead .col-val-filtro { display: table-cell !important; }
   .card.modo-validacion tbody .col-val-filtro { display: table-cell !important; }
-  /* columna "Estado de validación" solo lectura en modo edición */
+  /* en modo edición: ocultar col-val-filtro en tabla aunque el div sea visible */
+  .card.modo-edicion thead .col-val-filtro { display: none !important; }
+  .card.modo-edicion tbody .col-val-filtro { display: none !important; }
+  /* columna col-val-edicion: solo en edición */
   .card.modo-edicion thead .col-val-edicion { display: table-cell !important; }
   .card.modo-edicion tbody .col-val-edicion { display: table-cell !important; }
 
