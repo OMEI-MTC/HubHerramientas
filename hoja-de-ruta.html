@@ -1223,11 +1223,14 @@ async function cargarDatos() {
     });
 
     // 2) Maestro de hitos (una fila por hito) — se cruza por Código
-    // cols: Código, Intervención Estratégica, Departamento, CODHITOS, Hito(s) clave(s)
+    // cols: Código, Intervención Estratégica, Departamento, CODHITOS, Hito(s) clave(s), Vigente
     parseTSV(tsvMaestroHitos).forEach(f => {
       const cod = f['Código'];
       if (!cod || !f['CODHITOS']) return;
       if (!mapa[cod]) return; // hito sin intervención en el maestro: se ignora
+      // Solo incluir hitos vigentes (columna Vigente = 'SI'; si no existe la columna se incluye por defecto)
+      const vigente = (f['Vigente'] || '').trim().toUpperCase();
+      if (vigente === 'NO') return;
       mapa[cod].hitos.push({
         codhito: f['CODHITOS'],
         nombre:  f['Hito(s) clave(s)'] || '',
