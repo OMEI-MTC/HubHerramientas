@@ -792,6 +792,7 @@
               <option value="Cumplido">✅ Cumplido</option>
               <option value="En proceso">🔄 En proceso</option>
               <option value="Reprogramado">📅 Reprogramado</option>
+              <option value="No iniciado">⏸ No iniciado</option>
               <option value="__sin__">Sin estado</option>
             </select>
           </div>
@@ -2165,7 +2166,8 @@ function chipEstadoCumpl(estado) {
   const mapa = {
     'Cumplido':     { ico: '✅', bg: '#E3F5EC', color: '#1D9E75' },
     'En proceso':   { ico: '🔄', bg: '#E8F0FB', color: '#0055A5' },
-    'Reprogramado': { ico: '📅', bg: '#FDF0E3', color: '#B5651D' }
+    'Reprogramado': { ico: '📅', bg: '#FDF0E3', color: '#B5651D' },
+    'No iniciado':  { ico: '⏸', bg: '#EFF6FF', color: '#3B82F6' }
   };
   const e = mapa[estado];
   if (!e) return '<span style="color:var(--gris-texto);font-size:11px">—</span>';
@@ -2234,9 +2236,10 @@ function abrirModal(codigo) {
     ).join('');
     const opcionesEstado = [
       { v: '', label: '—' },
-      { v: 'Cumplido', label: '✅ Cumplido' },
-      { v: 'En proceso', label: '🔄 En proceso' },
-      { v: 'Reprogramado', label: '📅 Reprogramado' }
+      { v: 'Cumplido',    label: '✅ Cumplido' },
+      { v: 'En proceso',  label: '🔄 En proceso' },
+      { v: 'Reprogramado',label: '📅 Reprogramado' },
+      { v: 'No iniciado', label: '⏸ No iniciado' }
     ].map(e =>
       `<option value="${e.v}" ${estadoSel === e.v ? 'selected' : ''}>${e.label}</option>`
     ).join('');
@@ -2554,7 +2557,7 @@ function calcularResumen() {
         equipo: clave, vice: i.vice || '', director: i.director || '',
         resumenGrupo: i.resumenGrupo || '(Sin grupo)',
         ids: new Set(), totalHitos: 0,
-        cumplido: 0, enProceso: 0, reprogramado: 0, sinEstado: 0,
+        cumplido: 0, enProceso: 0, reprogramado: 0, noIniciado: 0, sinEstado: 0,
         ordenMaestro: idx
       });
     }
@@ -2567,6 +2570,7 @@ function calcularResumen() {
       if      (est === 'Cumplido')     g.cumplido++;
       else if (est === 'En proceso')   g.enProceso++;
       else if (est === 'Reprogramado') g.reprogramado++;
+      else if (est === 'No iniciado')  g.noIniciado++;
       else                             g.sinEstado++;
     });
   });
@@ -2576,7 +2580,7 @@ function calcularResumen() {
     resumenGrupo: g.resumenGrupo,
     total: g.ids.size, totalHitos: g.totalHitos,
     cumplido: g.cumplido, enProceso: g.enProceso,
-    reprogramado: g.reprogramado, sinEstado: g.sinEstado,
+    reprogramado: g.reprogramado, noIniciado: g.noIniciado, sinEstado: g.sinEstado,
     ordenMaestro: g.ordenMaestro
   }));
 
@@ -2597,13 +2601,14 @@ function abrirResumen() {
   const datos = calcularResumen();
   const totalGeneral = datos.reduce((s, r) => s + r.total, 0);
   const totales = {
-    hitos: 0, cumplido: 0, enProceso: 0, reprogramado: 0, sinEstado: 0
+    hitos: 0, cumplido: 0, enProceso: 0, reprogramado: 0, noIniciado: 0, sinEstado: 0
   };
   datos.forEach(r => {
     totales.hitos       += r.totalHitos;
     totales.cumplido    += r.cumplido;
     totales.enProceso   += r.enProceso;
     totales.reprogramado+= r.reprogramado;
+    totales.noIniciado  += r.noIniciado;
     totales.sinEstado   += r.sinEstado;
   });
 
@@ -2612,6 +2617,7 @@ function abrirResumen() {
     cumplido:    { bg: '#DCFCE7', color: '#166534', label: 'Cumplido' },
     enProceso:   { bg: '#DBEAFE', color: '#1E40AF', label: 'En proceso' },
     reprogramado:{ bg: '#FEF9C3', color: '#854D0E', label: 'Reprogramado' },
+    noIniciado:  { bg: '#EFF6FF', color: '#1D4ED8', label: 'No iniciado' },
     sinEstado:   { bg: '#F3F4F6', color: '#6B7280', label: 'Sin estado' }
   };
 
@@ -2620,7 +2626,8 @@ function abrirResumen() {
     ? `<span style="display:inline-block;padding:2px 8px;border-radius:12px;background:${COL[tipo].bg};color:${COL[tipo].color};font-size:12px;font-weight:700">${n}</span>`
     : `<span style="color:#D1D5DB;font-size:12px">—</span>`;
 
-  const haySinEstado = datos.some(r => r.sinEstado > 0);
+  const hayNoIniciado = datos.some(r => r.noIniciado > 0);
+  const haySinEstado  = datos.some(r => r.sinEstado  > 0);
 
   const subtotalHtml = (grupo, d) => `
     <tr class="fila-subtotal">
@@ -2630,7 +2637,8 @@ function abrirResumen() {
       <td style="text-align:center">${badge(d.cumplido,'cumplido')}</td>
       <td style="text-align:center">${badge(d.enProceso,'enProceso')}</td>
       <td style="text-align:center">${badge(d.reprogramado,'reprogramado')}</td>
-      ${haySinEstado ? `<td style="text-align:center">${badge(d.sinEstado,'sinEstado')}</td>` : ''}
+      ${hayNoIniciado ? `<td style="text-align:center">${badge(d.noIniciado,'noIniciado')}</td>` : ''}
+      ${haySinEstado  ? `<td style="text-align:center">${badge(d.sinEstado,'sinEstado')}</td>`  : ''}
     </tr>`;
 
   let filas = '';
@@ -2640,12 +2648,13 @@ function abrirResumen() {
   datos.forEach((r, idx) => {
     numero++;
     const g = r.resumenGrupo;
-    if (!subtotalAcum[g]) subtotalAcum[g] = { total:0, hitos:0, cumplido:0, enProceso:0, reprogramado:0, sinEstado:0 };
+    if (!subtotalAcum[g]) subtotalAcum[g] = { total:0, hitos:0, cumplido:0, enProceso:0, reprogramado:0, noIniciado:0, sinEstado:0 };
     subtotalAcum[g].total       += r.total;
     subtotalAcum[g].hitos       += r.totalHitos;
     subtotalAcum[g].cumplido    += r.cumplido;
     subtotalAcum[g].enProceso   += r.enProceso;
     subtotalAcum[g].reprogramado+= r.reprogramado;
+    subtotalAcum[g].noIniciado  += r.noIniciado;
     subtotalAcum[g].sinEstado   += r.sinEstado;
 
     filas += `
@@ -2657,7 +2666,8 @@ function abrirResumen() {
       <td style="text-align:center">${badge(r.cumplido,'cumplido')}</td>
       <td style="text-align:center">${badge(r.enProceso,'enProceso')}</td>
       <td style="text-align:center">${badge(r.reprogramado,'reprogramado')}</td>
-      ${haySinEstado ? `<td style="text-align:center">${badge(r.sinEstado,'sinEstado')}</td>` : ''}
+      ${hayNoIniciado ? `<td style="text-align:center">${badge(r.noIniciado,'noIniciado')}</td>` : ''}
+      ${haySinEstado  ? `<td style="text-align:center">${badge(r.sinEstado,'sinEstado')}</td>`  : ''}
     </tr>`;
 
     const grupoSiguiente = datos[idx + 1] ? datos[idx + 1].resumenGrupo : null;
@@ -2677,7 +2687,8 @@ function abrirResumen() {
           <th style="width:10%;text-align:center;background:#DCFCE7;color:#166534">Cumplido</th>
           <th style="width:10%;text-align:center;background:#DBEAFE;color:#1E40AF">En proceso</th>
           <th style="width:10%;text-align:center;background:#FEF9C3;color:#854D0E">Reprogramado</th>
-          ${haySinEstado ? `<th style="width:10%;text-align:center;background:#F3F4F6;color:#6B7280">Sin estado</th>` : ''}
+          ${hayNoIniciado ? `<th style="width:10%;text-align:center;background:#EFF6FF;color:#1D4ED8">No iniciado</th>` : ''}
+          ${haySinEstado  ? `<th style="width:10%;text-align:center;background:#F3F4F6;color:#6B7280">Sin estado</th>`  : ''}
         </tr>
       </thead>
       <tbody>${filas}</tbody>
@@ -2689,7 +2700,8 @@ function abrirResumen() {
           <td style="text-align:center;font-weight:700;background:#DCFCE7;color:#166534">${totales.cumplido}</td>
           <td style="text-align:center;font-weight:700;background:#DBEAFE;color:#1E40AF">${totales.enProceso}</td>
           <td style="text-align:center;font-weight:700;background:#FEF9C3;color:#854D0E">${totales.reprogramado}</td>
-          ${haySinEstado ? `<td style="text-align:center;font-weight:700;background:#F3F4F6;color:#6B7280">${totales.sinEstado}</td>` : ''}
+          ${hayNoIniciado ? `<td style="text-align:center;font-weight:700;background:#EFF6FF;color:#1D4ED8">${totales.noIniciado}</td>` : ''}
+          ${haySinEstado  ? `<td style="text-align:center;font-weight:700;background:#F3F4F6;color:#6B7280">${totales.sinEstado}</td>`  : ''}
         </tr>
       </tfoot>
     </table>`;
@@ -2709,10 +2721,10 @@ function cerrarResumen() {
 function descargarResumen() {
   const datos = calcularResumen();
   const totalGeneral = datos.reduce((s, r) => s + r.total, 0);
-  const totales = { hitos:0, cumplido:0, enProceso:0, reprogramado:0, sinEstado:0 };
-  datos.forEach(r => { totales.hitos+=r.totalHitos; totales.cumplido+=r.cumplido; totales.enProceso+=r.enProceso; totales.reprogramado+=r.reprogramado; totales.sinEstado+=r.sinEstado; });
+  const totales = { hitos:0, cumplido:0, enProceso:0, reprogramado:0, noIniciado:0, sinEstado:0 };
+  datos.forEach(r => { totales.hitos+=r.totalHitos; totales.cumplido+=r.cumplido; totales.enProceso+=r.enProceso; totales.reprogramado+=r.reprogramado; totales.noIniciado+=r.noIniciado; totales.sinEstado+=r.sinEstado; });
 
-  const rows = [['N°', 'Unidad / Oficina Responsable', 'Registros', 'Total Hitos', 'Cumplido', 'En proceso', 'Reprogramado', 'Sin estado']];
+  const rows = [['N°', 'Unidad / Oficina Responsable', 'Registros', 'Total Hitos', 'Cumplido', 'En proceso', 'Reprogramado', 'No iniciado', 'Sin estado']];
   const filasSubtotal = [];
   let numero = 0;
   const subtotalAcum = {};
@@ -2720,30 +2732,29 @@ function descargarResumen() {
   datos.forEach((r, idx) => {
     numero++;
     const g = r.resumenGrupo;
-    if (!subtotalAcum[g]) subtotalAcum[g] = {total:0,hitos:0,cumplido:0,enProceso:0,reprogramado:0,sinEstado:0};
+    if (!subtotalAcum[g]) subtotalAcum[g] = {total:0,hitos:0,cumplido:0,enProceso:0,reprogramado:0,noIniciado:0,sinEstado:0};
     subtotalAcum[g].total+=r.total; subtotalAcum[g].hitos+=r.totalHitos;
     subtotalAcum[g].cumplido+=r.cumplido; subtotalAcum[g].enProceso+=r.enProceso;
-    subtotalAcum[g].reprogramado+=r.reprogramado; subtotalAcum[g].sinEstado+=r.sinEstado;
+    subtotalAcum[g].reprogramado+=r.reprogramado; subtotalAcum[g].noIniciado+=r.noIniciado; subtotalAcum[g].sinEstado+=r.sinEstado;
 
-    rows.push([numero, r.equipo, r.total, r.totalHitos, r.cumplido, r.enProceso, r.reprogramado, r.sinEstado]);
+    rows.push([numero, r.equipo, r.total, r.totalHitos, r.cumplido, r.enProceso, r.reprogramado, r.noIniciado, r.sinEstado]);
 
     const grupoSiguiente = datos[idx + 1] ? datos[idx + 1].resumenGrupo : null;
     if (g !== grupoSiguiente) {
       const d = subtotalAcum[g];
-      rows.push(['', 'TOTAL ' + g, d.total, d.hitos, d.cumplido, d.enProceso, d.reprogramado, d.sinEstado]);
+      rows.push(['', 'TOTAL ' + g, d.total, d.hitos, d.cumplido, d.enProceso, d.reprogramado, d.noIniciado, d.sinEstado]);
       filasSubtotal.push(rows.length - 1);
     }
   });
-  rows.push(['', 'TOTAL GENERAL', totalGeneral, totales.hitos, totales.cumplido, totales.enProceso, totales.reprogramado, totales.sinEstado]);
+  rows.push(['', 'TOTAL GENERAL', totalGeneral, totales.hitos, totales.cumplido, totales.enProceso, totales.reprogramado, totales.noIniciado, totales.sinEstado]);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  const NCOLS = 8;
-  // Encabezado
+  const NCOLS = 9;
   for (let c = 0; c < NCOLS; c++) {
     const ref = XLSX.utils.encode_cell({ r: 0, c });
     if (!ws[ref]) continue;
-    const colores = [null, null, null, null, '166534', '1E40AF', '854D0E', '6B7280'];
-    const bgCols  = [null, null, null, null, 'DCFCE7', 'DBEAFE', 'FEF9C3', 'F3F4F6'];
+    const colores = [null, null, null, null, '166534', '1E40AF', '854D0E', '1D4ED8', '6B7280'];
+    const bgCols  = [null, null, null, null, 'DCFCE7', 'DBEAFE', 'FEF9C3', 'EFF6FF', 'F3F4F6'];
     ws[ref].s = {
       fill: { patternType: 'solid', fgColor: { rgb: bgCols[c] || '003F7D' } },
       font: { bold: true, color: { rgb: colores[c] || 'FFFFFF' }, sz: 11 },
@@ -2763,7 +2774,7 @@ function descargarResumen() {
     const ref = XLSX.utils.encode_cell({ r: filaTotal, c });
     if (ws[ref]) ws[ref].s = { fill: { patternType: 'solid', fgColor: { rgb: 'EEF4FF' } }, font: { bold: true, sz: 11 } };
   }
-  ws['!cols'] = [6, 40, 12, 12, 12, 12, 14, 12].map(w => ({ wch: w }));
+  ws['!cols'] = [6, 40, 12, 12, 12, 12, 14, 12, 12].map(w => ({ wch: w }));
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Resumen');
