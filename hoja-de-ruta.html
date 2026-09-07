@@ -1200,11 +1200,14 @@ async function cargarDatos() {
     // 1) Maestro de intervenciones (una fila por intervención)
     // cols: Código, Grupo, Viceministerios, Órgano, Ejes prioritarios de la gestión,
     //       Línea de interés, Intervención Estratégica, Detalle de Intervención,
-    //       Relevancia sectorial, Área de Influencia
+    //       Relevancia sectorial, Área de Influencia, Vigente
     const mapa = {};
     parseTSV(tsvMaestroInterv).forEach(f => {
       const cod = f['Código'];
       if (!cod) return;
+      // Si la columna Vigente existe y dice NO, se excluye la intervención
+      const vigente = (f['Vigente'] || '').trim().toUpperCase();
+      if (vigente === 'NO') return;
       mapa[cod] = {
         codigo:     cod,
         id:         f['ID'] || cod,   // agrupa variantes (DGPRTM-28-1/-2/-3 → DGPRTM-28)
