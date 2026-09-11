@@ -1197,46 +1197,46 @@ async function cargarDatos() {
       accesosPorOficina[org].push({ usuario, clave });
     });
 
-    // 1) Maestro de intervenciones (una fila por intervención)
-    // cols: Código, Grupo, Viceministerios, Órgano, Ejes prioritarios de la gestión,
-    //       Línea de interés, Intervención Estratégica, Detalle de Intervención,
-    //       Relevancia sectorial, Área de Influencia, Vigente
+    // 1) Maestro de intervenciones
+    // cols: COD INTERNO, Grupo, Órgano, Unidad, Intervención Estratégica, Detalle de Intervención,
+    //       Relevancia sectorial, Área de Influencia, CUI, EQUIPO, DIRECTOR(A),
+    //       Priorizadas, Tipo, Periodicidad, Responsable OGAME, Vigente
     const mapa = {};
     parseTSV(tsvMaestroInterv).forEach(f => {
-      const cod = f['Código'];
+      const cod = f['COD INTERNO'];
       if (!cod) return;
       // Si la columna Vigente existe y dice NO, se excluye la intervención
       const vigente = (f['Vigente'] || '').trim().toUpperCase();
       if (vigente === 'NO') return;
       mapa[cod] = {
-        codigo:     cod,
-        id:         f['ID'] || cod,   // agrupa variantes (DGPRTM-28-1/-2/-3 → DGPRTM-28)
-        grupo:      f['Grupo'] || '',
-        vice:       f['Viceministerios'] || '',
-        organo:     f['Órgano'] || '',
-        eje:        f['Ejes prioritarios de la gestión'] || '',
-        linea:      f['Línea de interés'] || '',
-        nombre:     f['Intervención Estratégica'] || '',
-        detalle:    f['Detalle de Intervención'] || '',
-        relevancia: f['Relevancia sectorial'] || '',
-        area:       f['Área de Influencia'] || '',
-        equipo:     f['EQUIPO'] || '',
-        director:   f['DIRECTOR(A)'] || '',
-        resumenGrupo: f['RESUMEN'] || '',
-        cui:        f['CUI'] || '',
-        priorizadas: (f['Priorizadas'] || f['Discurso'] || '').split(';').map(s => s.trim()).filter(Boolean),
-        tipo:       f['Tipo'] || 'Intervenciones',
-        hitos:      []
+        codigo:          cod,
+        id:              cod,   // agrupación directa por COD INTERNO
+        grupo:           f['Grupo'] || '',
+        vice:            f['Órgano'] || '',       // ex-Viceministerios → ahora Órgano
+        organo:          f['Unidad'] || '',        // ex-Órgano → ahora Unidad
+        nombre:          f['Intervención Estratégica'] || '',
+        detalle:         f['Detalle de Intervención'] || '',
+        relevancia:      f['Relevancia sectorial'] || '',
+        area:            f['Área de Influencia'] || '',
+        equipo:          f['EQUIPO'] || '',
+        director:        f['DIRECTOR(A)'] || '',
+        resumenGrupo:    f['Grupo'] || '',         // agrupación del resumen por Grupo
+        cui:             f['CUI'] || '',
+        priorizadas:     (f['Priorizadas'] || '').split(';').map(s => s.trim()).filter(Boolean),
+        tipo:            f['Tipo'] || 'Intervenciones',
+        periodicidad:    (f['Periodicidad'] || '').trim(),
+        respOgame:       (f['Responsable OGAME'] || '').trim(),
+        hitos:           []
       };
     });
 
-    // 2) Maestro de hitos (una fila por hito) — se cruza por Código
-    // cols: Código, Intervención Estratégica, Departamento, CODHITOS, Hito(s) clave(s), Vigente
+    // 2) Maestro de hitos — se cruza por COD INTERNO
+    // cols: COD INTERNO, Intervención Estratégica, Departamento, CODHITOS, Hito(s) clave(s), Último, Cartera Priorizada, Vigente
     parseTSV(tsvMaestroHitos).forEach(f => {
-      const cod = f['Código'];
+      const cod = f['COD INTERNO'];
       if (!cod || !f['CODHITOS']) return;
-      if (!mapa[cod]) return; // hito sin intervención en el maestro: se ignora
-      // Solo incluir hitos vigentes (columna Vigente = 'SI'; si no existe la columna se incluye por defecto)
+      if (!mapa[cod]) return;
+      // Solo incluir hitos vigentes
       const vigente = (f['Vigente'] || '').trim().toUpperCase();
       if (vigente === 'NO') return;
       mapa[cod].hitos.push({
