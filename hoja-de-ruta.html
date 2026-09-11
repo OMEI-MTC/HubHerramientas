@@ -1269,10 +1269,10 @@ async function cargarDatos() {
     });
 
     // procesar estado actual intervenciones
-    // cols: Fecha de registro, Código, Intervención Estratégica, Estado situacional, Avance, Priorizado
+    // cols: Fecha de registro, COD INTERNO, Intervención Estratégica, Estado situacional, Avance, Priorizado
     estadoInterv = {};
     parseTSV(tsvInterv).forEach(f => {
-      const cod = f['Código'];
+      const cod = f['COD INTERNO'] || f['Código']; // fallback para registros legacy
       if (!cod) return;
       estadoInterv[cod] = {
         fechaReg:   f['Fecha de registro'],
@@ -1303,7 +1303,7 @@ async function cargarDatos() {
     // Guardar datos de Prev en variables globales para usarlos al entrar en modo validación
     prevInterv = {};
     parseTSV(tsvPrevInterv).forEach(f => {
-      const cod = f['Código'];
+      const cod = f['COD INTERNO'] || f['Código'];
       if (!cod) return;
       prevInterv[cod] = {
         fechaReg:        f['Fecha de registro'],
