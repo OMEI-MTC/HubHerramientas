@@ -1952,9 +1952,9 @@ function aplicarFiltros() {
     if (esOgame() && i.respOgame !== usuarioActivo) return false;
     // Filtro de periodicidad (en edición, validación y OGAME)
     if ((esEdicion() || esValidacion()) && periodicidadActiva &&
-        (i.periodicidad || '').trim() !== periodicidadActiva) return false;
+        (i.periodicidad || '').trim().toUpperCase() !== periodicidadActiva.toUpperCase()) return false;
     // OGAME solo ve Semanal
-    if (esOgame() && (i.periodicidad || '').trim() !== 'Semanal') return false;
+    if (esOgame() && (i.periodicidad || '').trim().toUpperCase() !== 'SEMANAL') return false;
     if (vGrupo  && i.grupo !== vGrupo)  return false;
     if (vVice   && i.vice  !== vVice)   return false;
     if (vOrgano && i.organo !== vOrgano) return false;
