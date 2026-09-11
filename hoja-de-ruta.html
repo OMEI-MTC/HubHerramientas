@@ -746,9 +746,13 @@
           <p id="header-contadores" style="font-size:15px;color:var(--texto-2);margin-top:4px">Cargando…</p>
         </div>
         <div style="display:flex;gap:10px;flex-shrink:0" id="botones-modo">
-          <button class="btn-ogame" id="btn-edicion" onclick="abrirLoginEdicion()">
+          <button class="btn-ogame" id="btn-edicion-semanal" onclick="abrirLoginEdicion('Semanal')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Modo edición
+            Edición Semanal
+          </button>
+          <button class="btn-ogame" id="btn-edicion-mensual" onclick="abrirLoginEdicion('Mensual')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edición Mensual
           </button>
           <button class="btn-ogame" id="btn-priorizacion" onclick="abrirLoginPriorizacion()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
@@ -1069,6 +1073,8 @@ let filtradas    = []; // intervenciones después de filtros
 let modoApp = sessionStorage.getItem('hdr_modo') || 'general';
 let oficinaEdicion = sessionStorage.getItem('hdr_oficina') || '';
 let usuarioActivo  = sessionStorage.getItem('hdr_usuario') || '';
+let periodicidadActiva = sessionStorage.getItem('hdr_periodicidad') || ''; // 'Semanal' | 'Mensual' | ''
+let tipoUsuarioActivo  = sessionStorage.getItem('hdr_tipo') || '';         // 'Registrador' | 'Validador' | 'OGAME'
 const PASSWORD_OGAME = 'ogame.2026';
 let accesos = {}; // legado, no se usa directamente
 let accesosPorOficina = {}; // { 'DGPPT': [{usuario:'DGPPT-1', clave:'DGPPT-0401'}, ...] }
@@ -1077,6 +1083,7 @@ let accesosPorOficina = {}; // { 'DGPPT': [{usuario:'DGPPT-1', clave:'DGPPT-0401
 function esPriorizacion() { return modoApp === 'priorizacion'; }
 function esEdicion()      { return modoApp === 'edicion'; }
 function esValidacion()   { return modoApp === 'validacion'; }
+function esOgame()        { return modoApp === 'ogame'; }
 let intervModal  = null; // intervención abierta en modal
 
 // Viceministerios detectados al cargar accesos: { 'VMT': true, 'VMC': true }
@@ -1187,14 +1194,14 @@ async function cargarDatos() {
     accesos = {};
     accesosPorOficina = {};
     parseTSV(tsvAccesos).forEach(f => {
-      const org     = (f['Órgano']    || '').trim();
-      const clave   = (f['Contraseña'] || '').trim();
-      const usuario = (f['Usuario']   || '').trim();
+      const org     = (f['Órgano']         || '').trim();
+      const clave   = (f['Contraseña']     || '').trim();
+      const usuario = (f['Usuario']        || '').trim();
+      const tipo    = (f['Tipo de Usuario']|| '').trim(); // Registrador | Validador | OGAME
       if (!org) return;
-      // legado: para compatibilidad con viceSet (se sobreescribe si hay varios, no importa)
-      accesos[org] = clave;
+      accesos[org] = clave; // legado
       if (!accesosPorOficina[org]) accesosPorOficina[org] = [];
-      accesosPorOficina[org].push({ usuario, clave });
+      accesosPorOficina[org].push({ usuario, clave, tipo });
     });
 
     // 1) Maestro de intervenciones
@@ -1305,6 +1312,7 @@ async function cargarDatos() {
         validado:        (f['Validado'] || '').toLowerCase() === 'sí' || (f['Validado'] || '').toLowerCase() === 'si',
         estadoVal:       f['Estado de Validación'] || 'Pendiente',
         observacion:     f['Observación'] || '',
+        validadoOgame:   (f['Validado OGAME'] || '').toLowerCase() === 'sí' || (f['Validado OGAME'] || '').toLowerCase() === 'si',
         priorizado:      (f['Priorizado'] || '').toLowerCase() === 'sí' || (f['Priorizado'] || '').toLowerCase() === 'si',
         hitosHabilitados:(f['HitosHabilitados'] || '').toLowerCase() !== 'no'
       };
@@ -1336,12 +1344,12 @@ async function cargarDatos() {
 // ── MODOS (edición por oficina / priorización) ──────────────────────────────────
 let modoLoginActual = null; // 'edicion' | 'priorizacion' mientras el modal está abierto
 
-function abrirLoginEdicion() {
+function abrirLoginEdicion(periodicidad) {
   modoLoginActual = 'edicion';
-  document.getElementById('login-titulo').textContent = 'Modo edición / validación';
+  periodicidadActiva = periodicidad || '';
+  document.getElementById('login-titulo').textContent = 'Edición ' + (periodicidad || '');
   document.getElementById('login-subtitulo').textContent = 'Busca tu oficina e ingresa la contraseña';
   document.getElementById('login-oficina-group').style.display = 'block';
-  // Limpiar todo
   document.getElementById('login-oficina-input').value = '';
   document.getElementById('login-oficina').value = '';
   document.getElementById('login-usuario-group').style.display = 'none';
@@ -1534,10 +1542,12 @@ function validarLogin() {
   const usuarios = accesosPorOficina[oficina] || [];
   const match    = usuarios.find(u => u.usuario === usuario);
   if (match && pass === match.clave) {
-    // El modo depende de si la oficina es Viceministerio
-    const modo = viceSet.has(oficina) ? 'validacion' : 'edicion';
-    // oficinaEdicion = el usuario específico (para registradoPor)
-    // pero el filtro de organo debe seguir siendo la oficina
+    const tipo = match.tipo || 'Registrador';
+    let modo;
+    if (tipo === 'Validador') modo = 'validacion';
+    else if (tipo === 'OGAME') modo = 'ogame';
+    else modo = 'edicion';
+    tipoUsuarioActivo = tipo;
     entrarModo(modo, oficina, usuario);
   } else {
     errDiv.textContent = 'Contraseña incorrecta para este usuario';
@@ -1552,12 +1562,16 @@ function entrarModo(modo, oficina, usuario) {
   sessionStorage.setItem('hdr_modo', modo);
   sessionStorage.setItem('hdr_oficina', oficina);
   sessionStorage.setItem('hdr_usuario', usuarioActivo);
+  sessionStorage.setItem('hdr_periodicidad', periodicidadActiva);
+  sessionStorage.setItem('hdr_tipo', tipoUsuarioActivo);
   cerrarLogin();
   aplicarModo();
   aplicarFiltros();
-  const toastMsg = modo === 'edicion'     ? `Modo edición: ${usuarioActivo}` :
-                   modo === 'validacion'  ? `Modo validación: ${oficina}` :
-                                           'Modo priorización activado';
+  const per = periodicidadActiva ? ` · ${periodicidadActiva}` : '';
+  const toastMsg = modo === 'edicion'    ? `Edición${per}: ${usuarioActivo}` :
+                   modo === 'validacion' ? `Validación${per}: ${oficina}` :
+                   modo === 'ogame'      ? `Modo OGAME: ${usuarioActivo}` :
+                                          'Modo priorización activado';
   mostrarToast(toastMsg, 'exito');
 }
 
@@ -1582,7 +1596,11 @@ function salirModo() {
   sessionStorage.removeItem('hdr_modo');
   sessionStorage.removeItem('hdr_oficina');
   sessionStorage.removeItem('hdr_usuario');
+  sessionStorage.removeItem('hdr_periodicidad');
+  sessionStorage.removeItem('hdr_tipo');
   usuarioActivo = '';
+  periodicidadActiva = '';
+  tipoUsuarioActivo = '';
   aplicarModo();
   aplicarFiltros();
 }
@@ -1601,7 +1619,7 @@ function aplicarModo() {
   if (modoApp === 'general') {
     banner.style.display = 'none';
     botones.style.display = 'flex';
-    card.classList.remove('ogame-activa', 'modo-priorizacion', 'modo-validacion', 'modo-edicion');
+    card.classList.remove('ogame-activa', 'modo-priorizacion', 'modo-validacion', 'modo-edicion', 'modo-ogame');
     // liberar el filtro de órgano
     if (selOrgano) { selOrgano.disabled = false; selOrgano.style.opacity = ''; }
   } else {
@@ -1611,10 +1629,14 @@ function aplicarModo() {
     card.classList.toggle('modo-priorizacion', modoApp === 'priorizacion');
     card.classList.toggle('modo-validacion',   modoApp === 'validacion');
     card.classList.toggle('modo-edicion',      modoApp === 'edicion');
+    card.classList.toggle('modo-ogame',        modoApp === 'ogame');
+    const per = periodicidadActiva ? ` · ${periodicidadActiva}` : '';
     bannerTexto.innerHTML = modoApp === 'edicion'
-      ? `<strong>Modo edición — ${esc(oficinaEdicion)}</strong> · editando solo las intervenciones de tu oficina`
+      ? `<strong>Edición${per} — ${esc(usuarioActivo)}</strong> · editando solo las intervenciones de tu oficina`
       : modoApp === 'validacion'
-      ? `<strong>Modo validación — ${esc(oficinaEdicion)}</strong> · revisando y validando registros de tus órganos subordinados`
+      ? `<strong>Validación${per} — ${esc(oficinaEdicion)}</strong> · revisando y validando registros de tus órganos subordinados`
+      : modoApp === 'ogame'
+      ? `<strong>Modo OGAME — ${esc(usuarioActivo)}</strong> · revisando y validando intervenciones semanales asignadas`
       : `<strong>Modo priorización activo</strong> · marca las intervenciones prioritarias`;
     // en edición: fijar el filtro de órgano; en validación: liberar (ve todos sus subordinados)
     if (selOrgano) {
@@ -1924,8 +1946,15 @@ function aplicarFiltros() {
   const orgSubordinados = esValidacion() ? (viceOrganos[oficinaEdicion] || new Set()) : null;
 
   filtradas = intervenciones.filter(i => {
-    if (esEdicion()   && i.organo !== oficinaEdicion) return false;
+    if (esEdicion()    && i.organo !== oficinaEdicion) return false;
     if (esValidacion() && !orgSubordinados.has(i.organo)) return false;
+    // Modo OGAME: ver solo las intervenciones asignadas a este usuario
+    if (esOgame() && i.respOgame !== usuarioActivo) return false;
+    // Filtro de periodicidad (en edición, validación y OGAME)
+    if ((esEdicion() || esValidacion()) && periodicidadActiva &&
+        (i.periodicidad || '').trim() !== periodicidadActiva) return false;
+    // OGAME solo ve Semanal
+    if (esOgame() && (i.periodicidad || '').trim() !== 'Semanal') return false;
     if (vGrupo  && i.grupo !== vGrupo)  return false;
     if (vVice   && i.vice  !== vVice)   return false;
     if (vOrgano && i.organo !== vOrgano) return false;
@@ -2039,7 +2068,7 @@ function renderTabla() {
     const habilHtml = `<button class="toggle-prio ${habil ? 'on' : ''}" onclick="toggleHitosHabilitados('${esc(interv.codigo)}', this)" title="${habil ? 'Hitos habilitados' : 'Hitos bloqueados'}"></button>`;
 
     // El lápiz de edición aparece en modo edición y validación
-    const mostrarLapiz = esEdicion() || esValidacion();
+    const mostrarLapiz = esEdicion() || esValidacion() || esOgame();
 
     const hitosMostrar = hitosVisibles(interv);
     const nHitos = hitosMostrar.length;
@@ -2061,6 +2090,7 @@ function renderTabla() {
     // celda independiente de validación (solo en modo validación)
     const estadoValActual = est.estadoVal || 'Pendiente';
     const obsActual       = est.observacion || '';
+    const validadoOgame   = est.validadoOgame || false;
 
     const colValidacion = esValidacion()
       ? `<td class="col-val-filtro" rowspan="${nHitos}" style="display:none;text-align:center;vertical-align:top;padding:10px 8px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">
@@ -2081,15 +2111,35 @@ function renderTabla() {
         </td>`
       : '';
 
-    const esPendiente = tieneRegistro && estadoValActual !== 'Validado';
+    // celda OGAME: checkbox de validación OGAME (solo en modo ogame)
+    const colOgame = esOgame()
+      ? `<td class="col-val-filtro" rowspan="${nHitos}" style="display:none;text-align:center;vertical-align:top;padding:10px 8px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">
+          ${tieneRegistro
+            ? `<div class="val-selector">
+                 <div style="margin-bottom:6px;font-size:11px;color:var(--gris-texto)">Vice: <strong style="color:${estadoValActual==='Validado'?'var(--verde)':estadoValActual==='Observado'?'var(--rojo)':'#8a6200'}">${estadoValActual==='Validado'?'🟢':estadoValActual==='Observado'?'🔴':'🟡'} ${estadoValActual}</strong></div>
+                 ${obsActual ? `<div class="val-obs-texto" style="margin-bottom:8px">${esc(obsActual)}</div>` : ''}
+                 <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:700;color:${validadoOgame?'var(--verde)':'#8a6200'}">
+                   <input type="checkbox" ${validadoOgame?'checked':''}
+                          onchange="toggleValidacionOgame('${esc(interv.codigo)}', this)"
+                          style="width:15px;height:15px;accent-color:var(--verde);cursor:pointer">
+                   ${validadoOgame ? '✓ OGAME validado' : 'Pendiente OGAME'}
+                 </label>
+               </div>`
+            : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro</span>`}
+        </td>`
+      : '';
+
+    const esPendienteVal  = tieneRegistro && estadoValActual !== 'Validado';
+    const esPendienteOgame= tieneRegistro && !validadoOgame;
+    const esPendiente     = (esValidacion() && esPendienteVal) || (esOgame() && esPendienteOgame);
 
     html += `
-    <tr class="fila-intervencion${esPendiente && esValidacion() ? ' fila-pendiente-val' : ''}">
+    <tr class="fila-intervencion${esPendiente ? ' fila-pendiente-val' : ''}">
       <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;text-align:center;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding-top:12px">
         ${colActualizado}
       </td>
       <td class="col-resalte" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
-        ${(esValidacion() || esEdicion())
+        ${(esValidacion() || esEdicion() || esOgame())
           ? `<div style="font-size:11px;font-weight:700;color:var(--texto);margin-bottom:4px">${esc(interv.organo)}</div>
              <div style="font-weight:700;color:var(--azul);font-size:13px;line-height:1.35">${esc(interv.nombre)}</div>
              ${interv.detalle ? `<div style="margin-top:4px;font-size:11px;color:var(--azul);font-style:italic;line-height:1.4">${esc(interv.detalle)}</div>` : ''}`
@@ -2100,13 +2150,14 @@ function renderTabla() {
         ${interv.relevancia ? `<div style="margin-top:7px;font-size:11px;color:var(--texto-2);display:flex;align-items:flex-start;gap:5px;line-height:1.35">🎯 <span>${esc(interv.relevancia)}</span></div>` : ''}
       </td>
       ${colValidacion}
+      ${colOgame}
       ${esEdicion() ? `<td class="col-val-edicion" rowspan="${nHitos}" style="display:none;vertical-align:top;padding:10px 8px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;text-align:center">
         ${tieneRegistro && est.estadoVal
           ? `<div style="font-size:13px;margin-bottom:6px">${est.estadoVal === 'Validado' ? '🟢' : est.estadoVal === 'Observado' ? '🔴' : '🟡'} <strong>${esc(est.estadoVal)}</strong></div>
              ${est.observacion ? `<div style="font-size:11px;color:#6B7280;font-style:italic;text-align:left;border-left:2px solid #D97706;padding-left:6px;line-height:1.4">${esc(est.observacion)}</div>` : ''}`
           : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin revisión</span>`}
       </td>` : ''}
-      ${(esValidacion() || esEdicion()) ? '' : `<td class="col-responsable" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>`}
+      ${(esValidacion() || esEdicion() || esOgame()) ? '' : `<td class="col-responsable" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>`}
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.area) || "—"}</td>
       <td class="col-prio" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${prioHtml}</td>
       <td class="col-ogame" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${habilHtml}</td>
@@ -2201,7 +2252,8 @@ function abrirModal(codigo) {
   // Seguridad: el modal solo se abre en modo edición (su propio órgano)
   // o en modo validación (órganos subordinados al vice).
   const puedeAbrir = (esEdicion() && intervModal.organo === oficinaEdicion) ||
-                     (esValidacion() && (viceOrganos[oficinaEdicion] || new Set()).has(intervModal.organo));
+                     (esValidacion() && (viceOrganos[oficinaEdicion] || new Set()).has(intervModal.organo)) ||
+                     esOgame();
   if (!puedeAbrir) {
     mostrarToast('No tienes permiso para editar esta intervención', 'error');
     return;
@@ -2378,6 +2430,39 @@ async function guardarObservacion() {
   }
 }
 
+// Validación OGAME directa desde la tabla
+async function toggleValidacionOgame(codigo, chk) {
+  const nuevoValor = chk.checked;
+  chk.disabled = true;
+
+  const payload = {
+    accion:        'validarOgame',
+    codigo:        codigo,
+    validadoOgame: nuevoValor ? 'Sí' : 'No',
+    registradoPor: usuarioActivo || oficinaEdicion
+  };
+
+  try {
+    const data = await postBackend(payload);
+    if (data.ok) {
+      prevInterv[codigo] = prevInterv[codigo] || {};
+      prevInterv[codigo].validadoOgame = nuevoValor;
+      vistaInterv[codigo] = prevInterv[codigo];
+      if (nuevoValor) estadoInterv[codigo] = Object.assign({}, prevInterv[codigo]);
+      renderTabla();
+      mostrarToast(nuevoValor ? 'OGAME validado ✓' : 'Validación OGAME removida', 'exito');
+    } else {
+      chk.checked = !nuevoValor;
+      mostrarToast('Error: ' + (data.mensaje || 'intenta de nuevo'), 'error');
+    }
+  } catch (e) {
+    chk.checked = !nuevoValor;
+    mostrarToast(e.message, 'error');
+  } finally {
+    chk.disabled = false;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const obsOverlay = document.getElementById('obs-overlay');
   if (obsOverlay) obsOverlay.addEventListener('click', e => {
@@ -2499,9 +2584,10 @@ async function guardarRegistro() {
   }
 
   const validado = esValidacion() && document.getElementById('m-validado').checked;
+  const accion   = esOgame() ? 'validarOgame' : 'registrarHojaRuta';
 
   const payload = {
-    accion:        'registrarHojaRuta',
+    accion:        accion,
     timestamp:     new Date().toISOString(),
     codigo:        intervModal.codigo,
     nombre:        intervModal.nombre,
@@ -2509,6 +2595,7 @@ async function guardarRegistro() {
     estado:        document.getElementById('m-estado').value.trim(),
     avance:        document.getElementById('m-avance').value.trim(),
     validado:      validado ? 'Sí' : 'No',
+    validadoOgame: esOgame() && document.getElementById('m-validado')?.checked ? 'Sí' : 'No',
     registradoPor: usuarioActivo || oficinaEdicion,
     hitos:         hitos
   };
