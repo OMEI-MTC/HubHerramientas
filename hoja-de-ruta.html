@@ -788,7 +788,14 @@
             </div>
           </div>
           <div class="filtro-group"><label>Intervención / Política</label><input type="text" id="f-buscar" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
-          <div class="filtro-group" style="margin-bottom:0"><label>CUI</label><input type="text" id="f-cui" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
+          <div class="filtro-group"><label>CUI</label><input type="text" id="f-cui" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
+          <div class="filtro-group" style="margin-bottom:0"><label>Tipo de registro</label>
+            <select id="f-tipo" onchange="aplicarFiltros()">
+              <option value="">Todos</option>
+              <option value="Intervenciones">Intervenciones</option>
+              <option value="Normativa / Política">Políticas</option>
+            </select>
+          </div>
         </div>
 
         <!-- GRUPO 3: OTRAS CATEGORÍAS -->
@@ -805,7 +812,7 @@
               <option value="__sin__">Sin estado</option>
             </select>
           </div>
-          <div class="filtro-group" style="margin-bottom:0"><label>Fecha de cumplimiento</label>
+          <div class="filtro-group"><label>Fecha de cumplimiento</label>
             <div class="meses-dropdown" id="meses-panel">
               <button type="button" class="meses-btn" onclick="abrirMesesDropdown(event)">
                 <span id="meses-btn-label">Todos</span>
@@ -814,11 +821,10 @@
               <div class="meses-lista" id="meses-lista"></div>
             </div>
           </div>
-          <div class="filtro-group" style="margin-bottom:0"><label>Tipo de registro</label>
-            <select id="f-tipo" onchange="aplicarFiltros()">
+          <div class="filtro-group" style="margin-bottom:0"><label>Último hito</label>
+            <select id="f-ultimo-select" onchange="aplicarFiltros()">
               <option value="">Todos</option>
-              <option value="Intervenciones">Intervenciones</option>
-              <option value="Normativa / Política">Políticas</option>
+              <option value="si">Solo el último hito</option>
             </select>
           </div>
           <div class="filtro-group col-val-filtro" style="margin-bottom:0;display:none"><label>Estado de validación</label>
@@ -1716,7 +1722,8 @@ function construirFechasCumplimiento() {
   const base = intervenciones.length
     ? intervenciones.filter(i => pasaFiltrosExcepto(i, '__meses__'))
     : [];
-  const soloUltimo = document.getElementById('f-ultimo')?.checked;
+  const soloUltimo = document.getElementById('f-ultimo')?.checked ||
+                     document.getElementById('f-ultimo-select')?.value === 'si';
   const vHito = document.getElementById('f-hito')?.value.trim().toLowerCase();
   base.forEach(i => {
     var hitosBase = soloUltimo ? i.hitos.filter(h => h.ultimo) : i.hitos;
@@ -1893,7 +1900,8 @@ function hitosVisibles(interv) {
   let lista = interv.hitos;
 
   // solo el hito marcado como último en el maestro
-  const soloUltimo = document.getElementById('f-ultimo')?.checked;
+  const soloUltimo = document.getElementById('f-ultimo')?.checked ||
+                     document.getElementById('f-ultimo-select')?.value === 'si';
   if (soloUltimo) lista = lista.filter(h => h.ultimo);
 
   // búsqueda de texto en el nombre del hito
@@ -1999,7 +2007,7 @@ function aplicarFiltros() {
 }
 
 function limpiarFiltros() {
-  ['f-grupo','f-vice','f-organo','f-buscar','f-area','f-cui','f-estado-cumpl','f-estado-val','f-tipo'].forEach(id => {
+  ['f-grupo','f-vice','f-organo','f-buscar','f-area','f-cui','f-estado-cumpl','f-estado-val','f-tipo','f-ultimo-select'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value = '';
   });
   const fHito = document.getElementById('f-hito'); if(fHito) fHito.value = '';
@@ -2906,7 +2914,8 @@ function resumenFiltrosActivos() {
     const meses = [...mesesSeleccion].map(m => m === '__sinfecha__' ? 'Sin fecha' : m).join(', ');
     partes.push('Fecha de cumplimiento: ' + meses);
   }
-  if (document.getElementById('f-ultimo')?.checked) partes.push('Solo el último hito');
+  if (document.getElementById('f-ultimo')?.checked ||
+      document.getElementById('f-ultimo-select')?.value === 'si') partes.push('Solo el último hito');
   const estadoC = val('f-estado-cumpl');
   if (estadoC) partes.push('Estado de cumplimiento: ' + (estadoC === '__sin__' ? 'Sin estado' : estadoC));
 
