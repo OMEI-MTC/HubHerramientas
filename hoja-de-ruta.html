@@ -2612,22 +2612,33 @@ async function guardarRegistro() {
     const data = await postBackend(payload);
 
     if (data.ok) {
-      // actualizar estado local sin recargar (usa la fecha real del backend)
-      // escribe en la vista activa (Prev si es validación, Estado Actual si es edición)
-      vistaInterv[intervModal.codigo] = {
+      // Actualizar estado local sin recargar
+      const estadoValNuevo = validado ? 'Validado' : (prevInterv[intervModal.codigo]?.estadoVal || 'Pendiente');
+      const nuevoEst = {
         fechaReg:   data.fechaRegistro || fechaDisplay(new Date().toISOString().split('T')[0]),
         estado:     payload.estado,
         avance:     payload.avance,
         priorizado: vistaInterv[intervModal.codigo]?.priorizado || false,
         hitosHabilitados: vistaInterv[intervModal.codigo]?.hitosHabilitados !== false,
-        validado:   validado
+        validado:   validado,
+        estadoVal:  estadoValNuevo,
+        observacion: prevInterv[intervModal.codigo]?.observacion || '',
+        validadoOgame: prevInterv[intervModal.codigo]?.validadoOgame || false
       };
+      // Actualizar tanto vistaInterv como prevInterv para que el puntero no pierda el cambio
+      prevInterv[intervModal.codigo] = nuevoEst;
+      vistaInterv[intervModal.codigo] = nuevoEst;
+      if (validado) estadoInterv[intervModal.codigo] = Object.assign({}, nuevoEst);
+
       hitos.forEach(h => {
-        vistaHitos[h.codhito] = {
-          fechaReg:           vistaInterv[intervModal.codigo].fechaReg,
+        const hitEst = {
+          fechaReg:           nuevoEst.fechaReg,
           fechaCumplimiento:  h.fechaCumplimiento,
           estadoCumplimiento: h.estadoCumplimiento
         };
+        prevHitos[h.codhito]  = hitEst;
+        vistaHitos[h.codhito] = hitEst;
+        if (validado) estadoHitos[h.codhito] = Object.assign({}, hitEst);
       });
 
       cerrarModal();
