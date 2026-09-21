@@ -1990,7 +1990,7 @@ function aplicarFiltros() {
     if (vCui && !(i.cui || '').toLowerCase().includes(vCui)) return false;
     // Filtro Tipo de registro
     const vTipo = document.getElementById('f-tipo')?.value;
-    if (excepto !== 'tipo' && vTipo && (i.tipo || 'Intervenciones') !== vTipo) return false;
+    if (vTipo && (i.tipo || 'Intervenciones') !== vTipo) return false;
     // Filtros de hito (mes, último, y/o texto de hito): la intervención pasa
     // solo si le queda al menos un hito visible
     const filtrandoHitos = mesesSeleccion.size > 0 ||
