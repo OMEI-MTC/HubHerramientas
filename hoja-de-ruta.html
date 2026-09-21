@@ -2020,26 +2020,32 @@ function limpiarFiltros() {
 
 // ── RENDER TABLA ───────────────────────────────────────────────────────────────
 function renderTabla() {
-  // Contadores por tipo (IDs únicos para evitar doble-cuenta de variantes)
-  const idsInterv   = new Set();
-  const idsNormativa = new Set();
+  // Contadores dinámicos por tipo (agrupa todos los valores de i.tipo)
+  const conteosPorTipo = new Map();
   filtradas.forEach(i => {
-    const tipo = (i.tipo || '').trim();
-    if (tipo === 'Normativa / Política') idsNormativa.add(i.id);
-    else idsInterv.add(i.id);
+    const tipo = (i.tipo || 'Intervenciones').trim();
+    if (!conteosPorTipo.has(tipo)) conteosPorTipo.set(tipo, new Set());
+    conteosPorTipo.get(tipo).add(i.id);
   });
   const totalHitos = filtradas.reduce((s, i) => s + hitosVisibles(i).length, 0);
 
-  // Subtítulo dinámico bajo el título principal
-  const partes = [];
-  if (idsInterv.size)    partes.push(`<strong>${idsInterv.size}</strong> intervenciones`);
-  if (idsNormativa.size) partes.push(`<strong>${idsNormativa.size}</strong> políticas`);
+  // Etiquetas amigables para tipos conocidos
+  const labelTipo = tipo => {
+    if (tipo === 'Normativa / Política') return 'políticas';
+    if (tipo === 'Intervenciones') return 'intervenciones';
+    return tipo.toLowerCase();
+  };
+
+  const partes = [...conteosPorTipo.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([tipo, ids]) => `<strong>${ids.size}</strong> ${esc(labelTipo(tipo))}`);
+
   document.getElementById('header-contadores').innerHTML =
     partes.length ? partes.join(' · ') : 'Sin resultados';
 
-  // Barra inferior (hitos)
+  const totalRegistros = [...conteosPorTipo.values()].reduce((s, ids) => s + ids.size, 0);
   document.getElementById('resumen-info').innerHTML =
-    `<strong>${idsInterv.size + idsNormativa.size}</strong> registros &mdash; <strong>${totalHitos}</strong> hitos`;
+    `<strong>${totalRegistros}</strong> registros &mdash; <strong>${totalHitos}</strong> hitos`;
 
   // Sin paginación: se muestran todas las intervenciones filtradas
   const pagina = filtradas;
