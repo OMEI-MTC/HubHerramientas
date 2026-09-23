@@ -145,7 +145,12 @@
       <div class="filtros-wrap">
         <div class="fpanel fp-resp">
           <div class="fpanel-tit">Responsables</div>
+          <div class="field"><label class="lbl" for="fVicem">Viceministerio</label>
+            <select id="fVicem" onchange="onFiltro()"><option value="">Todos</option></select></div>
           <div class="field"><label class="lbl">Entidad reportante</label><div class="ms" id="ms-entidad"></div></div>
+          <div class="field"><label class="lbl">Área de influencia</label><div class="ms" id="ms-depto"></div></div>
+          <div class="field"><label class="lbl" for="fTipo">Tipo de infraestructura</label>
+            <select id="fTipo" onchange="onFiltro()"><option value="">Todos</option></select></div>
         </div>
 
         <div class="fpanel fp-interv">
@@ -156,17 +161,16 @@
             <input type="text" id="fCodigo" list="fCodigoList" placeholder="Escribe para buscar…" autocomplete="off" oninput="onFiltro()"><datalist id="fCodigoList"></datalist></div>
           <div class="field"><label class="lbl" for="fProySer">Proyecto / Servicio</label>
             <select id="fProySer" onchange="onFiltro()"><option value="">Todos</option></select></div>
-          <div class="field"><label class="lbl" for="fFinan">Financiamiento 2026</label>
-            <select id="fFinan" onchange="onFiltro()"><option value="">Todos</option></select></div>
+          <div class="field"><label class="lbl" for="fPrio">Cartera Priorizada 2026-2027</label>
+            <select id="fPrio" onchange="onFiltro()"><option value="">Todos</option></select></div>
         </div>
 
         <div class="fpanel fp-otras">
           <div class="fpanel-tit">Otras categorías</div>
-          <div class="field"><label class="lbl">Área de influencia</label><div class="ms" id="ms-depto"></div></div>
-          <div class="field"><label class="lbl" for="fTipo">Tipo de infraestructura</label>
-            <select id="fTipo" onchange="onFiltro()"><option value="">Todos</option></select></div>
           <div class="field"><label class="lbl">Modalidad de ejecución</label><div class="ms" id="ms-modalidad"></div></div>
           <div class="field"><label class="lbl">Fase</label><div class="ms" id="ms-fase"></div></div>
+          <div class="field"><label class="lbl" for="fFinan">Financiamiento 2026</label>
+            <select id="fFinan" onchange="onFiltro()"><option value="">Todos</option></select></div>
         </div>
 
         <div class="fpanel fp-acc">
@@ -253,6 +257,8 @@ const CORS_PROXIES = [
 // Si se RENOMBRA, basta con actualizar el texto aquí.
 const COLS = {
   corte:      'Corte',
+  vicem:      'Viceministerio',
+  prio:       'PRIORIZADOS',
   codInterno: 'COD INTERNO',
   nombre:     'Nombre de la intervención',
   area:       'Área de influencia',
@@ -355,6 +361,8 @@ function parseData(txt){
     const areaRaw=norm(get(c,'area'));
     DATA.push({
       corte, codInterno:cod, nombre,
+      vicem: norm(get(c,'vicem')).toUpperCase(),
+      prio: norm(get(c,'prio')).toUpperCase().replace('SÍ','SI'),
       area: areaRaw,
       deptos: partirDeptos(areaRaw),
       tipoCodigo: norm(get(c,'tipoCodigo')),
@@ -429,7 +437,11 @@ function filtrar(excluir){
   const fProySer=document.getElementById('fProySer').value;
   const fFinan=document.getElementById('fFinan').value;
   const fTipo=document.getElementById('fTipo').value;
+  const fVicem=document.getElementById('fVicem').value;
+  const fPrio=document.getElementById('fPrio').value;
   return DATA.filter(r=>{
+    if(excluir!=='vicem'   && fVicem && r.vicem!==fVicem) return false;
+    if(excluir!=='prio'    && fPrio && r.prio!==fPrio) return false;
     if(excluir!=='nombre'  && fNombre && !normClave(r.nombre).includes(fNombre)) return false;
     if(excluir!=='codigo'  && fCodigo && !normClave(r.codigo).includes(fCodigo)) return false;
     if(excluir!=='proySer' && fProySer && r.proySer!==fProySer) return false;
@@ -447,6 +459,8 @@ function recalcOpciones(){
   poblarSelect('fProySer', uniqSort(filtrar('proySer').map(r=>r.proySer)));
   poblarSelect('fFinan',   uniqSort(filtrar('finan').map(r=>r.finan)));
   poblarSelect('fTipo',    uniqSort(filtrar('tipo').map(r=>r.tipoInfra)));
+  poblarSelect('fVicem',   uniqSort(filtrar('vicem').map(r=>r.vicem)));
+  poblarSelect('fPrio',    uniqSort(filtrar('prio').map(r=>r.prio)));
   poblarDatalist('fNombreList', uniqSort(filtrar('nombre').map(r=>r.nombre)));
   poblarDatalist('fCodigoList', uniqSort(filtrar('codigo').map(r=>r.codigo)));
   for(const k of Object.keys(MS)) renderMultiLista(k, uniqSort(filtrar(k).flatMap(MS[k].obtener)));
@@ -503,7 +517,7 @@ document.addEventListener('click', e=>{
 function onFiltro(){ recalcOpciones(); render(filtrar()); }
 
 function limpiarFiltros(){
-  ['fNombre','fCodigo','fProySer','fFinan','fTipo'].forEach(id=>document.getElementById(id).value='');
+  ['fVicem','fNombre','fCodigo','fProySer','fPrio','fFinan','fTipo'].forEach(id=>document.getElementById(id).value='');
   Object.values(MS).forEach(cfg=>cfg.sel.clear());
   onFiltro();
 }
@@ -573,10 +587,12 @@ function abrirResumen(){
 
 function resumenFiltros(){
   const p=[];
+  const vm=document.getElementById('fVicem').value; if(vm) p.push('Viceministerio: '+vm);
   if(MS.entidad.sel.size)   p.push('Entidad: '+[...MS.entidad.sel].join(', '));
   const n=document.getElementById('fNombre').value.trim(); if(n) p.push('Intervención: "'+n+'"');
   const c=document.getElementById('fCodigo').value.trim(); if(c) p.push('Código: '+c);
   const ps=document.getElementById('fProySer').value; if(ps) p.push('Tipo: '+ps);
+  const pr=document.getElementById('fPrio').value; if(pr) p.push('Cartera Priorizada 2026-2027: '+pr);
   const f=document.getElementById('fFinan').value; if(f) p.push('Financ. 2026: '+f);
   if(MS.depto.sel.size)     p.push('Área: '+[...MS.depto.sel].join(', '));
   const t=document.getElementById('fTipo').value; if(t) p.push('Infraestructura: '+t);
@@ -590,18 +606,18 @@ function exportarXLSX(){
   if(typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
   const filas=filtrar();
   if(!filas.length){ alert('No hay intervenciones para exportar con los filtros actuales.'); return; }
-  const headers=['Corte','COD INTERNO','Nombre de la intervención','Área de influencia','Tipo de Código','Código','Proyecto / Servicio','Tipo de Infraestructura','Entidad Reportante','Tipo de Órgano ejecutor','Monto de la intervención S/','Beneficiarios','Modalidad de ejecución','Fase','Financiamiento 2026','Estado Situacional'];
+  const headers=['Corte','Viceministerio','Priorizados','COD INTERNO','Nombre de la intervención','Área de influencia','Tipo de Código','Código','Proyecto / Servicio','Tipo de Infraestructura','Entidad Reportante','Tipo de Órgano ejecutor','Monto de la intervención S/','Beneficiarios','Modalidad de ejecución','Fase','Financiamiento 2026','Estado Situacional'];
   const nc=headers.length;
   const rows=[
     ['Intervenciones MTC al '+(ULTIMO_CORTE||'—')].concat(Array(nc-1).fill('')),
     [resumenFiltros()].concat(Array(nc-1).fill('')),
     headers
   ];
-  filas.forEach(r=>rows.push([r.corte,r.codInterno,r.nombre,r.area,r.tipoCodigo,r.codigo,r.proySer,r.tipoInfra,r.entidad,r.tipoOrgano,
+  filas.forEach(r=>rows.push([r.corte,r.vicem,r.prio,r.codInterno,r.nombre,r.area,r.tipoCodigo,r.codigo,r.proySer,r.tipoInfra,r.entidad,r.tipoOrgano,
     isNaN(r.monto)?'':r.monto, isNaN(r.benef)?'':r.benef, r.modalidad,r.fase,r.finan,r.situacional]));
   const ws=XLSX.utils.aoa_to_sheet(rows);
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:nc-1}},{s:{r:1,c:0},e:{r:1,c:nc-1}}];
-  ws['!cols']=[12,14,50,20,10,12,12,16,12,12,16,13,20,24,12,70].map(w=>({wch:w}));
+  ws['!cols']=[12,12,11,14,50,20,10,12,12,16,12,12,16,13,20,24,12,70].map(w=>({wch:w}));
   ws['A1'].s={ font:{bold:true,color:{rgb:'C8102E'},sz:13} };
   ws['A2'].s={ font:{italic:true,color:{rgb:'444444'},sz:9}, alignment:{wrapText:true} };
   const estHead={ font:{bold:true,color:{rgb:'FFFFFF'},sz:10}, fill:{fgColor:{rgb:'0055A5'}}, alignment:{horizontal:'center',vertical:'center',wrapText:true} };
@@ -609,7 +625,7 @@ function exportarXLSX(){
   const estNum={ font:{sz:10}, alignment:{vertical:'top'}, numFmt:'#,##0' };
   for(let c=0;c<nc;c++){ const ref=XLSX.utils.encode_cell({r:2,c}); if(ws[ref]) ws[ref].s=estHead; }
   for(let r=3;r<rows.length;r++) for(let c=0;c<nc;c++){
-    const ref=XLSX.utils.encode_cell({r,c}); if(ws[ref]) ws[ref].s=(c===10||c===11)?estNum:estCel;
+    const ref=XLSX.utils.encode_cell({r,c}); if(ws[ref]) ws[ref].s=(c===12||c===13)?estNum:estCel;
   }
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Intervenciones');
