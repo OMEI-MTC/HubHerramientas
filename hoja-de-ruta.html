@@ -771,7 +771,15 @@
           <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#0055A5; margin-bottom:12px;">Responsables</div>
           <div class="filtro-group"><label>Grupo</label><select id="f-grupo" onchange="aplicarFiltros()"><option value="">Todos</option></select></div>
           <div class="filtro-group"><label>Órgano</label><select id="f-vice" onchange="aplicarFiltros()"><option value="">Todos</option></select></div>
-          <div class="filtro-group" style="margin-bottom:0"><label>Unidad / Oficina Responsable</label><select id="f-organo" onchange="aplicarFiltros()"><option value="">Todos</option></select></div>
+          <div class="filtro-group" style="margin-bottom:0"><label>Unidad / Oficina Responsable</label>
+            <div class="meses-dropdown" id="organo-panel">
+              <button type="button" class="meses-btn" onclick="abrirOrganoDropdown(event)">
+                <span id="organo-btn-label">Todos</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="meses-lista" id="organo-lista"></div>
+            </div>
+          </div>
         </div>
 
         <!-- GRUPO 2: INTERVENCIONES -->
@@ -801,14 +809,13 @@
           <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#1D9E75; margin-bottom:12px;">Otras categorías</div>
           <div class="filtro-group"><label>Área de influencia</label><input type="text" id="f-area" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
           <div class="filtro-group"><label>Estado de cumplimiento</label>
-            <select id="f-estado-cumpl" onchange="aplicarFiltros()">
-              <option value="">Todos</option>
-              <option value="Cumplido">✅ Cumplido</option>
-              <option value="En proceso">🔄 En proceso</option>
-              <option value="Reprogramado">📅 Reprogramado</option>
-              <option value="No iniciado">⏸ No iniciado</option>
-              <option value="__sin__">Sin estado</option>
-            </select>
+            <div class="meses-dropdown" id="estadocumpl-panel">
+              <button type="button" class="meses-btn" onclick="abrirEstadoCumplDropdown(event)">
+                <span id="estadocumpl-btn-label">Todos</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="meses-lista" id="estadocumpl-lista"></div>
+            </div>
           </div>
           <div class="filtro-group"><label>Fecha de cumplimiento</label>
             <div class="meses-dropdown" id="meses-panel">
@@ -884,8 +891,7 @@
             <th class="col-prio" style="width:5%; text-align:center; vertical-align:middle">Priorización</th>
             <th class="col-ogame" style="width:5%; text-align:center; vertical-align:middle">Habilitar<br>hitos</th>
             <th style="width:18%; vertical-align:middle">Estado situacional</th>
-            <th style="width:5%; text-align:center; vertical-align:middle">Avance</th>
-            <th style="width:14%; vertical-align:middle">Hitos claves</th>
+                        <th style="width:14%; vertical-align:middle">Hitos claves</th>
             <th style="width:7%; text-align:center; vertical-align:middle">Fecha de<br>Cumplimiento</th>
             <th style="width:8%; text-align:center; vertical-align:middle">Estado de<br>cumplimiento</th>
           </tr>
@@ -999,8 +1005,7 @@
             <textarea id="m-estado" rows="3" placeholder="Describe el estado actual de la intervención…"></textarea>
           </div>
           <div class="form-group">
-            <label>Avance físico (%)</label>
-            <input type="number" id="m-avance" placeholder="0" step="0.1" min="0" max="100">
+
           </div>
         </div>
       </div>
@@ -1603,6 +1608,8 @@ function salirModo() {
   sessionStorage.removeItem('hdr_periodicidad');
   sessionStorage.removeItem('hdr_tipo');
   usuarioActivo = '';
+  organoSeleccion.clear();
+  estadoCumplSeleccion.clear();
   periodicidadActiva = '';
   tipoUsuarioActivo = '';
   aplicarModo();
@@ -1618,7 +1625,7 @@ function aplicarModo() {
   const bannerTexto = document.getElementById('banner-modo-texto');
   const botones = document.getElementById('botones-modo');
   const card = document.getElementById('card-principal');
-  const selOrgano = document.getElementById('f-organo');
+  const selOrgano = null; // organo now uses checkbox dropdown
 
   if (modoApp === 'general') {
     banner.style.display = 'none';
@@ -1642,16 +1649,10 @@ function aplicarModo() {
       : modoApp === 'ogame'
       ? `<strong>Modo OGAME — ${esc(usuarioActivo)}</strong> · revisando y validando intervenciones semanales asignadas`
       : `<strong>Modo priorización activo</strong> · marca las intervenciones prioritarias`;
-    // en edición: fijar el filtro de órgano; en validación: liberar (ve todos sus subordinados)
-    if (selOrgano) {
-      if (modoApp === 'edicion') {
-        selOrgano.value = oficinaEdicion;
-        selOrgano.disabled = true;
-        selOrgano.style.opacity = '.65';
-      } else {
-        selOrgano.disabled = false;
-        selOrgano.style.opacity = '';
-      }
+    // En modo edición: fijar organoSeleccion a la oficina del usuario
+    if (modoApp === 'edicion') {
+      organoSeleccion.clear();
+      organoSeleccion.add(oficinaEdicion);
     }
   }
   activarVistaSegunModo();
@@ -1711,6 +1712,17 @@ let mesesDisponibles = [];   // [{label, orden, trimestre, anio}] ordenados
 let mesesSeleccion   = new Set(); // labels de meses activos
 let priorizadasDisponibles = [];
 let priorizadasSeleccion   = new Set();
+let organoSeleccion        = new Set(); // Unidad / Oficina Responsable seleccionadas
+let estadoCumplSeleccion   = new Set(); // Estados de cumplimiento seleccionados
+
+// Opciones fijas de estado de cumplimiento
+const ESTADOS_CUMPL = [
+  { value: 'Cumplido',    label: '✅ Cumplido' },
+  { value: 'En proceso',  label: '🔄 En proceso' },
+  { value: 'Reprogramado',label: '📅 Reprogramado' },
+  { value: 'No iniciado', label: '⏸ No iniciado' },
+  { value: '__sin__',     label: 'Sin estado' },
+];
 
 // Construye la lista de meses a partir de los hitos de las intervenciones
 // que pasan los demás filtros (cascada). Respeta también el checkbox "solo
@@ -1737,7 +1749,7 @@ function construirFechasCumplimiento() {
 }
 
 function poblarFiltros() {
-  ['f-grupo','f-vice','f-organo','f-estado-cumpl'].forEach(id => {
+  ['f-grupo','f-vice'].forEach(id => {
     const el = document.getElementById(id); if(el) el.addEventListener('change', aplicarFiltros);
   });
   ['f-buscar','f-area','f-cui'].forEach(id => {
@@ -1752,22 +1764,23 @@ function poblarFiltros() {
 // Se usa para calcular qué opciones tiene sentido mostrar en cada dropdown.
 function pasaFiltrosExcepto(i, excepto) {
   const v = {
-    grupo:       document.getElementById('f-grupo').value,
-    vice:        document.getElementById('f-vice').value,
-    organo:      document.getElementById('f-organo').value,
-    eje:         document.getElementById('f-eje') ? document.getElementById('f-eje').value : '',
-    linea:       document.getElementById('f-linea') ? document.getElementById('f-linea').value : '',
-    priorizadas: '',  // manejado por priorizadasSeleccion
-    buscar:      document.getElementById('f-buscar').value.trim().toLowerCase(),
-    area:        document.getElementById('f-area').value.trim().toLowerCase(),
-    cui:         document.getElementById('f-cui').value.trim().toLowerCase(),
+    grupo:  document.getElementById('f-grupo').value,
+    vice:   document.getElementById('f-vice').value,
+    buscar: document.getElementById('f-buscar').value.trim().toLowerCase(),
+    area:   document.getElementById('f-area').value.trim().toLowerCase(),
+    cui:    document.getElementById('f-cui').value.trim().toLowerCase(),
   };
   if (excepto !== 'grupo'  && v.grupo  && i.grupo  !== v.grupo)  return false;
   if (excepto !== 'vice'   && v.vice   && i.vice   !== v.vice)   return false;
-  if (excepto !== 'organo' && v.organo && i.organo !== v.organo) return false;
-  if (excepto !== 'eje'    && v.eje    && i.eje    !== v.eje)    return false;
-  if (excepto !== 'linea'  && v.linea  && i.linea  !== v.linea)  return false;
-  if (excepto !== 'priorizadas' && v.priorizadas && !(i.priorizadas||[]).includes(v.priorizadas)) return false;
+  if (excepto !== 'organo' && organoSeleccion.size > 0 && !organoSeleccion.has(i.organo)) return false;
+  if (excepto !== 'priorizadas' && priorizadasSeleccion.size > 0) {
+    const tags = i.priorizadas || [];
+    const sinTag = tags.length === 0;
+    const ok = priorizadasSeleccion.has('__noaplica__')
+      ? (sinTag || tags.some(p => priorizadasSeleccion.has(p)))
+      : tags.some(p => priorizadasSeleccion.has(p));
+    if (!ok) return false;
+  }
   if (excepto !== 'buscar' && v.buscar && !i.nombre.toLowerCase().includes(v.buscar)) return false;
   if (excepto !== 'area'   && v.area   && !(i.area || '').toLowerCase().includes(v.area)) return false;
   if (excepto !== 'cui'    && v.cui    && !(i.cui || '').toLowerCase().includes(v.cui)) return false;
@@ -1780,7 +1793,6 @@ function refrescarOpcionesFiltros() {
   const campos = [
     { id: 'f-grupo',  campo: 'grupo'  },
     { id: 'f-vice',   campo: 'vice'   },
-    { id: 'f-organo', campo: 'organo' },
     { id: 'f-tipo',   campo: 'tipo'   },
   ];
   campos.forEach(({ id, campo }) => {
@@ -1881,6 +1893,78 @@ function abrirPriorizadasDropdown(e) {
   document.getElementById('priorizadas-panel').classList.toggle('abierto');
 }
 
+// ── DROPDOWN ORGANO (Unidad / Oficina Responsable) ────────────────────────
+function renderOrganoDropdown() {
+  const cont = document.getElementById('organo-lista');
+  if (!cont) return;
+  // Obtener valores únicos disponibles según filtros actuales (excepto organo)
+  const disponibles = [...new Set(
+    intervenciones.filter(i => pasaFiltrosExcepto(i, 'organo')).map(i => i.organo).filter(Boolean)
+  )].sort();
+  cont.innerHTML = disponibles.map(v => `
+    <label class="mes-item">
+      <input type="checkbox" value="${esc(v)}" ${organoSeleccion.has(v) ? 'checked' : ''}
+             onchange="toggleOrgano('${esc(v)}', this.checked)">
+      <span>${esc(v)}</span>
+    </label>`).join('') || '<div style="padding:10px;color:var(--gris-texto);font-size:12px">Sin opciones</div>';
+  actualizarBotonOrgano();
+}
+
+function actualizarBotonOrgano() {
+  const btn = document.getElementById('organo-btn-label');
+  if (!btn) return;
+  const n = organoSeleccion.size;
+  if (n === 0) { btn.textContent = 'Todos'; btn.style.color = 'var(--texto)'; }
+  else { btn.textContent = `${n} seleccionada${n > 1 ? 's' : ''}`; btn.style.color = 'var(--azul)'; }
+}
+
+function toggleOrgano(valor, activo) {
+  if (activo) organoSeleccion.add(valor);
+  else organoSeleccion.delete(valor);
+  actualizarBotonOrgano();
+  aplicarFiltros();
+}
+
+function abrirOrganoDropdown(e) {
+  e.stopPropagation();
+  renderOrganoDropdown();
+  document.getElementById('organo-panel').classList.toggle('abierto');
+}
+
+// ── DROPDOWN ESTADO DE CUMPLIMIENTO ──────────────────────────────────────
+function renderEstadoCumplDropdown() {
+  const cont = document.getElementById('estadocumpl-lista');
+  if (!cont) return;
+  cont.innerHTML = ESTADOS_CUMPL.map(({ value, label }) => `
+    <label class="mes-item">
+      <input type="checkbox" value="${esc(value)}" ${estadoCumplSeleccion.has(value) ? 'checked' : ''}
+             onchange="toggleEstadoCumpl('${esc(value)}', this.checked)">
+      <span>${esc(label)}</span>
+    </label>`).join('');
+  actualizarBotonEstadoCumpl();
+}
+
+function actualizarBotonEstadoCumpl() {
+  const btn = document.getElementById('estadocumpl-btn-label');
+  if (!btn) return;
+  const n = estadoCumplSeleccion.size;
+  if (n === 0) { btn.textContent = 'Todos'; btn.style.color = 'var(--texto)'; }
+  else { btn.textContent = `${n} seleccionado${n > 1 ? 's' : ''}`; btn.style.color = 'var(--azul)'; }
+}
+
+function toggleEstadoCumpl(valor, activo) {
+  if (activo) estadoCumplSeleccion.add(valor);
+  else estadoCumplSeleccion.delete(valor);
+  actualizarBotonEstadoCumpl();
+  aplicarFiltros();
+}
+
+function abrirEstadoCumplDropdown(e) {
+  e.stopPropagation();
+  renderEstadoCumplDropdown();
+  document.getElementById('estadocumpl-panel').classList.toggle('abierto');
+}
+
 function toggleMes(label, activo) {
   if (activo) mesesSeleccion.add(label);
   else mesesSeleccion.delete(label);
@@ -1908,13 +1992,12 @@ function hitosVisibles(interv) {
   if (vHito) lista = lista.filter(h => (h.nombre || '').toLowerCase().includes(vHito));
 
   // filtro por estado de cumplimiento del hito
-  const vEstadoCumpl = document.getElementById('f-estado-cumpl')?.value;
-  if (vEstadoCumpl) {
+  if (estadoCumplSeleccion.size > 0) {
     lista = lista.filter(h => {
       const eh = vistaHitos[h.codhito] || {};
       const est = eh.estadoCumplimiento || '';
-      if (vEstadoCumpl === '__sin__') return est === '';
-      return est === vEstadoCumpl;
+      if (estadoCumplSeleccion.has('__sin__') && est === '') return true;
+      return estadoCumplSeleccion.has(est);
     });
   }
 
@@ -1941,7 +2024,7 @@ function aplicarFiltros() {
 
   const vGrupo      = document.getElementById('f-grupo').value;
   const vVice       = document.getElementById('f-vice').value;
-  const vOrgano     = document.getElementById('f-organo').value;
+  // organoSeleccion set used directly
   const vEje        = document.getElementById('f-eje') ? document.getElementById('f-eje').value : '';
   const vLinea      = document.getElementById('f-linea') ? document.getElementById('f-linea').value : '';
   const vBuscar     = document.getElementById('f-buscar').value.trim().toLowerCase();
@@ -1964,7 +2047,7 @@ function aplicarFiltros() {
     if (esOgame() && (i.periodicidad || '').trim().toUpperCase() !== 'SEMANAL') return false;
     if (vGrupo  && i.grupo !== vGrupo)  return false;
     if (vVice   && i.vice  !== vVice)   return false;
-    if (vOrgano && i.organo !== vOrgano) return false;
+    if (organoSeleccion.size > 0 && !organoSeleccion.has(i.organo)) return false;
     if (vEje    && i.eje   !== vEje)    return false;
     if (vLinea  && i.linea !== vLinea)  return false;
     if (priorizadasSeleccion.size > 0) {
@@ -1996,7 +2079,7 @@ function aplicarFiltros() {
     const filtrandoHitos = mesesSeleccion.size > 0 ||
                            (document.getElementById('f-ultimo') && document.getElementById('f-ultimo').checked) ||
                            vHito !== '' ||
-                           document.getElementById('f-estado-cumpl').value !== '';
+                           estadoCumplSeleccion.size > 0;
     if (filtrandoHitos && hitosVisibles(i).length === 0) return false;
     return true;
   });
@@ -2006,15 +2089,19 @@ function aplicarFiltros() {
 }
 
 function limpiarFiltros() {
-  ['f-grupo','f-vice','f-organo','f-buscar','f-area','f-cui','f-estado-cumpl','f-estado-val','f-tipo','f-ultimo-select'].forEach(id => {
+  ['f-grupo','f-vice','f-buscar','f-area','f-cui','f-estado-val','f-tipo','f-ultimo-select'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value = '';
   });
   const fHito = document.getElementById('f-hito'); if(fHito) fHito.value = '';
   const fUltimo = document.getElementById('f-ultimo'); if(fUltimo) fUltimo.checked = false;
   mesesSeleccion.clear();
   priorizadasSeleccion.clear();
+  organoSeleccion.clear();
+  estadoCumplSeleccion.clear();
   renderMesesDropdown();
   renderPriorizadasDropdown(false);
+  renderOrganoDropdown();
+  renderEstadoCumplDropdown();
   aplicarFiltros();
 }
 
@@ -2176,8 +2263,7 @@ function renderTabla() {
       <td class="col-ogame" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${habilHtml}</td>
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
         ${estadoHtml}
-      </td>
-      <td rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:10px 12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${avanceFisHtml}</td>`;
+      </td>`;
 
     hitosMostrar.forEach((h, idx) => {
       const eh = vistaHitos[h.codhito] || {};
@@ -2290,7 +2376,6 @@ function abrirModal(codigo) {
   document.getElementById('modal-subtitulo').textContent = intervModal.organo;
 
   document.getElementById('m-estado').value   = est.estado   || '';
-  document.getElementById('m-avance').value   = est.avance ? String(est.avance).replace(/%/g,'').replace(',','.').trim() : '';
 
   // ¿Están habilitados los hitos para esta intervención?
   const hitosBloqueados = est.hitosHabilitados === false;
@@ -2606,7 +2691,6 @@ async function guardarRegistro() {
     nombre:        intervModal.nombre,
     organo:        intervModal.organo,
     estado:        document.getElementById('m-estado').value.trim(),
-    avance:        document.getElementById('m-avance').value.trim(),
     validado:      validado ? 'Sí' : 'No',
     validadoOgame: esOgame() && document.getElementById('m-validado')?.checked ? 'Sí' : 'No',
     registradoPor: usuarioActivo || oficinaEdicion,
@@ -2916,7 +3000,7 @@ function resumenFiltrosActivos() {
 
   if (val('f-grupo'))  partes.push('Grupo: ' + val('f-grupo'));
   if (val('f-vice'))   partes.push('Órgano: ' + val('f-vice'));
-  if (val('f-organo')) partes.push('Órgano: ' + val('f-organo'));
+  if (organoSeleccion.size > 0) partes.push('Unidad: ' + [...organoSeleccion].join(', '));
   if (priorizadasSeleccion.size > 0) {
     const tags = [...priorizadasSeleccion].map(p => p === '__noaplica__' ? 'No aplica' : p).join(', ');
     partes.push('Priorizadas: ' + tags);
@@ -2932,7 +3016,7 @@ function resumenFiltrosActivos() {
   }
   if (document.getElementById('f-ultimo')?.checked ||
       document.getElementById('f-ultimo-select')?.value === 'si') partes.push('Solo el último hito');
-  const estadoC = val('f-estado-cumpl');
+  const estadoC = [...estadoCumplSeleccion].join(', ');
   if (estadoC) partes.push('Estado de cumplimiento: ' + (estadoC === '__sin__' ? 'Sin estado' : estadoC));
 
   return partes.length ? partes.join('  ·  ') : 'Ninguno (todas las intervenciones)';
@@ -3191,6 +3275,14 @@ document.addEventListener('click', e => {
   const panelP = document.getElementById('priorizadas-panel');
   if (panelP && panelP.classList.contains('abierto') && !panelP.contains(e.target)) {
     panelP.classList.remove('abierto');
+  }
+  const panelO = document.getElementById('organo-panel');
+  if (panelO && panelO.classList.contains('abierto') && !panelO.contains(e.target)) {
+    panelO.classList.remove('abierto');
+  }
+  const panelEC = document.getElementById('estadocumpl-panel');
+  if (panelEC && panelEC.classList.contains('abierto') && !panelEC.contains(e.target)) {
+    panelEC.classList.remove('abierto');
   }
   const dropO = document.getElementById('oficina-dropdown');
   const wrapO = document.querySelector('.usuario-search-wrap');
