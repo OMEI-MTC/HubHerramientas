@@ -36,7 +36,7 @@
   .panel { max-width:1900px; margin:0 auto; background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:28px 32px; }
   .panel-title { font-weight:700; font-size:30px; color:var(--blue); line-height:1.1; letter-spacing:-0.01em; }
   .panel-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
-  .btn-pbi { display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border:1.5px solid var(--blue); border-radius:8px; color:var(--blue); background:#fff; font-family:inherit; font-size:13px; font-weight:600; text-decoration:none; white-space:nowrap; }
+  .btn-pbi { display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border:1.5px solid var(--blue); cursor:pointer; border-radius:8px; color:var(--blue); background:#fff; font-family:inherit; font-size:13px; font-weight:600; text-decoration:none; white-space:nowrap; }
   .btn-pbi:hover { background:var(--blue-lt); }
   /* La tabla principal tiene su propio scroll para que el encabezado quede fijo */
   #tablaWrap { max-height:calc(100vh - 120px); min-height:360px; overflow:auto; }
@@ -55,11 +55,12 @@
   .panel-corte { font-size:13px; color:var(--text-3); margin-top:2px; margin-bottom:20px; }
 
   /* Bloque de filtros: 4 paneles de color */
-  .filtros-wrap { background:#eceef1; border-radius:var(--r); padding:14px; display:grid; grid-template-columns:1fr 1fr 1fr 0.9fr; gap:12px; margin-bottom:22px; }
+  .filtros-wrap { background:#eceef1; border-radius:var(--r); padding:14px; display:grid; grid-template-columns:repeat(4,1fr) 0.8fr; gap:12px; margin-bottom:22px; }
   .fpanel { border-radius:10px; padding:14px 14px 6px; border:1px solid transparent; }
   .fpanel-tit { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin-bottom:10px; }
   .fp-resp  { background:#edf3fc; border-color:#d6e3f5; }  .fp-resp  .fpanel-tit { color:var(--blue-dk); }
   .fp-interv{ background:#fff8ea; border-color:#f3e2bd; }  .fp-interv .fpanel-tit { color:#b36b00; }
+  .fp-prio  { background:#fdf0e8; border-color:#f3d6c3; }  .fp-prio .fpanel-tit { color:#b8501f; }
   .fp-otras { background:#eaf6ef; border-color:#cde8d8; }  .fp-otras .fpanel-tit { color:#1a7a52; }
   .fp-acc   { background:#f6f7f9; border-color:#e3e6ea; }  .fp-acc .fpanel-tit { color:var(--text-2); }
   .fp-acc .sep-tit { font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-3); margin:12px 0 8px; padding-top:10px; border-top:1px solid #e3e6ea; }
@@ -84,6 +85,18 @@
   /* Botones de acciones */
   .btn-acc { width:100%; display:flex; align-items:center; justify-content:center; gap:7px; padding:8px 12px; border-radius:8px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; margin-bottom:8px; background:#fff; border:1px solid #d9dde3; color:var(--text-2); }
   .btn-acc:hover { background:#eef0f3; }
+  .btn-acc.activo { border-color:var(--blue); color:var(--blue); background:var(--blue-lt); }
+  .badge { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--blue); color:#fff; font-size:11px; font-weight:700; }
+  /* Botones del encabezado */
+  .head-acciones { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end; }
+  .btn-head { display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border-radius:8px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; text-decoration:none; border:1.5px solid transparent; }
+  .bh-res { background:var(--blue); border-color:var(--blue); color:#fff; }  .bh-res:hover { background:var(--blue-dk); border-color:var(--blue-dk); }
+  .bh-pdf { background:#fff; border-color:var(--red); color:var(--red); }    .bh-pdf:hover { background:#fdecee; }
+  .bh-xls { background:var(--green); border-color:var(--green); color:#fff; } .bh-xls:hover { background:var(--green-dk); border-color:var(--green-dk); }
+  /* Modal de otros filtros: sin recorte para que los desplegables se vean completos */
+  #ovFiltros .modal { max-width:520px; overflow:visible; }
+  .modal-pie { display:flex; justify-content:space-between; gap:10px; margin-top:16px; padding-top:14px; border-top:1px solid var(--border); }
+  .modal-pie .btn-acc { width:auto; margin:0; }
   .btn-pdf { border-color:var(--red); color:var(--red); }
   .btn-pdf:hover { background:#fdecee; }
   .btn-xls { background:var(--green); border-color:var(--green); color:#fff; }
@@ -138,6 +151,7 @@
   .res-tabla td.num, .res-tabla th.num { text-align:right; white-space:nowrap; }
   .res-tabla tfoot td { font-weight:700; border-top:2px solid #d9dfe8; }
 
+  @media (max-width:1300px){ .filtros-wrap { grid-template-columns:repeat(3,1fr); } }
   @media (max-width:1100px){ .filtros-wrap { grid-template-columns:1fr 1fr; } .res-grid { grid-template-columns:1fr; } }
   @media (max-width:640px){ .filtros-wrap { grid-template-columns:1fr; } .main { padding:14px; } .panel { padding:20px 16px; } }
 </style>
@@ -165,10 +179,15 @@
           <div class="panel-title">Intervenciones MTC</div>
           <div class="panel-kpis" id="kpis">—</div>
         </div>
-        <a class="btn-pbi" href="https://app.powerbi.com/view?r=eyJrIjoiNWIxMTVkYWUtMDMwMi00YWRmLTg5MzEtMzY1ZDVmYzVjMjFmIiwidCI6IjUzYWNiMjY1LTkxMjgtNDQ2ZC1hNWJlLWI4Mzg2MDBhYTY1NyJ9&language=en-US" target="_blank" rel="noopener">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          Ver en Power BI
-        </a>
+        <div class="head-acciones">
+          <button class="btn-head bh-res" onclick="abrirResumen()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Ver resumen</button>
+          <button class="btn-head bh-pdf" onclick="exportarPDF()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Descargar PDF</button>
+          <button class="btn-head bh-xls" onclick="exportarXLSX()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar Excel</button>
+          <a class="btn-pbi" href="https://app.powerbi.com/view?r=eyJrIjoiNWIxMTVkYWUtMDMwMi00YWRmLTg5MzEtMzY1ZDVmYzVjMjFmIiwidCI6IjUzYWNiMjY1LTkxMjgtNDQ2ZC1hNWJlLWI4Mzg2MDBhYTY1NyJ9&language=en-US" target="_blank" rel="noopener">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Ver en Power BI
+          </a>
+        </div>
       </div>
       <div class="panel-corte" id="corteLabel">—</div>
 
@@ -179,9 +198,6 @@
           <div class="field"><label class="lbl" for="fVicem">Viceministerio</label>
             <select id="fVicem" onchange="onFiltro()"><option value="">Todos</option></select></div>
           <div class="field"><label class="lbl">Entidad reportante</label><div class="ms" id="ms-entidad"></div></div>
-          <div class="field"><label class="lbl">Área de influencia</label><div class="ms" id="ms-depto"></div></div>
-          <div class="field"><label class="lbl" for="fTipo">Tipo de infraestructura</label>
-            <select id="fTipo" onchange="onFiltro()"><option value="">Todos</option></select></div>
         </div>
 
         <div class="fpanel fp-interv">
@@ -190,35 +206,30 @@
             <input type="text" id="fNombre" list="fNombreList" placeholder="Escribe para buscar…" autocomplete="off" oninput="onFiltro()"><datalist id="fNombreList"></datalist></div>
           <div class="field"><label class="lbl" for="fCodigo">CUI / Código</label>
             <input type="text" id="fCodigo" list="fCodigoList" placeholder="Escribe para buscar…" autocomplete="off" oninput="onFiltro()"><datalist id="fCodigoList"></datalist></div>
-          <div class="field"><label class="lbl" for="fProySer">Proyecto / Servicio</label>
-            <select id="fProySer" onchange="onFiltro()"><option value="">Todos</option></select></div>
-          <div class="field"><label class="lbl" for="fPrio">Cartera Priorizada 2026-2027</label>
+        </div>
+
+        <div class="fpanel fp-prio">
+          <div class="fpanel-tit">Priorización</div>
+          <div class="field"><label class="lbl" for="fPrio">Hoja de Ruta</label>
             <select id="fPrio" onchange="onFiltro()"><option value="">Todos</option></select></div>
+          <div class="field"><label class="lbl" for="fFinan">Financiamiento 2026</label>
+            <select id="fFinan" onchange="onFiltro()"><option value="">Todos</option></select></div>
         </div>
 
         <div class="fpanel fp-otras">
           <div class="fpanel-tit">Otras categorías</div>
           <div class="field"><label class="lbl">Modalidad de ejecución</label><div class="ms" id="ms-modalidad"></div></div>
           <div class="field"><label class="lbl">Fase</label><div class="ms" id="ms-fase"></div></div>
-          <div class="field"><label class="lbl" for="fFinan">Financiamiento 2026</label>
-            <select id="fFinan" onchange="onFiltro()"><option value="">Todos</option></select></div>
         </div>
 
         <div class="fpanel fp-acc">
           <div class="fpanel-tit">Acciones</div>
+          <button class="btn-acc" id="btnOtros" onclick="abrirModal('ovFiltros')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            Otros filtros <span class="badge" id="badgeOtros" style="display:none">0</span></button>
           <button class="btn-acc" onclick="limpiarFiltros()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
             Limpiar filtros</button>
-          <div class="sep-tit">Exportables</div>
-          <button class="btn-acc btn-pdf" onclick="exportarPDF()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Descargar PDF</button>
-          <button class="btn-acc btn-xls" onclick="exportarXLSX()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Descargar Excel</button>
-          <button class="btn-acc" onclick="abrirResumen()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            Ver resumen</button>
         </div>
       </div>
 
@@ -236,7 +247,7 @@
               <th style="width:10%">Fase</th>
               <th style="width:22%">Estado situacional</th>
               <th style="width:7%">Financiamiento 2026</th>
-              <th style="width:9%">Cartera Priorizada 2026-2027</th>
+              <th style="width:9%">Hoja de Ruta</th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
@@ -275,6 +286,28 @@
         <thead><tr><th>Hito(s) clave(s)</th><th style="width:22%">Fecha de cumplimiento</th><th style="width:22%">Estado de cumplimiento</th></tr></thead>
         <tbody id="hitosBody"></tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL OTROS FILTROS -->
+<div class="overlay" id="ovFiltros">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">Otros filtros</div>
+        <div class="modal-sub">Se aplican al instante sobre la tabla.</div>
+      </div>
+      <button class="modal-x" onclick="cerrarModal('ovFiltros')" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="field"><label class="lbl">Área de influencia</label><div class="ms" id="ms-depto"></div></div>
+    <div class="field"><label class="lbl" for="fTipo">Tipo de infraestructura</label>
+      <select id="fTipo" onchange="onFiltro()"><option value="">Todos</option></select></div>
+    <div class="field"><label class="lbl" for="fProySer">Proyecto / Servicio</label>
+      <select id="fProySer" onchange="onFiltro()"><option value="">Todos</option></select></div>
+    <div class="modal-pie">
+      <button class="btn-acc" onclick="limpiarOtros()">Quitar estos filtros</button>
+      <button class="btn-head bh-res" onclick="cerrarModal('ovFiltros')">Listo</button>
     </div>
   </div>
 </div>
@@ -627,7 +660,20 @@ document.addEventListener('click', e=>{
 });
 
 // ====== APLICAR / LIMPIAR ======
-function onFiltro(){ recalcOpciones(); render(filtrar()); }
+function onFiltro(){ recalcOpciones(); render(filtrar()); actualizarBadge(); }
+
+// Cuenta los filtros activos dentro de "Otros filtros" y resalta el botón
+function actualizarBadge(){
+  const n = (MS.depto.sel.size?1:0) + (document.getElementById('fTipo').value?1:0) + (document.getElementById('fProySer').value?1:0);
+  const b=document.getElementById('badgeOtros');
+  b.textContent=n; b.style.display=n?'inline-flex':'none';
+  document.getElementById('btnOtros').classList.toggle('activo', n>0);
+}
+function limpiarOtros(){
+  MS.depto.sel.clear();
+  document.getElementById('fTipo').value=''; document.getElementById('fProySer').value='';
+  onFiltro();
+}
 
 function limpiarFiltros(){
   ['fVicem','fNombre','fCodigo','fProySer','fPrio','fFinan','fTipo'].forEach(id=>document.getElementById(id).value='');
@@ -639,9 +685,8 @@ function limpiarFiltros(){
 function render(filas){
   const nProy=filas.filter(r=>r.proySer==='PROYECTO').length;
   const nServ=filas.filter(r=>r.proySer==='SERVICIO').length;
-  const monto=filas.reduce((a,r)=>a+(isNaN(r.monto)?0:r.monto),0);
   document.getElementById('kpis').innerHTML =
-    '<strong>'+filas.length+'</strong> intervenciones · <strong>'+nProy+'</strong> proyectos · <strong>'+nServ+'</strong> servicios · <strong>'+fmtMillones(monto)+'</strong> en monto total';
+    '<strong>'+filas.length+'</strong> intervenciones · <strong>'+nProy+'</strong> proyectos · <strong>'+nServ+'</strong> servicios';
 
   const tbody=document.getElementById('tbody');
   if(!filas.length){ tbody.innerHTML='<tr><td colspan="9" class="vacio">No hay intervenciones con estos filtros. Prueba quitando alguno con "Limpiar filtros".</td></tr>'; return; }
@@ -674,12 +719,12 @@ function abrirSit(i){
 }
 function abrirModal(id){ document.getElementById(id).classList.add('show'); document.body.style.overflow='hidden'; }
 function cerrarModal(id){ document.getElementById(id).classList.remove('show'); document.body.style.overflow=''; }
-['ovSit','ovRes','ovHitos'].forEach(id=>{
+['ovSit','ovRes','ovHitos','ovFiltros'].forEach(id=>{
   const ov=document.getElementById(id); let down=false;
   ov.addEventListener('mousedown', e=>{ down=(e.target===ov); });
   ov.addEventListener('click', e=>{ if(e.target===ov && down) cerrarModal(id); down=false; });
 });
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ cerrarModal('ovSit'); cerrarModal('ovRes'); cerrarModal('ovHitos'); } });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ cerrarModal('ovSit'); cerrarModal('ovRes'); cerrarModal('ovHitos'); cerrarModal('ovFiltros'); } });
 
 function abrirResumen(){
   const filas=filtrar();
@@ -741,7 +786,7 @@ function resumenFiltros(){
   const n=document.getElementById('fNombre').value.trim(); if(n) p.push('Intervención: "'+n+'"');
   const c=document.getElementById('fCodigo').value.trim(); if(c) p.push('Código: '+c);
   const ps=document.getElementById('fProySer').value; if(ps) p.push('Tipo: '+ps);
-  const pr=document.getElementById('fPrio').value; if(pr) p.push('Cartera Priorizada 2026-2027: '+pr);
+  const pr=document.getElementById('fPrio').value; if(pr) p.push('Hoja de Ruta: '+pr);
   const f=document.getElementById('fFinan').value; if(f) p.push('Financ. 2026: '+f);
   if(MS.depto.sel.size)     p.push('Área: '+[...MS.depto.sel].join(', '));
   const t=document.getElementById('fTipo').value; if(t) p.push('Infraestructura: '+t);
