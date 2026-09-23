@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intervenciones MTC  ·  OGAME  ·  MTC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --red:#C8102E; --blue:#0055A5; --blue-dk:#003F7D; --blue-lt:#EEF4FF;
+    --white:#fff; --bg:#F2F2F2; --card:#fff; --border:rgba(0,0,0,0.09);
+    --text:#1a1a1a; --text-2:#4a5568; --text-3:#8a9ab0;
+    --green:#1D9E75; --green-dk:#0F6E56;
+    --sans:'DM Sans',system-ui,sans-serif; --r:12px;
+  }
+  body { font-family:var(--sans); background:var(--bg); color:var(--text); font-size:14px; line-height:1.5; min-height:100vh; }
+  .layout { min-height:100vh; display:grid; grid-template-rows:auto 1fr; }
+
+  /* Barra superior (igual al Hub) */
+  .topbar { background:var(--red); display:flex; align-items:center; justify-content:space-between; padding:0 28px; min-height:68px; }
+  .topbar-brand { display:flex; align-items:center; gap:12px; }
+  .topbar-logo { width:40px; height:40px; border-radius:7px; overflow:hidden; flex-shrink:0; box-shadow:0 1px 6px rgba(0,0,0,0.25); }
+  .topbar-logo img { width:100%; height:100%; object-fit:cover; display:block; }
+  .topbar-name { font-size:21px; font-weight:700; color:var(--white); line-height:1.15; letter-spacing:-0.01em; }
+  .topbar-sub { font-size:12px; color:rgba(255,255,255,0.85); margin-top:2px; }
+  .btn-back { display:flex; align-items:center; gap:7px; background:#003F7D; color:#fff; border:2px solid #003F7D; border-radius:24px; padding:8px 18px; font-family:var(--sans); font-size:15px; font-weight:700; cursor:pointer; white-space:nowrap; text-decoration:none; }
+  .btn-back:hover { background:#002D5C; border-color:#002D5C; }
+
+  .main { padding:28px; }
+  .panel { max-width:1900px; margin:0 auto; background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:28px 32px; }
+  .panel-title { font-weight:700; font-size:30px; color:var(--blue); line-height:1.1; letter-spacing:-0.01em; }
+  .panel-kpis { font-size:14px; color:var(--text-2); margin-top:6px; }
+  .panel-kpis strong { color:var(--text); }
+  .panel-corte { font-size:13px; color:var(--text-3); margin-top:2px; margin-bottom:20px; }
+
+  /* Bloque de filtros: 4 paneles de color */
+  .filtros-wrap { background:#eceef1; border-radius:var(--r); padding:14px; display:grid; grid-template-columns:1fr 1fr 1fr 0.9fr; gap:12px; margin-bottom:22px; }
+  .fpanel { border-radius:10px; padding:14px 14px 6px; border:1px solid transparent; }
+  .fpanel-tit { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin-bottom:10px; }
+  .fp-resp  { background:#edf3fc; border-color:#d6e3f5; }  .fp-resp  .fpanel-tit { color:var(--blue-dk); }
+  .fp-interv{ background:#fff8ea; border-color:#f3e2bd; }  .fp-interv .fpanel-tit { color:#b36b00; }
+  .fp-otras { background:#eaf6ef; border-color:#cde8d8; }  .fp-otras .fpanel-tit { color:#1a7a52; }
+  .fp-acc   { background:#f6f7f9; border-color:#e3e6ea; }  .fp-acc .fpanel-tit { color:var(--text-2); }
+  .fp-acc .sep-tit { font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-3); margin:12px 0 8px; padding-top:10px; border-top:1px solid #e3e6ea; }
+
+  .field { margin-bottom:10px; }
+  label.lbl { display:block; font-size:12.5px; font-weight:600; margin:0 0 4px; color:var(--text); }
+  select, input[type=text] { width:100%; padding:8px 10px; font-size:13.5px; font-family:inherit; color:var(--text); border:1px solid #d9dde3; border-radius:8px; background:#fff; }
+  select:focus, input[type=text]:focus, .ms-btn:focus { outline:2px solid var(--blue); outline-offset:1px; }
+
+  /* Dropdown multi-selección */
+  .ms { position:relative; }
+  .ms-btn { width:100%; padding:8px 10px; border:1px solid #d9dde3; border-radius:8px; background:#fff; font-family:inherit; font-size:13.5px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:var(--text); text-align:left; }
+  .ms-btn:hover { border-color:var(--blue); }
+  .ms-lista { display:none; position:absolute; top:calc(100% + 4px); left:0; min-width:100%; width:max-content; max-width:360px; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.15); z-index:200; max-height:280px; overflow-y:auto; padding:6px; }
+  .ms.abierto .ms-lista { display:block; }
+  .ms.abre-arriba .ms-lista { top:auto; bottom:calc(100% + 4px); }
+  .ms-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:13px; }
+  .ms-item:hover { background:var(--bg); }
+  .ms-item input { width:auto; cursor:pointer; accent-color:var(--blue); }
+  .ms-vacio { padding:10px; color:var(--text-3); font-size:12px; }
+
+  /* Botones de acciones */
+  .btn-acc { width:100%; display:flex; align-items:center; justify-content:center; gap:7px; padding:8px 12px; border-radius:8px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; margin-bottom:8px; background:#fff; border:1px solid #d9dde3; color:var(--text-2); }
+  .btn-acc:hover { background:#eef0f3; }
+  .btn-pdf { border-color:var(--red); color:var(--red); }
+  .btn-pdf:hover { background:#fdecee; }
+  .btn-xls { background:var(--green); border-color:var(--green); color:#fff; }
+  .btn-xls:hover { background:var(--green-dk); }
+
+  /* Tabla */
+  .loading { text-align:center; color:var(--text-2); padding:40px; }
+  .tabla-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  thead th { background:#eef2f7; text-align:left; padding:11px 12px; font-weight:700; color:var(--text-2); border-bottom:1px solid #d9dfe8; position:sticky; top:0; z-index:1; }
+  tbody td { padding:10px 12px; border-bottom:1px solid #eef0f3; vertical-align:top; }
+  tbody tr:hover td { background:#f7f9ff; }
+  .c-corte { white-space:nowrap; color:var(--text-2); }
+  .c-nombre { font-weight:700; color:var(--blue-dk); line-height:1.35; }
+  .c-meta { font-size:11.5px; color:var(--text-3); margin-top:3px; }
+  .c-meta b { color:var(--text-2); font-weight:600; }
+  .c-resp { font-weight:600; white-space:nowrap; }
+  .c-area { font-size:12.5px; color:var(--text-2); }
+  .c-sit { font-size:12.5px; line-height:1.45; white-space:pre-line; display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; overflow:hidden; }
+  .ver-mas { background:none; border:none; color:var(--blue); font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; padding:4px 0 0; }
+  .ver-mas:hover { text-decoration:underline; }
+  .vacio { text-align:center; padding:30px; color:var(--text-3); }
+
+  .pill { display:inline-block; padding:2px 9px; border-radius:12px; font-size:11.5px; font-weight:700; white-space:nowrap; }
+  .pill-si { background:#E0F3EA; color:#0c6647; }
+  .pill-no { background:#fdecee; color:#a50d26; }
+  .pill-otro { background:#f0f1f3; color:#5f6b7a; }
+  .pill-mod { background:var(--blue-lt); color:var(--blue); font-weight:600; white-space:normal; }
+
+  /* Modales */
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:500; align-items:center; justify-content:center; padding:20px; }
+  .overlay.show { display:flex; }
+  .modal { background:#fff; border-radius:var(--r); width:100%; max-width:820px; padding:24px 26px; max-height:90vh; overflow-y:auto; }
+  .modal-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:16px; }
+  .modal-title { font-size:17px; font-weight:700; color:var(--blue); }
+  .modal-sub { font-size:13px; color:var(--text-2); margin-top:4px; line-height:1.4; }
+  .modal-x { background:none; border:none; font-size:24px; line-height:1; color:var(--text-3); cursor:pointer; }
+  .modal-texto { background:#f4f6f9; border-radius:8px; padding:16px 18px; font-size:14px; line-height:1.65; white-space:pre-line; }
+  .res-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .res-bloque h4 { font-size:13px; color:var(--blue-dk); margin-bottom:8px; }
+  .res-tabla { font-size:12.5px; }
+  .res-tabla th { background:#eef2f7; padding:6px 8px; position:static; }
+  .res-tabla td { padding:6px 8px; }
+  .res-tabla td.num, .res-tabla th.num { text-align:right; white-space:nowrap; }
+  .res-tabla tfoot td { font-weight:700; border-top:2px solid #d9dfe8; }
+
+  @media (max-width:1100px){ .filtros-wrap { grid-template-columns:1fr 1fr; } .res-grid { grid-template-columns:1fr; } }
+  @media (max-width:640px){ .filtros-wrap { grid-template-columns:1fr; } .main { padding:14px; } .panel { padding:20px 16px; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo"><img src="mtc.jpg" alt="Logo MTC"></div>
+      <div>
+        <div class="topbar-name">Hub de Herramientas · OGAME</div>
+        <div class="topbar-sub">Oficina General de Articulación, Monitoreo, y Evaluación de Impacto</div>
+      </div>
+    </div>
+    <a class="btn-back" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Regresar a página principal
+    </a>
+  </header>
+
+  <main class="main">
+    <div class="panel">
+      <div class="panel-title">Intervenciones MTC</div>
+      <div class="panel-kpis" id="kpis">—</div>
+      <div class="panel-corte" id="corteLabel">—</div>
+
+      <!-- FILTROS -->
+      <div class="filtros-wrap">
+        <div class="fpanel fp-resp">
+          <div class="fpanel-tit">Responsables</div>
+          <div class="field"><label class="lbl">Entidad reportante</label><div class="ms" id="ms-entidad"></div></div>
+        </div>
+
+        <div class="fpanel fp-interv">
+          <div class="fpanel-tit">Intervenciones</div>
+          <div class="field"><label class="lbl" for="fNombre">Intervención</label>
+            <input type="text" id="fNombre" list="fNombreList" placeholder="Escribe para buscar…" autocomplete="off" oninput="onFiltro()"><datalist id="fNombreList"></datalist></div>
+          <div class="field"><label class="lbl" for="fCodigo">CUI / Código</label>
+            <input type="text" id="fCodigo" list="fCodigoList" placeholder="Escribe para buscar…" autocomplete="off" oninput="onFiltro()"><datalist id="fCodigoList"></datalist></div>
+          <div class="field"><label class="lbl" for="fProySer">Proyecto / Servicio</label>
+            <select id="fProySer" onchange="onFiltro()"><option value="">Todos</option></select></div>
+          <div class="field"><label class="lbl" for="fFinan">Financiamiento 2026</label>
+            <select id="fFinan" onchange="onFiltro()"><option value="">Todos</option></select></div>
+        </div>
+
+        <div class="fpanel fp-otras">
+          <div class="fpanel-tit">Otras categorías</div>
+          <div class="field"><label class="lbl">Área de influencia</label><div class="ms" id="ms-depto"></div></div>
+          <div class="field"><label class="lbl" for="fTipo">Tipo de infraestructura</label>
+            <select id="fTipo" onchange="onFiltro()"><option value="">Todos</option></select></div>
+          <div class="field"><label class="lbl">Modalidad de ejecución</label><div class="ms" id="ms-modalidad"></div></div>
+          <div class="field"><label class="lbl">Fase</label><div class="ms" id="ms-fase"></div></div>
+        </div>
+
+        <div class="fpanel fp-acc">
+          <div class="fpanel-tit">Acciones</div>
+          <button class="btn-acc" onclick="limpiarFiltros()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            Limpiar filtros</button>
+          <div class="sep-tit">Exportables</div>
+          <button class="btn-acc btn-pdf" onclick="exportarPDF()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Descargar PDF</button>
+          <button class="btn-acc btn-xls" onclick="exportarXLSX()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar Excel</button>
+          <button class="btn-acc" onclick="abrirResumen()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            Ver resumen</button>
+        </div>
+      </div>
+
+      <div id="loadingMsg" class="loading">Cargando intervenciones…</div>
+
+      <div class="tabla-wrap" id="tablaWrap" style="display:none;">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:7%">Corte</th>
+              <th style="width:24%">Intervención</th>
+              <th style="width:7%">Responsable</th>
+              <th style="width:10%">Área de influencia</th>
+              <th style="width:10%">Modalidad de ejecución</th>
+              <th style="width:10%">Fase</th>
+              <th style="width:24%">Estado situacional</th>
+              <th style="width:8%">Financiamiento 2026</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL ESTADO SITUACIONAL -->
+<div class="overlay" id="ovSit">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">Estado situacional</div>
+        <div class="modal-sub" id="sitNombre">—</div>
+      </div>
+      <button class="modal-x" onclick="cerrarModal('ovSit')" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal-texto" id="sitTexto">—</div>
+  </div>
+</div>
+
+<!-- MODAL RESUMEN -->
+<div class="overlay" id="ovRes">
+  <div class="modal" style="max-width:980px;">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">Resumen</div>
+        <div class="modal-sub" id="resFiltros">—</div>
+      </div>
+      <button class="modal-x" onclick="cerrarModal('ovRes')" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="res-grid" id="resContenido"></div>
+  </div>
+</div>
+
+<script>
+// ====== CONFIGURACIÓN ======
+const DATA_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQCh1cjWIRCOycRRdMQJHbY-yRa7CZPJHGE6egqMrw8-fRkDv-z20oeqNrUltTeVIwHjXZJN45on0L-/pub?gid=1212162516&single=true&output=tsv';
+
+const CORS_PROXIES = [
+  url => url,
+  url => 'https://corsproxy.io/?' + encodeURIComponent(url),
+  url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url)
+];
+
+// Columnas: se ubican por NOMBRE del encabezado, no por posición.
+// Si en la hoja se mueve una columna de lugar, no pasa nada.
+// Si se RENOMBRA, basta con actualizar el texto aquí.
+const COLS = {
+  corte:      'Corte',
+  codInterno: 'COD INTERNO',
+  nombre:     'Nombre de la intervención',
+  area:       'Área de influencia',
+  tipoCodigo: 'Tipo de Código',
+  codigo:     'Código',
+  proySer:    'Proyecto / Servicio',
+  tipoInfra:  'Tipo de Infraestructura',
+  entidad:    'Entidad Reportante',
+  tipoOrgano: 'Tipo de Órgano ejecutor',
+  monto:      'Monto de la intervención S/',
+  benef:      'Beneficiarios',
+  modalidad:  'Modalidad de ejecución',
+  fase:       'Fase (Depende de la Modalidad)',
+  finan:      'Financiamiento 2026 (SI/NO)',
+  situacional:'Estado Situacional'
+};
+
+let DATA = [];
+let ULTIMO_CORTE = '';
+
+// Filtros de selección múltiple
+const MS = {
+  entidad:   { id:'ms-entidad',   sel:new Set(), todos:'Todas', obtener:r=>[r.entidad] },
+  depto:     { id:'ms-depto',     sel:new Set(), todos:'Todos', obtener:r=>r.deptos },
+  modalidad: { id:'ms-modalidad', sel:new Set(), todos:'Todas', obtener:r=>[r.modalidad] },
+  fase:      { id:'ms-fase',      sel:new Set(), todos:'Todas', obtener:r=>[r.fase] }
+};
+
+// ====== CARGA ======
+async function cargar(){
+  try {
+    const txt = await fetchProxy(DATA_TSV);
+    parseData(txt);
+    construirMultiSelects();
+    document.getElementById('loadingMsg').style.display='none';
+    document.getElementById('tablaWrap').style.display='block';
+    document.getElementById('corteLabel').textContent = 'Último corte registrado: ' + (ULTIMO_CORTE || '—');
+    onFiltro();
+  } catch(e){
+    document.getElementById('loadingMsg').innerHTML = '<span style="color:#C8102E;">No se pudo cargar la información.<br><small>Verifica que la hoja "Actual" esté publicada como TSV. Detalle: '+escapeHtml(e.message)+'</small></span>';
+  }
+}
+
+async function fetchProxy(url){
+  let lastErr=null;
+  for(const fn of CORS_PROXIES){
+    try { const res=await fetch(fn(url),{cache:'no-cache'}); if(!res.ok) throw new Error('HTTP '+res.status); const t=await res.text(); if(!t||t.length<10) throw new Error('Respuesta vacía'); return t; }
+    catch(e){ lastErr=e; }
+  }
+  throw lastErr || new Error('Sin respuesta');
+}
+
+// Lee el TSV respetando celdas con saltos de línea (Google las envuelve entre comillas).
+function leerTSV(txt){
+  const filas=[]; let fila=[]; let campo=''; let i=0; const n=txt.length;
+  let inicioCampo=true, entreComillas=false;
+  while(i<n){
+    const ch=txt[i];
+    if(entreComillas){
+      if(ch==='"'){
+        if(txt[i+1]==='"'){ campo+='"'; i+=2; continue; }
+        entreComillas=false; i++; continue;
+      }
+      campo+=ch; i++; continue;
+    }
+    if(inicioCampo && ch==='"'){ entreComillas=true; inicioCampo=false; i++; continue; }
+    if(ch==='\t'){ fila.push(campo); campo=''; inicioCampo=true; i++; continue; }
+    if(ch==='\r'){ i++; continue; }
+    if(ch==='\n'){ fila.push(campo); filas.push(fila); fila=[]; campo=''; inicioCampo=true; i++; continue; }
+    campo+=ch; inicioCampo=false; i++;
+  }
+  if(campo!=='' || fila.length){ fila.push(campo); filas.push(fila); }
+  return filas;
+}
+
+const norm = s => String(s||'').trim().replace(/\s+/g,' ');
+const normClave = s => norm(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+
+function parseData(txt){
+  const filas = leerTSV(txt);
+  // La hoja tiene filas de título arriba: el encabezado real es la fila que contiene "COD INTERNO".
+  const iHead = filas.findIndex(f => f.some(c => normClave(c)===normClave(COLS.codInterno)));
+  if(iHead<0) throw new Error('No se encontró la fila de encabezados (columna "'+COLS.codInterno+'").');
+  const head = filas[iHead].map(normClave);
+  const idx = {}; const faltan=[];
+  for(const [k,nombre] of Object.entries(COLS)){
+    idx[k] = head.indexOf(normClave(nombre));
+    if(idx[k]<0) faltan.push(nombre);
+  }
+  if(faltan.length) console.warn('Columnas no encontradas en el TSV:', faltan);
+
+  const get = (c,k) => idx[k]>=0 ? (c[idx[k]]||'') : '';
+  DATA=[]; let maxCorte=0;
+  for(let i=iHead+1;i<filas.length;i++){
+    const c=filas[i];
+    const nombre=norm(get(c,'nombre')); const cod=norm(get(c,'codInterno'));
+    if(!nombre && !cod) continue;
+    const corte=norm(get(c,'corte'));
+    const pc=ordenFecha(corte); if(pc>maxCorte){ maxCorte=pc; ULTIMO_CORTE=corte; }
+    const areaRaw=norm(get(c,'area'));
+    DATA.push({
+      corte, codInterno:cod, nombre,
+      area: areaRaw,
+      deptos: partirDeptos(areaRaw),
+      tipoCodigo: norm(get(c,'tipoCodigo')),
+      codigo: limpiarCodigo(get(c,'codigo')),
+      proySer: norm(get(c,'proySer')).toUpperCase(),
+      tipoInfra: norm(get(c,'tipoInfra')).toUpperCase(),
+      entidad: norm(get(c,'entidad')),
+      tipoOrgano: norm(get(c,'tipoOrgano')),
+      montoTxt: norm(get(c,'monto')),
+      monto: aNumero(get(c,'monto')),
+      benef: aNumero(get(c,'benef')),
+      modalidad: norm(get(c,'modalidad')).toUpperCase(),
+      fase: norm(get(c,'fase')).toUpperCase(),
+      finan: norm(get(c,'finan')).toUpperCase(),
+      situacional: limpiarTexto(get(c,'situacional'))
+    });
+  }
+}
+
+// "LIMA , CALLAO" / "Arequipa,Ica" → ['LIMA','CALLAO'] / ['AREQUIPA','ICA']
+function partirDeptos(s){
+  if(!s) return [];
+  return [...new Set(s.split(',').map(p=>norm(p).toLocaleUpperCase('es')).filter(Boolean))];
+}
+function limpiarCodigo(s){
+  const t=norm(s).replace(/\.0+$/,'');
+  return (t==='-' || /^no aplica$/i.test(t)) ? '' : t;
+}
+// Algunos textos traen "\n" escrito literalmente: se convierte en salto de línea real.
+function limpiarTexto(s){
+  return String(s||'').replace(/\\n/g,'\n').split('\n').map(l=>l.trim()).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+// Convierte "45,903,891" / "45.903.891,50" / "45903891" en número
+function aNumero(s){
+  let t=String(s||'').replace(/[^\d.,-]/g,''); if(!t) return NaN;
+  const uc=t.lastIndexOf(','), up=t.lastIndexOf('.');
+  if(uc>-1 && up>-1){ t = uc>up ? t.replace(/\./g,'').replace(',','.') : t.replace(/,/g,''); }
+  else if(uc>-1){ t = /^-?\d{1,3}(,\d{3})+$/.test(t) ? t.replace(/,/g,'') : t.replace(',','.'); }
+  else if(up>-1 && t.split('.').length>2){ t=t.replace(/\./g,''); }
+  const v=parseFloat(t); return isNaN(v)?NaN:v;
+}
+function ordenFecha(s){
+  let m=String(s||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m) return +m[3]*10000 + +m[2]*100 + +m[1];
+  m=String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return +m[1]*10000 + +m[2]*100 + +m[3];
+  return 0;
+}
+
+// ====== UTILIDADES ======
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function uniqSort(arr){ return [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')); }
+function fmtSoles(v){ if(isNaN(v)) return '—'; return 'S/ ' + v.toLocaleString('es-PE',{maximumFractionDigits:0}); }
+function fmtMillones(v){ if(isNaN(v)||!v) return 'S/ 0'; return 'S/ ' + (v/1e6).toLocaleString('es-PE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' M'; }
+function textoCodigo(r){
+  if(!r.codigo) return '';
+  const t=r.tipoCodigo && !/^(no aplica|pendiente)$/i.test(r.tipoCodigo) ? r.tipoCodigo : 'Código';
+  return t+': '+r.codigo;
+}
+function pillFinan(v){
+  if(!v) return '<span class="pill pill-otro">—</span>';
+  if(v.startsWith('SI')) return '<span class="pill pill-si">'+escapeHtml(v)+'</span>';
+  if(v==='NO') return '<span class="pill pill-no">NO</span>';
+  return '<span class="pill pill-otro">'+escapeHtml(v)+'</span>';
+}
+
+// ====== FILTRADO (con cascada) ======
+// Cada filtro muestra solo las opciones posibles según los DEMÁS filtros activos.
+function filtrar(excluir){
+  const fNombre=normClave(document.getElementById('fNombre').value);
+  const fCodigo=normClave(document.getElementById('fCodigo').value);
+  const fProySer=document.getElementById('fProySer').value;
+  const fFinan=document.getElementById('fFinan').value;
+  const fTipo=document.getElementById('fTipo').value;
+  return DATA.filter(r=>{
+    if(excluir!=='nombre'  && fNombre && !normClave(r.nombre).includes(fNombre)) return false;
+    if(excluir!=='codigo'  && fCodigo && !normClave(r.codigo).includes(fCodigo)) return false;
+    if(excluir!=='proySer' && fProySer && r.proySer!==fProySer) return false;
+    if(excluir!=='finan'   && fFinan && r.finan!==fFinan) return false;
+    if(excluir!=='tipo'    && fTipo && r.tipoInfra!==fTipo) return false;
+    for(const [k,cfg] of Object.entries(MS)){
+      if(excluir===k || !cfg.sel.size) continue;
+      if(!cfg.obtener(r).some(v=>cfg.sel.has(v))) return false;
+    }
+    return true;
+  });
+}
+
+function recalcOpciones(){
+  poblarSelect('fProySer', uniqSort(filtrar('proySer').map(r=>r.proySer)));
+  poblarSelect('fFinan',   uniqSort(filtrar('finan').map(r=>r.finan)));
+  poblarSelect('fTipo',    uniqSort(filtrar('tipo').map(r=>r.tipoInfra)));
+  poblarDatalist('fNombreList', uniqSort(filtrar('nombre').map(r=>r.nombre)));
+  poblarDatalist('fCodigoList', uniqSort(filtrar('codigo').map(r=>r.codigo)));
+  for(const k of Object.keys(MS)) renderMultiLista(k, uniqSort(filtrar(k).flatMap(MS[k].obtener)));
+}
+function poblarSelect(id, valores){
+  const sel=document.getElementById(id); const actual=sel.value;
+  sel.innerHTML='<option value="">Todos</option>'+valores.map(v=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>').join('');
+  if(valores.includes(actual)) sel.value=actual;
+}
+function poblarDatalist(id, valores){
+  document.getElementById(id).innerHTML=valores.map(v=>'<option value="'+escapeHtml(v)+'">').join('');
+}
+
+// ====== DROPDOWNS MULTI ======
+function construirMultiSelects(){
+  for(const [k,cfg] of Object.entries(MS)){
+    document.getElementById(cfg.id).innerHTML =
+      '<button type="button" class="ms-btn" onclick="abrirMulti(event,\''+k+'\')"><span id="'+cfg.id+'-lbl">'+cfg.todos+'</span>'+
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>'+
+      '<div class="ms-lista" id="'+cfg.id+'-lista"></div>';
+  }
+}
+function abrirMulti(e, k){
+  e.stopPropagation();
+  const panel=document.getElementById(MS[k].id);
+  document.querySelectorAll('.ms.abierto').forEach(p=>{ if(p!==panel) p.classList.remove('abierto'); });
+  panel.classList.toggle('abierto');
+  if(panel.classList.contains('abierto')){
+    const espacio=window.innerHeight-panel.getBoundingClientRect().bottom;
+    panel.classList.toggle('abre-arriba', espacio<290);
+  }
+}
+function renderMultiLista(k, valores){
+  const cfg=MS[k]; const cont=document.getElementById(cfg.id+'-lista');
+  // Mantener visibles las opciones marcadas aunque la cascada ya no las ofrezca
+  const todos=uniqSort([...valores, ...cfg.sel]);
+  cont.innerHTML = todos.length ? todos.map(v=>
+    '<label class="ms-item"><input type="checkbox" data-k="'+k+'" value="'+escapeHtml(v)+'"'+(cfg.sel.has(v)?' checked':'')+' onchange="toggleMulti(this)"><span>'+escapeHtml(v)+'</span></label>'
+  ).join('') : '<div class="ms-vacio">Sin opciones</div>';
+  const lbl=document.getElementById(cfg.id+'-lbl'); const n=cfg.sel.size;
+  lbl.textContent = n===0 ? cfg.todos : (n===1 ? [...cfg.sel][0] : n+' seleccionados');
+  lbl.style.color = n===0 ? 'var(--text)' : 'var(--blue)';
+}
+function toggleMulti(el){
+  const set=MS[el.dataset.k].sel;
+  if(el.checked) set.add(el.value); else set.delete(el.value);
+  onFiltro();
+}
+document.addEventListener('click', e=>{
+  document.querySelectorAll('.ms.abierto').forEach(p=>{ if(!p.contains(e.target)) p.classList.remove('abierto'); });
+});
+
+// ====== APLICAR / LIMPIAR ======
+function onFiltro(){ recalcOpciones(); render(filtrar()); }
+
+function limpiarFiltros(){
+  ['fNombre','fCodigo','fProySer','fFinan','fTipo'].forEach(id=>document.getElementById(id).value='');
+  Object.values(MS).forEach(cfg=>cfg.sel.clear());
+  onFiltro();
+}
+
+// ====== RENDER ======
+function render(filas){
+  const nProy=filas.filter(r=>r.proySer==='PROYECTO').length;
+  const nServ=filas.filter(r=>r.proySer==='SERVICIO').length;
+  const monto=filas.reduce((a,r)=>a+(isNaN(r.monto)?0:r.monto),0);
+  document.getElementById('kpis').innerHTML =
+    '<strong>'+filas.length+'</strong> intervenciones · <strong>'+nProy+'</strong> proyectos · <strong>'+nServ+'</strong> servicios · <strong>'+fmtMillones(monto)+'</strong> en monto total';
+
+  const tbody=document.getElementById('tbody');
+  if(!filas.length){ tbody.innerHTML='<tr><td colspan="8" class="vacio">No hay intervenciones con estos filtros. Prueba quitando alguno con "Limpiar filtros".</td></tr>'; return; }
+
+  tbody.innerHTML = filas.map(r=>{
+    const i=DATA.indexOf(r);
+    const cod=textoCodigo(r);
+    const meta=[cod, r.tipoInfra, isNaN(r.monto)?'':fmtSoles(r.monto)].filter(Boolean).map(escapeHtml).join(' · ');
+    const largo=r.situacional.length>320 || (r.situacional.match(/\n/g)||[]).length>5;
+    return '<tr>'+
+      '<td class="c-corte">'+escapeHtml(r.corte||'—')+'</td>'+
+      '<td><div class="c-nombre">'+escapeHtml(r.nombre||'—')+'</div>'+(meta?'<div class="c-meta">'+meta+'</div>':'')+'</td>'+
+      '<td class="c-resp">'+escapeHtml(r.entidad||'—')+'</td>'+
+      '<td class="c-area">'+escapeHtml(r.deptos.join(', ')||'—')+'</td>'+
+      '<td>'+(r.modalidad?'<span class="pill pill-mod">'+escapeHtml(r.modalidad)+'</span>':'—')+'</td>'+
+      '<td>'+escapeHtml(r.fase||'—')+'</td>'+
+      '<td>'+(r.situacional?'<div class="c-sit">'+escapeHtml(r.situacional)+'</div>'+(largo?'<button class="ver-mas" onclick="abrirSit('+i+')">Ver completo</button>':''):'<span style="color:var(--text-3)">Sin registro</span>')+'</td>'+
+      '<td>'+pillFinan(r.finan)+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+// ====== MODALES ======
+function abrirSit(i){
+  const r=DATA[i]; if(!r) return;
+  document.getElementById('sitNombre').textContent = r.nombre + (r.entidad?'  ('+r.entidad+')':'');
+  document.getElementById('sitTexto').textContent = r.situacional || 'Sin registro';
+  abrirModal('ovSit');
+}
+function abrirModal(id){ document.getElementById(id).classList.add('show'); document.body.style.overflow='hidden'; }
+function cerrarModal(id){ document.getElementById(id).classList.remove('show'); document.body.style.overflow=''; }
+['ovSit','ovRes'].forEach(id=>{
+  const ov=document.getElementById(id); let down=false;
+  ov.addEventListener('mousedown', e=>{ down=(e.target===ov); });
+  ov.addEventListener('click', e=>{ if(e.target===ov && down) cerrarModal(id); down=false; });
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ cerrarModal('ovSit'); cerrarModal('ovRes'); } });
+
+function abrirResumen(){
+  const filas=filtrar();
+  document.getElementById('resFiltros').textContent = resumenFiltros();
+  const bloque=(titulo, campo)=>{
+    const g={};
+    filas.forEach(r=>{ const k=r[campo]||'(Sin dato)'; g[k]=g[k]||{n:0,m:0,si:0}; g[k].n++; if(!isNaN(r.monto)) g[k].m+=r.monto; if(r.finan.startsWith('SI')) g[k].si++; });
+    const orden=Object.entries(g).sort((a,b)=>b[1].n-a[1].n);
+    const tot=orden.reduce((a,[,v])=>({n:a.n+v.n,m:a.m+v.m,si:a.si+v.si}),{n:0,m:0,si:0});
+    return '<div class="res-bloque"><h4>'+titulo+'</h4><div class="tabla-wrap"><table class="res-tabla"><thead><tr><th>'+titulo+'</th><th class="num">N.º</th><th class="num">Con financ. 2026</th><th class="num">Monto</th></tr></thead><tbody>'+
+      orden.map(([k,v])=>'<tr><td>'+escapeHtml(k)+'</td><td class="num">'+v.n+'</td><td class="num">'+v.si+'</td><td class="num">'+fmtMillones(v.m)+'</td></tr>').join('')+
+      '</tbody><tfoot><tr><td>Total</td><td class="num">'+tot.n+'</td><td class="num">'+tot.si+'</td><td class="num">'+fmtMillones(tot.m)+'</td></tr></tfoot></table></div></div>';
+  };
+  document.getElementById('resContenido').innerHTML = filas.length
+    ? bloque('Entidad reportante','entidad') + bloque('Tipo de infraestructura','tipoInfra') + bloque('Modalidad de ejecución','modalidad') + bloque('Fase','fase')
+    : '<div class="vacio">No hay intervenciones con estos filtros.</div>';
+  abrirModal('ovRes');
+}
+
+function resumenFiltros(){
+  const p=[];
+  if(MS.entidad.sel.size)   p.push('Entidad: '+[...MS.entidad.sel].join(', '));
+  const n=document.getElementById('fNombre').value.trim(); if(n) p.push('Intervención: "'+n+'"');
+  const c=document.getElementById('fCodigo').value.trim(); if(c) p.push('Código: '+c);
+  const ps=document.getElementById('fProySer').value; if(ps) p.push('Tipo: '+ps);
+  const f=document.getElementById('fFinan').value; if(f) p.push('Financ. 2026: '+f);
+  if(MS.depto.sel.size)     p.push('Área: '+[...MS.depto.sel].join(', '));
+  const t=document.getElementById('fTipo').value; if(t) p.push('Infraestructura: '+t);
+  if(MS.modalidad.sel.size) p.push('Modalidad: '+[...MS.modalidad.sel].join(', '));
+  if(MS.fase.sel.size)      p.push('Fase: '+[...MS.fase.sel].join(', '));
+  return p.length ? 'Filtros aplicados: '+p.join(' · ') : 'Sin filtros aplicados';
+}
+
+// ====== EXPORTAR EXCEL ======
+function exportarXLSX(){
+  if(typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
+  const filas=filtrar();
+  if(!filas.length){ alert('No hay intervenciones para exportar con los filtros actuales.'); return; }
+  const headers=['Corte','COD INTERNO','Nombre de la intervención','Área de influencia','Tipo de Código','Código','Proyecto / Servicio','Tipo de Infraestructura','Entidad Reportante','Tipo de Órgano ejecutor','Monto de la intervención S/','Beneficiarios','Modalidad de ejecución','Fase','Financiamiento 2026','Estado Situacional'];
+  const nc=headers.length;
+  const rows=[
+    ['Intervenciones MTC al '+(ULTIMO_CORTE||'—')].concat(Array(nc-1).fill('')),
+    [resumenFiltros()].concat(Array(nc-1).fill('')),
+    headers
+  ];
+  filas.forEach(r=>rows.push([r.corte,r.codInterno,r.nombre,r.area,r.tipoCodigo,r.codigo,r.proySer,r.tipoInfra,r.entidad,r.tipoOrgano,
+    isNaN(r.monto)?'':r.monto, isNaN(r.benef)?'':r.benef, r.modalidad,r.fase,r.finan,r.situacional]));
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:nc-1}},{s:{r:1,c:0},e:{r:1,c:nc-1}}];
+  ws['!cols']=[12,14,50,20,10,12,12,16,12,12,16,13,20,24,12,70].map(w=>({wch:w}));
+  ws['A1'].s={ font:{bold:true,color:{rgb:'C8102E'},sz:13} };
+  ws['A2'].s={ font:{italic:true,color:{rgb:'444444'},sz:9}, alignment:{wrapText:true} };
+  const estHead={ font:{bold:true,color:{rgb:'FFFFFF'},sz:10}, fill:{fgColor:{rgb:'0055A5'}}, alignment:{horizontal:'center',vertical:'center',wrapText:true} };
+  const estCel={ font:{sz:10}, alignment:{vertical:'top',wrapText:true} };
+  const estNum={ font:{sz:10}, alignment:{vertical:'top'}, numFmt:'#,##0' };
+  for(let c=0;c<nc;c++){ const ref=XLSX.utils.encode_cell({r:2,c}); if(ws[ref]) ws[ref].s=estHead; }
+  for(let r=3;r<rows.length;r++) for(let c=0;c<nc;c++){
+    const ref=XLSX.utils.encode_cell({r,c}); if(ws[ref]) ws[ref].s=(c===10||c===11)?estNum:estCel;
+  }
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Intervenciones');
+  XLSX.writeFile(wb,'intervenciones_mtc_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+// ====== EXPORTAR PDF ======
+function exportarPDF(){
+  if(typeof window.jspdf==='undefined'){ alert('No se pudo cargar el componente PDF.'); return; }
+  const filas=filtrar();
+  if(!filas.length){ alert('No hay intervenciones para exportar con los filtros actuales.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc=new jsPDF({ orientation:'landscape', unit:'mm', format:'a3' });
+  const pw=doc.internal.pageSize.getWidth(); const MARGIN=8; const ANCHO=pw-MARGIN*2; const ALT=26;
+  const filtroTxt=resumenFiltros();
+  function encabezado(){
+    doc.setFillColor(200,16,46); doc.rect(0,0,pw,ALT,'F'); doc.setTextColor(255,255,255);
+    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('INTERVENCIONES MTC', pw/2, 9, {align:'center'});
+    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.text('Último corte: '+(ULTIMO_CORTE||'—'), pw/2, 16, {align:'center'});
+    doc.text(doc.splitTextToSize(filtroTxt, pw-20)[0], pw/2, 23, {align:'center'});
+    doc.setTextColor(0,0,0);
+  }
+  encabezado();
+  const PROPS=[0.05,0.23,0.06,0.09,0.08,0.09,0.33,0.07];
+  const colStyles={}; PROPS.forEach((p,i)=>colStyles[i]={cellWidth:Math.round(p*ANCHO*10)/10});
+  const body=filas.map(r=>{
+    const cod=textoCodigo(r);
+    return [r.corte, r.nombre+(cod?'\n'+cod:''), r.entidad, r.deptos.join(', '), r.modalidad, r.fase, r.situacional, r.finan];
+  });
+  doc.autoTable({
+    head:[['Corte','Intervención','Responsable','Área de influencia','Modalidad de ejecución','Fase','Estado situacional','Financ. 2026']],
+    body, startY:ALT+2, tableWidth:ANCHO,
+    styles:{ fontSize:9, cellPadding:2.5, valign:'top', overflow:'linebreak' },
+    headStyles:{ fillColor:[0,85,165], textColor:255, fontStyle:'bold', halign:'center' },
+    columnStyles:colStyles,
+    alternateRowStyles:{ fillColor:[245,247,250] },
+    margin:{ top:ALT+2, left:MARGIN, right:MARGIN, bottom:10 },
+    didDrawPage:(d)=>{
+      if(d.pageNumber>1) encabezado();
+      const ph=doc.internal.pageSize.getHeight();
+      doc.setFontSize(8); doc.setTextColor(150);
+      doc.text('Pág. '+d.pageNumber, pw-MARGIN, ph-4, {align:'right'});
+      doc.text('OGAME · MTC', MARGIN, ph-4);
+      doc.setTextColor(0,0,0);
+    }
+  });
+  doc.save('intervenciones_mtc_'+new Date().toISOString().slice(0,10)+'.pdf');
+}
+
+// ====== INICIO ======
+cargar();
+</script>
+</body>
+</html>
