@@ -97,6 +97,14 @@
   .pill-no { background:#fdecee; color:#a50d26; }
   .pill-otro { background:#f0f1f3; color:#5f6b7a; }
   .pill-mod { background:var(--blue-lt); color:var(--blue); font-weight:600; white-space:normal; }
+  .c-prio { white-space:nowrap; }
+  .btn-lupa { background:none; border:none; cursor:pointer; color:var(--blue); padding:4px; border-radius:6px; vertical-align:middle; margin-left:4px; }
+  .btn-lupa:hover { background:var(--blue-lt); }
+  .est { display:inline-block; padding:2px 9px; border-radius:12px; font-size:11.5px; font-weight:700; white-space:nowrap; }
+  .est-cumplido { background:#E0F3EA; color:#0c6647; }
+  .est-proceso { background:var(--blue-lt); color:var(--blue); }
+  .est-reprog { background:#FFF3D6; color:#8a6200; }
+  .est-noini { background:#f0f1f3; color:#5f6b7a; }
 
   /* Modales */
   .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:500; align-items:center; justify-content:center; padding:20px; }
@@ -198,13 +206,14 @@
           <thead>
             <tr>
               <th style="width:7%">Corte</th>
-              <th style="width:24%">Intervención</th>
+              <th style="width:23%">Intervención</th>
               <th style="width:7%">Responsable</th>
               <th style="width:10%">Área de influencia</th>
               <th style="width:10%">Modalidad de ejecución</th>
               <th style="width:10%">Fase</th>
-              <th style="width:24%">Estado situacional</th>
-              <th style="width:8%">Financiamiento 2026</th>
+              <th style="width:22%">Estado situacional</th>
+              <th style="width:7%">Financiamiento 2026</th>
+              <th style="width:7%">Cartera Priorizada 26-27</th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
@@ -225,6 +234,25 @@
       <button class="modal-x" onclick="cerrarModal('ovSit')" aria-label="Cerrar">&times;</button>
     </div>
     <div class="modal-texto" id="sitTexto">—</div>
+  </div>
+</div>
+
+<!-- MODAL HITOS -->
+<div class="overlay" id="ovHitos">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">Hitos de la intervención</div>
+        <div class="modal-sub" id="hitosNombre">—</div>
+      </div>
+      <button class="modal-x" onclick="cerrarModal('ovHitos')" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="tabla-wrap">
+      <table class="res-tabla">
+        <thead><tr><th>Hito(s) clave(s)</th><th style="width:22%">Fecha de cumplimiento</th><th style="width:22%">Estado de cumplimiento</th></tr></thead>
+        <tbody id="hitosBody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -279,6 +307,18 @@ const COLS = {
 let DATA = [];
 let ULTIMO_CORTE = '';
 
+// Hitos (otro Sheet). Se unen con la tabla principal por COD INTERNO.
+const HITOS_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=560017280&single=true&output=tsv';
+const COLS_HITOS = {
+  registro:   'Fecha de registro',
+  codInterno: 'COD INTERNO',
+  codHito:    'CODHITOS',
+  hito:       'Hito(s) clave(s)',
+  fecha:      'Fecha de Cumplimiento',
+  estado:     'Estado de Cumplimiento'
+};
+let HITOS = {};   // { 'DGPRTM-1': [ {hito, fecha, estado}, ... ] }
+
 // Filtros de selección múltiple
 const MS = {
   entidad:   { id:'ms-entidad',   sel:new Set(), todos:'Todas', obtener:r=>[r.entidad] },
@@ -290,8 +330,12 @@ const MS = {
 // ====== CARGA ======
 async function cargar(){
   try {
-    const txt = await fetchProxy(DATA_TSV);
+    const [txt, txtHitos] = await Promise.all([
+      fetchProxy(DATA_TSV),
+      fetchProxy(HITOS_TSV).catch(e=>{ console.warn('No se pudieron cargar los hitos:', e.message); return ''; })
+    ]);
     parseData(txt);
+    if(txtHitos) parseHitos(txtHitos);
     construirMultiSelects();
     document.getElementById('loadingMsg').style.display='none';
     document.getElementById('tablaWrap').style.display='block';
@@ -336,6 +380,52 @@ function leerTSV(txt){
 
 const norm = s => String(s||'').trim().replace(/\s+/g,' ');
 const normClave = s => norm(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+
+// Ubica la fila de encabezados (la que contiene COD INTERNO) y la posición de cada columna por nombre.
+function mapearColumnas(filas, cols){
+  const iHead = filas.findIndex(f => f.some(c => normClave(c)===normClave('COD INTERNO')));
+  if(iHead<0) return null;
+  const head = filas[iHead].map(normClave);
+  const idx = {}; const faltan=[];
+  for(const [k,nombre] of Object.entries(cols)){ idx[k]=head.indexOf(normClave(nombre)); if(idx[k]<0) faltan.push(nombre); }
+  if(faltan.length) console.warn('Columnas no encontradas:', faltan);
+  return { iHead, idx };
+}
+
+function parseHitos(txt){
+  const filas=leerTSV(txt); const m=mapearColumnas(filas, COLS_HITOS); if(!m) return;
+  const get=(c,k)=> m.idx[k]>=0 ? norm(c[m.idx[k]]) : '';
+  // Si un mismo hito aparece en varias fechas de registro, se queda el registro más reciente.
+  const porHito={};
+  for(let i=m.iHead+1;i<filas.length;i++){
+    const c=filas[i]; const interno=get(c,'codInterno'); const hito=get(c,'hito');
+    if(!interno || !hito) continue;
+    const clave = get(c,'codHito') || (interno+'|'+hito);
+    const reg = ordenFecha(get(c,'registro'));
+    if(porHito[clave] && porHito[clave].reg > reg) continue;
+    porHito[clave]={ reg, interno, codHito:get(c,'codHito'), hito, fecha:get(c,'fecha'), estado:get(c,'estado') };
+  }
+  HITOS={};
+  Object.values(porHito).forEach(h=>{ const k=normClave(h.interno); (HITOS[k]=HITOS[k]||[]).push(h); });
+  Object.values(HITOS).forEach(l=>l.sort((a,b)=>a.codHito.localeCompare(b.codHito,'es',{numeric:true})));
+}
+function tieneHitos(r){ return !!(r.codInterno && HITOS[normClave(r.codInterno)]); }
+
+function chipEstado(e){
+  const k=normClave(e);
+  const cls = k.startsWith('cumplido') ? 'est-cumplido' : k.includes('proceso') ? 'est-proceso' : k.startsWith('reprogramado') ? 'est-reprog' : 'est-noini';
+  return e ? '<span class="est '+cls+'">'+escapeHtml(e)+'</span>' : '—';
+}
+
+function abrirHitos(i){
+  const r=DATA[i]; if(!r) return;
+  const lista=HITOS[normClave(r.codInterno)]||[];
+  document.getElementById('hitosNombre').textContent = r.nombre + (r.entidad?'  ('+r.entidad+')':'');
+  document.getElementById('hitosBody').innerHTML = lista.map(h=>
+    '<tr><td>'+escapeHtml(h.hito)+'</td><td>'+escapeHtml(h.fecha||'—')+'</td><td>'+chipEstado(h.estado)+'</td></tr>'
+  ).join('');
+  abrirModal('ovHitos');
+}
 
 function parseData(txt){
   const filas = leerTSV(txt);
@@ -531,7 +621,7 @@ function render(filas){
     '<strong>'+filas.length+'</strong> intervenciones · <strong>'+nProy+'</strong> proyectos · <strong>'+nServ+'</strong> servicios · <strong>'+fmtMillones(monto)+'</strong> en monto total';
 
   const tbody=document.getElementById('tbody');
-  if(!filas.length){ tbody.innerHTML='<tr><td colspan="8" class="vacio">No hay intervenciones con estos filtros. Prueba quitando alguno con "Limpiar filtros".</td></tr>'; return; }
+  if(!filas.length){ tbody.innerHTML='<tr><td colspan="9" class="vacio">No hay intervenciones con estos filtros. Prueba quitando alguno con "Limpiar filtros".</td></tr>'; return; }
 
   tbody.innerHTML = filas.map(r=>{
     const i=DATA.indexOf(r);
@@ -547,6 +637,7 @@ function render(filas){
       '<td>'+escapeHtml(r.fase||'—')+'</td>'+
       '<td>'+(r.situacional?'<div class="c-sit">'+escapeHtml(r.situacional)+'</div>'+(largo?'<button class="ver-mas" onclick="abrirSit('+i+')">Ver completo</button>':''):'<span style="color:var(--text-3)">Sin registro</span>')+'</td>'+
       '<td>'+pillFinan(r.finan)+'</td>'+
+      '<td class="c-prio">'+pillFinan(r.prio)+(tieneHitos(r)?'<button class="btn-lupa" onclick="abrirHitos('+i+')" title="Ver hitos" aria-label="Ver hitos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>':'')+'</td>'+
     '</tr>';
   }).join('');
 }
@@ -560,12 +651,12 @@ function abrirSit(i){
 }
 function abrirModal(id){ document.getElementById(id).classList.add('show'); document.body.style.overflow='hidden'; }
 function cerrarModal(id){ document.getElementById(id).classList.remove('show'); document.body.style.overflow=''; }
-['ovSit','ovRes'].forEach(id=>{
+['ovSit','ovRes','ovHitos'].forEach(id=>{
   const ov=document.getElementById(id); let down=false;
   ov.addEventListener('mousedown', e=>{ down=(e.target===ov); });
   ov.addEventListener('click', e=>{ if(e.target===ov && down) cerrarModal(id); down=false; });
 });
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ cerrarModal('ovSit'); cerrarModal('ovRes'); } });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ cerrarModal('ovSit'); cerrarModal('ovRes'); cerrarModal('ovHitos'); } });
 
 function abrirResumen(){
   const filas=filtrar();
