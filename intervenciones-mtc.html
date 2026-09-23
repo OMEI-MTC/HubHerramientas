@@ -35,6 +35,21 @@
   .main { padding:28px; }
   .panel { max-width:1900px; margin:0 auto; background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:28px 32px; }
   .panel-title { font-weight:700; font-size:30px; color:var(--blue); line-height:1.1; letter-spacing:-0.01em; }
+  .panel-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+  .btn-pbi { display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border:1.5px solid var(--blue); border-radius:8px; color:var(--blue); background:#fff; font-family:inherit; font-size:13px; font-weight:600; text-decoration:none; white-space:nowrap; }
+  .btn-pbi:hover { background:var(--blue-lt); }
+  /* La tabla principal tiene su propio scroll para que el encabezado quede fijo */
+  #tablaWrap { max-height:calc(100vh - 120px); min-height:360px; overflow:auto; }
+  /* Tabla combinada Modalidad / Fase del resumen */
+  .res-full { grid-column:1 / -1; }
+  .mf-grupo td { background:#f4f7fb; font-weight:700; color:var(--blue-dk); cursor:pointer; }
+  .mf-grupo:hover td { background:#e9f0fa; }
+  .mf-flecha { display:inline-block; width:14px; transition:transform .15s; }
+  .mf-grupo.abierto .mf-flecha { transform:rotate(90deg); }
+  .mf-fase td:first-child { padding-left:30px; }
+  .mf-fase.oculto { display:none; }
+  .mf-ctrl { background:none; border:none; color:var(--blue); font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; margin-left:10px; }
+  .mf-ctrl:hover { text-decoration:underline; }
   .panel-kpis { font-size:14px; color:var(--text-2); margin-top:6px; }
   .panel-kpis strong { color:var(--text); }
   .panel-corte { font-size:13px; color:var(--text-3); margin-top:2px; margin-bottom:20px; }
@@ -145,8 +160,16 @@
 
   <main class="main">
     <div class="panel">
-      <div class="panel-title">Intervenciones MTC</div>
-      <div class="panel-kpis" id="kpis">—</div>
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Intervenciones MTC</div>
+          <div class="panel-kpis" id="kpis">—</div>
+        </div>
+        <a class="btn-pbi" href="https://app.powerbi.com/view?r=eyJrIjoiNWIxMTVkYWUtMDMwMi00YWRmLTg5MzEtMzY1ZDVmYzVjMjFmIiwidCI6IjUzYWNiMjY1LTkxMjgtNDQ2ZC1hNWJlLWI4Mzg2MDBhYTY1NyJ9&language=en-US" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Ver en Power BI
+        </a>
+      </div>
       <div class="panel-corte" id="corteLabel">—</div>
 
       <!-- FILTROS -->
@@ -671,9 +694,44 @@ function abrirResumen(){
       '</tbody><tfoot><tr><td>Total</td><td class="num">'+tot.n+'</td><td class="num">'+tot.si+'</td><td class="num">'+fmtMillones(tot.m)+'</td></tr></tfoot></table></div></div>';
   };
   document.getElementById('resContenido').innerHTML = filas.length
-    ? bloque('Entidad reportante','entidad') + bloque('Tipo de infraestructura','tipoInfra') + bloque('Modalidad de ejecución','modalidad') + bloque('Fase','fase')
+    ? bloque('Entidad reportante','entidad') + bloque('Tipo de infraestructura','tipoInfra') + bloqueModalidadFase(filas)
     : '<div class="vacio">No hay intervenciones con estos filtros.</div>';
   abrirModal('ovRes');
+}
+
+// Tabla tipo matriz: cada modalidad con sus fases debajo (se expanden con clic)
+function bloqueModalidadFase(filas){
+  const acum=(o,r)=>{ o.n++; if(!isNaN(r.monto)) o.m+=r.monto; if(r.finan.startsWith('SI')) o.si++; };
+  const g={}; const tot={n:0,m:0,si:0};
+  filas.forEach(r=>{
+    const mod=r.modalidad||'(Sin dato)', fase=r.fase||'(Sin dato)';
+    g[mod]=g[mod]||{n:0,m:0,si:0,fases:{}};
+    g[mod].fases[fase]=g[mod].fases[fase]||{n:0,m:0,si:0};
+    acum(g[mod],r); acum(g[mod].fases[fase],r); acum(tot,r);
+  });
+  const celdas=v=>'<td class="num">'+v.n+'</td><td class="num">'+v.si+'</td><td class="num">'+fmtMillones(v.m)+'</td>';
+  let cuerpo=''; let gi=0;
+  Object.entries(g).sort((a,b)=>b[1].n-a[1].n).forEach(([mod,v])=>{
+    cuerpo+='<tr class="mf-grupo" data-g="'+gi+'" onclick="toggleMF('+gi+')"><td><span class="mf-flecha">▸</span> '+escapeHtml(mod)+'</td>'+celdas(v)+'</tr>';
+    Object.entries(v.fases).sort((a,b)=>b[1].n-a[1].n).forEach(([fase,f])=>{
+      cuerpo+='<tr class="mf-fase oculto" data-g="'+gi+'"><td>'+escapeHtml(fase)+'</td>'+celdas(f)+'</tr>';
+    });
+    gi++;
+  });
+  return '<div class="res-bloque res-full"><h4>Modalidad de ejecución / Fase'+
+    '<button class="mf-ctrl" onclick="toggleMFTodo(true)">Expandir todo</button><button class="mf-ctrl" onclick="toggleMFTodo(false)">Contraer todo</button></h4>'+
+    '<div class="tabla-wrap"><table class="res-tabla"><thead><tr><th>Modalidad / Fase</th><th class="num">N.º</th><th class="num">Con financ. 2026</th><th class="num">Monto</th></tr></thead><tbody>'+
+    cuerpo+'</tbody><tfoot><tr><td>Total</td>'+celdas(tot)+'</tr></tfoot></table></div></div>';
+}
+function toggleMF(gi){
+  const fila=document.querySelector('.mf-grupo[data-g="'+gi+'"]');
+  const abrir=!fila.classList.contains('abierto');
+  fila.classList.toggle('abierto',abrir);
+  document.querySelectorAll('.mf-fase[data-g="'+gi+'"]').forEach(f=>f.classList.toggle('oculto',!abrir));
+}
+function toggleMFTodo(abrir){
+  document.querySelectorAll('.mf-grupo').forEach(f=>f.classList.toggle('abierto',abrir));
+  document.querySelectorAll('.mf-fase').forEach(f=>f.classList.toggle('oculto',!abrir));
 }
 
 function resumenFiltros(){
