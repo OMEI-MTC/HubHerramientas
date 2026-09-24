@@ -278,6 +278,7 @@
       <div>
         <div class="modal-title">Hitos de la intervención</div>
         <div class="modal-sub" id="hitosNombre">—</div>
+        <div class="modal-sub" id="hitosCorte" style="font-weight:600;">—</div>
       </div>
       <button class="modal-x" onclick="cerrarModal('ovHitos')" aria-label="Cerrar">&times;</button>
     </div>
@@ -461,7 +462,7 @@ function parseHitos(txt){
     const clave = get(c,'codHito') || (interno+'|'+hito);
     const reg = ordenFecha(get(c,'registro'));
     if(porHito[clave] && porHito[clave].reg > reg) continue;
-    porHito[clave]={ reg, interno, codHito:get(c,'codHito'), hito, fecha:get(c,'fecha'), estado:get(c,'estado') };
+    porHito[clave]={ reg, regTxt:get(c,'registro'), interno, codHito:get(c,'codHito'), hito, fecha:get(c,'fecha'), estado:get(c,'estado') };
   }
   HITOS={};
   Object.values(porHito).forEach(h=>{ const k=normClave(h.interno); (HITOS[k]=HITOS[k]||[]).push(h); });
@@ -479,6 +480,9 @@ function abrirHitos(i){
   const r=DATA[i]; if(!r) return;
   const lista=HITOS[normClave(r.codInterno)]||[];
   document.getElementById('hitosNombre').textContent = r.nombre + (r.entidad?'  ('+r.entidad+')':'');
+  // Corte = fecha de registro más reciente entre los hitos de la intervención
+  const ult = lista.reduce((m,h)=> h.reg>m.reg ? h : m, {reg:-1,regTxt:''});
+  document.getElementById('hitosCorte').textContent = 'Corte: ' + (ult.regTxt || '—');
   document.getElementById('hitosBody').innerHTML = lista.map(h=>
     '<tr><td>'+escapeHtml(h.hito)+'</td><td>'+escapeHtml(h.fecha||'—')+'</td><td>'+chipEstado(h.estado)+'</td></tr>'
   ).join('');
@@ -707,7 +711,7 @@ function render(filas){
       '<td>'+escapeHtml(r.fase||'—')+'</td>'+
       '<td>'+(r.situacional?'<div class="c-sit">'+escapeHtml(r.situacional)+'</div>'+(largo?'<button class="ver-mas" onclick="abrirSit('+i+')">Ver completo</button>':''):'<span style="color:var(--text-3)">Sin registro</span>')+'</td>'+
       '<td>'+pillFinan(r.finan)+'</td>'+
-      '<td class="c-prio">'+(tieneHitos(r)?'<button class="btn-lupa" onclick="abrirHitos('+i+')" title="Ver hitos" aria-label="Ver hitos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>':'')+'</td>'+
+      '<td class="c-prio">'+(tieneHitos(r)?'<button class="btn-lupa" onclick="abrirHitos('+i+')" title="Ver hitos" aria-label="Ver hitos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>':'<span style="color:var(--text-3)">—</span>')+'</td>'+
     '</tr>';
   }).join('');
 }
