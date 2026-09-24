@@ -125,7 +125,7 @@
   .pill-no { background:#fdecee; color:#a50d26; }
   .pill-otro { background:#f0f1f3; color:#5f6b7a; }
   .pill-mod { background:var(--blue-lt); color:var(--blue); font-weight:600; white-space:normal; }
-  .c-prio { white-space:nowrap; }
+  .c-prio { white-space:nowrap; text-align:center; }
   .btn-lupa { background:none; border:none; cursor:pointer; color:var(--blue); padding:4px; border-radius:6px; vertical-align:middle; margin-left:4px; }
   .btn-lupa:hover { background:var(--blue-lt); }
   .est { display:inline-block; padding:2px 9px; border-radius:12px; font-size:11.5px; font-weight:700; white-space:nowrap; }
@@ -342,7 +342,6 @@ const CORS_PROXIES = [
 const COLS = {
   corte:      'Corte',
   vicem:      'Viceministerio',
-  prio:       'HOJA DE RUTA',
   codInterno: 'COD INTERNO',
   nombre:     'Nombre de la intervención',
   area:       'Área de influencia',
@@ -392,6 +391,9 @@ async function cargar(){
     ]);
     parseData(txt);
     if(txtHitos) parseHitos(txtHitos);
+    // Hoja de Ruta: SI si la intervención tiene hitos registrados, NO si no tiene.
+    // Si la hoja de hitos no cargó, se deja vacío (—) para no mostrar un NO falso.
+    DATA.forEach(r=>{ r.prio = txtHitos ? (tieneHitos(r)?'SI':'NO') : ''; });
     construirMultiSelects();
     document.getElementById('loadingMsg').style.display='none';
     document.getElementById('tablaWrap').style.display='block';
@@ -508,7 +510,7 @@ function parseData(txt){
     DATA.push({
       corte, codInterno:cod, nombre,
       vicem: norm(get(c,'vicem')).toUpperCase(),
-      prio: norm(get(c,'prio')).toUpperCase().replace('SÍ','SI'),
+      prio: '',
       area: areaRaw,
       deptos: partirDeptos(areaRaw),
       tipoCodigo: norm(get(c,'tipoCodigo')),
@@ -705,7 +707,7 @@ function render(filas){
       '<td>'+escapeHtml(r.fase||'—')+'</td>'+
       '<td>'+(r.situacional?'<div class="c-sit">'+escapeHtml(r.situacional)+'</div>'+(largo?'<button class="ver-mas" onclick="abrirSit('+i+')">Ver completo</button>':''):'<span style="color:var(--text-3)">Sin registro</span>')+'</td>'+
       '<td>'+pillFinan(r.finan)+'</td>'+
-      '<td class="c-prio">'+pillFinan(r.prio)+(tieneHitos(r)?'<button class="btn-lupa" onclick="abrirHitos('+i+')" title="Ver hitos" aria-label="Ver hitos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>':'')+'</td>'+
+      '<td class="c-prio">'+(tieneHitos(r)?'<button class="btn-lupa" onclick="abrirHitos('+i+')" title="Ver hitos" aria-label="Ver hitos"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>':'')+'</td>'+
     '</tr>';
   }).join('');
 }
