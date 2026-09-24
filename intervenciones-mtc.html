@@ -342,7 +342,7 @@ const CORS_PROXIES = [
 const COLS = {
   corte:      'Corte',
   vicem:      'Viceministerio',
-  prio:       'PRIORIZADOS',
+  prio:       'HOJA DE RUTA',
   codInterno: 'COD INTERNO',
   nombre:     'Nombre de la intervención',
   area:       'Área de influencia',
@@ -800,7 +800,7 @@ function exportarXLSX(){
   if(typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
   const filas=filtrar();
   if(!filas.length){ alert('No hay intervenciones para exportar con los filtros actuales.'); return; }
-  const headers=['Corte','Viceministerio','Priorizados','COD INTERNO','Nombre de la intervención','Área de influencia','Tipo de Código','Código','Proyecto / Servicio','Tipo de Infraestructura','Entidad Reportante','Tipo de Órgano ejecutor','Monto de la intervención S/','Beneficiarios','Modalidad de ejecución','Fase','Financiamiento 2026','Estado Situacional'];
+  const headers=['Corte','Viceministerio','Hoja de Ruta','COD INTERNO','Nombre de la intervención','Área de influencia','Tipo de Código','Código','Proyecto / Servicio','Tipo de Infraestructura','Entidad Reportante','Tipo de Órgano ejecutor','Monto de la intervención S/','Beneficiarios','Modalidad de ejecución','Fase','Financiamiento 2026','Estado Situacional'];
   const nc=headers.length;
   const rows=[
     ['Intervenciones MTC al '+(ULTIMO_CORTE||'—')].concat(Array(nc-1).fill('')),
