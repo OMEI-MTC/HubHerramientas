@@ -2150,7 +2150,7 @@ function renderTabla() {
     const tieneRegistro = !!est.fechaReg;
 
     const estadoHtml = est.estado
-      ? `<div class="estado-situacional">${esc(est.estado)}</div>`
+      ? `<div class="estado-situacional">${esc(est.estado).replace(/\n/g, '<br>')}</div>`
       : `<div class="estado-vacio">Sin registro</div>`;
 
     // Avance físico (registrado a mano)
@@ -2682,7 +2682,13 @@ async function guardarRegistro() {
   }
 
   const validado = esValidacion() && document.getElementById('m-validado').checked;
-  const accion   = esOgame() ? 'validarOgame' : 'registrarHojaRuta';
+  // El vice que valida usa 'validarRegistro' para no resetear el estado.
+  // El vice que solo edita contenido usa 'registrarHojaRuta'.
+  // OGAME siempre usa 'validarOgame'.
+  let accion;
+  if (esOgame()) accion = 'validarOgame';
+  else if (esValidacion()) accion = 'validarRegistro';
+  else accion = 'registrarHojaRuta';
 
   const payload = {
     accion:        accion,
@@ -2692,6 +2698,9 @@ async function guardarRegistro() {
     organo:        intervModal.organo,
     estado:        document.getElementById('m-estado').value.trim(),
     validado:      validado ? 'Sí' : 'No',
+    estadoVal:     validado ? 'Validado' : (prevInterv[intervModal.codigo]?.estadoVal || 'Pendiente'),
+    observacion:   prevInterv[intervModal.codigo]?.observacion || '',
+    periodicidad:  intervModal.periodicidad || '',
     validadoOgame: esOgame() && document.getElementById('m-validado')?.checked ? 'Sí' : 'No',
     registradoPor: usuarioActivo || oficinaEdicion,
     hitos:         hitos
@@ -2704,20 +2713,23 @@ async function guardarRegistro() {
       // Actualizar estado local sin recargar
       const estadoValNuevo = validado ? 'Validado' : (prevInterv[intervModal.codigo]?.estadoVal || 'Pendiente');
       const nuevoEst = {
-        fechaReg:   data.fechaRegistro || fechaDisplay(new Date().toISOString().split('T')[0]),
-        estado:     payload.estado,
-        avance:     payload.avance,
-        priorizado: vistaInterv[intervModal.codigo]?.priorizado || false,
+        fechaReg:        prevInterv[intervModal.codigo]?.fechaReg || fechaDisplay(new Date().toISOString().split('T')[0]),
+        estado:          payload.estado,
+        priorizado:      vistaInterv[intervModal.codigo]?.priorizado || false,
         hitosHabilitados: vistaInterv[intervModal.codigo]?.hitosHabilitados !== false,
-        validado:   validado,
-        estadoVal:  estadoValNuevo,
-        observacion: prevInterv[intervModal.codigo]?.observacion || '',
-        validadoOgame: prevInterv[intervModal.codigo]?.validadoOgame || false
+        validado:        validado,
+        estadoVal:       estadoValNuevo,
+        observacion:     prevInterv[intervModal.codigo]?.observacion || '',
+        validadoOgame:   prevInterv[intervModal.codigo]?.validadoOgame || false
       };
       // Actualizar tanto vistaInterv como prevInterv para que el puntero no pierda el cambio
       prevInterv[intervModal.codigo] = nuevoEst;
       vistaInterv[intervModal.codigo] = nuevoEst;
-      if (validado) estadoInterv[intervModal.codigo] = Object.assign({}, nuevoEst);
+      // Semanal: OGAME valida → va a Estado Actual. Mensual: Vice valida → va directo.
+      const esMensual = (intervModal.periodicidad || '').toUpperCase() === 'MENSUAL';
+      if (validado && esMensual) estadoInterv[intervModal.codigo] = Object.assign({}, nuevoEst);
+      // OGAME: siempre copia a Estado Actual al validar
+      if (esOgame() && payload.validadoOgame === 'Sí') estadoInterv[intervModal.codigo] = Object.assign({}, nuevoEst);
 
       hitos.forEach(h => {
         const hitEst = {
