@@ -523,6 +523,7 @@ function parseData(txt){
       prio: '',
       area: areaRaw,
       deptos: partirDeptos(areaRaw),
+      areaTxt: textoArea(partirDeptos(areaRaw)),
       tipoCodigo: norm(get(c,'tipoCodigo')),
       codigo: limpiarCodigo(get(c,'codigo')),
       proySer: norm(get(c,'proySer')).toUpperCase(),
@@ -532,6 +533,7 @@ function parseData(txt){
       montoTxt: norm(get(c,'monto')),
       monto: aNumero(get(c,'monto')),
       benef: aNumero(get(c,'benef')),
+      benefTxt: norm(get(c,'benef')),
       modalidad: norm(get(c,'modalidad')).toUpperCase(),
       fase: norm(get(c,'fase')).toUpperCase(),
       finan: norm(get(c,'finan')).toUpperCase(),
@@ -541,10 +543,19 @@ function parseData(txt){
 }
 
 // "LIMA , CALLAO" / "Arequipa,Ica" → ['LIMA','CALLAO'] / ['AREQUIPA','ICA']
+// Los 25 departamentos (incluye Callao). Si una intervención los cubre todos, se muestra como NACIONAL.
+const DEPTOS_PERU=['AMAZONAS','ANCASH','APURIMAC','AREQUIPA','AYACUCHO','CAJAMARCA','CALLAO','CUSCO','HUANCAVELICA','HUANUCO','ICA','JUNIN','LA LIBERTAD','LAMBAYEQUE','LIMA','LORETO','MADRE DE DIOS','MOQUEGUA','PASCO','PIURA','PUNO','SAN MARTIN','TACNA','TUMBES','UCAYALI'];
 function partirDeptos(s){
   if(!s) return [];
-  return [...new Set(s.split(',').map(p=>norm(p).toLocaleUpperCase('es')).filter(Boolean))];
+  const lista=[...new Set(s.split(',').map(p=>norm(p).toLocaleUpperCase('es')).filter(Boolean))];
+  // Si cubre todo el país, también responde al filtro NACIONAL (sin dejar de aparecer al filtrar cada departamento)
+  if(esNacional(lista) && !lista.includes('NACIONAL')) lista.push('NACIONAL');
+  return lista;
 }
+function esNacional(lista){ const set=new Set(lista.map(d=>normClave(d).toUpperCase())); return DEPTOS_PERU.every(d=>set.has(d)); }
+function textoArea(lista){ return esNacional(lista) ? 'NACIONAL' : lista.join(', '); }
+// Beneficiarios: número con separador de miles, o el texto tal cual ("Por definir", "No aplica"…)
+function textoBenef(r){ if(!isNaN(r.benef)) return r.benef.toLocaleString('es-PE'); return (r.benefTxt && r.benefTxt!=='-') ? r.benefTxt : ''; }
 function limpiarCodigo(s){
   const t=norm(s).replace(/\.0+$/,'');
   return (t==='-' || /^no aplica$/i.test(t)) ? '' : t;
@@ -706,13 +717,13 @@ function render(filas){
   tbody.innerHTML = filas.map(r=>{
     const i=DATA.indexOf(r);
     const cod=textoCodigo(r);
-    const meta=[cod, r.tipoInfra, isNaN(r.monto)?'':fmtSoles(r.monto)].filter(Boolean).map(escapeHtml).join(' · ');
+    const meta=[cod, r.tipoInfra, isNaN(r.monto)?'':'Costo de Inv.: '+fmtSoles(r.monto), textoBenef(r)?'Beneficiarios: '+textoBenef(r):''].filter(Boolean).map(escapeHtml).join(' · ');
     const largo=r.situacional.length>320 || (r.situacional.match(/\n/g)||[]).length>5;
     return '<tr>'+
       '<td class="c-corte">'+escapeHtml(r.corte||'—')+'</td>'+
       '<td><div class="c-nombre">'+escapeHtml(r.nombre||'—')+'</div>'+(meta?'<div class="c-meta">'+meta+'</div>':'')+'</td>'+
       '<td class="c-resp">'+escapeHtml(r.entidad||'—')+'</td>'+
-      '<td class="c-area">'+escapeHtml(r.deptos.join(', ')||'—')+'</td>'+
+      '<td class="c-area">'+escapeHtml(r.areaTxt||'—')+'</td>'+
       '<td>'+(r.modalidad?'<span class="pill pill-mod">'+escapeHtml(r.modalidad)+'</span>':'—')+'</td>'+
       '<td>'+escapeHtml(r.fase||'—')+'</td>'+
       '<td>'+(r.situacional?'<div class="c-sit">'+escapeHtml(r.situacional)+'</div>'+(largo?'<button class="ver-mas" onclick="abrirSit('+i+')">Ver completo</button>':''):'<span style="color:var(--text-3)">Sin registro</span>')+'</td>'+
@@ -819,8 +830,8 @@ function exportarXLSX(){
     [resumenFiltros()].concat(Array(nc-1).fill('')),
     headers
   ];
-  filas.forEach(r=>rows.push([r.corte,r.vicem,r.prio,r.codInterno,r.nombre,r.area,r.tipoCodigo,r.codigo,r.proySer,r.tipoInfra,r.entidad,r.tipoOrgano,
-    isNaN(r.monto)?'':r.monto, isNaN(r.benef)?'':r.benef, r.modalidad,r.fase,r.finan,r.situacional]));
+  filas.forEach(r=>rows.push([r.corte,r.vicem,r.prio,r.codInterno,r.nombre,r.areaTxt,r.tipoCodigo,r.codigo,r.proySer,r.tipoInfra,r.entidad,r.tipoOrgano,
+    isNaN(r.monto)?'':r.monto, isNaN(r.benef)?(textoBenef(r)):r.benef, r.modalidad,r.fase,r.finan,r.situacional]));
   const ws=XLSX.utils.aoa_to_sheet(rows);
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:nc-1}},{s:{r:1,c:0},e:{r:1,c:nc-1}}];
   ws['!cols']=[12,12,11,14,50,20,10,12,12,16,12,12,16,13,20,24,12,70].map(w=>({wch:w}));
@@ -896,7 +907,7 @@ async function exportarWord(){
 
   const filasTabla=filas.map(r=>{
     const c1=[P(T(r.nombre||'—',{bold:true,color:AZUL}),{after:60})];
-    [r.entidad, textoCodigo(r), r.tipoInfra, isNaN(r.monto)?'':fmtSoles(r.monto)].filter(Boolean).forEach(t=>c1.push(P(T(t),{after:20})));
+    [r.entidad, textoCodigo(r), r.tipoInfra, isNaN(r.monto)?'':'Costo de Inv.: '+fmtSoles(r.monto), textoBenef(r)?'Beneficiarios: '+textoBenef(r):''].filter(Boolean).forEach(t=>c1.push(P(T(t),{after:20})));
     if(r.finan) c1.push(P([T('Financiamiento 2026: '),T(r.finan,{bold:true})],{after:20}));
     const c3=[P(T(r.modalidad||'—',{bold:true}),{after:40})]; if(r.fase) c3.push(P([T('Fase: '),T(r.fase)]));
     const c4=(r.situacional||'Sin registro').split('\n').filter(l=>l.trim()).map(l=>P(T(l.trim(),{italics:!r.situacional}),{align:AlignmentType.JUSTIFIED,after:60}));
@@ -905,7 +916,7 @@ async function exportarWord(){
       c4.push(P(T('Hitos priorizados:',{bold:true,color:AZUL}),{after:30}));
       hitos.forEach(h=>c4.push(P(T(fraseHito(h)),{bullet:true,align:AlignmentType.JUSTIFIED,after:30})));
     }
-    return new TableRow({ children:[celda(c1,0),celda([P(T(r.deptos.join(', ')||'—'))],1),celda(c3,2),celda(c4,3)] });
+    return new TableRow({ children:[celda(c1,0),celda([P(T(r.areaTxt||'—'))],1),celda(c3,2),celda(c4,3)] });
   });
 
   const doc=new Document({
@@ -953,7 +964,7 @@ function exportarPDF(){
   const colStyles={}; PROPS.forEach((p,i)=>colStyles[i]={cellWidth:Math.round(p*ANCHO*10)/10});
   const body=filas.map(r=>{
     const cod=textoCodigo(r);
-    return [r.corte, r.nombre+(cod?'\n'+cod:''), r.entidad, r.deptos.join(', '), r.modalidad, r.fase, r.situacional, r.finan];
+    return [r.corte, r.nombre+(cod?'\n'+cod:''), r.entidad, r.areaTxt, r.modalidad, r.fase, r.situacional, r.finan];
   });
   doc.autoTable({
     head:[['Corte','Intervención','Responsable','Área de influencia','Modalidad de ejecución','Fase','Estado situacional','Financ. 2026']],
