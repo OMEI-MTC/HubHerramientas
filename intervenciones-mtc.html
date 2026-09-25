@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <style>
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   :root {
@@ -92,6 +93,7 @@
   .btn-head { display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border-radius:8px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; text-decoration:none; border:1.5px solid transparent; }
   .bh-res { background:var(--blue); border-color:var(--blue); color:#fff; }  .bh-res:hover { background:var(--blue-dk); border-color:var(--blue-dk); }
   .bh-pdf { background:#fff; border-color:var(--red); color:var(--red); }    .bh-pdf:hover { background:#fdecee; }
+  .bh-doc { background:#fff; border-color:#2B579A; color:#2B579A; } .bh-doc:hover { background:#e9eef7; }
   .bh-xls { background:var(--green); border-color:var(--green); color:#fff; } .bh-xls:hover { background:var(--green-dk); border-color:var(--green-dk); }
   /* Modal de otros filtros: sin recorte para que los desplegables se vean completos */
   #ovFiltros .modal { max-width:520px; overflow:visible; }
@@ -182,6 +184,7 @@
         <div class="head-acciones">
           <button class="btn-head bh-res" onclick="abrirResumen()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Ver resumen</button>
           <button class="btn-head bh-pdf" onclick="exportarPDF()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Descargar PDF</button>
+          <button class="btn-head bh-doc" onclick="exportarWord()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg> Descargar Word</button>
           <button class="btn-head bh-xls" onclick="exportarXLSX()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar Excel</button>
           <a class="btn-pbi" href="https://app.powerbi.com/view?r=eyJrIjoiNWIxMTVkYWUtMDMwMi00YWRmLTg5MzEtMzY1ZDVmYzVjMjFmIiwidCI6IjUzYWNiMjY1LTkxMjgtNDQ2ZC1hNWJlLWI4Mzg2MDBhYTY1NyJ9&language=en-US" target="_blank" rel="noopener">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -830,6 +833,100 @@ function exportarXLSX(){
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Intervenciones');
   XLSX.writeFile(wb,'intervenciones_mtc_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+// ====== EXPORTAR WORD ======
+const MESES=['ene','feb','mar','abr','may','jun','jul','ago','set','oct','nov','dic'];
+function fechaLarga(s){ const m=String(s||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); return m ? m[1].padStart(2,'0')+'-'+MESES[+m[2]-1]+'-'+m[3] : (s||'—'); }
+function tituloNombre(s){ return s.toLowerCase().replace(/(^|[\s-])(\p{L})/gu,(x,a,b)=>a+b.toUpperCase()).replace(/ (De|Del|La|Las|Los|Y) /g,m=>m.toLowerCase()); }
+function listaY(arr){ return arr.length<2 ? (arr[0]||'') : arr.slice(0,-1).join(', ')+' y '+arr[arr.length-1]; }
+
+// Describe los filtros aplicados en lenguaje natural
+function filtrosNarrativos(){
+  const p=[]; const v=id=>document.getElementById(id).value.trim();
+  if(v('fVicem')) p.push('Viceministerio '+v('fVicem'));
+  if(MS.entidad.sel.size){ const e=[...MS.entidad.sel]; p.push((e.length>1?'Entidades ':'Entidad ')+listaY(e)); }
+  if(MS.depto.sel.size){ const d=[...MS.depto.sel].map(tituloNombre); p.push((d.length>1?'Departamentos de ':'Departamento de ')+listaY(d)); }
+  if(v('fNombre')) p.push('intervenciones que contienen "'+v('fNombre')+'"');
+  if(v('fCodigo')) p.push('código que contiene "'+v('fCodigo')+'"');
+  const pr=v('fPrio'); if(pr) p.push(pr==='SI'?'en Hoja de Ruta':'fuera de Hoja de Ruta');
+  const f=v('fFinan'); if(f) p.push(f.startsWith('SI')?'con financiamiento 2026':f==='NO'?'sin financiamiento 2026':'financiamiento 2026: '+f);
+  if(MS.modalidad.sel.size) p.push('modalidad '+listaY([...MS.modalidad.sel]));
+  if(MS.fase.sel.size) p.push('fase '+listaY([...MS.fase.sel]));
+  if(v('fTipo')) p.push('infraestructura '+v('fTipo'));
+  const ps=v('fProySer'); if(ps) p.push(ps==='PROYECTO'?'solo proyectos':ps==='SERVICIO'?'solo servicios':ps);
+  if(!p.length) return 'Sin filtros (universo completo).';
+  const t=listaY(p); return t.charAt(0).toUpperCase()+t.slice(1)+'.';
+}
+
+// Convierte cada hito en una oración según su estado
+function fraseHito(h){
+  const e=normClave(h.estado), f=h.fecha||'fecha por definir', n='"'+h.hito.replace(/\.$/,'')+'"';
+  if(e.startsWith('cumplido')) return 'El hito '+n+' se cumplió en '+f+'.';
+  if(e.startsWith('reprogramado')) return 'El hito '+n+' fue reprogramado para '+f+'.';
+  if(e.includes('proceso')) return 'El hito '+n+' se encuentra en proceso, con cumplimiento programado para '+f+'.';
+  return 'Se programa el cumplimiento del hito '+n+' para '+f+'.';
+}
+
+async function exportarWord(){
+  if(typeof window.docx==='undefined'){ alert('No se pudo cargar el componente Word.'); return; }
+  const filas=filtrar();
+  if(!filas.length){ alert('No hay intervenciones para exportar con los filtros actuales.'); return; }
+  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, ShadingType, PageOrientation, Footer, PageNumber, LevelFormat, VerticalAlign } = window.docx;
+  const AZUL='003F7D', GRIS='333333', BORDE='BFCBDA';
+  const T=(text,o={})=>new TextRun({ text, font:'Calibri', size:o.size||19, bold:!!o.bold, color:o.color||GRIS, italics:!!o.italics });
+  const P=(runs,o={})=>new Paragraph({ children:Array.isArray(runs)?runs:[runs], alignment:o.align, spacing:{ after:o.after??40 }, numbering:o.bullet?{reference:'vinetas',level:0}:undefined });
+  const borde={ style:BorderStyle.SINGLE, size:4, color:BORDE };
+  const bordes={ top:borde, bottom:borde, left:borde, right:borde };
+  const ANCHOS=[3300,1700,2300,7538];  // suma = ancho útil de A4 horizontal con márgenes de 1000
+  const celda=(hijos,i,o={})=>new TableCell({ children:hijos, width:{size:ANCHOS[i],type:WidthType.DXA}, borders:bordes,
+    shading:o.fill?{ type:ShadingType.CLEAR, color:'auto', fill:o.fill }:undefined, verticalAlign:o.va,
+    margins:{ top:80, bottom:80, left:110, right:110 } });
+
+  const nProy=filas.filter(r=>r.proySer==='PROYECTO').length, nServ=filas.filter(r=>r.proySer==='SERVICIO').length;
+  const partes=[]; if(nProy) partes.push(nProy+(nProy===1?' es proyecto':' son proyectos')); if(nServ) partes.push(nServ+(nServ===1?' es servicio':' son servicios'));
+  const intro = filas.length===1 ? 'La cartera de intervenciones seleccionada contiene 1 intervención.'
+    : 'La cartera de intervenciones seleccionada contiene '+filas.length+' intervenciones'+(partes.length?', de las cuales '+listaY(partes):'')+'.';
+
+  const encabezado=new TableRow({ tableHeader:true, children:['Intervención','Área de influencia','Modalidad de ejecución','Estado situacional']
+    .map((t,i)=>celda([P(T(t,{bold:true,color:'FFFFFF'}),{after:0})],i,{fill:AZUL,va:VerticalAlign.CENTER})) });
+
+  const filasTabla=filas.map(r=>{
+    const c1=[P(T(r.nombre||'—',{bold:true,color:AZUL}),{after:60})];
+    [r.entidad, textoCodigo(r), r.tipoInfra, isNaN(r.monto)?'':fmtSoles(r.monto)].filter(Boolean).forEach(t=>c1.push(P(T(t),{after:20})));
+    if(r.finan) c1.push(P([T('Financiamiento 2026: '),T(r.finan,{bold:true})],{after:20}));
+    const c3=[P(T(r.modalidad||'—',{bold:true}),{after:40})]; if(r.fase) c3.push(P([T('Fase: '),T(r.fase)]));
+    const c4=(r.situacional||'Sin registro').split('\n').filter(l=>l.trim()).map(l=>P(T(l.trim(),{italics:!r.situacional}),{align:AlignmentType.JUSTIFIED,after:60}));
+    const hitos=HITOS[normClave(r.codInterno)]||[];
+    if(hitos.length){
+      c4.push(P(T('Hitos priorizados:',{bold:true,color:AZUL}),{after:30}));
+      hitos.forEach(h=>c4.push(P(T(fraseHito(h)),{bullet:true,align:AlignmentType.JUSTIFIED,after:30})));
+    }
+    return new TableRow({ children:[celda(c1,0),celda([P(T(r.deptos.join(', ')||'—'))],1),celda(c3,2),celda(c4,3)] });
+  });
+
+  const doc=new Document({
+    numbering:{ config:[{ reference:'vinetas', levels:[{ level:0, format:LevelFormat.BULLET, text:'•', alignment:AlignmentType.LEFT,
+      style:{ paragraph:{ indent:{ left:360, hanging:240 } } } }] }] },
+    sections:[{
+      properties:{ page:{ size:{ width:11906, height:16838, orientation:PageOrientation.LANDSCAPE }, margin:{ top:900, bottom:900, left:1000, right:1000 } } },
+      footers:{ default:new Footer({ children:[ new Paragraph({ alignment:AlignmentType.RIGHT, children:[
+        T('OGAME · MTC   |   Página ',{size:16,color:'808080'}), new TextRun({ children:[PageNumber.CURRENT], font:'Calibri', size:16, color:'808080' }),
+        T(' de ',{size:16,color:'808080'}), new TextRun({ children:[PageNumber.TOTAL_PAGES], font:'Calibri', size:16, color:'808080' }) ] }) ] }) },
+      children:[
+        P(T('Intervenciones MTC',{bold:true,size:28,color:AZUL}),{align:AlignmentType.CENTER,after:60}),
+        P([T('Filtros: ',{bold:true}),T(filtrosNarrativos())],{align:AlignmentType.CENTER,after:40}),
+        new Paragraph({ alignment:AlignmentType.CENTER, spacing:{after:200}, border:{ bottom:{ style:BorderStyle.SINGLE, size:12, color:'C8102E', space:6 } },
+          children:[T('Corte: '+fechaLarga(ULTIMO_CORTE),{bold:true})] }),
+        P(T(intro),{after:160}),
+        new Table({ width:{size:ANCHOS.reduce((a,b)=>a+b,0),type:WidthType.DXA}, columnWidths:ANCHOS, rows:[encabezado,...filasTabla] })
+      ]
+    }]
+  });
+  const blob=await Packer.toBlob(doc);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='intervenciones_mtc_'+new Date().toISOString().slice(0,10)+'.docx';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }
 
 // ====== EXPORTAR PDF ======
