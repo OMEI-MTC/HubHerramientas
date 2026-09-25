@@ -332,7 +332,7 @@
 
 <script>
 // ====== CONFIGURACIÓN ======
-const DATA_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQCh1cjWIRCOycRRdMQJHbY-yRa7CZPJHGE6egqMrw8-fRkDv-z20oeqNrUltTeVIwHjXZJN45on0L-/pub?gid=1212162516&single=true&output=tsv';
+const DATA_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQCh1cjWIRCOycRRdMQJHbY-yRa7CZPJHGE6egqMrw8-fRkDv-z20oeqNrUltTeVIwHjXZJN45on0L-/pub?gid=1212162516&single=true&output=csv';
 
 const CORS_PROXIES = [
   url => url,
@@ -367,7 +367,7 @@ let DATA = [];
 let ULTIMO_CORTE = '';
 
 // Hitos (otro Sheet). Se unen con la tabla principal por COD INTERNO.
-const HITOS_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=560017280&single=true&output=tsv';
+const HITOS_TSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=560017280&single=true&output=csv';
 const COLS_HITOS = {
   registro:   'Fecha de registro',
   codInterno: 'COD INTERNO',
@@ -418,7 +418,10 @@ async function fetchProxy(url){
 }
 
 // Lee el TSV respetando celdas con saltos de línea (Google las envuelve entre comillas).
+// Lee CSV (o TSV) respetando celdas entre comillas, que pueden contener comas y saltos de línea.
+// Se usa CSV porque la exportación TSV de Google elimina los saltos de línea dentro de las celdas.
 function leerTSV(txt){
+  const sep = txt.split('\n',1)[0].includes('\t') ? '\t' : ',';
   const filas=[]; let fila=[]; let campo=''; let i=0; const n=txt.length;
   let inicioCampo=true, entreComillas=false;
   while(i<n){
@@ -431,7 +434,7 @@ function leerTSV(txt){
       campo+=ch; i++; continue;
     }
     if(inicioCampo && ch==='"'){ entreComillas=true; inicioCampo=false; i++; continue; }
-    if(ch==='\t'){ fila.push(campo); campo=''; inicioCampo=true; i++; continue; }
+    if(ch===sep){ fila.push(campo); campo=''; inicioCampo=true; i++; continue; }
     if(ch==='\r'){ i++; continue; }
     if(ch==='\n'){ fila.push(campo); filas.push(fila); fila=[]; campo=''; inicioCampo=true; i++; continue; }
     campo+=ch; inicioCampo=false; i++;
