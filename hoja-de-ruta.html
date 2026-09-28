@@ -688,6 +688,29 @@
     font-style: italic; line-height: 1.4; text-align: left;
     border-left: 2px solid #D97706; padding-left: 6px; width: 100%;
   }
+  /* ── CAMBIOS SIN GUARDAR (guardado por lotes) ── */
+  .val-select.sin-guardar { box-shadow: 0 0 0 3px #FCD34D; }
+  .val-sin-guardar {
+    font-size: 10px; font-weight: 700; color: #B45309;
+    background: #FEF3C7; border-radius: 20px; padding: 2px 8px;
+  }
+  .lote-bar {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 120px);
+    z-index: 300; display: flex; align-items: center; gap: 14px;
+    background: #fff; border: 2px solid #F59E0B; border-radius: 12px;
+    padding: 10px 14px 10px 18px; box-shadow: 0 10px 30px rgba(0,0,0,.18);
+    opacity: 0; pointer-events: none; transition: transform .3s, opacity .3s;
+  }
+  .lote-bar.visible { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+  .lote-contador { font-size: 13px; color: var(--texto); white-space: nowrap; }
+  .lote-contador strong { color: #B45309; font-size: 15px; }
+  .lote-btn {
+    padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 700;
+    font-family: inherit; cursor: pointer; white-space: nowrap;
+  }
+  .lote-btn.descartar { background: #fff; color: #6B7280; border: 1.5px solid #D1D5DB; }
+  .lote-btn.guardar   { background: var(--navy); color: #fff; border: none; }
+  .lote-btn:disabled  { opacity: .6; cursor: wait; }
   /* ── MODAL DE OBSERVACIÓN ── */
   .obs-overlay {
     display: none; position: fixed; inset: 0;
@@ -1050,6 +1073,12 @@
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+<!-- BARRA DE CAMBIOS SIN GUARDAR (modo validación) -->
+<div class="lote-bar" id="lote-bar">
+  <div class="lote-contador" id="lote-contador"></div>
+  <button class="lote-btn descartar" id="lote-btn-descartar" onclick="descartarCambiosLote()">Descartar</button>
+  <button class="lote-btn guardar" id="lote-btn-guardar" onclick="guardarCambiosLote()">Guardar cambios</button>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -2196,7 +2225,7 @@ function renderTabla() {
       ? `<td class="col-val-filtro" rowspan="${nHitos}" style="display:none;text-align:center;vertical-align:top;padding:10px 8px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">
           ${tieneRegistro
             ? `<div class="val-selector">
-                 <select class="val-select ${estadoValActual.toLowerCase()}"
+                 <select class="val-select ${estadoValActual.toLowerCase()}${cambiosPendientes[interv.codigo] ? ' sin-guardar' : ''}"
                          onchange="cambiarEstadoVal('${esc(interv.codigo)}', this)">
                    <option value="Pendiente"  ${estadoValActual==='Pendiente'  ? 'selected':''}>🟡 Pendiente</option>
                    <option value="Observado"  ${estadoValActual==='Observado'  ? 'selected':''}>🔴 Observado</option>
@@ -2206,6 +2235,7 @@ function renderTabla() {
                    ✎ Registrar observación
                  </button>
                  ${obsActual ? `<div class="val-obs-texto">${esc(obsActual)}</div>` : ''}
+                 ${cambiosPendientes[interv.codigo] ? `<div class="val-sin-guardar">● Sin guardar</div>` : ''}
                </div>`
             : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro</span>`}
         </td>`
@@ -2442,43 +2472,134 @@ function actualizarClaseSelect(sel) {
   sel.className = 'val-select ' + sel.value.toLowerCase();
 }
 
-async function cambiarEstadoVal(codigo, sel) {
-  actualizarClaseSelect(sel);
-  const nuevoEstado = sel.value;
-  const esValidado  = nuevoEstado === 'Validado';
-  const periodicidad = (intervenciones.find(i => i.codigo === codigo)?.periodicidad || '');
-  const esMensual    = periodicidad.toUpperCase() === 'MENSUAL';
-  sel.disabled = true;
-  const payload = {
-    accion:        'validarRegistro',
-    codigo:        codigo,
-    estadoVal:     nuevoEstado,
-    validado:      esValidado ? 'Sí' : 'No',
-    observacion:   (prevInterv[codigo] || {}).observacion || '',
-    periodicidad:  periodicidad,
-    registradoPor: usuarioActivo || oficinaEdicion
-  };
+// ── GUARDADO POR LOTES ─────────────────────────────────────────────────────
+// Los cambios de estado de validación y de observación NO se envían al
+// momento: se acumulan aquí y se envían todos juntos con "Guardar cambios".
+// { codigo → { estadoVal, observacion, original: { estadoVal, observacion, validado } } }
+let cambiosPendientes = {};
+
+function registrarPendiente(codigo, campos) {
+  prevInterv[codigo] = prevInterv[codigo] || {};
+  const actual = prevInterv[codigo];
+  if (!cambiosPendientes[codigo]) {
+    cambiosPendientes[codigo] = {
+      original: {
+        estadoVal:   actual.estadoVal || 'Pendiente',
+        observacion: actual.observacion || '',
+        validado:    !!actual.validado
+      }
+    };
+  }
+  Object.assign(actual, campos);
+  if (campos.estadoVal !== undefined) actual.validado = campos.estadoVal === 'Validado';
+  vistaInterv[codigo] = actual;
+
+  const p = cambiosPendientes[codigo];
+  p.estadoVal   = actual.estadoVal || 'Pendiente';
+  p.observacion = actual.observacion || '';
+  // Si volvió a como estaba, deja de contar como cambio
+  if (p.estadoVal === p.original.estadoVal && p.observacion === p.original.observacion) {
+    delete cambiosPendientes[codigo];
+  }
+  actualizarBarraLote();
+}
+
+function actualizarBarraLote() {
+  const n   = Object.keys(cambiosPendientes).length;
+  const bar = document.getElementById('lote-bar');
+  document.getElementById('lote-contador').innerHTML =
+    `<strong>${n}</strong> ${n === 1 ? 'cambio sin guardar' : 'cambios sin guardar'}`;
+  bar.classList.toggle('visible', n > 0);
+}
+
+// Publica en la vista general local (Mensual validado)
+function publicarLocal(codigo) {
+  estadoInterv[codigo] = Object.assign({}, prevInterv[codigo]);
+  const interv = intervenciones.find(i => i.codigo === codigo);
+  (interv?.hitos || []).forEach(h => {
+    if (prevHitos[h.codhito]) estadoHitos[h.codhito] = Object.assign({}, prevHitos[h.codhito]);
+  });
+}
+
+function descartarCambiosLote() {
+  const n = Object.keys(cambiosPendientes).length;
+  if (!n) return;
+  if (!confirm(`¿Descartar ${n} ${n === 1 ? 'cambio' : 'cambios'} sin guardar?`)) return;
+  Object.keys(cambiosPendientes).forEach(codigo => {
+    Object.assign(prevInterv[codigo], cambiosPendientes[codigo].original);
+    vistaInterv[codigo] = prevInterv[codigo];
+  });
+  cambiosPendientes = {};
+  actualizarBarraLote();
+  renderTabla();
+}
+
+async function guardarCambiosLote() {
+  const codigos = Object.keys(cambiosPendientes);
+  if (!codigos.length) return;
+  const btnG = document.getElementById('lote-btn-guardar');
+  const btnD = document.getElementById('lote-btn-descartar');
+  btnG.disabled = true; btnD.disabled = true;
+  btnG.textContent = 'Guardando…';
+
+  const cambios = codigos.map(codigo => {
+    const p = cambiosPendientes[codigo];
+    return {
+      codigo:       codigo,
+      estadoVal:    p.estadoVal,
+      validado:     p.estadoVal === 'Validado' ? 'Sí' : 'No',
+      observacion:  p.observacion,
+      periodicidad: intervenciones.find(i => i.codigo === codigo)?.periodicidad || ''
+    };
+  });
+
   try {
-    const data = await postBackend(payload);
-    if (data.ok) {
-      prevInterv[codigo] = prevInterv[codigo] || {};
-      prevInterv[codigo].estadoVal = nuevoEstado;
-      prevInterv[codigo].validado  = esValidado;
-      vistaInterv[codigo] = prevInterv[codigo];
-      // Solo Mensual se publica con la validación del Validador; Semanal espera a OGAME
-      if (esValidado && esMensual) estadoInterv[codigo] = Object.assign({}, prevInterv[codigo]);
-      renderTabla();
-      mostrarToast('Estado actualizado: ' + nuevoEstado, 'exito');
+    const data = await postBackend({
+      accion:        'validarLote',
+      registradoPor: usuarioActivo || oficinaEdicion,
+      cambios:       cambios
+    });
+    if (!data.resultados) throw new Error(data.mensaje || 'No se pudo guardar');
+
+    let guardados = 0;
+    const fallidos = [];
+    data.resultados.forEach(r => {
+      if (r.ok) {
+        guardados++;
+        delete cambiosPendientes[r.codigo];
+        if (r.publicado) publicarLocal(r.codigo);
+      } else {
+        fallidos.push(r.codigo + ' (' + r.mensaje + ')');
+      }
+    });
+    renderTabla();
+    if (fallidos.length) {
+      mostrarToast(`${guardados} guardados. No se guardaron ${fallidos.length}: ${fallidos.join(' · ')}`, 'error');
     } else {
-      mostrarToast('Error: ' + (data.mensaje || 'intenta de nuevo'), 'error');
-      renderTabla();
+      mostrarToast(`${guardados} ${guardados === 1 ? 'cambio guardado' : 'cambios guardados'}`, 'exito');
     }
   } catch (e) {
-    mostrarToast(e.message, 'error');
-    renderTabla();
+    mostrarToast('No se guardó nada: ' + e.message, 'error');
   } finally {
-    sel.disabled = false;
+    btnG.disabled = false; btnD.disabled = false;
+    btnG.textContent = 'Guardar cambios';
+    actualizarBarraLote();
   }
+}
+
+// Aviso del navegador si se intenta salir con cambios sin guardar
+window.addEventListener('beforeunload', e => {
+  if (Object.keys(cambiosPendientes).length) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+// Acceso rápido: solo marca el cambio (se guarda con "Guardar cambios")
+function cambiarEstadoVal(codigo, sel) {
+  actualizarClaseSelect(sel);
+  registrarPendiente(codigo, { estadoVal: sel.value });
+  renderTabla();
 }
 
 let _obsCodigoActual = '';
@@ -2499,38 +2620,13 @@ function cerrarObsModal() {
   _obsCodigoActual = '';
 }
 
-async function guardarObservacion() {
+// Observación: solo marca el cambio (se guarda con "Guardar cambios")
+function guardarObservacion() {
   const codigo = _obsCodigoActual;
   const texto  = document.getElementById('obs-textarea').value.trim();
-  const btn    = document.querySelector('#obs-overlay .btn-guardar');
-  btn.disabled = true; btn.textContent = 'Guardando…';
-  const estadoVal = (prevInterv[codigo] || {}).estadoVal || 'Pendiente';
-  const payload = {
-    accion:        'validarRegistro',
-    codigo:        codigo,
-    estadoVal:     estadoVal,
-    validado:      estadoVal === 'Validado' ? 'Sí' : 'No',
-    observacion:   texto,
-    periodicidad:  (intervenciones.find(i => i.codigo === codigo)?.periodicidad || ''),
-    registradoPor: usuarioActivo || oficinaEdicion
-  };
-  try {
-    const data = await postBackend(payload);
-    if (data.ok) {
-      prevInterv[codigo] = prevInterv[codigo] || {};
-      prevInterv[codigo].observacion = texto;
-      vistaInterv[codigo] = prevInterv[codigo];
-      cerrarObsModal();
-      renderTabla();
-      mostrarToast('Observación guardada', 'exito');
-    } else {
-      mostrarToast('Error: ' + (data.mensaje || 'intenta de nuevo'), 'error');
-    }
-  } catch (e) {
-    mostrarToast(e.message, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = 'Guardar observación';
-  }
+  registrarPendiente(codigo, { observacion: texto });
+  cerrarObsModal();
+  renderTabla();
 }
 
 // Validación OGAME directa desde la tabla
@@ -2746,6 +2842,10 @@ async function guardarRegistro() {
         vistaHitos[h.codhito] = hitEst;
         if (validado) estadoHitos[h.codhito] = Object.assign({}, hitEst);
       });
+
+      // El lápiz ya guardó estado y observación de esta intervención
+      delete cambiosPendientes[intervModal.codigo];
+      actualizarBarraLote();
 
       cerrarModal();
       renderTabla();
@@ -3333,7 +3433,7 @@ cargarDatos();
     <div class="obs-footer">
       <button class="btn-cancelar" onclick="cerrarObsModal()">Cancelar</button>
       <button class="btn-guardar" onclick="guardarObservacion()">
-        Guardar observación
+        Aceptar
       </button>
     </div>
   </div>
