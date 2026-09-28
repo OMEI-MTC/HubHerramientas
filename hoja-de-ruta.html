@@ -2446,6 +2446,8 @@ async function cambiarEstadoVal(codigo, sel) {
   actualizarClaseSelect(sel);
   const nuevoEstado = sel.value;
   const esValidado  = nuevoEstado === 'Validado';
+  const periodicidad = (intervenciones.find(i => i.codigo === codigo)?.periodicidad || '');
+  const esMensual    = periodicidad.toUpperCase() === 'MENSUAL';
   sel.disabled = true;
   const payload = {
     accion:        'validarRegistro',
@@ -2453,6 +2455,7 @@ async function cambiarEstadoVal(codigo, sel) {
     estadoVal:     nuevoEstado,
     validado:      esValidado ? 'Sí' : 'No',
     observacion:   (prevInterv[codigo] || {}).observacion || '',
+    periodicidad:  periodicidad,
     registradoPor: usuarioActivo || oficinaEdicion
   };
   try {
@@ -2462,7 +2465,8 @@ async function cambiarEstadoVal(codigo, sel) {
       prevInterv[codigo].estadoVal = nuevoEstado;
       prevInterv[codigo].validado  = esValidado;
       vistaInterv[codigo] = prevInterv[codigo];
-      if (esValidado) estadoInterv[codigo] = Object.assign({}, prevInterv[codigo]);
+      // Solo Mensual se publica con la validación del Validador; Semanal espera a OGAME
+      if (esValidado && esMensual) estadoInterv[codigo] = Object.assign({}, prevInterv[codigo]);
       renderTabla();
       mostrarToast('Estado actualizado: ' + nuevoEstado, 'exito');
     } else {
@@ -2507,6 +2511,7 @@ async function guardarObservacion() {
     estadoVal:     estadoVal,
     validado:      estadoVal === 'Validado' ? 'Sí' : 'No',
     observacion:   texto,
+    periodicidad:  (intervenciones.find(i => i.codigo === codigo)?.periodicidad || ''),
     registradoPor: usuarioActivo || oficinaEdicion
   };
   try {
