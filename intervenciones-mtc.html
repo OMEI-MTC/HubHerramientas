@@ -82,6 +82,8 @@
   .ms-item:hover { background:var(--bg); }
   .ms-item input { width:auto; cursor:pointer; accent-color:var(--blue); }
   .ms-vacio { padding:10px; color:var(--text-3); font-size:12px; }
+  .ms-busca-wrap { position:sticky; top:-6px; background:#fff; padding:2px 0 6px; margin-top:-2px; z-index:1; }
+  .ms-busca { width:100%; padding:7px 10px; font-size:13px; font-family:inherit; border:1px solid #d9dde3; border-radius:6px; }
 
   /* Botones de acciones */
   .btn-acc { width:100%; display:flex; align-items:center; justify-content:center; gap:7px; padding:8px 12px; border-radius:8px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; margin-bottom:8px; background:#fff; border:1px solid #d9dde3; color:var(--text-2); }
@@ -381,7 +383,7 @@ let HITOS = {};   // { 'DGPRTM-1': [ {hito, fecha, estado}, ... ] }
 // Filtros de selección múltiple
 const MS = {
   entidad:   { id:'ms-entidad',   sel:new Set(), todos:'Todas', obtener:r=>[r.entidad] },
-  depto:     { id:'ms-depto',     sel:new Set(), todos:'Todos', obtener:r=>r.deptos },
+  depto:     { id:'ms-depto',     sel:new Set(), todos:'Todos', obtener:r=>r.deptos, buscador:true, busca:'' },
   modalidad: { id:'ms-modalidad', sel:new Set(), todos:'Todas', obtener:r=>[r.modalidad] },
   fase:      { id:'ms-fase',      sel:new Set(), todos:'Todas', obtener:r=>[r.fase] }
 };
@@ -649,7 +651,9 @@ function construirMultiSelects(){
     document.getElementById(cfg.id).innerHTML =
       '<button type="button" class="ms-btn" onclick="abrirMulti(event,\''+k+'\')"><span id="'+cfg.id+'-lbl">'+cfg.todos+'</span>'+
       '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>'+
-      '<div class="ms-lista" id="'+cfg.id+'-lista"></div>';
+      '<div class="ms-lista" id="'+cfg.id+'-lista">'+
+        (cfg.buscador ? '<div class="ms-busca-wrap"><input type="text" class="ms-busca" id="'+cfg.id+'-busca" placeholder="Escribe para buscar…" autocomplete="off" oninput="buscarMulti(\''+k+'\',this.value)"></div>' : '')+
+        '<div id="'+cfg.id+'-items"></div></div>';
   }
 }
 function abrirMulti(e, k){
@@ -660,10 +664,11 @@ function abrirMulti(e, k){
   if(panel.classList.contains('abierto')){
     const espacio=window.innerHeight-panel.getBoundingClientRect().bottom;
     panel.classList.toggle('abre-arriba', espacio<290);
+    const b=document.getElementById(MS[k].id+'-busca'); if(b) b.focus();
   }
 }
 function renderMultiLista(k, valores){
-  const cfg=MS[k]; const cont=document.getElementById(cfg.id+'-lista');
+  const cfg=MS[k]; const cont=document.getElementById(cfg.id+'-items');
   // Mantener visibles las opciones marcadas aunque la cascada ya no las ofrezca
   const todos=uniqSort([...valores, ...cfg.sel]);
   cont.innerHTML = todos.length ? todos.map(v=>
@@ -672,6 +677,19 @@ function renderMultiLista(k, valores){
   const lbl=document.getElementById(cfg.id+'-lbl'); const n=cfg.sel.size;
   lbl.textContent = n===0 ? cfg.todos : (n===1 ? [...cfg.sel][0] : n+' seleccionados');
   lbl.style.color = n===0 ? 'var(--text)' : 'var(--blue)';
+  if(cfg.buscador) buscarMulti(k, cfg.busca);
+}
+// Buscador dentro de la lista: oculta las opciones que no coinciden (sin tildes ni mayúsculas)
+function buscarMulti(k, texto){
+  const cfg=MS[k]; cfg.busca=texto||''; const q=normClave(cfg.busca);
+  const cont=document.getElementById(cfg.id+'-items'); let visibles=0;
+  cont.querySelectorAll('.ms-item').forEach(it=>{ const ok=!q || normClave(it.textContent).includes(q); it.style.display=ok?'':'none'; if(ok) visibles++; });
+  let aviso=cont.querySelector('.ms-sin');
+  if(!visibles && cont.querySelector('.ms-item')){ if(!aviso){ aviso=document.createElement('div'); aviso.className='ms-vacio ms-sin'; aviso.textContent='Sin coincidencias'; cont.appendChild(aviso); } }
+  else if(aviso) aviso.remove();
+}
+function limpiarBusquedas(){
+  Object.entries(MS).forEach(([k,cfg])=>{ if(cfg.buscador){ cfg.busca=''; const b=document.getElementById(cfg.id+'-busca'); if(b) b.value=''; } });
 }
 function toggleMulti(el){
   const set=MS[el.dataset.k].sel;
@@ -694,6 +712,7 @@ function actualizarBadge(){
 }
 function limpiarOtros(){
   MS.depto.sel.clear();
+  limpiarBusquedas();
   document.getElementById('fTipo').value=''; document.getElementById('fProySer').value='';
   onFiltro();
 }
@@ -701,6 +720,7 @@ function limpiarOtros(){
 function limpiarFiltros(){
   ['fVicem','fNombre','fCodigo','fProySer','fPrio','fFinan','fTipo'].forEach(id=>document.getElementById(id).value='');
   Object.values(MS).forEach(cfg=>cfg.sel.clear());
+  limpiarBusquedas();
   onFiltro();
 }
 
