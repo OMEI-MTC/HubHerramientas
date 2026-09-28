@@ -317,7 +317,103 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 @keyframes spin { to { transform:rotate(360deg); } }
 .debug-box { background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:12px; font-size:11px; font-family:monospace; color:var(--text-2); margin-top:12px; white-space:pre-wrap; display:none; }
 
-/* ── Responsive ── */
+/* ── Carátula de acceso ── */
+#accessScreen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #0A0E1A;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0;
+}
+.access-bg-stripe {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--red);
+}
+.access-card {
+  background: #13192B;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 48px 52px;
+  width: 420px;
+  max-width: 90vw;
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+}
+.access-logo-wrap {
+  width: 64px; height: 64px;
+  border-radius: 14px; overflow: hidden;
+  box-shadow: 0 4px 20px rgba(200,16,46,0.35);
+  margin-bottom: 20px; flex-shrink: 0;
+}
+.access-logo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.access-title {
+  font-size: 22px; font-weight: 800; color: #fff;
+  letter-spacing: -0.02em; text-align: center; line-height: 1.2;
+  margin-bottom: 6px;
+}
+.access-sub {
+  font-size: 13px; color: rgba(255,255,255,0.45);
+  text-align: center; line-height: 1.5; margin-bottom: 36px;
+}
+.access-label {
+  font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5);
+  text-transform: uppercase; letter-spacing: .08em;
+  align-self: flex-start; margin-bottom: 8px;
+}
+.access-input-wrap {
+  width: 100%; position: relative; margin-bottom: 12px;
+}
+.access-input {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 13px 46px 13px 16px;
+  font-size: 16px; color: #fff;
+  font-family: var(--sans);
+  outline: none;
+  transition: border-color .2s;
+  letter-spacing: .05em;
+}
+.access-input:focus { border-color: var(--red); }
+.access-input.error { border-color: #ef4444; animation: shake .35s ease; }
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-6px)}
+  40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}
+.access-eye {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  color: rgba(255,255,255,0.35); padding: 4px;
+  display: flex; align-items: center;
+}
+.access-eye:hover { color: rgba(255,255,255,0.7); }
+.access-error {
+  font-size: 12px; color: #f87171;
+  align-self: flex-start; margin-bottom: 16px;
+  min-height: 16px; transition: opacity .2s;
+}
+.access-btn {
+  width: 100%;
+  background: var(--red);
+  color: #fff; border: none; border-radius: 10px;
+  padding: 14px; font-size: 15px; font-weight: 700;
+  font-family: var(--sans); cursor: pointer;
+  transition: background .15s, transform .1s;
+  letter-spacing: .01em;
+}
+.access-btn:hover { background: #a50d25; }
+.access-btn:active { transform: scale(.98); }
+.access-footer {
+  position: absolute; bottom: 24px;
+  font-size: 11px; color: rgba(255,255,255,0.2);
+  text-align: center; letter-spacing: .03em;
+}
+
 @media (max-width:700px) {
   .pub-grid { grid-template-columns:1fr; }
 }
@@ -332,6 +428,35 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 </style>
 </head>
 <body>
+<div id="accessScreen">
+  <div class="access-bg-stripe"></div>
+  <div class="access-card">
+    <div class="access-logo-wrap"><img src="mtc.jpg" alt="Logo MTC"></div>
+    <div class="access-title">Hub de Herramientas · OGAME</div>
+    <div class="access-sub">Oficina General de Articulación,<br>Monitoreo y Evaluación de Impacto</div>
+    <div class="access-label">Usuario</div>
+    <div class="access-input-wrap" style="margin-bottom:16px">
+      <input class="access-input" id="accessUser" type="text"
+             placeholder="Ej: OGAME-1"
+             onkeydown="if(event.key==='Enter')document.getElementById('accessInput').focus()">
+    </div>
+    <div class="access-label">Contraseña</div>
+    <div class="access-input-wrap">
+      <input class="access-input" id="accessInput" type="password"
+             placeholder="••••••••"
+             onkeydown="if(event.key==='Enter')checkAccess()">
+      <button class="access-eye" id="eyeBtn" onclick="toggleEye()" tabindex="-1" aria-label="Mostrar contraseña">
+        <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+    <div class="access-error" id="accessError"></div>
+    <button class="access-btn" onclick="checkAccess()">Ingresar</button>
+  </div>
+  <div class="access-footer">MTC · OGAME · Uso interno</div>
+</div>
+
 <div class="layout">
 
   <header class="topbar">
@@ -372,6 +497,79 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 </div>
 
 <script>
+// ── Acceso ──
+const ACCESS_KEY   = 'hub_ogame_access';
+const USERS_URL    = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=1230572390&single=true&output=tsv';
+
+let usersMap = {};   // { usuario: contraseña }
+let usersLoaded = false;
+
+async function loadUsers() {
+  try {
+    const res = await fetch(USERS_URL, { cache: 'no-store' });
+    const text = await res.text();
+    const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+    lines.forEach(line => {
+      const cols = line.split('\t').map(c => (c||'').trim());
+      const contrasena = cols[1]; // columna B
+      const usuario    = cols[2]; // columna C
+      if (usuario && contrasena && usuario !== 'Usuario') {
+        usersMap[usuario.toLowerCase()] = contrasena;
+      }
+    });
+    usersLoaded = true;
+  } catch(e) {
+    // Si falla la carga, bloquear acceso
+    document.getElementById('accessError').textContent = 'Error al cargar credenciales. Recarga la página.';
+  }
+}
+
+function checkAccess() {
+  if (!usersLoaded) {
+    document.getElementById('accessError').textContent = 'Cargando credenciales, espera un momento…';
+    return;
+  }
+  const rawUser = document.getElementById('accessUser').value.trim();
+  const rawPass = document.getElementById('accessInput').value;
+  const input   = document.getElementById('accessInput');
+  const err     = document.getElementById('accessError');
+
+  const expectedPass = usersMap[rawUser.toLowerCase()];
+  if (expectedPass && rawPass === expectedPass) {
+    sessionStorage.setItem(ACCESS_KEY, '1');
+    const screen = document.getElementById('accessScreen');
+    screen.style.opacity = '0';
+    screen.style.transition = 'opacity .4s ease';
+    setTimeout(() => screen.remove(), 400);
+  } else {
+    input.classList.remove('error');
+    void input.offsetWidth;
+    input.classList.add('error');
+    err.textContent = 'Usuario o contraseña incorrectos. Vuelve a intentarlo.';
+    input.value = '';
+    input.focus();
+    setTimeout(() => input.classList.remove('error'), 500);
+  }
+}
+
+function toggleEye() {
+  const input = document.getElementById('accessInput');
+  const icon  = document.getElementById('eyeIcon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  } else {
+    input.type = 'password';
+    icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+}
+
+// Si ya accedió en esta sesión, ocultar carátula directamente
+if (sessionStorage.getItem(ACCESS_KEY) === '1') {
+  document.getElementById('accessScreen').remove();
+} else {
+  loadUsers();
+}
 const SHEET_URL     = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkXT9qu8x5JInu81VZ3BDkQ338o6gix4h4CBRTL7q6UeL7NsWn0MvvRlMA474WwH4xIy0LSlPQT-A7/pub?gid=288707313&single=true&output=tsv';
 const KPIS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkXT9qu8x5JInu81VZ3BDkQ338o6gix4h4CBRTL7q6UeL7NsWn0MvvRlMA474WwH4xIy0LSlPQT-A7/pub?gid=1386310491&single=true&output=tsv';
 const PUB_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkXT9qu8x5JInu81VZ3BDkQ338o6gix4h4CBRTL7q6UeL7NsWn0MvvRlMA474WwH4xIy0LSlPQT-A7/pub?gid=505119670&single=true&output=tsv';
