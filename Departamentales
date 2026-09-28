@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero Carpetas Departamentales · OGAME · MTC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --red:    #C8102E;
+    --blue:   #0055A5;
+    --blue-dk:#003F7D;
+    --white:  #ffffff;
+    --bg:     #F2F2F2;
+    --card:   #ffffff;
+    --border: rgba(0,0,0,0.09);
+    --text:   #1a1a1a;
+    --text-2: #4a5568;
+    --sans: 'DM Sans', system-ui, sans-serif;
+    --serif: 'DM Serif Display', serif;
+    --r: 12px;
+  }
+  html, body { height: 100%; }
+  body { font-family:var(--sans); background:var(--bg); color:var(--text); font-size:14px; line-height:1.5; }
+  .layout { height:100vh; display:flex; flex-direction:column; }
+
+  /* ── Topbar (idéntico al Hub) ── */
+  .topbar {
+    background: var(--red);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; min-height: 100px; flex-shrink: 0;
+  }
+  .topbar-brand { display:flex; align-items:center; gap:14px; }
+  .topbar-logo { width:52px; height:52px; border-radius:8px; overflow:hidden; flex-shrink:0; box-shadow:0 1px 6px rgba(0,0,0,0.25); }
+  .topbar-logo img { width:100%; height:100%; object-fit:cover; display:block; }
+  .topbar-name { font-size:28px; font-weight:700; color:var(--white); line-height:1.2; letter-spacing:-0.01em; }
+  .topbar-sub  { font-size:14px; color:rgba(255,255,255,0.85); margin-top:3px; font-weight:400; }
+  .btn-back {
+    display:flex; align-items:center; gap:7px;
+    background:#003F7D; color:#fff; border:2px solid #003F7D;
+    border-radius:24px; padding:8px 18px;
+    font-family:var(--sans); font-size:15px; font-weight:700;
+    cursor:pointer; white-space:nowrap; transition:background .12s; text-decoration:none;
+  }
+  .btn-back:hover { background:#002D5C; border-color:#002D5C; }
+
+  /* ── Contenido ── */
+  .main { flex:1; display:flex; flex-direction:column; padding:20px 28px 24px; min-height:0; }
+  .head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  .panel-title { font-family:var(--serif); font-size:30px; color:var(--blue); line-height:1.1; }
+  .panel-sub { font-size:15px; color:var(--text-2); margin-top:4px; }
+  .btn-open {
+    font-size:13px; font-weight:600; color:var(--blue); text-decoration:none;
+    border:1px solid #8FAADC; border-radius:20px; padding:6px 14px; background:#fff; white-space:nowrap;
+  }
+  .btn-open:hover { background:#EEF4FF; }
+
+  /* Contenedor del visor: ocupa todo el alto disponible */
+  .visor {
+    flex:1; min-height:560px;
+    background:var(--card); border:1px solid var(--border); border-radius:var(--r);
+    overflow:hidden;
+  }
+  .visor iframe { width:100%; height:100%; border:0; display:block; }
+
+  @media (max-width: 720px) {
+    .topbar { flex-wrap:wrap; gap:12px; padding:14px 18px; }
+    .topbar-name { font-size:20px; }
+    .main { padding:16px; }
+    .visor { min-height:480px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo"><img src="mtc.jpg" alt="Logo MTC"></div>
+      <div>
+        <div class="topbar-name">Hub de Herramientas · OGAME</div>
+        <div class="topbar-sub">Oficina General de Articulación, Monitoreo, y Evaluación de Impacto</div>
+      </div>
+    </div>
+    <a class="btn-back" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Regresar a página principal
+    </a>
+  </header>
+
+  <main class="main">
+    <div class="head">
+      <div>
+        <div class="panel-title">TABLERO CARPETAS DEPARTAMENTALES</div>
+        <div class="panel-sub">Visor interactivo de intervenciones por departamento</div>
+      </div>
+      <a class="btn-open" id="btnOpen" target="_blank" rel="noopener">Abrir en pantalla completa</a>
+    </div>
+
+    <div class="visor">
+      <iframe id="visor" title="Tablero Carpetas Departamentales" allowfullscreen></iframe>
+    </div>
+  </main>
+</div>
+
+<script>
+// ====== CONFIGURACIÓN ======
+// Para cambiar de tablero, solo reemplaza este enlace.
+const VISOR_URL = 'https://app.powerbi.com/view?r=eyJrIjoiNWIxMTVkYWUtMDMwMi00YWRmLTg5MzEtMzY1ZDVmYzVjMjFmIiwidCI6IjUzYWNiMjY1LTkxMjgtNDQ2ZC1hNWJlLWI4Mzg2MDBhYTY1NyJ9&language=en-US';
+
+document.getElementById('visor').src = VISOR_URL;
+document.getElementById('btnOpen').href = VISOR_URL;
+</script>
+</body>
+</html>
