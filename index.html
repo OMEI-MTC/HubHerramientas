@@ -321,24 +321,39 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 #accessScreen {
   position: fixed; inset: 0; z-index: 9999;
   background: #0A0E1A;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+/* Mitad izquierda — imagen */
+.access-img-side {
+  position: relative;
+  overflow: hidden;
+}
+.access-img-side img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  display: block;
+}
+.access-img-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to right, rgba(10,14,26,0.15), rgba(10,14,26,0.55));
+}
+/* Mitad derecha — formulario */
+.access-form-side {
+  background: #0A0E1A;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  gap: 0;
+  padding: 48px 40px;
+  position: relative;
 }
 .access-bg-stripe {
   position: absolute; top: 0; left: 0; right: 0;
-  height: 4px;
+  height: 3px;
   background: var(--red);
 }
 .access-card {
-  background: #13192B;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 20px;
-  padding: 48px 52px;
-  width: 420px;
-  max-width: 90vw;
+  width: 100%; max-width: 380px;
   display: flex; flex-direction: column; align-items: center; gap: 0;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
 }
 .access-logo-wrap {
   width: 64px; height: 64px;
@@ -359,7 +374,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .access-label {
   font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5);
   text-transform: uppercase; letter-spacing: .08em;
-  align-self: flex-start; margin-bottom: 8px;
+  align-self: flex-start; margin-bottom: 8px; width: 100%;
 }
 .access-input-wrap {
   width: 100%; position: relative; margin-bottom: 12px;
@@ -370,12 +385,13 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
   border: 1.5px solid rgba(255,255,255,0.12);
   border-radius: 10px;
   padding: 13px 46px 13px 16px;
-  font-size: 16px; color: #fff;
+  font-size: 15px; color: #fff;
   font-family: var(--sans);
   outline: none;
   transition: border-color .2s;
-  letter-spacing: .05em;
+  letter-spacing: .03em;
 }
+.access-input::placeholder { color: rgba(255,255,255,0.25); }
 .access-input:focus { border-color: var(--red); }
 .access-input.error { border-color: #ef4444; animation: shake .35s ease; }
 @keyframes shake {
@@ -395,7 +411,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .access-error {
   font-size: 12px; color: #f87171;
   align-self: flex-start; margin-bottom: 16px;
-  min-height: 16px; transition: opacity .2s;
+  min-height: 16px; width: 100%;
 }
 .access-btn {
   width: 100%;
@@ -409,9 +425,13 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 .access-btn:hover { background: #a50d25; }
 .access-btn:active { transform: scale(.98); }
 .access-footer {
-  position: absolute; bottom: 24px;
+  position: absolute; bottom: 20px;
   font-size: 11px; color: rgba(255,255,255,0.2);
   text-align: center; letter-spacing: .03em;
+}
+@media (max-width: 700px) {
+  #accessScreen { grid-template-columns: 1fr; }
+  .access-img-side { display: none; }
 }
 
 @media (max-width:700px) {
@@ -429,32 +449,38 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 </head>
 <body>
 <div id="accessScreen">
-  <div class="access-bg-stripe"></div>
-  <div class="access-card">
-    <div class="access-logo-wrap"><img src="mtc.jpg" alt="Logo MTC"></div>
-    <div class="access-title">Hub de Herramientas · OGAME</div>
-    <div class="access-sub">Oficina General de Articulación,<br>Monitoreo y Evaluación de Impacto</div>
-    <div class="access-label">Usuario</div>
-    <div class="access-input-wrap" style="margin-bottom:16px">
-      <input class="access-input" id="accessUser" type="text"
-             placeholder="Ej: OGAME-1"
-             onkeydown="if(event.key==='Enter')document.getElementById('accessInput').focus()">
-    </div>
-    <div class="access-label">Contraseña</div>
-    <div class="access-input-wrap">
-      <input class="access-input" id="accessInput" type="password"
-             placeholder="••••••••"
-             onkeydown="if(event.key==='Enter')checkAccess()">
-      <button class="access-eye" id="eyeBtn" onclick="toggleEye()" tabindex="-1" aria-label="Mostrar contraseña">
-        <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-        </svg>
-      </button>
-    </div>
-    <div class="access-error" id="accessError"></div>
-    <button class="access-btn" onclick="checkAccess()">Ingresar</button>
+  <div class="access-img-side">
+    <img src="frontismtc.jpeg" alt="Ministerio de Transportes y Comunicaciones">
+    <div class="access-img-overlay"></div>
   </div>
-  <div class="access-footer">MTC · OGAME · Uso interno</div>
+  <div class="access-form-side">
+    <div class="access-bg-stripe"></div>
+    <div class="access-card">
+      <div class="access-logo-wrap"><img src="mtc.jpg" alt="Logo MTC"></div>
+      <div class="access-title">Hub de Herramientas · OGAME</div>
+      <div class="access-sub">Oficina General de Articulación,<br>Monitoreo y Evaluación de Impacto</div>
+      <div class="access-label">Usuario</div>
+      <div class="access-input-wrap" style="margin-bottom:16px">
+        <input class="access-input" id="accessUser" type="text"
+               placeholder="Ej: OGAME-1"
+               onkeydown="if(event.key==='Enter')document.getElementById('accessInput').focus()">
+      </div>
+      <div class="access-label">Contraseña</div>
+      <div class="access-input-wrap">
+        <input class="access-input" id="accessInput" type="password"
+               placeholder="••••••••"
+               onkeydown="if(event.key==='Enter')checkAccess()">
+        <button class="access-eye" id="eyeBtn" onclick="toggleEye()" tabindex="-1" aria-label="Mostrar contraseña">
+          <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+      <div class="access-error" id="accessError"></div>
+      <button class="access-btn" onclick="checkAccess()">Ingresar</button>
+    </div>
+    <div class="access-footer">MTC · OGAME · Uso interno</div>
+  </div>
 </div>
 
 <div class="layout">
