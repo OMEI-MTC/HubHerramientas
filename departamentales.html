@@ -58,6 +58,18 @@
   }
   .btn-open:hover { background:#EEF4FF; }
 
+
+  /* ── Ayuda Memoria ── */
+  .acciones { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .am-box { display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #8FAADC; border-radius:24px; padding:4px 4px 4px 14px; }
+  .am-box label { font-size:13px; font-weight:600; color:var(--blue-dk); white-space:nowrap; }
+  .am-box select { font-family:var(--sans); font-size:13px; border:none; background:transparent; color:var(--text); padding:4px 2px; min-width:150px; cursor:pointer; outline:none; }
+  .btn-am { font-family:var(--sans); font-size:13px; font-weight:700; color:#fff; background:var(--red); border:none; border-radius:20px; padding:7px 16px; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:6px; }
+  .btn-am:hover { background:#A50D26; }
+  .btn-am:disabled { background:#C9CFD8; cursor:not-allowed; }
+  .am-estado { font-size:12px; color:var(--text-2); width:100%; min-height:16px; padding-left:14px; }
+  .am-estado.error { color:var(--red); }
+
   /* Contenedor del visor: ocupa todo el alto disponible */
   .visor {
     flex:1; min-height:560px;
@@ -97,7 +109,18 @@
         <div class="panel-title">TABLERO CARPETAS DEPARTAMENTALES</div>
         <div class="panel-sub">Visor interactivo de intervenciones por departamento</div>
       </div>
-      <a class="btn-open" id="btnOpen" target="_blank" rel="noopener">Abrir en pantalla completa</a>
+      <div class="acciones">
+        <div class="am-box">
+          <label for="amDep">Ayuda Memoria</label>
+          <select id="amDep" disabled><option>Cargando datos…</option></select>
+          <button class="btn-am" id="amBtn" disabled>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar Word
+          </button>
+        </div>
+        <a class="btn-open" id="btnOpen" target="_blank" rel="noopener">Abrir en pantalla completa</a>
+        <div class="am-estado" id="amEstado"></div>
+      </div>
     </div>
 
     <div class="visor">
@@ -113,6 +136,423 @@ const VISOR_URL = 'https://app.powerbi.com/view?r=eyJrIjoiNWIxMTVkYWUtMDMwMi00YW
 
 document.getElementById('visor').src = VISOR_URL;
 document.getElementById('btnOpen').href = VISOR_URL;
+</script>
+<script src="https://cdn.jsdelivr.net/npm/docx@9.6.1/dist/index.iife.js"></script>
+<script>
+/* =====================================================================
+   GENERADOR DE AYUDA MEMORIA DEPARTAMENTAL (Word)
+   Requiere la librería docx cargada antes (variable global "docx").
+   ===================================================================== */
+
+// ====== CONFIGURACIÓN: periodos, cortes y fuentes (editar aquí) ======
+const AM_CONFIG = {
+  periodoActividad: 'II trimestre de 2026',
+  periodoActividadCorto: 'II Trim. 2026',
+  anioAnteriorActividad: '2025',
+  anioSocial: '2025',
+  corteVial: 'diciembre de 2025',
+  anioVialAnterior: '2024',
+  corteCobertura: 'Dic. 2025',
+  anioTIC: '2025',
+  anioPresupuesto: '2026',
+  cortePresupuesto: '29 de setiembre de 2026',
+  fuentes: {
+    actividad: 'INEI – Indicador de la Actividad Productiva Departamental, II trimestre 2026 (año base 2007 = 100).',
+    competitividad: 'Instituto Peruano de Economía (IPE) – Índice de Competitividad Regional (INCORE) 2024.',
+    social: 'Estimaciones OMEI-OGAME-MTC con base en INEI – Encuesta Nacional de Hogares (ENAHO) 2025.',
+    vial: 'MTC – Unidad de Estadística, con información del Sistema Nacional de Carreteras (SINAC), diciembre 2025.',
+    cobertura: 'Organismo Supervisor de Inversión Privada en Telecomunicaciones (OSIPTEL) – Centros poblados con cobertura reportados por las empresas operadoras, diciembre 2025.',
+    tic: 'Diagnóstico de brechas de infraestructura o de acceso a servicios 2025, elaborado con información de INEI – Encuesta Nacional de Hogares (ENAHO) 2025.',
+    presupuesto: 'Ministerio de Economía y Finanzas (MEF) – Consulta Amigable, corte al 29 de setiembre de 2026.'
+  }
+};
+
+// ====== Lectura de datos ======
+function amParseTSV(text) {
+  const lines = text.replace(/\r/g, '').split('\n').filter(l => l.trim() !== '');
+  const headers = lines[0].split('\t').map(h => h.trim());
+  return lines.slice(1).map(l => {
+    const cells = l.split('\t'); const o = {};
+    headers.forEach((h, i) => { o[h] = (cells[i] ?? '').trim(); });
+    return o;
+  });
+}
+// Convierte "1,884.20", "17.43%", "0,1743", "-15.47" a número. Vacío → null.
+function amNum(v) {
+  if (v === null || v === undefined) return null;
+  let s = String(v).trim().replace(/\s/g, '');
+  if (s === '' || s === '-' || /^#/.test(s) || /^n\/?a$/i.test(s)) return null;
+  let pct = false;
+  if (s.endsWith('%')) { pct = true; s = s.slice(0, -1); }
+  const hasDot = s.includes('.'), hasComma = s.includes(',');
+  if (hasDot && hasComma) {
+    if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.');
+    else s = s.replace(/,/g, '');
+  } else if (hasComma) {
+    if (/^-?[1-9]\d{0,2}(,\d{3})+$/.test(s)) s = s.replace(/,/g, '');
+    else s = s.replace(',', '.');
+  }
+  const n = parseFloat(s);
+  if (isNaN(n)) return null;
+  return pct ? n / 100 : n;
+}
+
+// ====== Formato ======
+const amFmt = (n, d = 1) => Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const amPct = f => amFmt(f * 100) + ' %';          // fracción → "17.4 %"
+const amR = f => Math.round(f * 1000) / 1000;      // redondeo a 1 decimal en %
+const amPP = (a, b) => amFmt(Math.abs(amR(a) - amR(b)) * 100); // diferencia en puntos porcentuales
+const AM_NUM_TXT = ['cero','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez','once','doce'];
+const AM_ORD = ['primer','segundo','tercer','cuarto','quinto','sexto','séptimo','octavo','noveno','décimo','undécimo','duodécimo'];
+const amJoin = arr => arr.length <= 1 ? (arr[0] || '') : arr.slice(0, -1).join(', ') + ' y ' + arr[arr.length - 1];
+const AM_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
+
+const AM_SECTORES = {
+  'AGROPECUARIO': 'agropecuario', 'PESCA': 'pesca', 'MINERÍA E HIDROCARBUROS': 'minería e hidrocarburos',
+  'MANUFACTURA': 'manufactura', 'ELECTRICIDAD, GAS Y AGUA': 'electricidad, gas y agua', 'CONSTRUCCIÓN': 'construcción',
+  'COMERCIO': 'comercio', 'TRANSPORTE Y ALMACENAMIENTO': 'transporte y almacenamiento', 'TELECOMUNICACIONES': 'telecomunicaciones',
+  'ADMINISTRACIÓN PÚBLICA Y DEFENSA': 'administración pública y defensa', 'OTRAS ACTIVIDADES 1/': null, 'OTROS SERVICIOS': null
+};
+
+// Nombres de columna de la base (si cambian en el Sheet, cambiar solo aquí)
+const C = {
+  dep: 'Departamento', macro: 'Macro región',
+  act: 'Índice de la Actividad Productiva Departamental', ic: 'Índice de competitividad', icPuesto: 'Puesto IC',
+  pobreza: 'Tasa de Pobreza Monetaria', desempleo: 'Tasa de Desempleo',
+  rvnExist: 'RVN existente', rvnPav: 'RVN Pavimentada', rvnBueno: 'RVN Pavimentada Buen estado',
+  rvnBuenoRep: 'Rep. RVN Pavimentada Buen estado', rvnVar: 'Var RVN buen estado actual',
+  rvdTot: 'RVD Total', rvdPav: 'RVD pavimentada', rvvTot: 'RVV Total', rvvPav: 'RVV pavimentada',
+  ferro: 'Ferrocarriles (KM)', puertos: 'Terminales portuarios', aero: 'Aeroportuario',
+  ccppTot: 'Total de CP', ccppSinPct: 'CCPP (%) sin cob', ccppCon: 'CCPP con cobertura', ccpp2GPct: 'CCPP con cobertura 2G',
+  internet: 'uso de internet', compu: 'uso de compu', celular: 'uso de celular',
+  pimT: 'PIM TRANS', devT: 'DevTRANS ult.', avT: 'Avance Fi Anual Trans', gnPctT: '% GN TRANS', devGnT: 'DevTRANS GN ult.',
+  grglPctT: '% GR+GL TRANS', devGrglT: 'DevTRANS GR+GL',
+  pimC: 'PIMCOM ult', devC: 'DevCOM ult.', avC: 'Avance Fi Anual COM', gnPctC: '% GN COM', devGnC: 'DevCOM GN ult.',
+  grglPctC: '% GR+GL COM', devGrglC: 'DevCOM GR+GL',
+  secDep: 'Departamento', secAct: 'Actividad', secVar: 'Variación interanual de la Producción Sectorial'
+};
+// Columnas que son fracciones (0.174 = 17.4 %)
+const AM_FRAC = ['pobreza','desempleo','rvnBuenoRep','rvnVar','ccppSinPct','ccpp2GPct','avT','gnPctT','grglPctT','avC','gnPctC','grglPctC'];
+
+function amGetter(row) {
+  return key => {
+    let v = amNum(row[C[key]]);
+    if (v !== null && AM_FRAC.includes(key) && Math.abs(v) > 1.5) v = v / 100;
+    return v;
+  };
+}
+
+// ====== Textos (reglas) ======
+function amTextos(depName, rows, secRows) {
+  const find = n => rows.find(r => (r[C.dep] || '').trim().toLowerCase() === n.toLowerCase());
+  const R = find(depName); if (!R) throw new Error('No se encontró el departamento: ' + depName);
+  const N = find('Nacional') || {};
+  const g = amGetter(R), n = amGetter(N);
+  const dep = R[C.dep].trim();
+  const macro = (R[C.macro] || '').trim();
+  const pares = macro ? rows.filter(r => (r[C.macro] || '').trim() === macro) : [];
+  const out = { dep, macro, key: [], kpis: [], secciones: [], faltantes: [] };
+  const falta = (...keys) => keys.filter(k => g(k) === null).forEach(k => out.faltantes.push(C[k]));
+
+  // --- 1. Contexto económico
+  const s1 = [];
+  const act = g('act'), actN = n('act');
+  if (act !== null) {
+    let t = `En el ${AM_CONFIG.periodoActividad}, la actividad productiva de ${dep} ${act >= 0 ? 'creció' : 'se contrajo'} ${amFmt(Math.abs(act))} % respecto al mismo periodo de ${AM_CONFIG.anioAnteriorActividad}`;
+    if (actN !== null) t += act >= actN ? `, por encima del resultado nacional (${amFmt(actN)} %)` : `, frente a un resultado nacional de ${amFmt(actN)} %`;
+    t += '.';
+    const secs = secRows.filter(r => (r[C.secDep] || '').trim().toLowerCase() === dep.toLowerCase())
+      .map(r => ({ nom: AM_SECTORES[(r[C.secAct] || '').trim()], v: amNum(r[C.secVar]) }))
+      .filter(s => s.nom && s.v !== null).map(s => ({ ...s, v: Math.abs(s.v) > 1.5 ? s.v / 100 : s.v }));
+    const pos = secs.filter(s => s.v > 0).sort((a, b) => b.v - a.v);
+    const neg = secs.filter(s => s.v < 0).sort((a, b) => a.v - b.v);
+    const lst = arr => amJoin(arr.map(s => `${s.nom} (${amPct(s.v)})`));
+    if (secs.length) {
+      if (!neg.length) t += ` Todos los sectores crecieron; destacan ${lst(pos.slice(0, 3))}.`;
+      else if (!pos.length) t += ` Todos los sectores se contrajeron, en especial ${lst(neg.slice(0, 3))}.`;
+      else if (act >= 0) t += ` Destacan ${lst(pos.slice(0, 3))}. ${neg.length === 1 ? 'Solo registró caída' : 'Registraron caída'} ${lst(neg.slice(0, 3))}.`;
+      else t += ` Los sectores con mayor caída fueron ${lst(neg.slice(0, 3))}. En contraste, crecieron ${lst(pos.slice(0, 3))}.`;
+    }
+    s1.push({ p: t });
+    if (/^(lima|callao)$/i.test(dep)) s1.push({ note: 'Para Lima se considera Lima Metropolitana; Callao comparte el indicador de Lima.' });
+    s1.push({ src: AM_CONFIG.fuentes.actividad });
+  } else falta('act');
+  const ic = g('ic'), puesto = g('icPuesto'), icN = n('ic');
+  if (ic !== null && puesto !== null) {
+    let t = `En competitividad, ${dep} ocupa el puesto ${Math.round(puesto)} a nivel nacional en el Índice de Competitividad Regional, con ${amFmt(ic)} puntos sobre 10`;
+    if (icN !== null) t += ic > icN ? `, por encima del promedio nacional (${amFmt(icN)})` : ic < icN ? `, por debajo del promedio nacional (${amFmt(icN)})` : `, igual al promedio nacional`;
+    s1.push({ p: t + '.' }, { src: AM_CONFIG.fuentes.competitividad });
+  } else falta('ic', 'icPuesto');
+  if (s1.length) out.secciones.push({ titulo: 'Contexto económico', bloques: s1 });
+
+  // --- 2. Contexto social
+  const s2 = []; const pob = g('pobreza'), pobN = n('pobreza'), des = g('desempleo'), desN = n('desempleo');
+  if (pob !== null) {
+    let t = `En ${AM_CONFIG.anioSocial}, la pobreza monetaria en ${dep} alcanzó al ${amPct(pob)} de su población`;
+    if (pobN !== null) t += pob === pobN ? `, igual al promedio nacional` : `, ${amPP(pob, pobN)} puntos porcentuales ${pob > pobN ? 'por encima' : 'por debajo'} del promedio nacional (${amPct(pobN)})`;
+    t += '.';
+    if (des !== null && desN !== null) {
+      const mismoSentido = (pob > pobN) === (des > desN);
+      t += mismoSentido ? ` La tasa de desempleo fue ${amPct(des)} de la PEA, también ${des > desN ? 'superior' : 'inferior'} a la nacional (${amPct(desN)}).`
+                        : ` En contraste, la tasa de desempleo fue ${amPct(des)} de la PEA, ${des > desN ? 'superior' : 'inferior'} a la nacional (${amPct(desN)}).`;
+    }
+    s2.push({ p: t });
+    if (pares.length > 2) {
+      const rk = key => { const vals = pares.map(r => amGetter(r)(key)).filter(v => v !== null).sort((a, b) => a - b); return { pos: vals.indexOf(g(key)) + 1, tot: vals.length }; };
+      const frase = (key, nom) => { const { pos, tot } = rk(key); if (!pos) return null;
+        if (pos === 1) return `el menor ${nom}`; if (pos === tot) return `el mayor ${nom}`; return `el ${AM_ORD[pos - 1]} menor ${nom}`; };
+      const fp = frase('pobreza', 'nivel de pobreza'), fd = des !== null ? frase('desempleo', 'nivel de desempleo') : null;
+      const tot = pares.length;
+      if (fp) s2.push({ p: `Dentro de la macro región ${macro}, conformada por ${AM_NUM_TXT[tot] || tot} departamentos, ${dep} registra ${fp}${fd ? ' y ' + fd : ''}.` });
+    }
+    s2.push({ src: AM_CONFIG.fuentes.social });
+  } else falta('pobreza');
+  if (s2.length) out.secciones.push({ titulo: 'Contexto social', bloques: s2 });
+
+  // --- 3. Transporte
+  const s3 = []; const ex = g('rvnExist'), pav = g('rvnPav'), bue = g('rvnBueno'), rep = g('rvnBuenoRep'), vr = g('rvnVar');
+  if (ex !== null && pav !== null) {
+    let t = `A ${AM_CONFIG.corteVial}, ${dep} cuenta con ${amFmt(ex)} km de Red Vial Nacional (RVN), de los cuales ${amFmt(pav)} km (${amPct(pav / ex)}) están pavimentados.`;
+    if (bue !== null) {
+      t += ` De la RVN pavimentada, ${amFmt(bue)} km (${amPct(rep !== null ? rep : bue / pav)}) se encuentran en buen estado`;
+      if (vr !== null) t += Math.abs(vr) < 0.0005 ? `, sin variación respecto a ${AM_CONFIG.anioVialAnterior}` : `, ${amPct(Math.abs(vr))} ${vr > 0 ? 'más' : 'menos'} que en ${AM_CONFIG.anioVialAnterior}`;
+      t += '.';
+    }
+    s3.push({ p: t });
+    const redes = [['Nacional (RVN)', ex, pav], ['Departamental (RVD)', g('rvdTot'), g('rvdPav')], ['Vecinal (RVV)', g('rvvTot'), g('rvvPav')]]
+      .filter(r => r[1] !== null && r[2] !== null && r[1] > 0);
+    if (redes.length > 1) {
+      const menor = redes.slice(1).every(r => r[2] / r[1] < pav / ex);
+      s3.push({ lead: menor ? 'La pavimentación es considerablemente menor en las redes subnacionales:' : 'La pavimentación por tipo de red es la siguiente:' });
+      s3.push({ tabla: { h: ['Red vial', 'Total (km)', 'Pavimentada (km)', '% pavimentado'], w: [3638, 2000, 2000, 2000],
+        rows: redes.map(r => [r[0], amFmt(r[1]), amFmt(r[2]), amPct(r[2] / r[1])]) } });
+    }
+    const fe = g('ferro'), ae = g('aero'), pu = g('puertos'); const si = [], no = [];
+    if (fe !== null) (fe > 0 ? si.push(`${amFmt(fe, 0)} km de vía férrea`) : no.push('vía férrea'));
+    if (ae !== null) (ae > 0 ? si.push(`${amFmt(ae, 0)} ${ae === 1 ? 'instalación aeroportuaria' : 'instalaciones aeroportuarias'}`) : no.push('instalaciones aeroportuarias'));
+    if (pu !== null) (pu > 0 ? si.push(`${amFmt(pu, 0)} ${pu === 1 ? 'terminal portuario' : 'terminales portuarios'}`) : no.push('terminales portuarios'));
+    if (si.length || no.length) {
+      const noTxt = no.length === 1 ? no[0] : no.slice(0, -1).join(', ') + ' ni ' + no[no.length - 1];
+      let t2 = 'En otros modos, el departamento ';
+      t2 += si.length ? `cuenta con ${amJoin(si)}` + (no.length ? `, pero no tiene ${noTxt}` : '') : `no cuenta con ${noTxt}`;
+      s3.push({ p: t2 + '.' });
+    }
+    s3.push({ src: AM_CONFIG.fuentes.vial });
+    out.secciones.push({ titulo: 'Transporte', bloques: s3 });
+  } else falta('rvnExist', 'rvnPav');
+
+  // --- 4. Comunicaciones
+  const s4 = []; const tot = g('ccppTot'), con = g('ccppCon');
+  if (tot !== null && con !== null && tot > 0) {
+    const sinPct = g('ccppSinPct') !== null ? g('ccppSinPct') : (tot - con) / tot;
+    const sin = Math.round(tot - con); const p2g = g('ccpp2GPct');
+    s4.push({ h2: 'Cobertura de servicios móviles' });
+    let t = sin > 0
+      ? `De los ${amFmt(tot, 0)} centros poblados (CCPP) de ${dep}, ${amFmt(sin, 0)} (${amPct(sinPct)}) no cuentan con cobertura de servicio móvil ni de internet fijo inalámbrico.`
+      : `Los ${amFmt(tot, 0)} centros poblados (CCPP) de ${dep} cuentan con cobertura de servicio móvil o de internet fijo inalámbrico.`;
+    if (p2g !== null && con > 0) {
+      const n2g = Math.round(p2g * tot);
+      t += ` De los ${amFmt(con, 0)} CCPP con cobertura, ${amFmt(n2g, 0)} ${n2g === 1 ? 'solo tiene' : 'solo tienen'} tecnología 2G (${amPct(p2g)} del total); es decir, el ${amPct(n2g / con)} de los CCPP con cobertura solo puede realizar llamadas y enviar SMS.`;
+    }
+    s4.push({ p: t }, { src: AM_CONFIG.fuentes.cobertura });
+    out.kpiCob = sinPct;
+  } else falta('ccppTot', 'ccppCon');
+  const it = g('internet'), cp = g('compu'), ce = g('celular');
+  if (it !== null) {
+    s4.push({ h2: 'Uso de tecnologías de la información' });
+    const itN = n('internet');
+    let t = `En ${AM_CONFIG.anioTIC}, ${amFmt(it)} mil personas de 6 años a más usaron internet en ${dep}` + (itN ? `, el ${amPct(it / itN)} del total nacional de usuarios` : '') + '.';
+    const extra = [];
+    if (cp !== null) extra.push(`${amFmt(cp)} mil usan computadora, laptop o tablet`);
+    if (ce !== null) extra.push(`${amFmt(ce)} mil personas de 18 años a más tienen celular propio`);
+    if (extra.length) t += ' Asimismo, ' + amJoin(extra) + '.';
+    s4.push({ p: t }, { src: AM_CONFIG.fuentes.tic });
+  }
+  if (s4.length) out.secciones.push({ titulo: 'Comunicaciones', bloques: s4 });
+
+  // --- 5. Presupuesto
+  const fun = (sfx) => {
+    const pim = g('pim' + sfx), dev = g('dev' + sfx), av = g('av' + sfx);
+    if (pim === null || dev === null) return null;
+    let grgl = g('grglPct' + sfx), gn = g('gnPct' + sfx), dGr = g('devGrgl' + sfx), dGn = g('devGn' + sfx);
+    if (gn === null && grgl !== null) gn = 1 - grgl; if (grgl === null && gn !== null) grgl = 1 - gn;
+    if (dGn === null && dGr !== null) dGn = dev - dGr; if (dGr === null && dGn !== null) dGr = dev - dGn;
+    return { pim, dev, av: av !== null ? av : dev / pim, gn, grgl, dGn, dGr, avN: n('av' + sfx) };
+  };
+  const T = fun('T'), Cm = fun('C');
+  if (T || Cm) {
+    const s5 = []; const partes = [];
+    const pm = v => v >= 100 ? amFmt(v) : amFmt(v);
+    if (T) partes.push(`la función transporte en ${dep} ejecutó el ${amPct(T.av)} de su PIM (S/ ${pm(T.dev)} millones de S/ ${pm(T.pim)} millones)` + (T.avN !== null ? `, ${T.av >= T.avN ? 'por encima' : 'por debajo'} del avance nacional (${amPct(T.avN)})` : ''));
+    if (Cm) partes.push(`la función comunicaciones avanzó ${amPct(Cm.av)} (S/ ${pm(Cm.dev)} millones de S/ ${pm(Cm.pim)} millones)`);
+    let t = `Al ${AM_CONFIG.cortePresupuesto}, ` + partes.join(', mientras que ') + '.';
+    const dist = (f) => f.gn === null ? null : (f.gn >= 0.45 && f.gn <= 0.55) ? 'la ejecución se reparte casi en partes iguales entre el Gobierno Nacional y los gobiernos subnacionales'
+      : f.gn > 0.55 ? `predomina el Gobierno Nacional (${amPct(f.gn)})` : `predominan los gobiernos regional y locales (${amPct(f.grgl)})`;
+    const dT = T && dist(T), dC = Cm && dist(Cm);
+    if (dT && dC) t += ` En transporte, ${dT}; en comunicaciones, ${dC}.`;
+    else if (dT) t += ` En transporte, ${dT}.`;
+    s5.push({ p: t });
+    const col = (f, fn) => f ? fn(f) : '–';
+    const cell = (v, p) => v === null ? '–' : `${amFmt(v)}` + (p !== null && p !== undefined ? ` (${amPct(p)})` : '');
+    s5.push({ tabla: { h: ['Concepto (millones de S/)', 'Transporte', 'Comunicaciones'], w: [5238, 2200, 2200], rows: [
+      [`PIM ${AM_CONFIG.anioPresupuesto} (GN + GR + GL)`, col(T, f => amFmt(f.pim)), col(Cm, f => amFmt(f.pim))],
+      [`Devengado ${AM_CONFIG.anioPresupuesto}`, col(T, f => amFmt(f.dev)), col(Cm, f => amFmt(f.dev))],
+      ['Avance financiero', col(T, f => amPct(f.av)), col(Cm, f => amPct(f.av))],
+      ['Devengado Gobierno Nacional', col(T, f => cell(f.dGn, f.gn)), col(Cm, f => cell(f.dGn, f.gn))],
+      ['Devengado gobiernos regional y locales', col(T, f => cell(f.dGr, f.grgl)), col(Cm, f => cell(f.dGr, f.grgl))]
+    ] } });
+    s5.push({ note: 'Los porcentajes entre paréntesis corresponden a la participación en el devengado total de cada función.' });
+    s5.push({ src: AM_CONFIG.fuentes.presupuesto });
+    out.secciones.push({ titulo: `Presupuesto sectorial ${AM_CONFIG.anioPresupuesto}`, bloques: s5 });
+  }
+
+  // --- Mensajes clave
+  if (act !== null || pob !== null) {
+    const a = [];
+    if (act !== null) a.push(`En el ${AM_CONFIG.periodoActividad}, la actividad productiva de ${dep} ${act >= 0 ? 'creció' : 'se contrajo'} ${amFmt(Math.abs(act))} %` + (actN !== null ? `, ${act >= actN ? 'por encima' : 'por debajo'} del resultado nacional (${amFmt(actN)} %)` : '') + '.');
+    if (pob !== null && pobN !== null) a.push(`Su pobreza monetaria (${amPct(pob)}) se ubica ${amPP(pob, pobN)} puntos porcentuales ${pob > pobN ? 'por encima' : 'por debajo'} del promedio nacional.`);
+    out.key.push(a.join(' '));
+  }
+  const b = [];
+  if (ex !== null && pav !== null) b.push(`En infraestructura vial, el ${amPct(pav / ex)} de su Red Vial Nacional está pavimentada` + (bue !== null ? ` y el ${amPct(rep !== null ? rep : bue / pav)} de ese tramo se encuentra en buen estado.` : '.'));
+  if (out.kpiCob !== undefined) b.push(out.kpiCob > 0 ? `En telecomunicaciones, el ${amPct(out.kpiCob)} de sus centros poblados no tiene cobertura móvil.` : 'En telecomunicaciones, todos sus centros poblados tienen cobertura móvil.');
+  if (b.length) out.key.push(b.join(' '));
+  if (T || Cm) out.key.push(`Al ${AM_CONFIG.cortePresupuesto}, ` + [T && `la función transporte ejecutó el ${amPct(T.av)} de su presupuesto ${AM_CONFIG.anioPresupuesto}`, Cm && `la función comunicaciones avanzó ${amPct(Cm.av)}`].filter(Boolean).join(', mientras que ') + '.');
+
+  // --- Cifras destacadas
+  if (act !== null) out.kpis.push([`${amFmt(act)} %`, 'Actividad productiva', AM_CONFIG.periodoActividadCorto]);
+  if (pob !== null) out.kpis.push([amPct(pob), 'Pobreza monetaria', AM_CONFIG.anioSocial]);
+  if (bue !== null && pav) out.kpis.push([amPct(rep !== null ? rep : bue / pav), 'RVN pavimentada en buen estado', 'Dic. 2025']);
+  if (out.kpiCob !== undefined) out.kpis.push([amPct(out.kpiCob), 'Centros poblados sin cobertura móvil', AM_CONFIG.corteCobertura]);
+  if (T) out.kpis.push([amPct(T.av), 'Avance financiero transporte', AM_CONFIG.anioPresupuesto]);
+  if (Cm) out.kpis.push([amPct(Cm.av), 'Avance financiero comunicaciones', AM_CONFIG.anioPresupuesto]);
+  return out;
+}
+
+// ====== Documento Word ======
+function amDocumento(am) {
+  const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, ShadingType,
+    AlignmentType, BorderStyle, Header, Footer, PageNumber, TabStopType, VerticalAlign } = docx;
+  const RED = 'C8102E', BLUE = '0055A5', BLUEDK = '003F7D', GRAY = '5A6472', LIGHT = 'EEF4FF', LINE = '8FAADC', FONT = 'Arial', W = 9638;
+  const fix = t => String(t).replace(/(^|[\s(])-(?=\d)/g, '$1\u2011');
+  const run = (t, o = {}) => new TextRun({ text: fix(t), font: FONT, size: o.size || 21, bold: o.bold, italics: o.it, color: o.color });
+  const para = (t, o = {}) => new Paragraph({ children: [run(t, o)], alignment: o.align || AlignmentType.JUSTIFIED,
+    spacing: { after: o.after ?? 140, before: o.before || 0, line: 290 }, keepNext: o.keepNext });
+  const none = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  const noB = { top: none, bottom: none, left: none, right: none };
+  const tabla = (hd, rows, widths) => {
+    const lb = { style: BorderStyle.SINGLE, size: 4, color: 'D5DDEA' };
+    const mk = (cells, i, head) => new TableRow({ tableHeader: head, cantSplit: true, children: cells.map((c, j) => new TableCell({
+      width: { size: widths[j], type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER, margins: { top: 70, bottom: 70, left: 110, right: 110 },
+      shading: { type: ShadingType.CLEAR, color: 'auto', fill: head ? BLUE : (i % 2 ? 'F6F8FC' : 'FFFFFF') },
+      borders: { top: lb, bottom: lb, left: none, right: none },
+      children: [new Paragraph({ alignment: j === 0 ? AlignmentType.LEFT : AlignmentType.RIGHT,
+        children: [run(c, { size: head ? 17 : 18, bold: head, color: head ? 'FFFFFF' : '1A1A1A' })] })] })) });
+    return new Table({ width: { size: widths.reduce((a, b) => a + b), type: WidthType.DXA }, columnWidths: widths,
+      rows: [mk(hd, 0, true), ...rows.map((r, i) => mk(r, i, false))] });
+  };
+
+  const body = [];
+  am.secciones.forEach((s, si) => {
+    body.push(new Paragraph({ keepNext: true, spacing: { before: 280, after: 140 }, border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: RED, space: 4 } },
+      children: [run((si + 1) + '.  ', { size: 24, bold: true, color: RED }), run(s.titulo.toUpperCase(), { size: 24, bold: true, color: BLUE })] }));
+    s.bloques.forEach((b, bi) => {
+      const next = s.bloques[bi + 1];
+      if (b.p) body.push(para(b.p, { keepNext: !!(next && next.src) }));
+      else if (b.lead) body.push(para(b.lead, { keepNext: true }));
+      else if (b.h2) body.push(new Paragraph({ keepNext: true, spacing: { before: 160, after: 100 }, children: [run(b.h2, { size: 21, bold: true, color: BLUEDK })] }));
+      else if (b.tabla) { body.push(tabla(b.tabla.h, b.tabla.rows, b.tabla.w)); if (!(next && next.note)) body.push(para('', { after: 60 })); }
+      else if (b.note) body.push(new Paragraph({ spacing: { before: 60, after: 0 }, children: [run(b.note, { size: 16, it: true, color: GRAY })] }));
+      else if (b.src) body.push(new Paragraph({ spacing: { before: 20, after: 220 }, children: [
+        run('Fuente: ', { size: 16, it: true, color: GRAY, bold: true }), run(b.src, { size: 16, it: true, color: GRAY })] }));
+    });
+  });
+
+  const keyBox = new Table({ width: { size: W, type: WidthType.DXA }, columnWidths: [W], rows: [new TableRow({ children: [new TableCell({
+    width: { size: W, type: WidthType.DXA }, shading: { type: ShadingType.CLEAR, color: 'auto', fill: LIGHT },
+    margins: { top: 160, bottom: 120, left: 240, right: 240 }, borders: { ...noB, left: { style: BorderStyle.SINGLE, size: 36, color: RED } },
+    children: [new Paragraph({ spacing: { after: 100 }, children: [run('MENSAJES CLAVE', { size: 19, bold: true, color: BLUE })] }),
+      ...am.key.map((k, i) => para(k, { after: i === am.key.length - 1 ? 40 : 80 }))] })] })] });
+  const n = am.kpis.length || 1, kw = Math.floor(W / n), kws = am.kpis.map((_, i) => i < n - 1 ? kw : W - (n - 1) * kw);
+  const kpiT = new Table({ width: { size: W, type: WidthType.DXA }, columnWidths: kws, rows: [new TableRow({ children: am.kpis.map((k, i) => new TableCell({
+    width: { size: kws[i], type: WidthType.DXA }, margins: { top: 120, bottom: 120, left: 80, right: 80 },
+    borders: { ...noB, right: i < n - 1 ? { style: BorderStyle.SINGLE, size: 4, color: LINE } : none },
+    children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [run(k[0], { size: 30, bold: true, color: RED })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 40 }, children: [run(k[1], { size: 16, color: '1A1A1A' })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, children: [run(k[2], { size: 15, color: GRAY, it: true })] })] })) })] });
+
+  const hoy = new Date();
+  const fecha = AM_MESES[hoy.getMonth()] + ' ' + hoy.getFullYear();
+  const sub = ['Carpeta Departamental', am.macro ? 'Macro región ' + am.macro : null, fecha].filter(Boolean).join('  |  ');
+  const g = { size: 15, color: GRAY };
+  return new Document({
+    creator: 'OMEI – OGAME – MTC', title: 'Ayuda Memoria – ' + am.dep,
+    styles: { default: { document: { run: { font: FONT, size: 21 } } } },
+    sections: [{
+      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1300, bottom: 1100, left: 1134, right: 1134, header: 560, footer: 500 } } },
+      headers: { default: new Header({ children: [new Paragraph({ tabStops: [{ type: TabStopType.RIGHT, position: W }],
+        border: { bottom: { style: BorderStyle.SINGLE, size: 18, color: RED, space: 6 } },
+        children: [run('MINISTERIO DE TRANSPORTES Y COMUNICACIONES', { size: 16, bold: true, color: BLUE }),
+          run('\tOficina General de Articulación, Monitoreo y Evaluación de Impacto', g)] })] }) },
+      footers: { default: new Footer({ children: [new Paragraph({ tabStops: [{ type: TabStopType.RIGHT, position: W }],
+        border: { top: { style: BorderStyle.SINGLE, size: 4, color: LINE, space: 6 } },
+        children: [run('Ayuda Memoria · Departamento de ' + am.dep, g), run('\tPágina ', g),
+          new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: 15, color: GRAY }), run(' de ', g),
+          new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FONT, size: 15, color: GRAY })] })] }) },
+      children: [
+        new Paragraph({ spacing: { after: 0 }, children: [run('AYUDA MEMORIA', { size: 40, bold: true, color: BLUE })] }),
+        new Paragraph({ spacing: { after: 60 }, children: [run('Departamento de ' + am.dep, { size: 30, color: RED, bold: true })] }),
+        new Paragraph({ spacing: { after: 240 }, border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: LINE, space: 8 } }, children: [run(sub, { size: 18, color: GRAY })] }),
+        keyBox, para('', { after: 120 }), kpiT, ...body,
+        new Paragraph({ spacing: { before: 300 }, alignment: AlignmentType.RIGHT, children: [run('Elaboración: OMEI – OGAME – MTC', { size: 17, it: true, color: GRAY })] })
+      ]
+    }]
+  });
+}
+
+// ====== AYUDA MEMORIA: fuentes de datos (Google Sheets publicado como TSV) ======
+const AM_URL_DATOS   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSfxbrTt12Dh8n0qYW_-NlX7GYiZFYJkp_h8vzHe8wIjZ8E14MaKNaB_-Kb-cCpL9EqRscpxLCQta_p/pub?gid=1452101256&single=true&output=tsv';
+const AM_URL_SECTORES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSfxbrTt12Dh8n0qYW_-NlX7GYiZFYJkp_h8vzHe8wIjZ8E14MaKNaB_-Kb-cCpL9EqRscpxLCQta_p/pub?gid=378268387&single=true&output=tsv';
+
+let AM_FILAS = [], AM_SECT = [];
+const amSel = document.getElementById('amDep'), amBtn = document.getElementById('amBtn'), amEst = document.getElementById('amEstado');
+const amMsg = (t, err) => { amEst.textContent = t; amEst.className = 'am-estado' + (err ? ' error' : ''); };
+
+async function amCargar() {
+  try {
+    const [a, b] = await Promise.all([fetch(AM_URL_DATOS), fetch(AM_URL_SECTORES)]);
+    if (!a.ok || !b.ok) throw new Error('HTTP ' + a.status + '/' + b.status);
+    AM_FILAS = amParseTSV(await a.text());
+    AM_SECT = amParseTSV(await b.text());
+    const deps = AM_FILAS.map(r => (r[C.dep] || '').trim()).filter(d => d && d.toLowerCase() !== 'nacional')
+      .sort((x, y) => x.localeCompare(y, 'es'));
+    amSel.innerHTML = '<option value="">Elegir departamento…</option>' + deps.map(d => `<option>${d}</option>`).join('');
+    amSel.disabled = false; amMsg('');
+  } catch (e) {
+    console.error(e);
+    amSel.innerHTML = '<option>Sin datos</option>';
+    amMsg('No se pudieron cargar los datos de la Ayuda Memoria.', true);
+  }
+}
+amSel.addEventListener('change', () => { amBtn.disabled = !amSel.value; amMsg(''); });
+amBtn.addEventListener('click', async () => {
+  const dep = amSel.value; if (!dep) return;
+  if (typeof docx === 'undefined') { amMsg('La librería de Word aún no carga; intenta en unos segundos.', true); return; }
+  amBtn.disabled = true; amMsg('Generando documento…');
+  try {
+    const am = amTextos(dep, AM_FILAS, AM_SECT);
+    const blob = await docx.Packer.toBlob(amDocumento(am));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'AM_' + dep.replace(/\s+/g, '_') + '.docx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    amMsg(am.faltantes.length ? 'Descargado. Datos vacíos en la base: ' + am.faltantes.join(', ') : 'Descargado.', am.faltantes.length > 0);
+  } catch (e) {
+    console.error(e); amMsg('Error al generar: ' + e.message, true);
+  } finally { amBtn.disabled = false; }
+});
+amCargar();
 </script>
 </body>
 </html>
