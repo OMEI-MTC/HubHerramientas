@@ -71,8 +71,14 @@
   .am-estado.error { color:var(--red); }
 
   /* Contenedor del visor: ocupa todo el alto disponible */
+  /* El visor toma la proporción del reporte (16:9) + la barra inferior de Power BI (~56px),
+     con el mayor tamaño posible que quepa completo en la pantalla */
   .visor {
-    flex:1; min-height:560px;
+    --barra-pbi: 56px;
+    --ancho: min(100vw - 56px, (100vh - 230px - var(--barra-pbi)) * 16 / 9);
+    width: var(--ancho);
+    height: calc(var(--ancho) * 9 / 16 + var(--barra-pbi));
+    margin: 0 auto; flex: none;
     background:var(--card); border:1px solid var(--border); border-radius:var(--r);
     overflow:hidden;
   }
@@ -82,7 +88,7 @@
     .topbar { flex-wrap:wrap; gap:12px; padding:14px 18px; }
     .topbar-name { font-size:20px; }
     .main { padding:16px; }
-    .visor { min-height:480px; }
+    .visor { --ancho: calc(100vw - 32px); }
   }
 </style>
 </head>
@@ -136,6 +142,23 @@ const VISOR_URL = 'https://app.powerbi.com/view?r=eyJrIjoiNWIxMTVkYWUtMDMwMi00YW
 
 document.getElementById('visor').src = VISOR_URL;
 document.getElementById('btnOpen').href = VISOR_URL;
+
+// ====== Tamaño del visor: el reporte (16:9) completo y lo más grande posible ======
+const PBI_PROPORCION = 16 / 9;   // proporción de las páginas del reporte
+const PBI_BARRA = 56;            // barra inferior de Power BI (páginas, zoom)
+function ajustarVisor() {
+  const visor = document.querySelector('.visor');
+  const main = document.querySelector('.main');
+  const est = getComputedStyle(main);
+  const anchoMax = main.clientWidth - parseFloat(est.paddingLeft) - parseFloat(est.paddingRight);
+  const altoDisp = window.innerHeight - visor.getBoundingClientRect().top - parseFloat(est.paddingBottom);
+  let ancho = Math.min(anchoMax, (altoDisp - PBI_BARRA) * PBI_PROPORCION);
+  if (ancho < 360) ancho = anchoMax;   // pantallas muy bajas: usar todo el ancho
+  visor.style.width = ancho + 'px';
+  visor.style.height = (ancho / PBI_PROPORCION + PBI_BARRA) + 'px';
+}
+window.addEventListener('resize', ajustarVisor);
+ajustarVisor();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/docx@9.6.1/dist/index.iife.js"></script>
 <script>
