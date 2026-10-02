@@ -228,6 +228,14 @@ const amPP = (a, b) => amFmt(Math.abs(amR(a) - amR(b)) * 100); // diferencia en 
 const AM_NUM_TXT = ['cero','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez','once','doce'];
 const AM_ORD = ['primer','segundo','tercer','cuarto','quinto','sexto','séptimo','octavo','noveno','décimo','undécimo','duodécimo'];
 const amJoin = arr => arr.length <= 1 ? (arr[0] || '') : arr.slice(0, -1).join(', ') + ' y ' + arr[arr.length - 1];
+// "Var. Diciembre 2025/ Junio 2026" → { ant: 'diciembre de 2025', act: 'junio de 2026', actCorto: 'Jun. 2026' }
+function amCorte(txt) {
+  const partes = String(txt || '').replace(/^\s*var\.?\s*/i, '').split('/').map(p => p.trim()).filter(Boolean);
+  if (partes.length !== 2) return null;
+  const largo = p => { const m = p.match(/^([A-Za-zÁÉÍÓÚáéíóúñÑ]+)\s+(\d{4})$/); return m ? m[1].toLowerCase() + ' de ' + m[2] : p; };
+  const corto = p => { const m = p.match(/^([A-Za-zÁÉÍÓÚáéíóúñÑ]+)\s+(\d{4})$/); return m ? m[1].charAt(0).toUpperCase() + m[1].slice(1, 3).toLowerCase() + '. ' + m[2] : p; };
+  return { ant: largo(partes[0]), act: largo(partes[1]), actCorto: corto(partes[1]) };
+}
 const AM_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
 
 const AM_SECTORES = {
@@ -243,7 +251,7 @@ const C = {
   act: 'Índice de la Actividad Productiva Departamental', ic: 'Índice de competitividad', icPuesto: 'Puesto IC',
   pobreza: 'Tasa de Pobreza Monetaria', desempleo: 'Tasa de Desempleo',
   rvnExist: 'RVN existente', rvnPav: 'RVN Pavimentada', rvnBueno: 'RVN Pavimentada Buen estado',
-  rvnBuenoRep: 'Rep. RVN Pavimentada Buen estado', rvnVar: 'Var RVN buen estado actual',
+  rvnBuenoRep: 'Rep. RVN Pavimentada Buen estado', rvnVar: 'Var RVN buen estado actual', corteVial: 'Corte Red Vial',
   rvdTot: 'RVD Total', rvdPav: 'RVD pavimentada', rvvTot: 'RVV Total', rvvPav: 'RVV pavimentada',
   ferro: 'Ferrocarriles (KM)', puertos: 'Terminales portuarios', aero: 'Aeroportuario',
   ccppTot: 'Total de CP', ccppSinPct: 'CCPP (%) sin cob', ccppCon: 'CCPP con cobertura', ccpp2GPct: 'CCPP con cobertura 2G',
@@ -333,12 +341,15 @@ function amTextos(depName, rows, secRows) {
   if (s2.length) out.secciones.push({ titulo: 'Contexto social', bloques: s2 });
 
   // --- 3. Transporte
+  const cv = amCorte(R[C.corteVial]);
+  const vialAct = cv ? cv.act : AM_CONFIG.corteVial, vialAnt = cv ? cv.ant : AM_CONFIG.anioVialAnterior;
+  const vialCorto = cv ? cv.actCorto : 'Dic. 2025';
   const s3 = []; const ex = g('rvnExist'), pav = g('rvnPav'), bue = g('rvnBueno'), rep = g('rvnBuenoRep'), vr = g('rvnVar');
   if (ex !== null && pav !== null) {
-    let t = `A ${AM_CONFIG.corteVial}, ${dep} cuenta con ${amFmt(ex)} km de Red Vial Nacional (RVN), de los cuales ${amFmt(pav)} km (${amPct(pav / ex)}) están pavimentados.`;
+    let t = `A ${vialAct}, ${dep} cuenta con ${amFmt(ex)} km de Red Vial Nacional (RVN), de los cuales ${amFmt(pav)} km (${amPct(pav / ex)}) están pavimentados.`;
     if (bue !== null) {
       t += ` De la RVN pavimentada, ${amFmt(bue)} km (${amPct(rep !== null ? rep : bue / pav)}) se encuentran en buen estado`;
-      if (vr !== null) t += Math.abs(vr) < 0.0005 ? `, sin variación respecto a ${AM_CONFIG.anioVialAnterior}` : `, ${amPct(Math.abs(vr))} ${vr > 0 ? 'más' : 'menos'} que en ${AM_CONFIG.anioVialAnterior}`;
+      if (vr !== null) t += Math.abs(vr) < 0.0005 ? `, sin variación respecto a ${vialAnt}` : `, ${amPct(Math.abs(vr))} ${vr > 0 ? 'más' : 'menos'} que en ${vialAnt}`;
       t += '.';
     }
     s3.push({ p: t });
@@ -360,7 +371,7 @@ function amTextos(depName, rows, secRows) {
       t2 += si.length ? `cuenta con ${amJoin(si)}` + (no.length ? `, pero no tiene ${noTxt}` : '') : `no cuenta con ${noTxt}`;
       s3.push({ p: t2 + '.' });
     }
-    s3.push({ src: AM_CONFIG.fuentes.vial });
+    s3.push({ src: cv ? `MTC – Unidad de Estadística, con información del Sistema Nacional de Carreteras (SINAC), ${vialAct}.` : AM_CONFIG.fuentes.vial });
     out.secciones.push({ titulo: 'Transporte', bloques: s3 });
   } else falta('rvnExist', 'rvnPav');
 
@@ -445,7 +456,7 @@ function amTextos(depName, rows, secRows) {
   // --- Cifras destacadas
   if (act !== null) out.kpis.push([`${amFmt(act)} %`, 'Actividad productiva', AM_CONFIG.periodoActividadCorto]);
   if (pob !== null) out.kpis.push([amPct(pob), 'Pobreza monetaria', AM_CONFIG.anioSocial]);
-  if (bue !== null && pav) out.kpis.push([amPct(rep !== null ? rep : bue / pav), 'RVN pavimentada en buen estado', 'Dic. 2025']);
+  if (bue !== null && pav) out.kpis.push([amPct(rep !== null ? rep : bue / pav), 'RVN pavimentada en buen estado', vialCorto]);
   if (out.kpiCob !== undefined) out.kpis.push([amPct(out.kpiCob), 'Centros poblados sin cobertura móvil', AM_CONFIG.corteCobertura]);
   if (T) out.kpis.push([amPct(T.av), 'Avance financiero transporte', AM_CONFIG.anioPresupuesto]);
   if (Cm) out.kpis.push([amPct(Cm.av), 'Avance financiero comunicaciones', AM_CONFIG.anioPresupuesto]);
