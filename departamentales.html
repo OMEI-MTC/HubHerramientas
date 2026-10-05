@@ -143,7 +143,7 @@ const VISOR_URL = 'https://app.powerbi.com/view?r=eyJrIjoiNWIxMTVkYWUtMDMwMi00YW
 document.getElementById('visor').src = VISOR_URL;
 document.getElementById('btnOpen').href = VISOR_URL;
 
-// ====== Tamaño del visor: el reporte (16:9) completo y lo más grande posible ======
+// ====== Tamaño del visor: el reporte (16:9) lo más grande posible, sin superar el alto de la ventana ======
 const PBI_PROPORCION = 16 / 9;   // proporción de las páginas del reporte
 const PBI_BARRA = 56;            // barra inferior de Power BI (páginas, zoom)
 function ajustarVisor() {
@@ -151,7 +151,8 @@ function ajustarVisor() {
   const main = document.querySelector('.main');
   const est = getComputedStyle(main);
   const anchoMax = main.clientWidth - parseFloat(est.paddingLeft) - parseFloat(est.paddingRight);
-  const altoDisp = window.innerHeight - visor.getBoundingClientRect().top - parseFloat(est.paddingBottom);
+  // El visor puede ocupar toda la altura de la ventana: al bajar, el encabezado se desplaza y el reporte queda completo
+  const altoDisp = window.innerHeight - 2 * parseFloat(est.paddingBottom);
   let ancho = Math.min(anchoMax, (altoDisp - PBI_BARRA) * PBI_PROPORCION);
   if (ancho < 360) ancho = anchoMax;   // pantallas muy bajas: usar todo el ancho
   visor.style.width = ancho + 'px';
@@ -227,6 +228,9 @@ const amR = f => Math.round(f * 1000) / 1000;      // redondeo a 1 decimal en %
 const amPP = (a, b) => amFmt(Math.abs(amR(a) - amR(b)) * 100); // diferencia en puntos porcentuales
 const AM_NUM_TXT = ['cero','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez','once','doce'];
 const AM_ORD = ['primer','segundo','tercer','cuarto','quinto','sexto','séptimo','octavo','noveno','décimo','undécimo','duodécimo'];
+// Personas (dato en miles): 272.0 → "272.0 mil personas"; 1,413.2 → "1.41 millones de personas"
+const amPersonas = (miles, sust = 'personas') => miles >= 1000
+  ? `${amFmt(miles / 1000, 2)} millones de ${sust}` : `${amFmt(miles)} mil ${sust}`;
 const amJoin = arr => arr.length <= 1 ? (arr[0] || '') : arr.slice(0, -1).join(', ') + ' y ' + arr[arr.length - 1];
 // "Var. Diciembre 2025/ Junio 2026" → { ant: 'diciembre de 2025', act: 'junio de 2026', actCorto: 'Jun. 2026' }
 function amCorte(txt) {
@@ -395,10 +399,10 @@ function amTextos(depName, rows, secRows) {
   if (it !== null) {
     s4.push({ h2: 'Uso de tecnologías de la información' });
     const itN = n('internet');
-    let t = `En ${AM_CONFIG.anioTIC}, ${amFmt(it)} mil personas de 6 años a más usaron internet en ${dep}` + (itN ? `, el ${amPct(it / itN)} del total nacional de usuarios` : '') + '.';
+    let t = `En ${AM_CONFIG.anioTIC}, ${amPersonas(it)} de 6 años a más usaron internet en ${dep}` + (itN ? `, el ${amPct(it / itN)} del total nacional de usuarios` : '') + '.';
     const extra = [];
-    if (cp !== null) extra.push(`${amFmt(cp)} mil usan computadora, laptop o tablet`);
-    if (ce !== null) extra.push(`${amFmt(ce)} mil personas de 18 años a más tienen celular propio`);
+    if (cp !== null) extra.push(`${amPersonas(cp)} usan computadora, laptop o tablet`);
+    if (ce !== null) extra.push(`${amPersonas(ce)} de 18 años a más tienen celular propio`);
     if (extra.length) t += ' Asimismo, ' + amJoin(extra) + '.';
     s4.push({ p: t }, { src: AM_CONFIG.fuentes.tic });
   }
