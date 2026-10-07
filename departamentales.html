@@ -232,6 +232,42 @@ const AM_ORD = ['primer','segundo','tercer','cuarto','quinto','sexto','séptimo'
 const amPersonas = (miles, sust = 'personas') => miles >= 1000
   ? `${amFmt(miles / 1000, 2)} millones de ${sust}` : `${amFmt(miles)} mil ${sust}`;
 const amJoin = arr => arr.length <= 1 ? (arr[0] || '') : arr.slice(0, -1).join(', ') + ' y ' + arr[arr.length - 1];
+// ====== Fechas de corte ======
+const AM_MES_N = { ene:1, feb:2, mar:3, abr:4, may:5, jun:6, jul:7, ago:8, set:9, sep:9, oct:10, nov:11, dic:12,
+  jan:1, apr:4, aug:8, dec:12 };
+const AM_ROM = ['I','II','III','IV'];
+// Lee "30/06/2026", "2026-06-30", "29-Sep-26", "Junio 2026", "Jun-26", "jun. 2026", número de serie de Excel → {d, m, y}
+function amFecha(txt) {
+  const s = String(txt || '').trim(); if (!s) return null;
+  const y4 = y => { y = +y; return y < 100 ? 2000 + y : y; };
+  let m;
+  if (/^\d{5}(\.\d+)?$/.test(s)) { const f = new Date(Math.round((+s - 25569) * 864e5)); return { d: f.getUTCDate(), m: f.getUTCMonth() + 1, y: f.getUTCFullYear() }; }
+  if ((m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/))) return { d: +m[3], m: +m[2], y: +m[1] };
+  if ((m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/))) {
+    let a = +m[1], b = +m[2]; if (b > 12 && a <= 12) [a, b] = [b, a];   // formato mes/día
+    return { d: a, m: b, y: y4(m[3]) };
+  }
+  if ((m = s.match(/^(\d{1,2})[\s\-\/.]+(?:de\s+)?([A-Za-zÁÉÍÓÚáéíóú]+)\.?[\s\-\/.]+(?:de\s+|del\s+)?(\d{2,4})$/))) {
+    const mm = AM_MES_N[m[2].slice(0, 3).toLowerCase()]; if (mm) return { d: +m[1], m: mm, y: y4(m[3]) };
+  }
+  if ((m = s.match(/^([A-Za-zÁÉÍÓÚáéíóú]+)\.?[\s\-\/.]+(?:de\s+|del\s+)?(\d{2,4})$/))) {
+    const mm = AM_MES_N[m[1].slice(0, 3).toLowerCase()]; if (mm) return { d: null, m: mm, y: y4(m[2]) };
+  }
+  return null;
+}
+const amMesLargo = f => AM_MESES[f.m - 1].toLowerCase() + ' de ' + f.y;               // junio de 2026
+const amMesCorto = f => AM_MESES[f.m - 1].slice(0, 3) + '. ' + f.y;                   // Jun. 2026
+const amDiaLargo = f => (f.d ? f.d + ' de ' : '') + amMesLargo(f);                     // 29 de setiembre de 2026
+// Trimestre: acepta una fecha o un texto como "II Trim. 2026"
+function amTrimestre(txt) {
+  const s = String(txt || '').trim();
+  let m = s.match(/\b(IV|III|II|I)\b[^\d]*(\d{4})/i);
+  let q, y;
+  if (m) { q = AM_ROM.indexOf(m[1].toUpperCase()) + 1; y = +m[2]; }
+  else { const f = amFecha(s); if (!f) return null; q = Math.ceil(f.m / 3); y = f.y; }
+  return { largo: `${AM_ROM[q - 1]} trimestre de ${y}`, corto: `${AM_ROM[q - 1]} Trim. ${y}`, fuente: `${AM_ROM[q - 1]} trimestre ${y}`, anterior: String(y - 1) };
+}
+
 // "Var. Diciembre 2025/ Junio 2026" → { ant: 'diciembre de 2025', act: 'junio de 2026', actCorto: 'Jun. 2026' }
 function amCorte(txt) {
   const partes = String(txt || '').replace(/^\s*var\.?\s*/i, '').split('/').map(p => p.trim()).filter(Boolean);
@@ -260,6 +296,8 @@ const C = {
   ferro: 'Ferrocarriles (KM)', puertos: 'Terminales portuarios', aero: 'Aeroportuario',
   ccppTot: 'Total de CP', ccppSinPct: 'CCPP (%) sin cob', ccppCon: 'CCPP con cobertura', ccpp2GPct: 'CCPP con cobertura 2G',
   internet: 'uso de internet', compu: 'uso de compu', celular: 'uso de celular',
+  internetPct: 'uso de internet %', compuPct: 'compu %', celularPct: 'Celular %',
+  corteAct: 'Corte Ind Act.', corteFin: 'Corte Info Financiera', corteCob: 'Corte cobertura',
   pimT: 'PIM TRANS', devT: 'DevTRANS ult.', avT: 'Avance Fi Anual Trans', gnPctT: '% GN TRANS', devGnT: 'DevTRANS GN ult.',
   grglPctT: '% GR+GL TRANS', devGrglT: 'DevTRANS GR+GL',
   pimC: 'PIMCOM ult', devC: 'DevCOM ult.', avC: 'Avance Fi Anual COM', gnPctC: '% GN COM', devGnC: 'DevCOM GN ult.',
@@ -267,7 +305,7 @@ const C = {
   secDep: 'Departamento', secAct: 'Actividad', secVar: 'Variación interanual de la Producción Sectorial'
 };
 // Columnas que son fracciones (0.174 = 17.4 %)
-const AM_FRAC = ['pobreza','desempleo','rvnBuenoRep','rvnVar','ccppSinPct','ccpp2GPct','avT','gnPctT','grglPctT','avC','gnPctC','grglPctC'];
+const AM_FRAC = ['internetPct','compuPct','celularPct','pobreza','desempleo','rvnBuenoRep','rvnVar','ccppSinPct','ccpp2GPct','avT','gnPctT','grglPctT','avC','gnPctC','grglPctC'];
 
 function amGetter(row) {
   return key => {
@@ -288,12 +326,28 @@ function amTextos(depName, rows, secRows) {
   const pares = macro ? rows.filter(r => (r[C.macro] || '').trim() === macro) : [];
   const out = { dep, macro, key: [], kpis: [], secciones: [], faltantes: [] };
   const falta = (...keys) => keys.filter(k => g(k) === null).forEach(k => out.faltantes.push(C[k]));
+  const txt = key => (R[C[key]] || N[C[key]] || '').trim();
+  const trim = amTrimestre(txt('corteAct'));
+  const P = {
+    act: trim ? trim.largo : AM_CONFIG.periodoActividad,
+    actCorto: trim ? trim.corto : AM_CONFIG.periodoActividadCorto,
+    actAnt: trim ? trim.anterior : AM_CONFIG.anioAnteriorActividad,
+    fuenteAct: trim ? `INEI – Indicador de la Actividad Productiva Departamental, ${trim.fuente} (año base 2007 = 100).` : AM_CONFIG.fuentes.actividad
+  };
+  const ff = amFecha(txt('corteFin'));
+  P.fin = ff ? amDiaLargo(ff) : P.fin;
+  P.finAnio = ff ? String(ff.y) : P.finAnio;
+  P.fuenteFin = ff ? `Ministerio de Economía y Finanzas (MEF) – Consulta Amigable, corte al ${P.fin}.` : AM_CONFIG.fuentes.presupuesto;
+  const fc = amFecha(txt('corteCob'));
+  P.cob = fc ? amMesLargo(fc) : null;
+  P.cobCorto = fc ? amMesCorto(fc) : AM_CONFIG.corteCobertura;
+  P.fuenteCob = fc ? `Organismo Supervisor de Inversión Privada en Telecomunicaciones (OSIPTEL) – Centros poblados con cobertura reportados por las empresas operadoras, ${P.cob}.` : AM_CONFIG.fuentes.cobertura;
 
   // --- 1. Contexto económico
   const s1 = [];
   const act = g('act'), actN = n('act');
   if (act !== null) {
-    let t = `En el ${AM_CONFIG.periodoActividad}, la actividad productiva de ${dep} ${act >= 0 ? 'creció' : 'se contrajo'} ${amFmt(Math.abs(act))} % respecto al mismo periodo de ${AM_CONFIG.anioAnteriorActividad}`;
+    let t = `En el ${P.act}, la actividad productiva de ${dep} ${act >= 0 ? 'creció' : 'se contrajo'} ${amFmt(Math.abs(act))} % respecto al mismo periodo de ${P.actAnt}`;
     if (actN !== null) t += act >= actN ? `, por encima del resultado nacional (${amFmt(actN)} %)` : `, frente a un resultado nacional de ${amFmt(actN)} %`;
     t += '.';
     const secs = secRows.filter(r => (r[C.secDep] || '').trim().toLowerCase() === dep.toLowerCase())
@@ -310,7 +364,7 @@ function amTextos(depName, rows, secRows) {
     }
     s1.push({ p: t });
     if (/^(lima|callao)$/i.test(dep)) s1.push({ note: 'Para Lima se considera Lima Metropolitana; Callao comparte el indicador de Lima.' });
-    s1.push({ src: AM_CONFIG.fuentes.actividad });
+    s1.push({ src: P.fuenteAct });
   } else falta('act');
   const ic = g('ic'), puesto = g('icPuesto'), icN = n('ic');
   if (ic !== null && puesto !== null) {
@@ -386,24 +440,37 @@ function amTextos(depName, rows, secRows) {
     const sin = Math.round(tot - con); const p2g = g('ccpp2GPct');
     s4.push({ h2: 'Cobertura de servicios móviles' });
     let t = sin > 0
-      ? `De los ${amFmt(tot, 0)} centros poblados (CCPP) de ${dep}, ${amFmt(sin, 0)} (${amPct(sinPct)}) no cuentan con cobertura de servicio móvil ni de internet fijo inalámbrico.`
-      : `Los ${amFmt(tot, 0)} centros poblados (CCPP) de ${dep} cuentan con cobertura de servicio móvil o de internet fijo inalámbrico.`;
+      ? `${P.cob ? 'A ' + P.cob + ', de' : 'De'} los ${amFmt(tot, 0)} centros poblados (CCPP) de ${dep}, ${amFmt(sin, 0)} (${amPct(sinPct)}) no cuentan con cobertura de servicio móvil ni de internet fijo inalámbrico.`
+      : `${P.cob ? 'A ' + P.cob + ', los' : 'Los'} ${amFmt(tot, 0)} centros poblados (CCPP) de ${dep} cuentan con cobertura de servicio móvil o de internet fijo inalámbrico.`;
     if (p2g !== null && con > 0) {
       const n2g = Math.round(p2g * tot);
       t += ` De los ${amFmt(con, 0)} CCPP con cobertura, ${amFmt(n2g, 0)} ${n2g === 1 ? 'solo tiene' : 'solo tienen'} tecnología 2G (${amPct(p2g)} del total); es decir, el ${amPct(n2g / con)} de los CCPP con cobertura solo puede realizar llamadas y enviar SMS.`;
     }
-    s4.push({ p: t }, { src: AM_CONFIG.fuentes.cobertura });
+    s4.push({ p: t }, { src: P.fuenteCob });
     out.kpiCob = sinPct;
   } else falta('ccppTot', 'ccppCon');
   const it = g('internet'), cp = g('compu'), ce = g('celular');
-  if (it !== null) {
+  const itP = g('internetPct'), cpP = g('compuPct'), ceP = g('celularPct');
+  const itPN = n('internetPct'), cpPN = n('compuPct'), cePN = n('celularPct');
+  if (itP !== null || it !== null) {
     s4.push({ h2: 'Uso de tecnologías de la información' });
-    const itN = n('internet');
-    let t = `En ${AM_CONFIG.anioTIC}, ${amPersonas(it)} de 6 años a más usaron internet en ${dep}` + (itN ? `, el ${amPct(it / itN)} del total nacional de usuarios` : '') + '.';
-    const extra = [];
-    if (cp !== null) extra.push(`${amPersonas(cp)} usan computadora, laptop o tablet`);
-    if (ce !== null) extra.push(`${amPersonas(ce)} de 18 años a más tienen celular propio`);
-    if (extra.length) t += ' Asimismo, ' + amJoin(extra) + '.';
+    let t;
+    if (itP !== null) {
+      t = `En ${AM_CONFIG.anioTIC}, el ${amPct(itP)} de la población de 6 años a más de ${dep} usó internet` + (it !== null ? ` (${amPersonas(it)})` : '');
+      if (itPN !== null) t += itP > itPN ? `, por encima del promedio nacional (${amPct(itPN)})` : itP < itPN ? `, por debajo del promedio nacional (${amPct(itPN)})` : ', igual al promedio nacional';
+      t += '.';
+      const extra = [];
+      if (cpP !== null) extra.push(`el ${amPct(cpP)} usa computadora, laptop o tablet` + (cpPN !== null ? ` (nacional: ${amPct(cpPN)})` : ''));
+      if (ceP !== null) extra.push(`el ${amPct(ceP)} de la población de 18 años a más tiene celular propio` + (cePN !== null ? ` (nacional: ${amPct(cePN)})` : ''));
+      if (extra.length) t += ' Además, ' + amJoin(extra) + '.';
+    } else {   // sin porcentajes en la base: solo personas
+      const itN = n('internet');
+      t = `En ${AM_CONFIG.anioTIC}, ${amPersonas(it)} de 6 años a más usaron internet en ${dep}` + (itN ? `, el ${amPct(it / itN)} del total nacional de usuarios` : '') + '.';
+      const extra = [];
+      if (cp !== null) extra.push(`${amPersonas(cp)} usan computadora, laptop o tablet`);
+      if (ce !== null) extra.push(`${amPersonas(ce)} de 18 años a más tienen celular propio`);
+      if (extra.length) t += ' Asimismo, ' + amJoin(extra) + '.';
+    }
     s4.push({ p: t }, { src: AM_CONFIG.fuentes.tic });
   }
   if (s4.length) out.secciones.push({ titulo: 'Comunicaciones', bloques: s4 });
@@ -423,7 +490,7 @@ function amTextos(depName, rows, secRows) {
     const pm = v => v >= 100 ? amFmt(v) : amFmt(v);
     if (T) partes.push(`la función transporte en ${dep} ejecutó el ${amPct(T.av)} de su PIM (S/ ${pm(T.dev)} millones de S/ ${pm(T.pim)} millones)` + (T.avN !== null ? `, ${T.av >= T.avN ? 'por encima' : 'por debajo'} del avance nacional (${amPct(T.avN)})` : ''));
     if (Cm) partes.push(`la función comunicaciones avanzó ${amPct(Cm.av)} (S/ ${pm(Cm.dev)} millones de S/ ${pm(Cm.pim)} millones)`);
-    let t = `Al ${AM_CONFIG.cortePresupuesto}, ` + partes.join(', mientras que ') + '.';
+    let t = `Al ${P.fin}, ` + partes.join(', mientras que ') + '.';
     const dist = (f) => f.gn === null ? null : (f.gn >= 0.45 && f.gn <= 0.55) ? 'la ejecución se reparte casi en partes iguales entre el Gobierno Nacional y los gobiernos subnacionales'
       : f.gn > 0.55 ? `predomina el Gobierno Nacional (${amPct(f.gn)})` : `predominan los gobiernos regional y locales (${amPct(f.grgl)})`;
     const dT = T && dist(T), dC = Cm && dist(Cm);
@@ -433,37 +500,37 @@ function amTextos(depName, rows, secRows) {
     const col = (f, fn) => f ? fn(f) : '–';
     const cell = (v, p) => v === null ? '–' : `${amFmt(v)}` + (p !== null && p !== undefined ? ` (${amPct(p)})` : '');
     s5.push({ tabla: { h: ['Concepto (millones de S/)', 'Transporte', 'Comunicaciones'], w: [5238, 2200, 2200], rows: [
-      [`PIM ${AM_CONFIG.anioPresupuesto} (GN + GR + GL)`, col(T, f => amFmt(f.pim)), col(Cm, f => amFmt(f.pim))],
-      [`Devengado ${AM_CONFIG.anioPresupuesto}`, col(T, f => amFmt(f.dev)), col(Cm, f => amFmt(f.dev))],
+      [`PIM ${P.finAnio} (GN + GR + GL)`, col(T, f => amFmt(f.pim)), col(Cm, f => amFmt(f.pim))],
+      [`Devengado ${P.finAnio}`, col(T, f => amFmt(f.dev)), col(Cm, f => amFmt(f.dev))],
       ['Avance financiero', col(T, f => amPct(f.av)), col(Cm, f => amPct(f.av))],
       ['Devengado Gobierno Nacional', col(T, f => cell(f.dGn, f.gn)), col(Cm, f => cell(f.dGn, f.gn))],
       ['Devengado gobiernos regional y locales', col(T, f => cell(f.dGr, f.grgl)), col(Cm, f => cell(f.dGr, f.grgl))]
     ] } });
     s5.push({ note: 'Los porcentajes entre paréntesis corresponden a la participación en el devengado total de cada función.' });
-    s5.push({ src: AM_CONFIG.fuentes.presupuesto });
-    out.secciones.push({ titulo: `Presupuesto sectorial ${AM_CONFIG.anioPresupuesto}`, bloques: s5 });
+    s5.push({ src: P.fuenteFin });
+    out.secciones.push({ titulo: `Presupuesto sectorial ${P.finAnio}`, bloques: s5 });
   }
 
   // --- Mensajes clave
   if (act !== null || pob !== null) {
     const a = [];
-    if (act !== null) a.push(`En el ${AM_CONFIG.periodoActividad}, la actividad productiva de ${dep} ${act >= 0 ? 'creció' : 'se contrajo'} ${amFmt(Math.abs(act))} %` + (actN !== null ? `, ${act >= actN ? 'por encima' : 'por debajo'} del resultado nacional (${amFmt(actN)} %)` : '') + '.');
+    if (act !== null) a.push(`En el ${P.act}, la actividad productiva de ${dep} ${act >= 0 ? 'creció' : 'se contrajo'} ${amFmt(Math.abs(act))} %` + (actN !== null ? `, ${act >= actN ? 'por encima' : 'por debajo'} del resultado nacional (${amFmt(actN)} %)` : '') + '.');
     if (pob !== null && pobN !== null) a.push(`Su pobreza monetaria (${amPct(pob)}) se ubica ${amPP(pob, pobN)} puntos porcentuales ${pob > pobN ? 'por encima' : 'por debajo'} del promedio nacional.`);
     out.key.push(a.join(' '));
   }
   const b = [];
-  if (ex !== null && pav !== null) b.push(`En infraestructura vial, el ${amPct(pav / ex)} de su Red Vial Nacional está pavimentada` + (bue !== null ? ` y el ${amPct(rep !== null ? rep : bue / pav)} de ese tramo se encuentra en buen estado.` : '.'));
-  if (out.kpiCob !== undefined) b.push(out.kpiCob > 0 ? `En telecomunicaciones, el ${amPct(out.kpiCob)} de sus centros poblados no tiene cobertura móvil.` : 'En telecomunicaciones, todos sus centros poblados tienen cobertura móvil.');
+  if (ex !== null && pav !== null) b.push(`En infraestructura vial, al corte de ${vialAct}, el ${amPct(pav / ex)} de su Red Vial Nacional está pavimentada` + (bue !== null ? ` y el ${amPct(rep !== null ? rep : bue / pav)} de ese tramo se encuentra en buen estado.` : '.'));
+  if (out.kpiCob !== undefined) b.push(out.kpiCob > 0 ? `En telecomunicaciones${P.cob ? ', a ' + P.cob : ''}, el ${amPct(out.kpiCob)} de sus centros poblados no tiene cobertura móvil.` : 'En telecomunicaciones, todos sus centros poblados tienen cobertura móvil.');
   if (b.length) out.key.push(b.join(' '));
-  if (T || Cm) out.key.push(`Al ${AM_CONFIG.cortePresupuesto}, ` + [T && `la función transporte ejecutó el ${amPct(T.av)} de su presupuesto ${AM_CONFIG.anioPresupuesto}`, Cm && `la función comunicaciones avanzó ${amPct(Cm.av)}`].filter(Boolean).join(', mientras que ') + '.');
+  if (T || Cm) out.key.push(`Al ${P.fin}, ` + [T && `la función transporte ejecutó el ${amPct(T.av)} de su presupuesto ${P.finAnio}`, Cm && `la función comunicaciones avanzó ${amPct(Cm.av)}`].filter(Boolean).join(', mientras que ') + '.');
 
   // --- Cifras destacadas
-  if (act !== null) out.kpis.push([`${amFmt(act)} %`, 'Actividad productiva', AM_CONFIG.periodoActividadCorto]);
+  if (act !== null) out.kpis.push([`${amFmt(act)} %`, 'Actividad productiva', P.actCorto]);
   if (pob !== null) out.kpis.push([amPct(pob), 'Pobreza monetaria', AM_CONFIG.anioSocial]);
   if (bue !== null && pav) out.kpis.push([amPct(rep !== null ? rep : bue / pav), 'RVN pavimentada en buen estado', vialCorto]);
-  if (out.kpiCob !== undefined) out.kpis.push([amPct(out.kpiCob), 'Centros poblados sin cobertura móvil', AM_CONFIG.corteCobertura]);
-  if (T) out.kpis.push([amPct(T.av), 'Avance financiero transporte', AM_CONFIG.anioPresupuesto]);
-  if (Cm) out.kpis.push([amPct(Cm.av), 'Avance financiero comunicaciones', AM_CONFIG.anioPresupuesto]);
+  if (out.kpiCob !== undefined) out.kpis.push([amPct(out.kpiCob), 'Centros poblados sin cobertura móvil', P.cobCorto]);
+  if (T) out.kpis.push([amPct(T.av), 'Avance financiero transporte', P.finAnio]);
+  if (Cm) out.kpis.push([amPct(Cm.av), 'Avance financiero comunicaciones', P.finAnio]);
   return out;
 }
 
