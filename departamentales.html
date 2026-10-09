@@ -449,17 +449,31 @@ function amTextos(depName, rows, secRows, extra = {}) {
     s4.push({ p: t }, { src: P.fuenteCob });
     out.kpiCob = sinPct;
   } else falta('ccppTot', 'ccppCon');
-  // TIC: cifra en personas + participación en el total nacional (columnas "%"; si faltan, se calcula con la fila Nacional)
+  // TIC: porcentaje de la población del departamento + personas (miles) + comparación con el promedio nacional
   const it = g('internet'), cp = g('compu'), ce = g('celular');
-  const part = (v, pctKey, key) => { const p = g(pctKey); if (p !== null) return p; const t = n(key); return (v !== null && t) ? v / t : null; };
-  if (it !== null) {
+  const itP = g('internetPct'), cpP = g('compuPct'), ceP = g('celularPct');
+  const nac = k => { const v = n(k); return v !== null && v < 0.999 ? v : null; };   // ignora un "100 %" en la fila Nacional
+  const itPN = nac('internetPct'), cpPN = nac('compuPct'), cePN = nac('celularPct');
+  const pers = v => v !== null ? amPersonas(v) : null;
+  if (itP !== null || it !== null) {
     s4.push({ h2: 'Uso de tecnologías de la información' });
-    const itP = part(it, 'internetPct', 'internet'), cpP = part(cp, 'compuPct', 'compu'), ceP = part(ce, 'celularPct', 'celular');
-    let t = `En ${AM_CONFIG.anioTIC}, ${amPersonas(it)} de 6 años a más usaron internet en ${dep}` + (itP !== null ? `, lo que representa el ${amPct(itP)} de los usuarios de internet del país` : '') + '.';
-    const extra = [];
-    if (cp !== null) extra.push(`${amPersonas(cp)} usan computadora, laptop o tablet` + (cpP !== null ? ` (${amPct(cpP)} del total nacional)` : ''));
-    if (ce !== null) extra.push(`${amPersonas(ce)} de 18 años a más cuentan con celular propio` + (ceP !== null ? ` (${amPct(ceP)} del total nacional)` : ''));
-    if (extra.length) t += ' Asimismo, ' + amJoin(extra) + '.';
+    let t;
+    if (itP !== null) {
+      t = `En ${AM_CONFIG.anioTIC}, el ${amPct(itP)} de la población de 6 años a más de ${dep} usó internet` + (it !== null ? ` (${pers(it)})` : '');
+      if (itPN !== null) t += itP > itPN ? `, por encima del promedio nacional (${amPct(itPN)})` : itP < itPN ? `, por debajo del promedio nacional (${amPct(itPN)})` : ', igual al promedio nacional';
+      t += '.';
+      const det = (v, pN) => { const p = [v !== null ? pers(v) : null, pN !== null ? `nacional: ${amPct(pN)}` : null].filter(Boolean); return p.length ? ` (${p.join('; ')})` : ''; };
+      const extra = [];
+      if (cpP !== null) extra.push(`el ${amPct(cpP)} usa computadora, laptop o tablet${det(cp, cpPN)}`);
+      if (ceP !== null) extra.push(`el ${amPct(ceP)} de la población de 18 años a más tiene celular propio${det(ce, cePN)}`);
+      if (extra.length) t += ' Además, ' + amJoin(extra) + '.';
+    } else {   // sin porcentajes: solo personas
+      t = `En ${AM_CONFIG.anioTIC}, ${pers(it)} de 6 años a más usaron internet en ${dep}.`;
+      const extra = [];
+      if (cp !== null) extra.push(`${pers(cp)} usan computadora, laptop o tablet`);
+      if (ce !== null) extra.push(`${pers(ce)} de 18 años a más cuentan con celular propio`);
+      if (extra.length) t += ' Asimismo, ' + amJoin(extra) + '.';
+    }
     s4.push({ p: t }, { src: AM_CONFIG.fuentes.tic });
   }
   if (s4.length) out.secciones.push({ titulo: 'Comunicaciones', bloques: s4 });
@@ -567,7 +581,7 @@ function amTextos(depName, rows, secRows, extra = {}) {
           : `Según entidad responsable, las intervenciones están a cargo principalmente de ${amJoin(ents.slice(0, 3).map(fe))}` + (ents.length > 3 ? `; el resto corresponde a ${amJoin(ents.slice(3).map(fe))}.` : '.');
         s6.push({ p: t });
       }
-      s6.push({ note: 'Costo de inversión: para las intervenciones con CUI se toma del portal de Seguimiento de Proyectos de Inversión del MEF; para las demás, es el reportado por la entidad responsable.' });
+      s6.push({ note: 'Para las intervenciones con CUI, la información financiera (costo de inversión, PIM y devengado) proviene del portal de Seguimiento de Proyectos de Inversión del MEF; para las demás, solo se cuenta con el costo de inversión reportado por la entidad responsable.' });
       s6.push({ src: `MTC – OGAME/OMEI, Base de Intervenciones MTC${corte6 ? ', corte al ' + corte6 : ''}.` });
       out.secciones.push({ titulo: 'Intervenciones MTC', bloques: s6 });
       ivKey = `El MTC tiene ${amFmt(nI, 0)} intervenciones en el departamento` + (costo !== null ? `, con un costo de inversión de S/ ${amFmt(costo)} millones` : '') + (pim ? `, y en ${P.finAnio} su cartera registra un avance financiero de ${amPct(avI)}` : '') + '.';
