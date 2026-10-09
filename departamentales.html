@@ -25,7 +25,7 @@
   }
   html, body { height: 100%; }
   body { font-family:var(--sans); background:var(--bg); color:var(--text); font-size:14px; line-height:1.5; }
-  .layout { height:100vh; display:flex; flex-direction:column; }
+  .layout { min-height:100vh; display:flex; flex-direction:column; }
 
   /* ── Topbar (idéntico al Hub) ── */
   .topbar {
@@ -143,18 +143,14 @@ const VISOR_URL = 'https://app.powerbi.com/view?r=eyJrIjoiNWIxMTVkYWUtMDMwMi00YW
 document.getElementById('visor').src = VISOR_URL;
 document.getElementById('btnOpen').href = VISOR_URL;
 
-// ====== Tamaño del visor: el reporte (16:9) lo más grande posible, sin superar el alto de la ventana ======
+// ====== Tamaño del visor: todo el ancho disponible; el alto sigue la proporción del reporte (16:9) ======
 const PBI_PROPORCION = 16 / 9;   // proporción de las páginas del reporte
 const PBI_BARRA = 56;            // barra inferior de Power BI (páginas, zoom)
 function ajustarVisor() {
   const visor = document.querySelector('.visor');
   const main = document.querySelector('.main');
   const est = getComputedStyle(main);
-  const anchoMax = main.clientWidth - parseFloat(est.paddingLeft) - parseFloat(est.paddingRight);
-  // El visor puede ocupar toda la altura de la ventana: al bajar, el encabezado se desplaza y el reporte queda completo
-  const altoDisp = window.innerHeight - 2 * parseFloat(est.paddingBottom);
-  let ancho = Math.min(anchoMax, (altoDisp - PBI_BARRA) * PBI_PROPORCION);
-  if (ancho < 360) ancho = anchoMax;   // pantallas muy bajas: usar todo el ancho
+  const ancho = main.clientWidth - parseFloat(est.paddingLeft) - parseFloat(est.paddingRight);
   visor.style.width = ancho + 'px';
   visor.style.height = (ancho / PBI_PROPORCION + PBI_BARRA) + 'px';
 }
