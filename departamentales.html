@@ -182,7 +182,7 @@ const AM_CONFIG = {
   cortePresupuesto: '29 de setiembre de 2026',
   fuentes: {
     actividad: 'INEI – Indicador de la Actividad Productiva Departamental, II trimestre 2026 (año base 2007 = 100).',
-    competitividad: 'Instituto Peruano de Economía (IPE) – Índice de Competitividad Regional (INCORE) 2024.',
+    competitividad: 'Instituto Peruano de Economía (IPE) – Índice de Competitividad Regional (INCORE) 2025.',
     social: 'Estimaciones OMEI-OGAME-MTC con base en INEI – Encuesta Nacional de Hogares (ENAHO) 2025.',
     vial: 'MTC – Unidad de Estadística, con información del Sistema Nacional de Carreteras (SINAC), diciembre 2025.',
     cobertura: 'Organismo Supervisor de Inversión Privada en Telecomunicaciones (OSIPTEL) – Centros poblados con cobertura reportados por las empresas operadoras, diciembre 2025.',
@@ -316,7 +316,7 @@ function amGetter(row) {
 }
 
 // ====== Textos (reglas) ======
-function amTextos(depName, rows, secRows) {
+function amTextos(depName, rows, secRows, extra = {}) {
   const find = n => rows.find(r => (r[C.dep] || '').trim().toLowerCase() === n.toLowerCase());
   const R = find(depName); if (!R) throw new Error('No se encontró el departamento: ' + depName);
   const N = find('Nacional') || {};
@@ -425,7 +425,7 @@ function amTextos(depName, rows, secRows) {
     if (pu !== null) (pu > 0 ? si.push(`${amFmt(pu, 0)} ${pu === 1 ? 'terminal portuario' : 'terminales portuarios'}`) : no.push('terminales portuarios'));
     if (si.length || no.length) {
       const noTxt = no.length === 1 ? no[0] : no.slice(0, -1).join(', ') + ' ni ' + no[no.length - 1];
-      let t2 = 'En otros modos, el departamento ';
+      let t2 = 'Por otro lado, el departamento ';
       t2 += si.length ? `cuenta con ${amJoin(si)}` + (no.length ? `, pero no tiene ${noTxt}` : '') : `no cuenta con ${noTxt}`;
       s3.push({ p: t2 + '.' });
     }
@@ -449,28 +449,17 @@ function amTextos(depName, rows, secRows) {
     s4.push({ p: t }, { src: P.fuenteCob });
     out.kpiCob = sinPct;
   } else falta('ccppTot', 'ccppCon');
+  // TIC: cifra en personas + participación en el total nacional (columnas "%"; si faltan, se calcula con la fila Nacional)
   const it = g('internet'), cp = g('compu'), ce = g('celular');
-  const itP = g('internetPct'), cpP = g('compuPct'), ceP = g('celularPct');
-  const itPN = n('internetPct'), cpPN = n('compuPct'), cePN = n('celularPct');
-  if (itP !== null || it !== null) {
+  const part = (v, pctKey, key) => { const p = g(pctKey); if (p !== null) return p; const t = n(key); return (v !== null && t) ? v / t : null; };
+  if (it !== null) {
     s4.push({ h2: 'Uso de tecnologías de la información' });
-    let t;
-    if (itP !== null) {
-      t = `En ${AM_CONFIG.anioTIC}, el ${amPct(itP)} de la población de 6 años a más de ${dep} usó internet` + (it !== null ? ` (${amPersonas(it)})` : '');
-      if (itPN !== null) t += itP > itPN ? `, por encima del promedio nacional (${amPct(itPN)})` : itP < itPN ? `, por debajo del promedio nacional (${amPct(itPN)})` : ', igual al promedio nacional';
-      t += '.';
-      const extra = [];
-      if (cpP !== null) extra.push(`el ${amPct(cpP)} usa computadora, laptop o tablet` + (cpPN !== null ? ` (nacional: ${amPct(cpPN)})` : ''));
-      if (ceP !== null) extra.push(`el ${amPct(ceP)} de la población de 18 años a más tiene celular propio` + (cePN !== null ? ` (nacional: ${amPct(cePN)})` : ''));
-      if (extra.length) t += ' Además, ' + amJoin(extra) + '.';
-    } else {   // sin porcentajes en la base: solo personas
-      const itN = n('internet');
-      t = `En ${AM_CONFIG.anioTIC}, ${amPersonas(it)} de 6 años a más usaron internet en ${dep}` + (itN ? `, el ${amPct(it / itN)} del total nacional de usuarios` : '') + '.';
-      const extra = [];
-      if (cp !== null) extra.push(`${amPersonas(cp)} usan computadora, laptop o tablet`);
-      if (ce !== null) extra.push(`${amPersonas(ce)} de 18 años a más tienen celular propio`);
-      if (extra.length) t += ' Asimismo, ' + amJoin(extra) + '.';
-    }
+    const itP = part(it, 'internetPct', 'internet'), cpP = part(cp, 'compuPct', 'compu'), ceP = part(ce, 'celularPct', 'celular');
+    let t = `En ${AM_CONFIG.anioTIC}, ${amPersonas(it)} de 6 años a más usaron internet en ${dep}` + (itP !== null ? `, lo que representa el ${amPct(itP)} de los usuarios de internet del país` : '') + '.';
+    const extra = [];
+    if (cp !== null) extra.push(`${amPersonas(cp)} usan computadora, laptop o tablet` + (cpP !== null ? ` (${amPct(cpP)} del total nacional)` : ''));
+    if (ce !== null) extra.push(`${amPersonas(ce)} de 18 años a más cuentan con celular propio` + (ceP !== null ? ` (${amPct(ceP)} del total nacional)` : ''));
+    if (extra.length) t += ' Asimismo, ' + amJoin(extra) + '.';
     s4.push({ p: t }, { src: AM_CONFIG.fuentes.tic });
   }
   if (s4.length) out.secciones.push({ titulo: 'Comunicaciones', bloques: s4 });
@@ -491,11 +480,15 @@ function amTextos(depName, rows, secRows) {
     if (T) partes.push(`la función transporte en ${dep} ejecutó el ${amPct(T.av)} de su PIM (S/ ${pm(T.dev)} millones de S/ ${pm(T.pim)} millones)` + (T.avN !== null ? `, ${T.av >= T.avN ? 'por encima' : 'por debajo'} del avance nacional (${amPct(T.avN)})` : ''));
     if (Cm) partes.push(`la función comunicaciones avanzó ${amPct(Cm.av)} (S/ ${pm(Cm.dev)} millones de S/ ${pm(Cm.pim)} millones)`);
     let t = `Al ${P.fin}, ` + partes.join(', mientras que ') + '.';
-    const dist = (f) => f.gn === null ? null : (f.gn >= 0.45 && f.gn <= 0.55) ? 'la ejecución se reparte casi en partes iguales entre el Gobierno Nacional y los gobiernos subnacionales'
-      : f.gn > 0.55 ? `predomina el Gobierno Nacional (${amPct(f.gn)})` : `predominan los gobiernos regional y locales (${amPct(f.grgl)})`;
-    const dT = T && dist(T), dC = Cm && dist(Cm);
-    if (dT && dC) t += ` En transporte, ${dT}; en comunicaciones, ${dC}.`;
-    else if (dT) t += ` En transporte, ${dT}.`;
+    // Quién ejecuta: 'GN' (Gobierno Nacional), 'SUB' (Gobierno Regional y gobiernos locales) o 'MIX' (partes casi iguales)
+    const quien = f => f.gn === null ? null : (f.gn >= 0.45 && f.gn <= 0.55) ? 'MIX' : f.gn > 0.55 ? 'GN' : 'SUB';
+    const frase = { GN: 'predomina el Gobierno Nacional', SUB: 'predominan el Gobierno Regional y los gobiernos locales',
+      MIX: 'la ejecución se reparte casi en partes iguales entre el Gobierno Nacional y los gobiernos subnacionales' };
+    const share = (f, q) => q === 'GN' ? f.gn : f.grgl;
+    const qT = T ? quien(T) : null, qC = Cm ? quien(Cm) : null;
+    if (qT && qC && qT === qC && qT !== 'MIX') t += ` Tanto en transporte como en comunicaciones ${frase[qT]} (${amPct(share(T, qT))} y ${amPct(share(Cm, qC))}, respectivamente).`;
+    else if (qT && qC) t += ` En transporte, ${frase[qT]}${qT !== 'MIX' ? ` (${amPct(share(T, qT))})` : ''}; en comunicaciones, ${frase[qC]}${qC !== 'MIX' ? ` (${amPct(share(Cm, qC))})` : ''}.`;
+    else if (qT) t += ` En transporte, ${frase[qT]}${qT !== 'MIX' ? ` (${amPct(share(T, qT))})` : ''}.`;
     s5.push({ p: t });
     const col = (f, fn) => f ? fn(f) : '–';
     const cell = (v, p) => v === null ? '–' : `${amFmt(v)}` + (p !== null && p !== undefined ? ` (${amPct(p)})` : '');
@@ -504,11 +497,81 @@ function amTextos(depName, rows, secRows) {
       [`Devengado ${P.finAnio}`, col(T, f => amFmt(f.dev)), col(Cm, f => amFmt(f.dev))],
       ['Avance financiero', col(T, f => amPct(f.av)), col(Cm, f => amPct(f.av))],
       ['Devengado Gobierno Nacional', col(T, f => cell(f.dGn, f.gn)), col(Cm, f => cell(f.dGn, f.gn))],
-      ['Devengado gobiernos regional y locales', col(T, f => cell(f.dGr, f.grgl)), col(Cm, f => cell(f.dGr, f.grgl))]
+      ['Devengado Gobierno Regional y gobiernos locales', col(T, f => cell(f.dGr, f.grgl)), col(Cm, f => cell(f.dGr, f.grgl))]
     ] } });
     s5.push({ note: 'Los porcentajes entre paréntesis corresponden a la participación en el devengado total de cada función.' });
     s5.push({ src: P.fuenteFin });
     out.secciones.push({ titulo: `Presupuesto sectorial ${P.finAnio}`, bloques: s5 });
+  }
+
+  // --- 6. Intervenciones MTC
+  const cl = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+  const col = (r, ...nombres) => { for (const k of nombres) if (r[k] !== undefined && r[k] !== '') return r[k]; return ''; };
+  const IV = (extra.interv || []).find(r => cl(col(r, 'Dpto_int')) === cl(dep));
+  let ivKey = null;
+  if (IV) {
+    const nI = amNum(col(IV, 'Intervenciones')), costo = amNum(col(IV, 'Costo de Inversión', 'Costo de Inversión (MM S/)'));
+    const pim = amNum(col(IV, 'PIM', 'PIM 2026')), devI = amNum(col(IV, 'Devengado', 'Devengado 2026'));
+    let avI = amNum(col(IV, 'Avance Fi', 'Avance Financiero 2026')); if (avI !== null && avI > 1.5) avI /= 100;
+    if (pim && devI !== null) avI = devI / pim;   // se recalcula para evitar redondeos de la hoja
+    const pro = amNum(col(IV, 'Proyectos')), ser = amNum(col(IV, 'Servicios'));
+    const fc6 = amFecha(col(IV, 'Corte', 'Última fecha: Fecha de Corte'));
+    const corte6 = fc6 ? amDiaLargo(fc6) : null;
+    const s6 = [];
+    if (nI) {
+      let t = `${corte6 ? 'Al ' + corte6 + ', el' : 'El'} MTC registra ${amFmt(nI, 0)} ${nI === 1 ? 'intervención' : 'intervenciones'} en ${dep}`;
+      if (costo !== null) t += `, con un costo de inversión de S/ ${amFmt(costo)} millones`;
+      if (pro !== null && ser !== null) t += `: ${amFmt(pro, 0)} ${pro === 1 ? 'proyecto' : 'proyectos'} (${amPct(pro / nI)}) y ${amFmt(ser, 0)} ${ser === 1 ? 'servicio' : 'servicios'} (${amPct(ser / nI)})`;
+      t += '.';
+      if (pim) t += ` En ${P.finAnio}, estas intervenciones cuentan con un PIM de S/ ${amFmt(pim)} millones, del cual se ha devengado S/ ${amFmt(devI)} millones (${amPct(avI)}). Este presupuesto corresponde solo a la cartera del MTC, a diferencia del presupuesto por función, que incluye a todos los niveles de gobierno.`;
+      s6.push({ p: t });
+
+      // Modalidades
+      const NOM = { 'APP': ['mediante Asociaciones Público Privadas (APP)', 'APP'], 'OBRA PUBLICA': ['de obra pública', 'obra pública'],
+        'ADM. DIRECTA POR DEFINIR POR CONTRATA': ['de administración directa por definir por contrata', 'administración directa'],
+        'CANON/TASA POR COBERTURA': ['financiadas con canon o tasa por cobertura', 'canon o tasa por cobertura'],
+        'GTOG': ['bajo la modalidad Gobierno a Gobierno (G2G)', 'Gobierno a Gobierno'], 'OXI': ['mediante Obras por Impuestos (OxI)', 'Obras por Impuestos'],
+        'POR DEFINIR': ['con modalidad por definir', 'modalidad por definir'] };
+      const mods = (extra.modal || []).filter(r => cl(col(r, 'Dpto_int')) === cl(dep)).map(r => {
+        const k = cl(col(r, 'Modalidad de ejecución')); const nm = NOM[k] || [String(col(r, 'Modalidad de ejecución')).toLowerCase(), String(col(r, 'Modalidad de ejecución')).toLowerCase()];
+        let av = amNum(col(r, 'Avance Financiero 2026', 'Avance Fi')); if (av !== null && av > 1.5) av /= 100;
+        const pimM = amNum(col(r, 'PIM 2026', 'PIM')), devM = amNum(col(r, 'Devengado 2026', 'Devengado'));
+        if (pimM && devM !== null) av = devM / pimM;
+        return { frase: nm[0], corto: nm[1], n: amNum(col(r, 'Intervenciones')) || 0, costo: amNum(col(r, 'Costo de Inversión (MM S/)', 'Costo de Inversión')) || 0,
+          pim: amNum(col(r, 'PIM 2026', 'PIM')) || 0, av };
+      }).filter(m => m.n > 0).sort((a, b) => b.n - a.n || b.costo - a.costo);
+      if (mods.length) {
+        const item = (m, primero) => `${amFmt(m.n, 0)}${primero ? (m.n === 1 ? ' intervención' : ' intervenciones') : ''} ${m.n === 1 ? m.frase.replace('financiadas', 'financiada') : m.frase}`;
+        const conMonto = m => item(m, m === mods[0]) + (m.costo ? `, por S/ ${amFmt(m.costo)} millones` : '');
+        const top = mods.slice(0, 2), resto = mods.slice(2);
+        let t = `Por modalidad de ejecución, la cartera se compone principalmente de ${top.map(conMonto).join(', y ')}.`;
+        if (resto.length) t += ` ${resto.length === 1 && resto[0].n === 1 ? 'La restante corresponde' : 'Las restantes corresponden'} a ${amJoin(resto.map((m, i) => item(m, i === 0)))}.`;
+        const conPim = mods.filter(m => m.pim > 0).sort((a, b) => b.pim - a.pim);
+        if (conPim.length && pim) {
+          const f = conPim[0];
+          t += ` El PIM ${P.finAnio} se concentra en ${f.corto} (S/ ${amFmt(f.pim)} millones, ${amPct(f.pim / pim)} del total)` + (f.av !== null ? `, con un avance de ${amPct(f.av)}` : '');
+          if (conPim.length > 1) t += '; le sigue ' + amJoin(conPim.slice(1, 2).map(m => `${m.corto}, con S/ ${amFmt(m.pim)} millones` + (m.av !== null ? ` y un avance de ${amPct(m.av)}` : '')));
+          t += '.';
+        }
+        s6.push({ p: t });
+      }
+
+      // Entidades responsables
+      const ENT = { 'PVN': 'Provías Nacional', 'PVD': 'Provías Descentralizado' };
+      const ents = (extra.resp || []).filter(r => cl(col(r, 'Dpto_int')) === cl(dep))
+        .map(r => ({ nom: ENT[cl(col(r, 'Entidad Reportante'))] || String(col(r, 'Entidad Reportante')).trim(), n: amNum(col(r, 'Cant. de Intervenciones', '(K) Interv', 'Intervenciones')) || 0 }))
+        .filter(e => e.n > 0).sort((a, b) => b.n - a.n);
+      if (ents.length) {
+        const fe = e => `${e.nom} (${amFmt(e.n, 0)})`;
+        let t = ents.length === 1 ? `Todas las intervenciones están a cargo de ${ents[0].nom}.`
+          : `Según entidad responsable, las intervenciones están a cargo principalmente de ${amJoin(ents.slice(0, 3).map(fe))}` + (ents.length > 3 ? `; el resto corresponde a ${amJoin(ents.slice(3).map(fe))}.` : '.');
+        s6.push({ p: t });
+      }
+      s6.push({ note: 'Costo de inversión: para las intervenciones con CUI se toma del portal de Seguimiento de Proyectos de Inversión del MEF; para las demás, es el reportado por la entidad responsable.' });
+      s6.push({ src: `MTC – OGAME/OMEI, Base de Intervenciones MTC${corte6 ? ', corte al ' + corte6 : ''}.` });
+      out.secciones.push({ titulo: 'Intervenciones MTC', bloques: s6 });
+      ivKey = `El MTC tiene ${amFmt(nI, 0)} intervenciones en el departamento` + (costo !== null ? `, con un costo de inversión de S/ ${amFmt(costo)} millones` : '') + (pim ? `, y en ${P.finAnio} su cartera registra un avance financiero de ${amPct(avI)}` : '') + '.';
+    }
   }
 
   // --- Mensajes clave
@@ -522,6 +585,7 @@ function amTextos(depName, rows, secRows) {
   if (ex !== null && pav !== null) b.push(`En infraestructura vial, al corte de ${vialAct}, el ${amPct(pav / ex)} de su Red Vial Nacional está pavimentada` + (bue !== null ? ` y el ${amPct(rep !== null ? rep : bue / pav)} de ese tramo se encuentra en buen estado.` : '.'));
   if (out.kpiCob !== undefined) b.push(out.kpiCob > 0 ? `En telecomunicaciones${P.cob ? ', a ' + P.cob : ''}, el ${amPct(out.kpiCob)} de sus centros poblados no tiene cobertura móvil.` : 'En telecomunicaciones, todos sus centros poblados tienen cobertura móvil.');
   if (b.length) out.key.push(b.join(' '));
+  if (ivKey) out.key.push(ivKey);
   if (T || Cm) out.key.push(`Al ${P.fin}, ` + [T && `la función transporte ejecutó el ${amPct(T.av)} de su presupuesto ${P.finAnio}`, Cm && `la función comunicaciones avanzó ${amPct(Cm.av)}`].filter(Boolean).join(', mientras que ') + '.');
 
   // --- Cifras destacadas
@@ -619,7 +683,12 @@ function amDocumento(am) {
 const AM_URL_DATOS   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSfxbrTt12Dh8n0qYW_-NlX7GYiZFYJkp_h8vzHe8wIjZ8E14MaKNaB_-Kb-cCpL9EqRscpxLCQta_p/pub?gid=1452101256&single=true&output=tsv';
 const AM_URL_SECTORES = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSfxbrTt12Dh8n0qYW_-NlX7GYiZFYJkp_h8vzHe8wIjZ8E14MaKNaB_-Kb-cCpL9EqRscpxLCQta_p/pub?gid=378268387&single=true&output=tsv';
 
-let AM_FILAS = [], AM_SECT = [];
+// Tablas de Intervenciones MTC (pegar aquí el enlace TSV de cada pestaña; si queda vacío, la sección no se incluye)
+const AM_URL_INTERV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSfxbrTt12Dh8n0qYW_-NlX7GYiZFYJkp_h8vzHe8wIjZ8E14MaKNaB_-Kb-cCpL9EqRscpxLCQta_p/pub?gid=363253435&single=true&output=tsv';   // pestaña "Intervenciones"
+const AM_URL_MODAL  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSfxbrTt12Dh8n0qYW_-NlX7GYiZFYJkp_h8vzHe8wIjZ8E14MaKNaB_-Kb-cCpL9EqRscpxLCQta_p/pub?gid=144774876&single=true&output=tsv';   // pestaña "Modalidades"
+const AM_URL_RESP   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSfxbrTt12Dh8n0qYW_-NlX7GYiZFYJkp_h8vzHe8wIjZ8E14MaKNaB_-Kb-cCpL9EqRscpxLCQta_p/pub?gid=1944891004&single=true&output=tsv';   // pestaña "Responsables"
+
+let AM_FILAS = [], AM_SECT = [], AM_EXTRA = {};
 const amSel = document.getElementById('amDep'), amBtn = document.getElementById('amBtn'), amEst = document.getElementById('amEstado');
 const amMsg = (t, err) => { amEst.textContent = t; amEst.className = 'am-estado' + (err ? ' error' : ''); };
 
@@ -629,6 +698,9 @@ async function amCargar() {
     if (!a.ok || !b.ok) throw new Error('HTTP ' + a.status + '/' + b.status);
     AM_FILAS = amParseTSV(await a.text());
     AM_SECT = amParseTSV(await b.text());
+    const opc = async url => { if (!url) return []; try { const r = await fetch(url); return r.ok ? amParseTSV(await r.text()) : []; } catch (e) { console.warn(e); return []; } };
+    const [iv, md, rs] = await Promise.all([opc(AM_URL_INTERV), opc(AM_URL_MODAL), opc(AM_URL_RESP)]);
+    AM_EXTRA = { interv: iv, modal: md, resp: rs };
     const deps = AM_FILAS.map(r => (r[C.dep] || '').trim()).filter(d => d && d.toLowerCase() !== 'nacional')
       .sort((x, y) => x.localeCompare(y, 'es'));
     amSel.innerHTML = '<option value="">Elegir departamento…</option>' + deps.map(d => `<option>${d}</option>`).join('');
@@ -645,7 +717,7 @@ amBtn.addEventListener('click', async () => {
   if (typeof docx === 'undefined') { amMsg('La librería de Word aún no carga; intenta en unos segundos.', true); return; }
   amBtn.disabled = true; amMsg('Generando documento…');
   try {
-    const am = amTextos(dep, AM_FILAS, AM_SECT);
+    const am = amTextos(dep, AM_FILAS, AM_SECT, AM_EXTRA);
     const blob = await docx.Packer.toBlob(amDocumento(am));
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
