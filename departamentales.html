@@ -59,15 +59,33 @@
   .btn-open:hover { background:#EEF4FF; }
 
 
+  /* ── Bloque de contenido alineado con el visor ── */
+  .contenido { width:100%; max-width:1602px; margin:0 auto; }
+
   /* ── Ayuda Memoria ── */
-  .acciones { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-  .am-box { display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #8FAADC; border-radius:24px; padding:4px 4px 4px 14px; }
-  .am-box label { font-size:13px; font-weight:600; color:var(--blue-dk); white-space:nowrap; }
-  .am-box select { font-family:var(--sans); font-size:13px; border:none; background:transparent; color:var(--text); padding:4px 2px; min-width:150px; cursor:pointer; outline:none; }
-  .btn-am { font-family:var(--sans); font-size:13px; font-weight:700; color:#fff; background:var(--red); border:none; border-radius:20px; padding:7px 16px; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:6px; }
+  .am-card {
+    display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+    background:#fff; border:1px solid var(--border); border-left:6px solid var(--red);
+    border-radius:var(--r); padding:16px 20px; margin-bottom:16px;
+    box-shadow:0 2px 10px rgba(0,63,125,0.06);
+  }
+  .am-icono { width:48px; height:48px; border-radius:10px; background:#FDECEF; color:var(--red);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .am-texto { flex:1; min-width:260px; }
+  .am-titulo { font-size:18px; font-weight:700; color:var(--blue-dk); line-height:1.25; }
+  .am-desc { font-size:13.5px; color:var(--text-2); margin-top:3px; }
+  .am-controles { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .am-controles select {
+    font-family:var(--sans); font-size:14px; color:var(--text); height:42px; min-width:220px;
+    border:1px solid #8FAADC; border-radius:21px; padding:0 14px; background:#fff; cursor:pointer;
+  }
+  .am-controles select:focus { outline:2px solid var(--blue); outline-offset:1px; }
+  .btn-am { font-family:var(--sans); font-size:14px; font-weight:700; color:#fff; background:var(--red); border:none;
+    border-radius:21px; height:42px; padding:0 20px; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:8px; }
   .btn-am:hover { background:#A50D26; }
   .btn-am:disabled { background:#C9CFD8; cursor:not-allowed; }
-  .am-estado { font-size:12px; color:var(--text-2); width:100%; min-height:16px; padding-left:14px; }
+  .am-estado { font-size:12.5px; color:var(--text-2); width:100%; min-height:0; }
+  .am-estado:empty { display:none; }
   .am-estado.error { color:var(--red); }
 
   /* Contenedor del visor: ocupa todo el alto disponible */
@@ -110,23 +128,32 @@
   </header>
 
   <main class="main">
-    <div class="head">
-      <div>
-        <div class="panel-title">TABLERO CARPETAS DEPARTAMENTALES</div>
-        <div class="panel-sub">Visor interactivo de intervenciones por departamento</div>
-      </div>
-      <div class="acciones">
-        <div class="am-box">
-          <label for="amDep">Ayuda Memoria</label>
-          <select id="amDep" disabled><option>Cargando datos…</option></select>
-          <button class="btn-am" id="amBtn" disabled>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Descargar Word
-          </button>
+    <div class="contenido">
+      <div class="head">
+        <div>
+          <div class="panel-title">TABLERO CARPETAS DEPARTAMENTALES</div>
+          <div class="panel-sub">Información económica, social y sectorial por departamento</div>
         </div>
         <a class="btn-open" id="btnOpen" target="_blank" rel="noopener">Abrir en pantalla completa</a>
-        <div class="am-estado" id="amEstado"></div>
       </div>
+
+      <section class="am-card" aria-label="Generador de Ayuda Memoria">
+        <div class="am-icono">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+        </div>
+        <div class="am-texto">
+          <div class="am-titulo">Ayuda Memoria departamental</div>
+          <div class="am-desc">Descarga en Word un resumen del departamento con mensajes clave, cifras destacadas y análisis por sección, listo para reuniones y visitas.</div>
+        </div>
+        <div class="am-controles">
+          <select id="amDep" disabled aria-label="Departamento"><option>Cargando datos…</option></select>
+          <button class="btn-am" id="amBtn" disabled>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar Ayuda Memoria
+          </button>
+        </div>
+        <div class="am-estado" id="amEstado"></div>
+      </section>
     </div>
 
     <div class="visor">
@@ -143,16 +170,19 @@ const VISOR_URL = 'https://app.powerbi.com/view?r=eyJrIjoiNWIxMTVkYWUtMDMwMi00YW
 document.getElementById('visor').src = VISOR_URL;
 document.getElementById('btnOpen').href = VISOR_URL;
 
-// ====== Tamaño del visor: todo el ancho disponible; el alto sigue la proporción del reporte (16:9) ======
-const PBI_PROPORCION = 16 / 9;   // proporción de las páginas del reporte
-const PBI_BARRA = 56;            // barra inferior de Power BI (páginas, zoom)
+// ====== Tamaño del visor: igual al lienzo del reporte (Formato de página → Tamaño del lienzo en Power BI) ======
+const PBI_ANCHO = 1600;   // ancho del lienzo en píxeles
+const PBI_ALTO  = 850;    // alto del lienzo en píxeles
+const PBI_BARRA = 56;     // barra inferior de Power BI (páginas, zoom)
 function ajustarVisor() {
   const visor = document.querySelector('.visor');
   const main = document.querySelector('.main');
   const est = getComputedStyle(main);
-  const ancho = main.clientWidth - parseFloat(est.paddingLeft) - parseFloat(est.paddingRight);
+  const disponible = main.clientWidth - parseFloat(est.paddingLeft) - parseFloat(est.paddingRight);
+  const ancho = Math.min(PBI_ANCHO + 2, disponible);              // +2 por el borde del recuadro
+  const scrollH = ancho < PBI_ANCHO + 2 ? 17 : 0;                 // si no entra, Power BI agrega barra horizontal
   visor.style.width = ancho + 'px';
-  visor.style.height = (ancho / PBI_PROPORCION + PBI_BARRA) + 'px';
+  visor.style.height = (PBI_ALTO + PBI_BARRA + scrollH + 2) + 'px';
 }
 window.addEventListener('resize', ajustarVisor);
 ajustarVisor();
