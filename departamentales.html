@@ -840,6 +840,9 @@ lsBtn.addEventListener('click', async () => {
       return areas.includes(clave) || areas.includes('NACIONAL');
     });
     if (!sel.length) { amMsg('No hay intervenciones registradas para ' + dep + '.', true); return; }
+    // Las intervenciones de alcance nacional van al final (se mantiene el orden de la base en cada grupo)
+    const esNacional = f => String(f[iArea] || '').split(',').map(lsClave).includes('NACIONAL');
+    sel.sort((a, b) => esNacional(a) - esNacional(b));
 
     const wb = new ExcelJS.Workbook(); wb.creator = 'OMEI – OGAME – MTC';
     const ws = wb.addWorksheet('Intervenciones', { views: [{ state: 'frozen', ySplit: 4, showGridLines: false }] });
