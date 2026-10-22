@@ -31,21 +31,21 @@
   .topbar {
     background: var(--red);
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 28px; min-height: 100px; flex-shrink: 0;
+    padding: 0 28px; min-height: 68px; flex-shrink: 0;
   }
-  .topbar-brand { display:flex; align-items:center; gap:14px; }
-  .topbar-logo { width:52px; height:52px; border-radius:8px; overflow:hidden; flex-shrink:0; box-shadow:0 1px 6px rgba(0,0,0,0.25); }
+  .topbar-brand { display:flex; align-items:center; gap:12px; }
+  .topbar-logo { width:40px; height:40px; border-radius:8px; overflow:hidden; flex-shrink:0; box-shadow:0 1px 6px rgba(0,0,0,0.25); }
   .topbar-logo img { width:100%; height:100%; object-fit:cover; display:block; }
-  .topbar-name { font-size:28px; font-weight:700; color:var(--white); line-height:1.2; letter-spacing:-0.01em; }
-  .topbar-sub  { font-size:14px; color:rgba(255,255,255,0.85); margin-top:3px; font-weight:400; }
+  .topbar-name { font-size:18px; font-weight:700; color:var(--white); line-height:1.2; letter-spacing:-0.01em; }
+  .topbar-sub  { font-size:13px; color:rgba(255,255,255,0.85); margin-top:1px; font-weight:400; }
   .btn-back {
     display:flex; align-items:center; gap:7px;
-    background:#003F7D; color:#fff; border:2px solid #003F7D;
-    border-radius:24px; padding:8px 18px;
-    font-family:var(--sans); font-size:15px; font-weight:700;
+    background:transparent; color:#fff; border:1px solid rgba(255,255,255,0.6);
+    border-radius:20px; padding:6px 14px;
+    font-family:var(--sans); font-size:13px; font-weight:600;
     cursor:pointer; white-space:nowrap; transition:background .12s; text-decoration:none;
   }
-  .btn-back:hover { background:#002D5C; border-color:#002D5C; }
+  .btn-back:hover { background:rgba(255,255,255,0.14); border-color:#fff; }
 
   /* ── Contenido ── */
   .main { flex:1; display:flex; flex-direction:column; padding:20px 28px 24px; min-height:0; }
@@ -64,7 +64,7 @@
 
   /* ── Ayuda Memoria ── */
   .am-card {
-    display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+    display:flex; align-items:center; gap:14px 20px; flex-wrap:wrap;
     background:#fff; border:1px solid var(--border); border-left:6px solid var(--red);
     border-radius:var(--r); padding:16px 20px; margin-bottom:16px;
     box-shadow:0 2px 10px rgba(0,63,125,0.06);
@@ -74,7 +74,8 @@
   .am-texto { flex:1; min-width:260px; }
   .am-titulo { font-size:18px; font-weight:700; color:var(--blue-dk); line-height:1.25; }
   .am-desc { font-size:13.5px; color:var(--text-2); margin-top:3px; }
-  .am-controles { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .am-controles { display:flex; align-items:center; gap:10px; flex-wrap:wrap; width:100%; padding-left:68px; }
+  .am-controles .sep { width:1px; height:28px; background:var(--border); margin:0 4px; }
   .am-controles select {
     font-family:var(--sans); font-size:14px; color:var(--text); height:42px; min-width:220px;
     border:1px solid #8FAADC; border-radius:21px; padding:0 14px; background:#fff; cursor:pointer;
@@ -83,6 +84,9 @@
   .btn-am { font-family:var(--sans); font-size:14px; font-weight:700; color:#fff; background:var(--red); border:none;
     border-radius:21px; height:42px; padding:0 20px; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:8px; }
   .btn-am:hover { background:#A50D26; }
+  .btn-am.excel { background:var(--blue); }
+  .btn-am.excel:hover { background:var(--blue-dk); }
+  .am-estado { padding-left:68px; }
   .btn-am:disabled { background:#C9CFD8; cursor:not-allowed; }
   .am-estado { font-size:12.5px; color:var(--text-2); width:100%; min-height:0; }
   .am-estado:empty { display:none; }
@@ -103,6 +107,7 @@
   .visor iframe { width:100%; height:100%; border:0; display:block; }
 
   @media (max-width: 720px) {
+    .am-controles, .am-estado { padding-left:0; }
     .topbar { flex-wrap:wrap; gap:12px; padding:14px 18px; }
     .topbar-name { font-size:20px; }
     .main { padding:16px; }
@@ -137,19 +142,24 @@
         <a class="btn-open" id="btnOpen" target="_blank" rel="noopener">Abrir en pantalla completa</a>
       </div>
 
-      <section class="am-card" aria-label="Generador de Ayuda Memoria">
+      <section class="am-card" aria-label="Descargas por departamento">
         <div class="am-icono">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
         </div>
         <div class="am-texto">
-          <div class="am-titulo">Ayuda Memoria departamental</div>
-          <div class="am-desc">Descarga en Word un resumen del departamento con mensajes clave, cifras destacadas y análisis por sección, listo para reuniones y visitas.</div>
+          <div class="am-titulo">Descargas por departamento</div>
+          <div class="am-desc">Elige un departamento y descarga su Ayuda Memoria en Word, con mensajes clave y análisis por sección, o el listado de intervenciones vigentes del MTC en Excel.</div>
         </div>
         <div class="am-controles">
           <select id="amDep" disabled aria-label="Departamento"><option>Cargando datos…</option></select>
+          <span class="sep"></span>
           <button class="btn-am" id="amBtn" disabled>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Descargar Ayuda Memoria
+            Ayuda Memoria (Word)
+          </button>
+          <button class="btn-am excel" id="lsBtn" disabled>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Listado de intervenciones (Excel)
           </button>
         </div>
         <div class="am-estado" id="amEstado"></div>
@@ -188,6 +198,7 @@ window.addEventListener('resize', ajustarVisor);
 ajustarVisor();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/docx@9.6.1/dist/index.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script>
 /* =====================================================================
    GENERADOR DE AYUDA MEMORIA DEPARTAMENTAL (Word)
@@ -751,7 +762,8 @@ async function amCargar() {
     amMsg('No se pudieron cargar los datos de la Ayuda Memoria.', true);
   }
 }
-amSel.addEventListener('change', () => { amBtn.disabled = !amSel.value; amMsg(''); });
+const lsBtn = document.getElementById('lsBtn');
+amSel.addEventListener('change', () => { amBtn.disabled = lsBtn.disabled = !amSel.value; amMsg(''); });
 amBtn.addEventListener('click', async () => {
   const dep = amSel.value; if (!dep) return;
   if (typeof docx === 'undefined') { amMsg('La librería de Word aún no carga; intenta en unos segundos.', true); return; }
@@ -770,6 +782,112 @@ amBtn.addEventListener('click', async () => {
   } finally { amBtn.disabled = false; }
 });
 amCargar();
+
+// ====== LISTADO DE INTERVENCIONES (Excel) ======
+const LS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQCh1cjWIRCOycRRdMQJHbY-yRa7CZPJHGE6egqMrw8-fRkDv-z20oeqNrUltTeVIwHjXZJN45on0L-/pub?gid=1212162516&single=true&output=csv';
+// Columnas del descargable, en este orden: [encabezado en la base, ancho en Excel]
+const LS_COLUMNAS = [
+  ['Nombre de la intervención', 47], ['Área de influencia', 32], ['Tipo de Código', 16], ['Código', 14],
+  ['Proyecto / Servicio', 16], ['Monto de la intervención S/', 24], ['Beneficiarios', 17], ['Modalidad de ejecución', 20],
+  ['Fase (Depende de la Modalidad)', 22], ['Financiamiento 2026 (SI/NO)', 18], ['Estado Situacional', 60]
+];
+const LS_NUMERICAS = ['Monto de la intervención S/', 'Beneficiarios'];
+
+// CSV con comillas y saltos de línea dentro de las celdas (por ejemplo, en Estado Situacional)
+function lsParseCSV(text) {
+  const filas = []; let fila = [], campo = '', comillas = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (comillas) {
+      if (c === '"') { if (text[i + 1] === '"') { campo += '"'; i++; } else comillas = false; }
+      else campo += c;
+    } else if (c === '"') comillas = true;
+    else if (c === ',') { fila.push(campo); campo = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; fila.push(campo); filas.push(fila); fila = []; campo = ''; }
+    else campo += c;
+  }
+  if (campo !== '' || fila.length) { fila.push(campo); filas.push(fila); }
+  return filas;
+}
+const lsClave = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
+let LS_CACHE = null;
+async function lsDatos() {
+  if (LS_CACHE) return LS_CACHE;
+  const r = await fetch(LS_URL); if (!r.ok) throw new Error('HTTP ' + r.status);
+  const filas = lsParseCSV(await r.text());
+  const iH = filas.findIndex(f => f.some(c => lsClave(c) === 'NOMBRE DE LA INTERVENCION'));
+  if (iH < 0) throw new Error('No se encontró la fila de encabezados en la base de intervenciones.');
+  const enc = filas[iH].map(lsClave);
+  const corteTxt = (filas.slice(0, iH).flat().find(c => /^corte/i.test(String(c).trim())) || '').trim();
+  const datos = filas.slice(iH + 1).filter(f => f.some(c => String(c).trim() !== ''));
+  LS_CACHE = { enc, datos, corteTxt };
+  return LS_CACHE;
+}
+
+lsBtn.addEventListener('click', async () => {
+  const dep = amSel.value; if (!dep) return;
+  if (typeof ExcelJS === 'undefined') { amMsg('La librería de Excel aún no carga; intenta en unos segundos.', true); return; }
+  lsBtn.disabled = true; amMsg('Generando listado…');
+  try {
+    const { enc, datos, corteTxt } = await lsDatos();
+    const idx = nombre => enc.indexOf(lsClave(nombre));
+    const iArea = idx('Área de influencia'), iDep = idx('Departamento');
+    const clave = lsClave(dep);
+    // Se incluyen las intervenciones del departamento y las de alcance nacional
+    const sel = datos.filter(f => {
+      if (iDep >= 0 && f[iDep]) return lsClave(f[iDep]) === clave;
+      const areas = String(f[iArea] || '').split(',').map(lsClave);
+      return areas.includes(clave) || areas.includes('NACIONAL');
+    });
+    if (!sel.length) { amMsg('No hay intervenciones registradas para ' + dep + '.', true); return; }
+
+    const wb = new ExcelJS.Workbook(); wb.creator = 'OMEI – OGAME – MTC';
+    const ws = wb.addWorksheet('Intervenciones', { views: [{ state: 'frozen', ySplit: 4, showGridLines: false }] });
+    ws.columns = LS_COLUMNAS.map(([, w]) => ({ width: w }));
+    const nCol = LS_COLUMNAS.length, ultima = String.fromCharCode(64 + nCol);
+    const fuente = { name: 'Arial' };
+    ws.getCell('A1').value = 'Carpeta Departamental – ' + dep;
+    ws.getCell('A1').font = { ...fuente, size: 16, bold: true, color: { argb: 'FF0055A5' } };
+    ws.getCell('A2').value = 'Intervenciones Vigentes del Gobierno Nacional';
+    ws.getCell('A2').font = { ...fuente, size: 12, color: { argb: 'FFC8102E' }, bold: true };
+    ws.getCell('A3').value = (corteTxt || '') + (corteTxt ? '  |  ' : '') + sel.length + ' intervenciones (incluye las de alcance nacional)';
+    ws.getCell('A3').font = { ...fuente, size: 10, color: { argb: 'FF5A6472' }, italic: true };
+    const h = ws.getRow(4);
+    LS_COLUMNAS.forEach(([nombre], j) => { h.getCell(j + 1).value = nombre; });
+    h.height = 36;
+    h.eachCell(c => {
+      c.font = { ...fuente, size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0055A5' } };
+      c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    });
+    const borde = { style: 'thin', color: { argb: 'FFD5DDEA' } };
+    sel.forEach((f, i) => {
+      const fila = ws.getRow(5 + i);
+      LS_COLUMNAS.forEach(([nombre], j) => {
+        const k = idx(nombre); let v = k >= 0 ? String(f[k] ?? '').trim() : '';
+        const cell = fila.getCell(j + 1);
+        if (LS_NUMERICAS.includes(nombre)) {
+          const n = amNum(v); cell.value = n; cell.numFmt = '#,##0'; cell.alignment = { vertical: 'top', horizontal: 'right' };
+        } else {
+          cell.value = v; cell.alignment = { vertical: 'top', wrapText: true };
+        }
+        cell.font = { ...fuente, size: 9.5 };
+        cell.border = { top: borde, bottom: borde, left: borde, right: borde };
+        if (i % 2) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF6F8FC' } };
+      });
+    });
+    ws.autoFilter = { from: 'A4', to: ultima + '4' };
+    const buf = await wb.xlsx.writeBuffer();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    a.download = 'Intervenciones_' + dep.replace(/\s+/g, '_') + '.xlsx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    amMsg('Descargado: ' + sel.length + ' intervenciones.');
+  } catch (e) {
+    console.error(e); amMsg('Error al generar el listado: ' + e.message, true);
+  } finally { lsBtn.disabled = false; }
+});
 </script>
 </body>
 </html>
