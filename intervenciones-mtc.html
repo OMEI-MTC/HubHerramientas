@@ -389,7 +389,7 @@ let HITOS = {};   // { 'DGPRTM-1': [ {hito, fecha, estado}, ... ] }
 // Si se deja vacío, el filtro no aparece con opciones y el panel funciona igual que antes.
 const CREDITO_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQCh1cjWIRCOycRRdMQJHbY-yRa7CZPJHGE6egqMrw8-fRkDv-z20oeqNrUltTeVIwHjXZJN45on0L-/pub?gid=2012125839&single=true&output=csv';
 const CREDITO_TSV = CREDITO_URL.trim();
-let CREDITO = { cod:new Set(), cui:new Set() };
+let CREDITO = { cod:new Set(), cui:new Set(), montoCod:{}, montoCui:{} };
 
 // Filtros de selección múltiple
 const MS = {
@@ -411,7 +411,7 @@ async function cargar(){
     if(txtHitos) parseHitos(txtHitos);
     // Crédito suplementario: SI/NO. Si la pestaña no cargó, se deja vacío (—) para no mostrar un NO falso.
     if(txtCredito) parseCredito(txtCredito);
-    DATA.forEach(r=>{ r.credito = txtCredito ? (tieneCredito(r)?'SI':'NO') : ''; });
+    DATA.forEach(r=>{ r.credito = txtCredito ? (tieneCredito(r)?'SI':'NO') : ''; r.montoCred = r.credito==='SI' ? montoCredito(r) : NaN; });
     // Hoja de Ruta: SI si la intervención tiene hitos registrados, NO si no tiene.
     // Si la hoja de hitos no cargó, se deja vacío (—) para no mostrar un NO falso.
     DATA.forEach(r=>{ r.prio = txtHitos ? (tieneHitos(r)?'SI':'NO') : ''; });
@@ -498,12 +498,21 @@ function parseCredito(txt){
   const head=filas[iHead].map(normClave);
   const iCod=head.indexOf('cod interno');
   const iCui=head.indexOf('cui')>=0 ? head.indexOf('cui') : head.indexOf('codigo');
-  CREDITO={ cod:new Set(), cui:new Set() };
+  const iMonto=head.indexOf('monto asignado');   // opcional: monto del crédito suplementario
+  CREDITO={ cod:new Set(), cui:new Set(), montoCod:{}, montoCui:{} };
   for(let i=iHead+1;i<filas.length;i++){
     const c=filas[i];
-    if(iCod>=0 && norm(c[iCod])) CREDITO.cod.add(normClave(c[iCod]));
-    if(iCui>=0){ const v=limpiarCodigo(c[iCui]); if(v) CREDITO.cui.add(normClave(v)); }
+    const monto = iMonto>=0 ? aNumero(c[iMonto]) : NaN;
+    if(iCod>=0 && norm(c[iCod])){ const k=normClave(c[iCod]); CREDITO.cod.add(k); if(!isNaN(monto)) CREDITO.montoCod[k]=monto; }
+    if(iCui>=0){ const v=limpiarCodigo(c[iCui]); if(v){ const k=normClave(v); CREDITO.cui.add(k); if(!isNaN(monto)) CREDITO.montoCui[k]=monto; } }
   }
+}
+// Monto asignado como crédito suplementario (NaN si no tiene o si la hoja no trae la columna)
+function montoCredito(r){
+  const kc=normClave(r.codInterno), ku=normClave(r.codigo);
+  if(r.codInterno && kc in CREDITO.montoCod) return CREDITO.montoCod[kc];
+  if(r.codigo && ku in CREDITO.montoCui) return CREDITO.montoCui[ku];
+  return NaN;
 }
 function tieneCredito(r){
   return (!!r.codInterno && CREDITO.cod.has(normClave(r.codInterno))) ||
@@ -773,7 +782,7 @@ function render(filas){
   tbody.innerHTML = filas.map(r=>{
     const i=DATA.indexOf(r);
     const cod=textoCodigo(r);
-    const meta=[cod, r.tipoInfra, isNaN(r.monto)?'':'Costo de Inv.: '+fmtSoles(r.monto), textoBenef(r)?'Beneficiarios: '+textoBenef(r):''].filter(Boolean).map(escapeHtml).join(' · ');
+    const meta=[cod, r.tipoInfra, isNaN(r.monto)?'':'Costo de Inv.: '+fmtSoles(r.monto), textoBenef(r)?'Beneficiarios: '+textoBenef(r):'', isNaN(r.montoCred)?'':'Crédito suplementario del CUI: '+fmtSoles(r.montoCred)].filter(Boolean).map(escapeHtml).join(' · ');
     const largo=r.situacional.length>320 || (r.situacional.match(/\n/g)||[]).length>5;
     return '<tr>'+
       '<td class="c-corte">'+escapeHtml(r.corte||'—')+'</td>'+
@@ -965,7 +974,7 @@ async function exportarWord(){
 
   const filasTabla=filas.map(r=>{
     const c1=[P(T(r.nombre||'—',{bold:true,color:AZUL}),{after:60})];
-    [r.entidad, textoCodigo(r), r.tipoInfra, isNaN(r.monto)?'':'Costo de Inv.: '+fmtSoles(r.monto), textoBenef(r)?'Beneficiarios: '+textoBenef(r):''].filter(Boolean).forEach(t=>c1.push(P(T(t),{after:20})));
+    [r.entidad, textoCodigo(r), r.tipoInfra, isNaN(r.monto)?'':'Costo de Inv.: '+fmtSoles(r.monto), textoBenef(r)?'Beneficiarios: '+textoBenef(r):'', isNaN(r.montoCred)?'':'Crédito suplementario del CUI: '+fmtSoles(r.montoCred)].filter(Boolean).forEach(t=>c1.push(P(T(t),{after:20})));
     if(r.finan) c1.push(P([T('Financiamiento 2026: '),T(r.finan,{bold:true})],{after:20}));
     const c3=[P(T(r.modalidad||'—',{bold:true}),{after:40})]; if(r.fase) c3.push(P([T('Fase: '),T(r.fase)]));
     const c4=(r.situacional||'Sin registro').split('\n').filter(l=>l.trim()).map(l=>P(T(l.trim(),{italics:!r.situacional}),{align:AlignmentType.JUSTIFIED,after:60}));
