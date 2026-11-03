@@ -219,6 +219,8 @@
             <select id="fPrio" onchange="onFiltro()"><option value="">Todos</option></select></div>
           <div class="field"><label class="lbl" for="fFinan">Financiamiento 2026</label>
             <select id="fFinan" onchange="onFiltro()"><option value="">Todos</option></select></div>
+          <div class="field"><label class="lbl" for="fCredito">Crédito suplementario</label>
+            <select id="fCredito" onchange="onFiltro()"><option value="">Todos</option></select></div>
         </div>
 
         <div class="fpanel fp-otras">
@@ -380,6 +382,15 @@ const COLS_HITOS = {
 };
 let HITOS = {};   // { 'DGPRTM-1': [ {hito, fecha, estado}, ... ] }
 
+// Crédito suplementario: hoja "LISTADO CREDITO SUPLEMENTARIO" (Google Sheets publicado en la web como CSV).
+// Debe tener una columna "COD INTERNO" (recomendado, es único) y/o una columna "CUI".
+// Se marca SI a toda intervención cuyo COD INTERNO o CUI figure en esa hoja; el resto queda como NO.
+// Para activarlo: pegar entre las comillas el enlace de "Publicar en la web" (termina en output=csv).
+// Si se deja vacío, el filtro no aparece con opciones y el panel funciona igual que antes.
+const CREDITO_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQCh1cjWIRCOycRRdMQJHbY-yRa7CZPJHGE6egqMrw8-fRkDv-z20oeqNrUltTeVIwHjXZJN45on0L-/pub?gid=2012125839&single=true&output=csv';
+const CREDITO_TSV = CREDITO_URL.trim();
+let CREDITO = { cod:new Set(), cui:new Set() };
+
 // Filtros de selección múltiple
 const MS = {
   entidad:   { id:'ms-entidad',   sel:new Set(), todos:'Todas', obtener:r=>[r.entidad] },
@@ -391,12 +402,16 @@ const MS = {
 // ====== CARGA ======
 async function cargar(){
   try {
-    const [txt, txtHitos] = await Promise.all([
+    const [txt, txtHitos, txtCredito] = await Promise.all([
       fetchProxy(DATA_TSV),
-      fetchProxy(HITOS_TSV).catch(e=>{ console.warn('No se pudieron cargar los hitos:', e.message); return ''; })
+      fetchProxy(HITOS_TSV).catch(e=>{ console.warn('No se pudieron cargar los hitos:', e.message); return ''; }),
+      CREDITO_TSV ? fetchProxy(CREDITO_TSV).catch(e=>{ console.warn('No se pudo cargar crédito suplementario:', e.message); return ''; }) : Promise.resolve('')
     ]);
     parseData(txt);
     if(txtHitos) parseHitos(txtHitos);
+    // Crédito suplementario: SI/NO. Si la pestaña no cargó, se deja vacío (—) para no mostrar un NO falso.
+    if(txtCredito) parseCredito(txtCredito);
+    DATA.forEach(r=>{ r.credito = txtCredito ? (tieneCredito(r)?'SI':'NO') : ''; });
     // Hoja de Ruta: SI si la intervención tiene hitos registrados, NO si no tiene.
     // Si la hoja de hitos no cargó, se deja vacío (—) para no mostrar un NO falso.
     DATA.forEach(r=>{ r.prio = txtHitos ? (tieneHitos(r)?'SI':'NO') : ''; });
@@ -475,6 +490,24 @@ function parseHitos(txt){
   HITOS={};
   Object.values(porHito).forEach(h=>{ const k=normClave(h.interno); (HITOS[k]=HITOS[k]||[]).push(h); });
   Object.values(HITOS).forEach(l=>l.sort((a,b)=>a.codHito.localeCompare(b.codHito,'es',{numeric:true})));
+}
+function parseCredito(txt){
+  const filas=leerTSV(txt);
+  const esClave = c => ['cod interno','cui','codigo'].includes(normClave(c));
+  const iHead=filas.findIndex(f=>f.some(esClave)); if(iHead<0){ console.warn('Crédito suplementario: no se encontró columna COD INTERNO ni CUI'); return; }
+  const head=filas[iHead].map(normClave);
+  const iCod=head.indexOf('cod interno');
+  const iCui=head.indexOf('cui')>=0 ? head.indexOf('cui') : head.indexOf('codigo');
+  CREDITO={ cod:new Set(), cui:new Set() };
+  for(let i=iHead+1;i<filas.length;i++){
+    const c=filas[i];
+    if(iCod>=0 && norm(c[iCod])) CREDITO.cod.add(normClave(c[iCod]));
+    if(iCui>=0){ const v=limpiarCodigo(c[iCui]); if(v) CREDITO.cui.add(normClave(v)); }
+  }
+}
+function tieneCredito(r){
+  return (!!r.codInterno && CREDITO.cod.has(normClave(r.codInterno))) ||
+         (!!r.codigo && CREDITO.cui.has(normClave(r.codigo)));
 }
 function tieneHitos(r){ return !!(r.codInterno && HITOS[normClave(r.codInterno)]); }
 
@@ -610,7 +643,9 @@ function filtrar(excluir){
   const fTipo=document.getElementById('fTipo').value;
   const fVicem=document.getElementById('fVicem').value;
   const fPrio=document.getElementById('fPrio').value;
+  const fCredito=document.getElementById('fCredito').value;
   return DATA.filter(r=>{
+    if(excluir!=='credito' && fCredito && r.credito!==fCredito) return false;
     if(excluir!=='vicem'   && fVicem && r.vicem!==fVicem) return false;
     if(excluir!=='prio'    && fPrio && r.prio!==fPrio) return false;
     if(excluir!=='nombre'  && fNombre && !normClave(r.nombre).includes(fNombre)) return false;
@@ -632,6 +667,7 @@ function recalcOpciones(){
   poblarSelect('fTipo',    uniqSort(filtrar('tipo').map(r=>r.tipoInfra)));
   poblarSelect('fVicem',   uniqSort(filtrar('vicem').map(r=>r.vicem)));
   poblarSelect('fPrio',    uniqSort(filtrar('prio').map(r=>r.prio)));
+  poblarSelect('fCredito', uniqSort(filtrar('credito').map(r=>r.credito)));
   poblarDatalist('fNombreList', uniqSort(filtrar('nombre').map(r=>r.nombre)));
   poblarDatalist('fCodigoList', uniqSort(filtrar('codigo').map(r=>r.codigo)));
   for(const k of Object.keys(MS)) renderMultiLista(k, uniqSort(filtrar(k).flatMap(MS[k].obtener)));
@@ -718,7 +754,7 @@ function limpiarOtros(){
 }
 
 function limpiarFiltros(){
-  ['fVicem','fNombre','fCodigo','fProySer','fPrio','fFinan','fTipo'].forEach(id=>document.getElementById(id).value='');
+  ['fVicem','fNombre','fCodigo','fProySer','fPrio','fFinan','fCredito','fTipo'].forEach(id=>document.getElementById(id).value='');
   Object.values(MS).forEach(cfg=>cfg.sel.clear());
   limpiarBusquedas();
   onFiltro();
@@ -831,6 +867,7 @@ function resumenFiltros(){
   const ps=document.getElementById('fProySer').value; if(ps) p.push('Tipo: '+ps);
   const pr=document.getElementById('fPrio').value; if(pr) p.push('Hoja de Ruta: '+pr);
   const f=document.getElementById('fFinan').value; if(f) p.push('Financ. 2026: '+f);
+  const cs=document.getElementById('fCredito').value; if(cs) p.push('Crédito suplementario: '+cs);
   if(MS.depto.sel.size)     p.push('Área: '+[...MS.depto.sel].join(', '));
   const t=document.getElementById('fTipo').value; if(t) p.push('Infraestructura: '+t);
   if(MS.modalidad.sel.size) p.push('Modalidad: '+[...MS.modalidad.sel].join(', '));
@@ -843,7 +880,7 @@ function exportarXLSX(){
   if(typeof XLSX==='undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
   const filas=filtrar();
   if(!filas.length){ alert('No hay intervenciones para exportar con los filtros actuales.'); return; }
-  const headers=['Corte','Viceministerio','Hoja de Ruta','COD INTERNO','Nombre de la intervención','Área de influencia','Tipo de Código','Código','Proyecto / Servicio','Tipo de Infraestructura','Entidad Reportante','Tipo de Órgano ejecutor','Monto de la intervención S/','Beneficiarios','Modalidad de ejecución','Fase','Financiamiento 2026','Estado Situacional'];
+  const headers=['Corte','Viceministerio','Hoja de Ruta','COD INTERNO','Nombre de la intervención','Área de influencia','Tipo de Código','Código','Proyecto / Servicio','Tipo de Infraestructura','Entidad Reportante','Tipo de Órgano ejecutor','Monto de la intervención S/','Beneficiarios','Modalidad de ejecución','Fase','Financiamiento 2026','Crédito suplementario','Estado Situacional'];
   const nc=headers.length;
   const rows=[
     ['Intervenciones MTC al '+(ULTIMO_CORTE||'—')].concat(Array(nc-1).fill('')),
@@ -851,10 +888,10 @@ function exportarXLSX(){
     headers
   ];
   filas.forEach(r=>rows.push([r.corte,r.vicem,r.prio,r.codInterno,r.nombre,r.areaTxt,r.tipoCodigo,r.codigo,r.proySer,r.tipoInfra,r.entidad,r.tipoOrgano,
-    isNaN(r.monto)?'':r.monto, isNaN(r.benef)?(textoBenef(r)):r.benef, r.modalidad,r.fase,r.finan,r.situacional]));
+    isNaN(r.monto)?'':r.monto, isNaN(r.benef)?(textoBenef(r)):r.benef, r.modalidad,r.fase,r.finan,r.credito,r.situacional]));
   const ws=XLSX.utils.aoa_to_sheet(rows);
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:nc-1}},{s:{r:1,c:0},e:{r:1,c:nc-1}}];
-  ws['!cols']=[12,12,11,14,50,20,10,12,12,16,12,12,16,13,20,24,12,70].map(w=>({wch:w}));
+  ws['!cols']=[12,12,11,14,50,20,10,12,12,16,12,12,16,13,20,24,12,12,70].map(w=>({wch:w}));
   ws['A1'].s={ font:{bold:true,color:{rgb:'C8102E'},sz:13} };
   ws['A2'].s={ font:{italic:true,color:{rgb:'444444'},sz:9}, alignment:{wrapText:true} };
   const estHead={ font:{bold:true,color:{rgb:'FFFFFF'},sz:10}, fill:{fgColor:{rgb:'0055A5'}}, alignment:{horizontal:'center',vertical:'center',wrapText:true} };
@@ -885,6 +922,7 @@ function filtrosNarrativos(){
   if(v('fCodigo')) p.push('código que contiene "'+v('fCodigo')+'"');
   const pr=v('fPrio'); if(pr) p.push(pr==='SI'?'en Hoja de Ruta':'fuera de Hoja de Ruta');
   const f=v('fFinan'); if(f) p.push(f.startsWith('SI')?'con financiamiento 2026':f==='NO'?'sin financiamiento 2026':'financiamiento 2026: '+f);
+  const cs=v('fCredito'); if(cs) p.push(cs==='SI'?'con crédito suplementario':'sin crédito suplementario');
   if(MS.modalidad.sel.size) p.push('modalidad '+listaY([...MS.modalidad.sel]));
   if(MS.fase.sel.size) p.push('fase '+listaY([...MS.fase.sel]));
   if(v('fTipo')) p.push('infraestructura '+v('fTipo'));
