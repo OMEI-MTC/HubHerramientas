@@ -411,6 +411,35 @@
   .toggle-prio:disabled { opacity: .5; cursor: wait; }
   /* toggle en modo consulta (vista usuario): visible pero no interactivo */
   span.toggle-prio.deshab { cursor: default; opacity: .55; }
+  /* Filtro tipo interruptor (Cartera Priorizada): misma caja que los demás filtros
+     y mismo interruptor que la columna Priorización */
+  .filtro-group .filtro-switch {
+    display: flex; align-items: center; gap: 10px; width: 100%; margin-bottom: 0;
+    font-weight: 500; font-size: 13px;
+    padding: 8px 11px; border: 1px solid var(--gris-borde); border-radius: 8px;
+    background: var(--blanco); cursor: pointer; user-select: none;
+    color: var(--texto); line-height: 1.3; transition: background .2s, border-color .2s;
+  }
+  .filtro-group .filtro-switch input {
+    position: absolute; opacity: 0; width: 0; height: 0; padding: 0; border: 0; pointer-events: none;
+  }
+  .filtro-switch .sw {
+    flex: 0 0 auto; width: 34px; height: 19px; border-radius: 10px;
+    background: #cfd6e0; position: relative; transition: background .2s;
+  }
+  .filtro-switch .sw::after {
+    content: ''; position: absolute; top: 2.5px; left: 3px;
+    width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: left .2s;
+  }
+  .filtro-switch input:checked + .sw { background: var(--verde); }
+  .filtro-switch input:checked + .sw::after { left: 17px; }
+  .filtro-switch input:focus-visible + .sw { outline: 2px solid var(--azul); outline-offset: 2px; }
+  .filtro-group .filtro-switch.activo { border-color: var(--verde); background: var(--verde-bg); }
+  .filtro-switch small { color: var(--gris-texto); font-size: 11px; }
+  /* En edición, validación y OGAME ya se trabaja por periodicidad: el filtro sería redundante */
+  .card.modo-edicion #f-cartera-group,
+  .card.modo-validacion #f-cartera-group,
+  .card.modo-ogame #f-cartera-group { display: none; }
 
   /* fila hito */
   .fila-hito td {
@@ -815,8 +844,15 @@
         <!-- GRUPO 2: INTERVENCIONES -->
         <div style="background:#FFFBF0; border-radius:10px; padding:14px 16px;">
           <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#D97706; margin-bottom:12px;">Intervenciones / Políticas</div>
+          <div class="filtro-group" id="f-cartera-group"><label>Filtrar por cartera</label>
+            <label class="filtro-switch" id="f-cartera-caja">
+              <input type="checkbox" id="f-cartera" onchange="document.getElementById('f-cartera-caja').classList.toggle('activo', this.checked); aplicarFiltros()">
+              <span class="sw" aria-hidden="true"></span>
+              <span>Cartera Priorizada <small>(semanal)</small></span>
+            </label>
+          </div>
           <div class="filtro-group">
-            <label>Priorizadas</label>
+            <label>Incluida en</label>
             <div class="meses-dropdown" id="priorizadas-panel">
               <button type="button" class="meses-btn" onclick="abrirPriorizadasDropdown(event)">
                 <span id="priorizadas-btn-label">Todas</span>
@@ -1274,7 +1310,11 @@ async function cargarDatos() {
         director:        f['DIRECTOR(A)'] || '',
         resumenGrupo:    f['Grupo'] || '',         // agrupación del resumen por Grupo
         cui:             f['CUI'] || '',
-        priorizadas:     (f['Priorizadas'] || '').split(';').map(s => s.trim()).filter(Boolean),
+        // "Incluida en" (antes "Priorizadas"): compromisos o discursos donde se menciona la
+        // intervención, separados por ";". Se acepta el nombre anterior de la columna y se
+        // ignora el valor antiguo "No priorizada" (vacío = "No aplica").
+        priorizadas:     (f['Incluida en'] ?? f['Priorizadas'] ?? '').split(';').map(s => s.trim())
+                           .filter(t => t && t.toLowerCase() !== 'no priorizada'),
         tipo:            f['Tipo'] || 'Intervenciones',
         periodicidad:    (f['Periodicidad'] || '').trim(),
         respOgame:       (f['Responsable OGAME'] || '').trim(),
@@ -2133,6 +2173,11 @@ function aplicarFiltros() {
     if (vBuscar && !i.nombre.toLowerCase().includes(vBuscar)) return false;
     if (vArea && !(i.area || '').toLowerCase().includes(vArea)) return false;
     if (vCui && !(i.cui || '').toLowerCase().includes(vCui)) return false;
+    // Filtro Cartera Priorizada: intervenciones con periodicidad SEMANAL en Maestro_interv
+    // (solo en vista pública y priorización; en los demás modos ya se filtra por periodicidad)
+    if (!esEdicion() && !esValidacion() && !esOgame() &&
+        document.getElementById('f-cartera')?.checked &&
+        (i.periodicidad || '').trim().toUpperCase() !== 'SEMANAL') return false;
     // Filtro Tipo de registro
     const vTipo = document.getElementById('f-tipo')?.value;
     if (vTipo && (i.tipo || 'Intervenciones') !== vTipo) return false;
@@ -2156,6 +2201,8 @@ function limpiarFiltros() {
   });
   const fHito = document.getElementById('f-hito'); if(fHito) fHito.value = '';
   const fUltimo = document.getElementById('f-ultimo'); if(fUltimo) fUltimo.checked = false;
+  const fCartera = document.getElementById('f-cartera'); if(fCartera) fCartera.checked = false;
+  document.getElementById('f-cartera-caja')?.classList.remove('activo');
   mesesSeleccion.clear();
   priorizadasSeleccion.clear();
   organoSeleccion.clear();
@@ -3189,9 +3236,11 @@ function resumenFiltrosActivos() {
   if (val('f-grupo'))  partes.push('Grupo: ' + val('f-grupo'));
   if (val('f-vice'))   partes.push('Órgano: ' + val('f-vice'));
   if (organoSeleccion.size > 0) partes.push('Unidad: ' + [...organoSeleccion].join(', '));
+  if (!esEdicion() && !esValidacion() && !esOgame() && document.getElementById('f-cartera')?.checked)
+    partes.push('Cartera Priorizada (semanal)');
   if (priorizadasSeleccion.size > 0) {
     const tags = [...priorizadasSeleccion].map(p => p === '__noaplica__' ? 'No aplica' : p).join(', ');
-    partes.push('Priorizadas: ' + tags);
+    partes.push('Incluida en: ' + tags);
   }
   if (val('f-area'))   partes.push('Área de influencia: "' + val('f-area') + '"');
   if (val('f-cui'))    partes.push('CUI: "' + val('f-cui') + '"');
@@ -3295,7 +3344,7 @@ function exportarPDF() {
 function exportarExcel() {
   // Columnas de visualización (se retiraron Código, CODHITOS, Priorizado,
   // Grupo, Avance físico e Hito final por ser internas/técnicas).
-  const encabezados = ['Fecha de registro', 'Discurso 28 julio', 'Viceministerio',
+  const encabezados = ['Fecha de registro', 'Incluida en', 'Viceministerio',
     'Responsable', 'Área de influencia', 'CUI', 'Línea de Intervención',
     'Intervención Estratégica', 'Relevancia sectorial', 'Estado situacional',
     'Hito(s) clave(s)', 'Fecha de cumplimiento', 'Estado de cumplimiento'];
