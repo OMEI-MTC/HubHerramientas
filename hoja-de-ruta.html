@@ -109,6 +109,13 @@
   /* columna col-val-edicion: solo en edición */
   .card.modo-edicion thead .col-val-edicion { display: table-cell !important; }
   .card.modo-edicion tbody .col-val-edicion { display: table-cell !important; }
+  /* vista OGAME: igual que validación (filtro y columna de validación visibles;
+     Responsable y Priorización ocultas para que encabezados y celdas coincidan) */
+  .card.modo-ogame .col-prio,
+  .card.modo-ogame .col-responsable { display: none; }
+  .card.modo-ogame .col-val-filtro { display: block !important; }
+  .card.modo-ogame thead .col-val-filtro,
+  .card.modo-ogame tbody .col-val-filtro { display: table-cell !important; }
 
 
   /* ── PAGE TITLE ── */
@@ -1056,7 +1063,7 @@
         <div class="modal-seccion-titulo">Validación</div>
         <div class="validar-wrap">
           <input type="checkbox" id="m-validado">
-          <label for="m-validado">Validar este registro y publicarlo en la vista principal</label>
+          <label for="m-validado" id="m-validado-label">Validar este registro y publicarlo en la vista principal</label>
         </div>
       </div>
 
@@ -1692,8 +1699,29 @@ function aplicarModo() {
 let vistaInterv = estadoInterv;
 let vistaHitos  = estadoHitos;
 
+// El filtro "Estado de validación" cambia sus opciones en la vista OGAME
+function ajustarFiltroValidacion() {
+  const sel = document.getElementById('f-estado-val');
+  if (!sel) return;
+  const modo = esOgame() ? 'ogame' : 'normal';
+  if (sel.dataset.modo === modo) return;
+  sel.dataset.modo = modo;
+  sel.innerHTML = modo === 'ogame'
+    ? `<option value="">Todos</option>
+       <option value="pendiente">🟡 Pendiente OGAME</option>
+       <option value="espera">⏳ Espera validación del órgano</option>
+       <option value="validado">✓ OGAME validado</option>
+       <option value="publicado">🟢 Publicado</option>`
+    : `<option value="">Todos</option>
+       <option value="Pendiente">🟡 Pendiente</option>
+       <option value="Observado">🔴 Observado</option>
+       <option value="Validado">🟢 Validado</option>`;
+}
+
 function activarVistaSegunModo() {
-  if (esEdicion() || esValidacion()) {
+  // Edición, validación y OGAME trabajan sobre lo registrado (Prev); la vista pública, sobre lo publicado
+  ajustarFiltroValidacion();
+  if (esEdicion() || esValidacion() || esOgame()) {
     vistaInterv = prevInterv;
     vistaHitos  = prevHitos;
   } else {
@@ -2087,6 +2115,11 @@ function aplicarFiltros() {
         : tags.some(p => priorizadasSeleccion.has(p));
       if (!ok) return false;
     }
+    // Filtro Estado de validación en modo OGAME: usa los estados de la vista OGAME
+    if (esOgame()) {
+      const vVal = document.getElementById('f-estado-val')?.value;
+      if (vVal && estadoOgame(i.codigo, vistaInterv[i.codigo] || {}) !== vVal) return false;
+    }
     // Filtro Estado de validación (en modo validación y edición)
     if (esValidacion() || esEdicion()) {
       const vVal = document.getElementById('f-estado-val')?.value;
@@ -2242,25 +2275,30 @@ function renderTabla() {
       : '';
 
     // celda OGAME: checkbox de validación OGAME (solo en modo ogame)
+    const estOgame = esOgame() ? estadoOgame(interv.codigo, est) : '';
     const colOgame = esOgame()
       ? `<td class="col-val-filtro" rowspan="${nHitos}" style="display:none;text-align:center;vertical-align:top;padding:10px 8px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">
           ${tieneRegistro
             ? `<div class="val-selector">
                  <div style="margin-bottom:6px;font-size:11px;color:var(--gris-texto)">Vice: <strong style="color:${estadoValActual==='Validado'?'var(--verde)':estadoValActual==='Observado'?'var(--rojo)':'#8a6200'}">${estadoValActual==='Validado'?'🟢':estadoValActual==='Observado'?'🔴':'🟡'} ${estadoValActual}</strong></div>
                  ${obsActual ? `<div class="val-obs-texto" style="margin-bottom:8px">${esc(obsActual)}</div>` : ''}
-                 <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:700;color:${validadoOgame?'var(--verde)':'#8a6200'}">
+                 ${(estOgame === 'validado' || estOgame === 'pendiente')
+                   ? `<label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:700;color:${validadoOgame?'var(--verde)':'#8a6200'}">
                    <input type="checkbox" ${validadoOgame?'checked':''}
                           onchange="toggleValidacionOgame('${esc(interv.codigo)}', this)"
                           style="width:15px;height:15px;accent-color:var(--verde);cursor:pointer">
                    ${validadoOgame ? '✓ OGAME validado' : 'Pendiente OGAME'}
-                 </label>
+                 </label>`
+                   : estOgame === 'publicado'
+                     ? `<span style="font-size:12px;font-weight:700;color:var(--verde)">Publicado</span>`
+                     : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Espera validación del órgano</span>`}
                </div>`
             : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro</span>`}
         </td>`
       : '';
 
     const esPendienteVal  = tieneRegistro && estadoValActual !== 'Validado';
-    const esPendienteOgame= tieneRegistro && !validadoOgame;
+    const esPendienteOgame= estOgame === 'pendiente';
     const esPendiente     = (esValidacion() && esPendienteVal) || (esOgame() && esPendienteOgame);
 
     html += `
@@ -2391,13 +2429,27 @@ function abrirModal(codigo) {
   // Sección de validación: visible solo en modo validación
   const secVal = document.getElementById('seccion-validacion');
   const chkVal = document.getElementById('m-validado');
+  const lblVal = document.getElementById('m-validado-label');
+  chkVal.disabled = false;
   if (esValidacion()) {
     secVal.style.display = 'block';
     const est0 = vistaInterv[codigo] || {};
     chkVal.checked = est0.validado === true;
+    lblVal.textContent = 'Validar este registro y publicarlo en la vista principal';
+  } else if (esOgame()) {
+    // OGAME: visto bueno final. Solo habilitado si el órgano ya validó.
+    secVal.style.display = 'block';
+    const est0 = vistaInterv[codigo] || {};
+    const st = estadoOgame(codigo, est0);
+    chkVal.checked = est0.validadoOgame === true;
+    chkVal.disabled = (st === 'sin' || st === 'espera');
+    lblVal.textContent = chkVal.disabled
+      ? 'Visto bueno OGAME (disponible cuando el órgano valide este registro)'
+      : 'Visto bueno OGAME: validar y publicar en la vista principal';
   } else {
     secVal.style.display = 'none';
     chkVal.checked = false;
+    lblVal.textContent = 'Validar este registro y publicarlo en la vista principal';
   }
 
   const est = vistaInterv[codigo] || {};
@@ -2630,6 +2682,23 @@ function guardarObservacion() {
 }
 
 // Validación OGAME directa desde la tabla
+// Estado de una intervención para la vista OGAME:
+//   'sin'       → no tiene registro
+//   'validado'  → OGAME ya dio el visto bueno (Prev col I = Sí)
+//   'espera'    → el órgano (Vice/SG/Despacho) aún no valida: no le toca a OGAME
+//   'publicado' → lo que está en Prev ya está en la vista principal (mismo corte y mismo
+//                 estado situacional): no requiere acción
+//   'pendiente' → validado por el órgano, no publicado y sin visto bueno OGAME
+function estadoOgame(codigo, est) {
+  if (!est || !est.fechaReg) return 'sin';
+  if (est.validadoOgame) return 'validado';
+  if ((est.estadoVal || '') !== 'Validado') return 'espera';
+  const pub = estadoInterv[codigo];
+  const t = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+  if (pub && t(pub.fechaReg) === t(est.fechaReg) && t(pub.estado) === t(est.estado)) return 'publicado';
+  return 'pendiente';
+}
+
 async function toggleValidacionOgame(codigo, chk) {
   const nuevoValor = chk.checked;
   chk.disabled = true;
@@ -2821,7 +2890,8 @@ async function guardarRegistro() {
         validado:        validado,
         estadoVal:       estadoValNuevo,
         observacion:     prevInterv[intervModal.codigo]?.observacion || '',
-        validadoOgame:   prevInterv[intervModal.codigo]?.validadoOgame || false
+        validadoOgame:   esOgame() ? payload.validadoOgame === 'Sí'
+                                   : (prevInterv[intervModal.codigo]?.validadoOgame || false)
       };
       // Actualizar tanto vistaInterv como prevInterv para que el puntero no pierda el cambio
       prevInterv[intervModal.codigo] = nuevoEst;
@@ -2841,7 +2911,7 @@ async function guardarRegistro() {
         };
         prevHitos[h.codhito]  = hitEst;
         vistaHitos[h.codhito] = hitEst;
-        if (validado) estadoHitos[h.codhito] = Object.assign({}, hitEst);
+        if (validado || (esOgame() && payload.validadoOgame === 'Sí')) estadoHitos[h.codhito] = Object.assign({}, hitEst);
       });
 
       // El lápiz ya guardó estado y observación de esta intervención
