@@ -86,6 +86,8 @@
   .btn-am:hover { background:#A50D26; }
   .btn-am.excel { background:var(--blue); }
   .btn-am.excel:hover { background:var(--blue-dk); }
+  .btn-am.pdf { background:#3B4452; }
+  .btn-am.pdf:hover { background:#262D38; }
   .am-estado { padding-left:68px; }
   .btn-am:disabled { background:#C9CFD8; cursor:not-allowed; }
   .am-estado { font-size:12.5px; color:var(--text-2); width:100%; min-height:0; }
@@ -148,7 +150,7 @@
         </div>
         <div class="am-texto">
           <div class="am-titulo">Descargas por departamento</div>
-          <div class="am-desc">Elige un departamento y descarga su Ayuda Memoria en Word, con mensajes clave y análisis por sección, o el listado de intervenciones vigentes del MTC en Excel.</div>
+          <div class="am-desc">Elige un departamento y descarga su Ayuda Memoria en Word, con mensajes clave y análisis por sección, o el listado de intervenciones vigentes del MTC en Excel o en PDF listo para imprimir.</div>
         </div>
         <div class="am-controles">
           <select id="amDep" disabled aria-label="Departamento"><option>Cargando datos…</option></select>
@@ -160,6 +162,10 @@
           <button class="btn-am excel" id="lsBtn" disabled>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Listado de intervenciones (Excel)
+          </button>
+          <button class="btn-am pdf" id="pdfBtn" disabled>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Listado de intervenciones (PDF)
           </button>
         </div>
         <div class="am-estado" id="amEstado"></div>
@@ -199,6 +205,8 @@ ajustarVisor();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/docx@9.6.1/dist/index.iife.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <script>
 /* =====================================================================
    GENERADOR DE AYUDA MEMORIA DEPARTAMENTAL (Word)
@@ -762,8 +770,8 @@ async function amCargar() {
     amMsg('No se pudieron cargar los datos de la Ayuda Memoria.', true);
   }
 }
-const lsBtn = document.getElementById('lsBtn');
-amSel.addEventListener('change', () => { amBtn.disabled = lsBtn.disabled = !amSel.value; amMsg(''); });
+const lsBtn = document.getElementById('lsBtn'), pdfBtn = document.getElementById('pdfBtn');
+amSel.addEventListener('change', () => { amBtn.disabled = lsBtn.disabled = pdfBtn.disabled = !amSel.value; amMsg(''); });
 amBtn.addEventListener('click', async () => {
   const dep = amSel.value; if (!dep) return;
   if (typeof docx === 'undefined') { amMsg('La librería de Word aún no carga; intenta en unos segundos.', true); return; }
@@ -824,11 +832,8 @@ async function lsDatos() {
   return LS_CACHE;
 }
 
-lsBtn.addEventListener('click', async () => {
-  const dep = amSel.value; if (!dep) return;
-  if (typeof ExcelJS === 'undefined') { amMsg('La librería de Excel aún no carga; intenta en unos segundos.', true); return; }
-  lsBtn.disabled = true; amMsg('Generando listado…');
-  try {
+// Intervenciones del departamento (más las de alcance nacional, al final). La usan el Excel y el PDF.
+async function lsSeleccion(dep) {
     const { enc, datos, corteTxt } = await lsDatos();
     const idx = nombre => enc.indexOf(lsClave(nombre));
     const iArea = idx('Área de influencia'), iDep = idx('Departamento');
@@ -839,10 +844,24 @@ lsBtn.addEventListener('click', async () => {
       const areas = String(f[iArea] || '').split(',').map(lsClave);
       return areas.includes(clave) || areas.includes('NACIONAL');
     });
-    if (!sel.length) { amMsg('No hay intervenciones registradas para ' + dep + '.', true); return; }
     // Las intervenciones de alcance nacional van al final (se mantiene el orden de la base en cada grupo)
     const esNacional = f => String(f[iArea] || '').split(',').map(lsClave).includes('NACIONAL');
     sel.sort((a, b) => esNacional(a) - esNacional(b));
+    return { sel, corteTxt, idx };
+}
+// Valor de una celda del listado: número (columnas numéricas) o texto
+function lsValor(f, nombre, idx) {
+  const k = idx(nombre); const v = k >= 0 ? String(f[k] ?? '').trim() : '';
+  return LS_NUMERICAS.includes(nombre) ? amNum(v) : v;
+}
+
+lsBtn.addEventListener('click', async () => {
+  const dep = amSel.value; if (!dep) return;
+  if (typeof ExcelJS === 'undefined') { amMsg('La librería de Excel aún no carga; intenta en unos segundos.', true); return; }
+  lsBtn.disabled = true; amMsg('Generando listado…');
+  try {
+    const { sel, corteTxt, idx } = await lsSeleccion(dep);
+    if (!sel.length) { amMsg('No hay intervenciones registradas para ' + dep + '.', true); return; }
 
     const wb = new ExcelJS.Workbook(); wb.creator = 'OMEI – OGAME – MTC';
     const ws = wb.addWorksheet('Intervenciones', { views: [{ state: 'frozen', ySplit: 4, showGridLines: false }] });
@@ -880,6 +899,16 @@ lsBtn.addEventListener('click', async () => {
       });
     });
     ws.autoFilter = { from: 'A4', to: ultima + '4' };
+    // Configuración de impresión: A4 horizontal, todo el ancho en una página, encabezado repetido
+    ws.pageSetup = {
+      paperSize: 9, orientation: 'landscape',
+      fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+      horizontalCentered: true,
+      margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.6, header: 0.2, footer: 0.3 },
+      printTitlesRow: '4:4',
+      printArea: 'A1:' + ultima + (4 + sel.length)
+    };
+    ws.headerFooter = { oddFooter: '&L&8Carpeta Departamental – ' + dep + '&R&8Página &P de &N' };
     const buf = await wb.xlsx.writeBuffer();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
@@ -890,6 +919,63 @@ lsBtn.addEventListener('click', async () => {
   } catch (e) {
     console.error(e); amMsg('Error al generar el listado: ' + e.message, true);
   } finally { lsBtn.disabled = false; }
+});
+
+// Listado en PDF, listo para imprimir (A4 horizontal, mismo contenido que el Excel)
+pdfBtn.addEventListener('click', async () => {
+  const dep = amSel.value; if (!dep) return;
+  if (!window.jspdf || !window.jspdf.jsPDF) { amMsg('La librería de PDF aún no carga; intenta en unos segundos.', true); return; }
+  pdfBtn.disabled = true; amMsg('Generando PDF…');
+  try {
+    const { sel, corteTxt, idx } = await lsSeleccion(dep);
+    if (!sel.length) { amMsg('No hay intervenciones registradas para ' + dep + '.', true); return; }
+    const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    if (typeof doc.autoTable !== 'function') { amMsg('La librería de tablas PDF aún no carga; intenta en unos segundos.', true); return; }
+    const anchoPag = doc.internal.pageSize.getWidth(), mx = 8;
+    // Ancho de cada columna proporcional al que usa el Excel
+    const totalW = LS_COLUMNAS.reduce((s, [, w]) => s + w, 0), util = anchoPag - 2 * mx;
+    const columnStyles = {};
+    LS_COLUMNAS.forEach(([nombre, w], j) => {
+      columnStyles[j] = { cellWidth: util * w / totalW };
+      if (LS_NUMERICAS.includes(nombre)) columnStyles[j].halign = 'right';
+    });
+    const fmtMiles = n => (n === null || n === undefined || n === '' || isNaN(n)) ? '' : Number(n).toLocaleString('es-PE', { maximumFractionDigits: 0 });
+    const cuerpo = sel.map(f => LS_COLUMNAS.map(([nombre]) => {
+      const v = lsValor(f, nombre, idx);
+      return LS_NUMERICAS.includes(nombre) ? fmtMiles(v) : v;
+    }));
+    // Encabezado del documento
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(0, 85, 165);
+    doc.text('Carpeta Departamental – ' + dep, mx, 13);
+    doc.setFontSize(10.5); doc.setTextColor(200, 16, 46);
+    doc.text('Intervenciones Vigentes del Gobierno Nacional', mx, 19);
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(90, 100, 114);
+    doc.text((corteTxt || '') + (corteTxt ? '  |  ' : '') + sel.length + ' intervenciones (incluye las de alcance nacional)', mx, 24);
+    doc.autoTable({
+      head: [LS_COLUMNAS.map(([nombre]) => nombre)],
+      body: cuerpo,
+      startY: 27,
+      margin: { left: mx, right: mx, top: 12, bottom: 12 },
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 6.5, cellPadding: 1.2, valign: 'top', overflow: 'linebreak', lineColor: [213, 221, 234], lineWidth: 0.1, textColor: [30, 35, 45] },
+      headStyles: { fillColor: [0, 85, 165], textColor: 255, fontStyle: 'bold', halign: 'center', valign: 'middle', fontSize: 6.8 },
+      alternateRowStyles: { fillColor: [246, 248, 252] },
+      columnStyles,
+      showHead: 'everyPage',
+      rowPageBreak: 'auto'
+    });
+    // Pie de página con numeración
+    const n = doc.internal.getNumberOfPages(), altoPag = doc.internal.pageSize.getHeight();
+    for (let i = 1; i <= n; i++) {
+      doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(120, 128, 140);
+      doc.text('Carpeta Departamental – ' + dep, mx, altoPag - 6);
+      doc.text('Página ' + i + ' de ' + n, anchoPag - mx, altoPag - 6, { align: 'right' });
+    }
+    doc.save('Intervenciones_' + dep.replace(/\s+/g, '_') + '.pdf');
+    amMsg('PDF descargado: ' + sel.length + ' intervenciones.');
+  } catch (e) {
+    console.error(e); amMsg('Error al generar el PDF: ' + e.message, true);
+  } finally { pdfBtn.disabled = !amSel.value; }
 });
 </script>
 </body>
