@@ -411,6 +411,8 @@
   .toggle-prio:disabled { opacity: .5; cursor: wait; }
   /* toggle en modo consulta (vista usuario): visible pero no interactivo */
   span.toggle-prio.deshab { cursor: default; opacity: .55; }
+  /* Filtros de texto como type="search": misma apariencia que el resto de campos */
+  .filtro-group input[type="search"] { -webkit-appearance: none; appearance: none; }
   /* Filtro tipo interruptor (Cartera Priorizada): misma caja que los demás filtros
      y mismo interruptor que la columna Priorización */
   .filtro-group .filtro-switch {
@@ -861,8 +863,8 @@
               <div class="meses-lista" id="priorizadas-lista"></div>
             </div>
           </div>
-          <div class="filtro-group"><label>Intervención / Política</label><input type="text" id="f-buscar" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
-          <div class="filtro-group"><label>CUI</label><input type="text" id="f-cui" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
+          <div class="filtro-group"><label>Intervención / Política</label><input type="search" id="f-buscar" name="filtro-buscar" autocomplete="off" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
+          <div class="filtro-group"><label>CUI</label><input type="search" id="f-cui" name="filtro-cui" autocomplete="off" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
           <div class="filtro-group" style="margin-bottom:0"><label>Tipo de registro</label>
             <select id="f-tipo" onchange="aplicarFiltros()">
               <option value="">Todos</option>
@@ -873,7 +875,7 @@
         <!-- GRUPO 3: OTRAS CATEGORÍAS -->
         <div style="background:#F0FBF4; border-radius:10px; padding:14px 16px;">
           <div style="font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#1D9E75; margin-bottom:12px;">Otras categorías</div>
-          <div class="filtro-group"><label>Área de influencia</label><input type="text" id="f-area" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
+          <div class="filtro-group"><label>Área de influencia</label><input type="search" id="f-area" name="filtro-area" autocomplete="off" placeholder="Escribe para buscar…" oninput="aplicarFiltros()"></div>
           <div class="filtro-group"><label>Estado de cumplimiento</label>
             <div class="meses-dropdown" id="estadocumpl-panel">
               <button type="button" class="meses-btn" onclick="abrirEstadoCumplDropdown(event)">
@@ -1032,7 +1034,8 @@
       <div class="form-group">
         <label>Contraseña</label>
         <div style="position:relative">
-          <input type="password" id="login-password" placeholder="Contraseña de tu usuario"
+          <input type="text" name="username" autocomplete="username" tabindex="-1" aria-hidden="true" class="login-usuario-ac" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+          <input type="password" id="login-password" autocomplete="current-password" placeholder="Contraseña de tu usuario"
                  style="padding-right:40px" onkeydown="if(event.key==='Enter')validarLogin()">
           <button type="button" id="btn-ojo" onclick="toggleVerPassword()" title="Mostrar contraseña"
                   style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gris-texto);padding:4px;display:flex">
@@ -3559,5 +3562,34 @@ cargarDatos();
   </div>
 </div>
 
+<script>
+// Defensa contra el autocompletado del navegador: el gestor de contraseñas puede escribir
+// un usuario guardado (p. ej. "Despacho-1") en un filtro de texto. Si al cargar la página un
+// filtro tiene un valor que el usuario no tecleó ni pegó, se limpia y se vuelven a aplicar los filtros.
+(function () {
+  const ids = ['f-buscar', 'f-cui', 'f-area'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const marcar = () => { el.dataset.tocado = '1'; };
+    el.addEventListener('keydown', marcar);
+    el.addEventListener('paste', marcar);
+    el.addEventListener('drop', marcar);
+  });
+  function limpiarAutorrelleno() {
+    let cambio = false;
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.value && !el.dataset.tocado) { el.value = ''; cambio = true; }
+    });
+    if (cambio && typeof aplicarFiltros === 'function') { try { aplicarFiltros(); } catch (e) {} }
+  }
+  window.addEventListener('load', () => {
+    setTimeout(limpiarAutorrelleno, 300);
+    setTimeout(limpiarAutorrelleno, 1500);
+  });
+  window.addEventListener('pageshow', e => { if (e.persisted) limpiarAutorrelleno(); });
+})();
+</script>
 </body>
 </html>
