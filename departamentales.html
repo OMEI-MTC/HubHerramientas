@@ -932,20 +932,27 @@ pdfBtn.addEventListener('click', async () => {
     const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     if (typeof doc.autoTable !== 'function') { amMsg('La librería de tablas PDF aún no carga; intenta en unos segundos.', true); return; }
     const anchoPag = doc.internal.pageSize.getWidth(), mx = 8;
-    // Anchos propios del PDF (en mm, suman el ancho útil de A4 horizontal): dan más espacio
-    // a las columnas con palabras largas (Fase, Modalidad) para que no se corten a la mitad.
+    // Anchos propios del PDF (en mm; suman 281, el ancho útil de A4 horizontal).
+    // Las columnas cortas tienen el mínimo para que su palabra más larga entre sin cortarse
+    // (medido con la fuente del PDF); todo el resto va a Estado Situacional, para que las
+    // filas crezcan menos en alto y salten menos de página.
     const PDF_ANCHOS = {
-      'Nombre de la intervención': 44, 'Área de influencia': 30, 'Tipo de Código': 15, 'Código': 15,
-      'Proyecto / Servicio': 17, 'Monto de la intervención S/': 23, 'Beneficiarios': 19,
-      'Modalidad de ejecución': 21, 'Fase (Depende de la Modalidad)': 27,
-      'Financiamiento 2026 (SI/NO)': 19, 'Estado Situacional': 51
+      'Nombre de la intervención': 44, 'Área de influencia': 30, 'Tipo de Código': 15.5, 'Código': 15.5,
+      'Proyecto / Servicio': 16, 'Monto de la intervención S/': 17.5, 'Beneficiarios': 16.5,
+      'Modalidad de ejecución': 18, 'Fase (Depende de la Modalidad)': 23,
+      'Financiamiento 2026 (SI/NO)': 18.5, 'Estado Situacional': 66.5
+    };
+    // Letra más pequeña en columnas con palabras o cifras largas y poco ancho
+    const PDF_LETRA = {
+      'Fase (Depende de la Modalidad)': 6, 'Tipo de Código': 6, 'Código': 6,
+      'Monto de la intervención S/': 6, 'Beneficiarios': 6
     };
     const totalW = LS_COLUMNAS.reduce((s, [n, w]) => s + (PDF_ANCHOS[n] || w), 0), util = anchoPag - 2 * mx;
     const columnStyles = {};
     LS_COLUMNAS.forEach(([nombre, w], j) => {
       columnStyles[j] = { cellWidth: util * (PDF_ANCHOS[nombre] || w) / totalW };
       if (LS_NUMERICAS.includes(nombre)) columnStyles[j].halign = 'right';
-      if (nombre === 'Fase (Depende de la Modalidad)') columnStyles[j].fontSize = 6;
+      if (PDF_LETRA[nombre]) columnStyles[j].fontSize = PDF_LETRA[nombre];
     });
     const fmtMiles = n => (n === null || n === undefined || n === '' || isNaN(n)) ? '' : Number(n).toLocaleString('es-PE', { maximumFractionDigits: 0 });
     const cuerpo = sel.map(f => LS_COLUMNAS.map(([nombre]) => {
@@ -966,7 +973,7 @@ pdfBtn.addEventListener('click', async () => {
       margin: { left: mx, right: mx, top: 12, bottom: 12 },
       theme: 'grid',
       styles: { font: 'helvetica', fontSize: 6.5, cellPadding: 1.2, valign: 'top', overflow: 'linebreak', lineColor: [213, 221, 234], lineWidth: 0.1, textColor: [30, 35, 45] },
-      headStyles: { fillColor: [0, 85, 165], textColor: 255, fontStyle: 'bold', halign: 'center', valign: 'middle', fontSize: 6.3 },
+      headStyles: { fillColor: [0, 85, 165], textColor: 255, fontStyle: 'bold', halign: 'center', valign: 'middle', fontSize: 6 },
       alternateRowStyles: { fillColor: [246, 248, 252] },
       columnStyles,
       showHead: 'everyPage',
