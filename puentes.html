@@ -195,7 +195,7 @@ const TABS = {
         return (E[a.Estado] ?? 2.5) - (E[b.Estado] ?? 2.5) || (C[a['Calificación']] ?? 9) - (C[b['Calificación']] ?? 9); } }
   },
   PVD: {
-    nombre:'Red departamental y vecinal', org:'PVD', titulo:'Red vial departamental y vecinal', fuente:'Base del estado situacional de los puentes a cargo de Provías Descentralizado',
+    nombre:'Provías Descentralizado', org:'PVD', titulo:'Provías Descentralizado', fuente:'Base del estado situacional de los puentes a cargo de Provías Descentralizado',
     zona:'Región', grafico:'Puentes por región', apilar:{ campo:'Tipo', vals:[['Definitivo','#0055A5'],['Modular','#7FB2E5']] },
     kpis(rows){
       const cu = rows.filter(r => r['Situación'] === 'Culminado'), pa = rows.filter(r => ['Paralizado','Suspendido'].includes(r['Situación']));
@@ -293,12 +293,50 @@ document.addEventListener('click', e => {
 document.addEventListener('change', e => {
   if (e.target.matches('select[data-f]')){ sel[activa][e.target.dataset.f] = e.target.value; verTodo = false; dibujar(); }
 });
+// ── Descarga a Excel (mismo formato que el módulo Intervenciones MTC) ───────
+function resumenFiltros(){
+  const T = TABS[activa], s = sel[activa] || {};
+  const p = (T._filtros || []).filter(f => s[f.id] && s[f.id] !== f.opts[0]).map(f => f.lab + ': ' + s[f.id]);
+  return p.length ? 'Filtros aplicados: ' + p.join(' · ') + '.' : 'Sin filtros (información completa).';
+}
+const ANCHOS = { 'Puente':50, 'Departamento':16, 'Región':16, 'Provincia':16, 'Distrito':18, 'Concesión':26, 'Ruta':10, 'Progresiva':12,
+  'Longitud (m)':12, 'Tipo':16, 'Condición':12, 'Estado':12, 'Calificación':18, 'Responsable O&M':16, 'Latitud':12, 'Longitud':12,
+  'Tipo de vía':22, 'Tipo de inversión':22, 'Grupo':16, 'CUI':11, 'Etapa':18, 'Situación':20 };
+const NUMERICAS = ['Longitud (m)'];
 document.getElementById('btn-excel').addEventListener('click', () => {
-  if (typeof XLSX === 'undefined' || !DATOS[activa]) return;
-  const vis = filtrar(activa).map(r => { const o = { ...r }; delete o._sit; return o; });
-  const ws = XLSX.utils.json_to_sheet(vis);
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, TABS[activa].org);
-  XLSX.writeFile(wb, `Puentes_${TABS[activa].org}.xlsx`);
+  if (typeof XLSX === 'undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
+  const T = TABS[activa];
+  if (!DATOS[activa]){ alert('La información de esta pestaña no está disponible.'); return; }
+  const filas = filtrar(activa);
+  if (!filas.length){ alert('No hay puentes para exportar con los filtros actuales.'); return; }
+  const headers = Object.keys(filas[0]).filter(h => h !== '_sit');
+  const nc = headers.length, ctrl = CONTROL[activa];
+  const titulo = 'Puentes del MTC · ' + T.nombre + ' (' + T.org + ')' + (ctrl && ctrl.Cargado ? ' · información cargada el ' + ctrl.Cargado : '');
+  const rows = [
+    [titulo].concat(Array(nc - 1).fill('')),
+    [resumenFiltros()].concat(Array(nc - 1).fill('')),
+    headers
+  ];
+  filas.forEach(r => rows.push(headers.map(h => {
+    if (NUMERICAS.includes(h)){ const n = parseFloat(String(r[h]).replace(/,/g, '')); return isNaN(n) ? (r[h] || '') : n; }
+    return r[h] || '';
+  })));
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:nc-1} }, { s:{r:1,c:0}, e:{r:1,c:nc-1} }];
+  ws['!cols'] = headers.map(h => ({ wch: ANCHOS[h] || 14 }));
+  ws['A1'].s = { font:{ bold:true, color:{ rgb:'C8102E' }, sz:13 } };
+  ws['A2'].s = { font:{ italic:true, color:{ rgb:'444444' }, sz:9 }, alignment:{ wrapText:true } };
+  const estHead = { font:{ bold:true, color:{ rgb:'FFFFFF' }, sz:10 }, fill:{ fgColor:{ rgb:'0055A5' } }, alignment:{ horizontal:'center', vertical:'center', wrapText:true } };
+  const estCel = { font:{ sz:10 }, alignment:{ vertical:'top', wrapText:true } };
+  const estNum = { font:{ sz:10 }, alignment:{ vertical:'top' }, numFmt:'#,##0.0' };
+  const colNum = headers.map(h => NUMERICAS.includes(h));
+  for (let c = 0; c < nc; c++){ const ref = XLSX.utils.encode_cell({ r:2, c }); if (ws[ref]) ws[ref].s = estHead; }
+  for (let r = 3; r < rows.length; r++) for (let c = 0; c < nc; c++){
+    const ref = XLSX.utils.encode_cell({ r, c }); if (ws[ref]) ws[ref].s = colNum[c] ? estNum : estCel;
+  }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Puentes ' + T.org);
+  XLSX.writeFile(wb, 'puentes_' + T.org.toLowerCase() + '_' + new Date().toISOString().slice(0, 10) + '.xlsx');
 });
 
 (async function iniciar(){
