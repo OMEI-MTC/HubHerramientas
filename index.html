@@ -450,13 +450,13 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 <body>
 <div id="accessScreen">
   <div class="access-img-side">
-    <img src="frontismtc.jpeg" alt="Ministerio de Transportes y Comunicaciones">
+    <img src="assets/img/frontismtc.jpeg" alt="Ministerio de Transportes y Comunicaciones">
     <div class="access-img-overlay"></div>
   </div>
   <div class="access-form-side">
     <div class="access-bg-stripe"></div>
     <div class="access-card">
-      <div class="access-logo-wrap"><img src="mtc.jpg" alt="Logo MTC"></div>
+      <div class="access-logo-wrap"><img src="assets/img/mtc.jpg" alt="Logo MTC"></div>
       <div class="access-title">Hub de Herramientas · OGAME</div>
       <div class="access-sub">Oficina General de Articulación,<br>Monitoreo y Evaluación de Impacto</div>
       <div class="access-label">Usuario</div>
@@ -487,7 +487,7 @@ body { font-family:var(--sans); background:var(--bg); color:var(--text); font-si
 
   <header class="topbar">
     <div class="topbar-brand">
-      <div class="topbar-logo"><img src="mtc.jpg" alt="Logo MTC"></div>
+      <div class="topbar-logo"><img src="assets/img/mtc.jpg" alt="Logo MTC"></div>
       <div>
         <div class="topbar-name">Hub de Herramientas · OGAME</div>
         <div class="topbar-sub">Oficina General de Articulación, Monitoreo, y Evaluación de Impacto</div>
@@ -820,7 +820,7 @@ function renderCards() {
       const kpiHtml = kpis.length ? `<div class="mc-kpis">
         ${kpis.slice(0,5).map(k=>`
           <div class="mc-kpi">
-            <img class="mc-kpi-icon" src="${k.icono || kpiIcon(k.variable)}" alt="" onerror="this.style.display='none'">
+            <img class="mc-kpi-icon" src="${rutaIcono(k.icono || kpiIcon(k.variable))}" alt="" onerror="this.style.display='none'">
             <div><div class="mc-kpi-val">${fmtVal(k.valor,k.unidad)}</div><div class="mc-kpi-lbl">${k.variable}</div></div>
           </div>`).join('')}
       </div>` : '';
@@ -945,9 +945,19 @@ function getFreshness(cfg) {
   return (Date.now()-new Date(y,m,d).getTime())/86400000 <= limit ? 'ok' : 'warn';
 }
 
+// Los íconos están en assets/iconos/. La hoja de configuración puede seguir escribiendo
+// solo el nombre del archivo (p. ej. "hito.png"); una URL o una ruta con "/" se respeta tal cual.
+function rutaIcono(n) {
+  n = (n || '').trim();
+  if (!n) return '';
+  if (/^(https?:)?\/\//.test(n) || n.includes('/')) return n;
+  if (n === 'Total.png') n = 'hitosTotal.png';
+  return 'assets/iconos/' + encodeURIComponent(n);
+}
+
 function kpiIcon(v) {
   const s=(v||'').toLowerCase();
-  if (s.includes('hitos vigentes'))   return 'Total.png';
+  if (s.includes('hitos vigentes'))   return 'hitosTotal.png';
   if (s.includes('hitos vigentes culminados')) return 'culminados.png';
   if (s.includes('a/c vigentes'))     return 'vigentes cumplidos.png';
   if (s.includes('culminados'))       return 'vigentes cumplidos.png';
