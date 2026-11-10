@@ -93,7 +93,7 @@
 <body>
 <header class="topbar">
   <div class="topbar-brand">
-    <div class="topbar-logo"><img src="assets/img/mtc.jpg" alt="Logo MTC"></div>
+    <div class="topbar-logo"><img src="mtc.jpg" alt="Logo MTC"></div>
     <div>
       <div class="topbar-name">Hub de Herramientas · OGAME</div>
       <div class="topbar-sub">Oficina General de Articulación, Monitoreo, y Evaluación de Impacto</div>
@@ -170,7 +170,7 @@ const PARAL = 'Paralizado o suspendido';
 // ── Definición de cada pestaña ──────────────────────────────────────────────
 const TABS = {
   PVN: {
-    nombre:'Red Vial Nacional', org:'PVN', titulo:'Red Vial Nacional no concesionada', fuente:'Inventario de puentes · reportado por Provías Nacional',
+    nombre:'Red Vial Nacional', org:'PVN', titulo:'Red Vial Nacional', fuente:'Inventario de puentes RVN 2025 · archivo remitido por PVN',
     zona:'Departamento', grafico:'Puentes por departamento',
     kpis(rows){
       const t = rows.length, b = contar(rows, r => r['Condición'] === 'Bueno'), g = contar(rows, r => r['Condición'] === 'Regular'), m = contar(rows, r => r['Condición'] === 'Malo');
@@ -188,7 +188,7 @@ const TABS = {
       orden:(a, b) => (parseFloat(b['Longitud (m)']) || 0) - (parseFloat(a['Longitud (m)']) || 0) }
   },
   DGPPT: {
-    nombre:'Concesiones', org:'DGPPT', titulo:'Red Vial Nacional concesionada', fuente:'Inventario general de puentes de las concesiones · reportado por DGPPT',
+    nombre:'Concesiones', org:'DGPPT', titulo:'Inventario general de puentes vehiculares DGPPT / DINPTRA', fuente:'Corte al 15/09/2026 · archivo remitido por DGPPT',
     zona:'Departamento', grafico:'Puentes por departamento',
     kpis(rows){
       const cr = contar(rows, r => r.Estado === 'Crítico'), ma = contar(rows, r => r.Estado === 'Malo');
@@ -197,8 +197,8 @@ const TABS = {
       return [
         { v:fmt(rows.length), e:'Puentes registrados', n:(() => { const n = new Set(rows.map(r => r['Concesión'])).size; return `En ${n} ${n === 1 ? 'tramo concesionado' : 'tramos concesionados'}`; })() },
         { v:fmt(cr), e:'Estado crítico', n:`Además, ${fmt(ma)} en estado malo`, c:'rojo' },
-        { v:fmt(al + ri), e:'Calificación técnica grave', n:`${fmt(al)} alarmante y ${fmt(ri)} riesgo inaceptable`, c:'rojo' },
-        { v:fmt(sd), e:'Sin departamento registrado', n:'Dato pendiente de completar en el inventario', c:'ambar' } ];
+        { v:fmt(al + ri), e:'Alarmante o riesgo inaceptable', n:`Según la calificación técnica del inventario: ${fmt(al)} alarmante y ${fmt(ri)} riesgo inaceptable`, c:'rojo' },
+        { v:fmt(sd), e:'Sin departamento registrado', n:'Registros del inventario sin este dato', c:'ambar' } ];
     },
     filtros(rows){ return [
       { id:'est', lab:'Estado', tipo:'pills', campo:'Estado', opts:['Todos'].concat(opciones(rows, 'Estado', ['Bueno','Regular','Malo','Crítico','Sin dato'])) },
@@ -208,7 +208,7 @@ const TABS = {
         return (E[a.Estado] ?? 2.5) - (E[b.Estado] ?? 2.5) || (C[a['Calificación']] ?? 9) - (C[b['Calificación']] ?? 9); } }
   },
   PVD: {
-    nombre:'Provías Descentralizado', org:'PVD', titulo:'Provías Descentralizado', fuente:'Base del estado situacional de los puentes a cargo de Provías Descentralizado',
+    nombre:'Provías Descentralizado', org:'PVD', titulo:'Provías Descentralizado', fuente:'Estado situacional de los puentes a cargo de PVD · archivo remitido por PVD',
     zona:'Región', grafico:'Puentes por región', apilar:{ campo:'Tipo', vals:[['Definitivo','#0055A5'],['Modular','#7FB2E5']] },
     kpis(rows){
       const cu = rows.filter(r => r['Situación'] === 'Culminado'), pa = rows.filter(r => ['Paralizado','Suspendido'].includes(r['Situación']));
