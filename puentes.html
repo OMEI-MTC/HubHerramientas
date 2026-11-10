@@ -68,6 +68,10 @@
   .chip-sel { display:inline-flex; align-items:center; gap:8px; background:var(--blue-lt); color:var(--blue); border:1px solid var(--blue); border-radius:999px; padding:5px 6px 5px 14px; font-size:13px; font-weight:700; }
   .chip-sel button { border:0; background:var(--blue); color:#fff; width:24px; height:24px; border-radius:50%; cursor:pointer; font-size:13px; line-height:1; }
   .ayuda { font-size:12px; color:var(--text-3); }
+  .resumen-head { display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; }
+  .resumen-head .r-tit { font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-2); }
+  .resumen-head .r-lugar { font-size:16px; font-weight:700; color:var(--blue); }
+  .btn-pais { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--blue); background:#fff; color:var(--blue); border-radius:999px; padding:5px 12px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; }
   .barra .nom { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .barra .pista { display:flex; height:10px; background:#EEF1F5; border-radius:5px; overflow:hidden; }
   .barra b { text-align:right; }
@@ -171,7 +175,8 @@ const TABS = {
     kpis(rows){
       const t = rows.length, b = contar(rows, r => r['Condición'] === 'Bueno'), g = contar(rows, r => r['Condición'] === 'Regular'), m = contar(rows, r => r['Condición'] === 'Malo');
       return [
-        { v:fmt(t), e:'Puentes registrados', n:`En ${new Set(rows.map(r => r.Ruta).filter(Boolean)).size} rutas de ${new Set(rows.map(r => r.Departamento)).size} departamentos` },
+        { v:fmt(t), e:'Puentes registrados', n:(() => { const nr = new Set(rows.map(r => r.Ruta).filter(Boolean)).size, nd = new Set(rows.map(r => r.Departamento)).size;
+            return `En ${nr} ${nr === 1 ? 'ruta' : 'rutas'}` + (nd > 1 ? ` de ${nd} departamentos` : ''); })() },
         { v:fmt(b), e:'Buen estado', n:`${pct(b, t)} del inventario` },
         { v:fmt(g), e:'Estado regular', n:`${pct(g, t)} del inventario`, c:'ambar' },
         { v:fmt(m), e:'Mal estado', n:`${fmt(contar(rows, r => r['Condición'] === 'Malo' && r.Tipo === 'Definitivo'))} de ellos son puentes definitivos`, c:'rojo' } ];
@@ -190,7 +195,7 @@ const TABS = {
       const al = contar(rows, r => r['Calificación'] === 'Alarmante'), ri = contar(rows, r => r['Calificación'] === 'Riesgo inaceptable');
       const sd = contar(rows, r => r.Departamento === 'Sin departamento');
       return [
-        { v:fmt(rows.length), e:'Puentes registrados', n:`En ${new Set(rows.map(r => r['Concesión'])).size} tramos concesionados` },
+        { v:fmt(rows.length), e:'Puentes registrados', n:(() => { const n = new Set(rows.map(r => r['Concesión'])).size; return `En ${n} ${n === 1 ? 'tramo concesionado' : 'tramos concesionados'}`; })() },
         { v:fmt(cr), e:'Estado crítico', n:`Además, ${fmt(ma)} en estado malo`, c:'rojo' },
         { v:fmt(al + ri), e:'Calificación técnica grave', n:`${fmt(al)} alarmante y ${fmt(ri)} riesgo inaceptable`, c:'rojo' },
         { v:fmt(sd), e:'Sin departamento registrado', n:'Dato pendiente de completar en el inventario', c:'ambar' } ];
@@ -211,7 +216,7 @@ const TABS = {
       const t = v => contar(rows, r => r.Tipo === v), tc = v => contar(cu, r => r.Tipo === v);
       const s = v => contar(cur, r => r['Situación'] === v);
       return [
-        { v:fmt(rows.length), e:'Puentes en la cartera', n:`${fmt(t('Modular'))} modulares y ${fmt(t('Definitivo'))} definitivos, en ${new Set(rows.map(r => r['Región'])).size} regiones` },
+        { v:fmt(rows.length), e:'Puentes en la cartera', n:(() => { const nr = new Set(rows.map(r => r['Región'])).size; return `${fmt(t('Modular'))} modulares y ${fmt(t('Definitivo'))} definitivos` + (nr > 1 ? `, en ${nr} regiones` : ''); })() },
         { v:fmt(cu.length), e:'Culminados', n:`${fmt(tc('Modular'))} modulares y ${fmt(tc('Definitivo'))} definitivos` },
         { v:fmt(cur.length), e:'Por iniciar o en curso', n:`${fmt(s('Sin iniciar'))} sin iniciar, ${fmt(s('En estudios'))} en estudios, ${fmt(s('En contratación') + s('En ejecución física'))} en contratación o ejecución`, c:'ambar' },
         { v:fmt(pa.length), e:'Paralizados o suspendidos', n:`${fmt(contar(pa, r => r.Etapa === 'Estudio definitivo'))} en etapa de estudio y ${fmt(contar(pa, r => r.Etapa === 'Ejecución'))} en ejecución`, c:'rojo' } ];
@@ -292,16 +297,17 @@ function dibujar(){
   cont.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:22px">
       <div class="fuente"><b>${T.titulo}</b><small>${T.fuente}${ctrl ? ` · archivo «${esc(ctrl.Archivo)}» cargado el ${esc(ctrl.Cargado)}` : ''}</small></div>
-      <div class="kpis">${T.kpis(rows).map(k => `<div class="kpi ${k.c || ''}"><span class="v">${k.v}</span><span class="e">${k.e}</span><span class="n">${k.n}</span></div>`).join('')}</div>
-      <div class="filtros"><span class="tit">Filtros · se aplican al gráfico y a la tabla</span>${filtrosHtml}
-        ${zs ? `<div class="fila-f"><span class="lab">${T.zona}</span><span class="chip-sel">${esc(zs)}<button type="button" id="quitar-zona" aria-label="Quitar ${esc(T.zona.toLowerCase())}">✕</button></span><span class="ayuda">Elegido en el gráfico · solo filtra la tabla</span></div>` : ''}</div>
+      <div class="resumen-head"><span class="r-tit">Resumen</span><span class="r-lugar">${zs ? esc(zs) : 'Todo el país'}</span>
+        ${zs ? `<button type="button" class="btn-pais" id="quitar-zona">Ver todo el país ✕</button>` : `<span class="ayuda">Haz clic en ${T.zona === 'Región' ? 'una región' : 'un departamento'} del gráfico para ver su resumen</span>`}</div>
+      <div class="kpis">${T.kpis(zs ? rows.filter(r => (r[T.zona] || 'Sin dato') === zs) : rows).map(k => `<div class="kpi ${k.c || ''}"><span class="v">${k.v}</span><span class="e">${k.e}</span><span class="n">${k.n}</span></div>`).join('')}</div>
+      <div class="filtros"><span class="tit">Filtros de detalle · se aplican al gráfico y a la tabla</span>${filtrosHtml}</div>
       <div class="caja">
-        <div class="caja-head"><h2>${T.grafico} <span>· ${fmt(vis.length)} puentes</span></h2><span class="ayuda">Haz clic en ${T.zona === 'Región' ? 'una región' : 'un departamento'} para ver solo sus puentes en la tabla</span>
+        <div class="caja-head"><h2>${T.grafico} <span>· ${fmt(vis.length)} puentes</span></h2><span class="ayuda">${zs ? 'Haz clic de nuevo en ' + esc(zs) + ' para volver a todo el país' : 'Haz clic en ' + (T.zona === 'Región' ? 'una región' : 'un departamento') + ' para ver su resumen y sus puentes'}</span>
           ${T.apilar ? `<div class="leyenda">${T.apilar.vals.map(([v, c]) => `<span><i style="background:${c}"></i>${v}</span>`).join('')}</div>` : ''}</div>
         <div class="barras">${barras || '<span class="nota">Sin puentes para los filtros elegidos.</span>'}</div>
       </div>
       <div class="tabla-wrap">
-        <div class="tabla-head"><h2 style="font-size:16px">${T.tabla.titulo}</h2><span class="nota">Mostrando ${fmt(mostrar.length)} de ${fmt(visTabla.length)}</span></div>
+        <div class="tabla-head"><h2 style="font-size:16px">${T.tabla.titulo}${zs ? ' · ' + esc(zs) : ''}</h2><span class="nota">Mostrando ${fmt(mostrar.length)} de ${fmt(visTabla.length)}</span></div>
         <table><thead><tr>${T.tabla.cols.map(([h]) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${filas}</tbody></table>
         ${visTabla.length > 10 ? `<div class="ver"><button type="button" class="link" id="ver-todo">${verTodo ? 'Mostrar solo los primeros 10' : 'Ver la lista completa'}</button></div>` : ''}
       </div>
