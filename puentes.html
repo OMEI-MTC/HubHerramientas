@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puentes del MTC · Hub de Herramientas OGAME</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --red:#C8102E; --blue:#0055A5; --blue-dk:#003F7D; --blue-lt:#E8F0FA;
+    --white:#fff; --bg:#F2F2F2; --card:#fff; --border:#DDE3EA;
+    --text:#1a1a1a; --text-2:#4a5568; --text-3:#6b7a90;
+    --green:#1B7F54; --sans:'DM Sans',system-ui,sans-serif; --r:12px;
+  }
+  body { font-family:var(--sans); background:var(--bg); color:var(--text); font-size:14px; line-height:1.5; min-height:100vh; }
+  .topbar { background:var(--red); display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:12px 28px; min-height:68px; }
+  .topbar-brand { display:flex; align-items:center; gap:12px; }
+  .topbar-logo { width:40px; height:40px; border-radius:7px; overflow:hidden; flex-shrink:0; box-shadow:0 1px 6px rgba(0,0,0,0.25); }
+  .topbar-logo img { width:100%; height:100%; object-fit:cover; display:block; }
+  .topbar-name { font-size:21px; font-weight:700; color:var(--white); line-height:1.15; }
+  .topbar-sub { font-size:12px; color:rgba(255,255,255,0.85); margin-top:2px; }
+  .btn-back { display:flex; align-items:center; gap:7px; background:#003F7D; color:#fff; border-radius:24px; padding:9px 18px; font-size:15px; font-weight:700; text-decoration:none; }
+  .main { padding:28px; }
+  .panel { max-width:1300px; margin:0 auto; background:var(--card); border:1px solid rgba(0,0,0,0.09); border-radius:var(--r); padding:28px 32px; display:flex; flex-direction:column; gap:22px; }
+  .head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+  h1 { font-size:30px; font-weight:700; color:var(--blue); line-height:1.1; }
+  .sub { font-size:14px; color:var(--text-2); margin-top:6px; }
+  .btn { display:inline-flex; align-items:center; gap:7px; padding:10px 16px; border-radius:8px; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; border:0; min-height:42px; }
+  .btn-excel { background:var(--green); color:#fff; }
+  .tabs { display:flex; flex-wrap:wrap; gap:10px; }
+  .tab { border:1px solid #C9D2DC; background:#fff; color:var(--blue); border-radius:999px; padding:9px 18px; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; min-height:42px; }
+  .tab span { font-weight:500; }
+  .tab.on { background:var(--blue); color:#fff; border-color:var(--blue); }
+  .fuente { border-left:4px solid var(--blue); padding:4px 0 4px 14px; display:flex; flex-wrap:wrap; gap:4px 16px; align-items:baseline; }
+  .fuente b { font-size:18px; }
+  .fuente small { font-size:13px; color:var(--text-2); }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:16px; }
+  .kpi { border:1px solid var(--border); border-radius:var(--r); padding:18px 20px; display:flex; flex-direction:column; gap:4px; }
+  .kpi .v { font-size:32px; font-weight:700; }
+  .kpi .e { font-size:15px; font-weight:700; }
+  .kpi .n { font-size:13px; color:var(--text-2); }
+  .kpi.rojo { border-color:#F3C4CB; background:#FDF1F3; } .kpi.rojo .v { color:#A50E26; }
+  .kpi.ambar { border-color:#F2C17D; background:#FFF6E8; } .kpi.ambar .v { color:#8A4B00; }
+  .filtros { background:#F5F7FA; border-radius:var(--r); padding:16px 20px; display:flex; flex-direction:column; gap:12px; }
+  .filtros .tit { font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-2); }
+  .fila-f { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .fila-f label, .fila-f .lab { font-size:13px; font-weight:700; min-width:120px; }
+  .pill { font-family:inherit; font-size:13px; font-weight:700; padding:7px 14px; min-height:36px; border-radius:999px; border:1px solid #C9D2DC; background:#fff; color:#1F2933; cursor:pointer; }
+  .pill.on { background:var(--blue); border-color:var(--blue); color:#fff; }
+  select { font-family:inherit; font-size:14px; padding:8px 12px; border:1px solid #C9D2DC; border-radius:8px; background:#fff; min-height:40px; min-width:260px; }
+  .caja { border:1px solid var(--border); border-radius:var(--r); padding:20px; display:flex; flex-direction:column; gap:14px; }
+  .caja h2 { font-size:16px; font-weight:700; }
+  .caja h2 span { font-weight:500; color:var(--text-2); }
+  .caja-head { display:flex; flex-wrap:wrap; gap:8px 16px; justify-content:space-between; align-items:baseline; }
+  .leyenda { display:flex; gap:16px; font-size:13px; }
+  .leyenda i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; }
+  .barras { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:10px 32px; }
+  .barra { display:grid; grid-template-columns:130px 1fr 48px; align-items:center; gap:10px; font-size:13px; }
+  .barra .nom { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .barra .pista { display:flex; height:10px; background:#EEF1F5; border-radius:5px; overflow:hidden; }
+  .barra b { text-align:right; }
+  .tabla-wrap { border:1px solid var(--border); border-radius:var(--r); overflow-x:auto; }
+  .tabla-head { padding:16px 20px 6px; display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:baseline; }
+  table { width:100%; border-collapse:collapse; font-size:14px; min-width:800px; }
+  th { text-align:left; padding:12px 20px; font-weight:700; background:#F5F7FA; }
+  td { padding:11px 20px; border-top:1px solid #E5E9EF; vertical-align:top; }
+  td:first-child { font-weight:700; max-width:380px; }
+  .chip { display:inline-block; font-weight:700; font-size:12px; padding:3px 10px; border-radius:999px; white-space:nowrap; }
+  .ver { padding:12px 20px; border-top:1px solid #E5E9EF; }
+  .link { background:none; border:0; color:var(--blue); font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; }
+  .nota { font-size:12px; color:var(--text-2); }
+  .estado { padding:40px; text-align:center; color:var(--text-2); }
+  .error { color:#A50E26; }
+  @media (max-width:640px){ .main{padding:12px} .panel{padding:20px 16px} .barra{grid-template-columns:100px 1fr 40px} }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo"><img src="mtc.jpg" alt="Logo MTC"></div>
+    <div>
+      <div class="topbar-name">Hub de Herramientas · OGAME</div>
+      <div class="topbar-sub">Oficina General de Articulación, Monitoreo, y Evaluación de Impacto</div>
+    </div>
+  </div>
+  <a class="btn-back" href="index.html">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Regresar a página principal
+  </a>
+</header>
+
+<main class="main">
+  <div class="panel">
+    <div class="head">
+      <div>
+        <h1>Puentes del MTC</h1>
+        <p class="sub">Información reportada por cada órgano. Las cifras de una pestaña no se suman con las de otra.</p>
+      </div>
+      <button class="btn btn-excel" id="btn-excel" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar Excel
+      </button>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+    <div id="contenido"><div class="estado">Cargando información…</div></div>
+  </div>
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// CONFIGURACIÓN — Google Sheet "Puentes – Consolidado" publicado en la web
+// URL_PUBLICADA: el enlace de "Publicar en la web" SIN lo que va después de "/pub"
+//   (termina en .../pub). GID: el número de cada pestaña (aparece en la URL tras #gid=).
+// ═══════════════════════════════════════════════════════════════════════════
+const URL_PUBLICADA = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5SK2Gqdw1braZA5s1yKGTlKUuptHXeXi4p93pkc2pJZ0flhcDgILsWU3_lqKdvbYOXJ-h_eO39Tto/pub';
+const GID = { PVN: '260217824', DGPPT: '1059504539', PVD: '321728799', Control: '65635837' };
+
+const CORS_PROXIES = [ u => u, u => 'https://corsproxy.io/?' + encodeURIComponent(u), u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u) ];
+async function traer(url){
+  let ultimo = null;
+  for (const fn of CORS_PROXIES){
+    try { const r = await fetch(fn(url), { cache:'no-cache' }); if (!r.ok) throw new Error('HTTP ' + r.status); const t = await r.text(); if (!t || t.length < 5) throw new Error('vacío'); return t; }
+    catch(e){ ultimo = e; }
+  }
+  throw ultimo || new Error('Sin respuesta');
+}
+// CSV con comillas, comas y saltos de línea dentro de las celdas
+function leerCSV(t){
+  const filas = []; let fila = [], campo = '', q = false;
+  for (let i = 0; i < t.length; i++){
+    const c = t[i];
+    if (q){ if (c === '"'){ if (t[i+1] === '"'){ campo += '"'; i++; } else q = false; } else campo += c; }
+    else if (c === '"') q = true;
+    else if (c === ','){ fila.push(campo); campo = ''; }
+    else if (c === '\n'){ fila.push(campo); filas.push(fila); fila = []; campo = ''; }
+    else if (c !== '\r') campo += c;
+  }
+  if (campo || fila.length){ fila.push(campo); filas.push(fila); }
+  const cab = (filas.shift() || []).map(s => s.trim());
+  return filas.filter(f => f.some(x => x.trim())).map(f => { const o = {}; cab.forEach((h, i) => o[h] = (f[i] || '').trim()); return o; });
+}
+const fmt = n => Number(n).toLocaleString('es-PE');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const pct = (n, t) => t ? Math.round(n / t * 100) + '%' : '0%';
+const contar = (rows, f) => rows.filter(f).length;
+const CHIP = { 'Bueno':['#E6F4EC','#1B6B3A'], 'Regular':['#FBF3D9','#6B5300'], 'Malo':['#FDEEE2','#8A3D00'], 'Crítico':['#FDE8EA','#A50E26'], 'Sin dato':['#EEF1F5','#374151'],
+  'Culminado':['#E6F4EC','#1B6B3A'], 'En ejecución física':['#E8F0FA','#0055A5'], 'En contratación':['#E8F0FA','#0055A5'], 'En estudios':['#F0EDF8','#4B3A8C'],
+  'Sin iniciar':['#EEF1F5','#374151'], 'Paralizado':['#FDE8EA','#A50E26'], 'Suspendido':['#FDEEE2','#8A3D00'] };
+const chip = v => { const c = CHIP[v] || ['#EEF1F5','#374151']; return `<span class="chip" style="background:${c[0]};color:${c[1]}">${esc(v || '—')}</span>`; };
+// opciones de un filtro: las conocidas en su orden y luego cualquier valor nuevo que traiga el archivo
+const opciones = (rows, campo, conocidas) => { const v = [...new Set(rows.map(r => r[campo]).filter(Boolean))]; return conocidas.filter(x => v.includes(x)).concat(v.filter(x => !conocidas.includes(x)).sort()); };
+const PARAL = 'Paralizado o suspendido';
+
+// ── Definición de cada pestaña ──────────────────────────────────────────────
+const TABS = {
+  PVN: {
+    nombre:'Red Vial Nacional', org:'PVN', titulo:'Red Vial Nacional no concesionada', fuente:'Inventario de puentes · reportado por Provías Nacional',
+    zona:'Departamento', grafico:'Puentes por departamento',
+    kpis(rows){
+      const t = rows.length, b = contar(rows, r => r['Condición'] === 'Bueno'), g = contar(rows, r => r['Condición'] === 'Regular'), m = contar(rows, r => r['Condición'] === 'Malo');
+      return [
+        { v:fmt(t), e:'Puentes registrados', n:`En ${new Set(rows.map(r => r.Ruta).filter(Boolean)).size} rutas de ${new Set(rows.map(r => r.Departamento)).size} departamentos` },
+        { v:fmt(b), e:'Buen estado', n:`${pct(b, t)} del inventario` },
+        { v:fmt(g), e:'Estado regular', n:`${pct(g, t)} del inventario`, c:'ambar' },
+        { v:fmt(m), e:'Mal estado', n:`${fmt(contar(rows, r => r['Condición'] === 'Malo' && r.Tipo === 'Definitivo'))} de ellos son puentes definitivos`, c:'rojo' } ];
+    },
+    filtros(rows){ return [
+      { id:'cond', lab:'Condición', tipo:'pills', campo:'Condición', opts:['Todos'].concat(opciones(rows, 'Condición', ['Bueno','Regular','Malo','Crítico','Sin dato'])) },
+      { id:'tipo', lab:'Tipo de puente', tipo:'pills', campo:'Tipo', opts:['Todos'].concat(opciones(rows, 'Tipo', ['Definitivo','Temporal','Obras de drenaje','Artesanal'])) } ]; },
+    tabla:{ titulo:'Puentes (ordenados por longitud)', cols:[['Puente','Puente'],['Departamento','Departamento'],['Tipo','Tipo'],['Ruta y progresiva', r => [r.Ruta, r.Progresiva && 'km ' + r.Progresiva].filter(Boolean).join(', ')],['Longitud', r => r['Longitud (m)'] ? fmt(parseFloat(r['Longitud (m)'])) + ' m' : '—'],['Condición', r => chip(r['Condición']), true]],
+      orden:(a, b) => (parseFloat(b['Longitud (m)']) || 0) - (parseFloat(a['Longitud (m)']) || 0) }
+  },
+  DGPPT: {
+    nombre:'Concesiones', org:'DGPPT', titulo:'Red Vial Nacional concesionada', fuente:'Inventario general de puentes de las concesiones · reportado por DGPPT',
+    zona:'Departamento', grafico:'Puentes por departamento',
+    kpis(rows){
+      const cr = contar(rows, r => r.Estado === 'Crítico'), ma = contar(rows, r => r.Estado === 'Malo');
+      const al = contar(rows, r => r['Calificación'] === 'Alarmante'), ri = contar(rows, r => r['Calificación'] === 'Riesgo inaceptable');
+      const sd = contar(rows, r => r.Departamento === 'Sin departamento');
+      return [
+        { v:fmt(rows.length), e:'Puentes registrados', n:`En ${new Set(rows.map(r => r['Concesión'])).size} tramos concesionados` },
+        { v:fmt(cr), e:'Estado crítico', n:`Además, ${fmt(ma)} en estado malo`, c:'rojo' },
+        { v:fmt(al + ri), e:'Calificación técnica grave', n:`${fmt(al)} alarmante y ${fmt(ri)} riesgo inaceptable`, c:'rojo' },
+        { v:fmt(sd), e:'Sin departamento registrado', n:'Dato pendiente de completar en el inventario', c:'ambar' } ];
+    },
+    filtros(rows){ return [
+      { id:'est', lab:'Estado', tipo:'pills', campo:'Estado', opts:['Todos'].concat(opciones(rows, 'Estado', ['Bueno','Regular','Malo','Crítico','Sin dato'])) },
+      { id:'conc', lab:'Concesión', tipo:'select', campo:'Concesión', opts:['Todas'].concat([...new Set(rows.map(r => r['Concesión']))].sort()) } ]; },
+    tabla:{ titulo:'Puentes (primero los de estado más grave)', cols:[['Puente','Puente'],['Departamento','Departamento'],['Concesión','Concesión'],['Calificación técnica', r => r['Calificación'] || '—'],['Estado', r => chip(r.Estado), true]],
+      orden:(a, b) => { const E = { 'Crítico':0, 'Malo':1, 'Regular':2, 'Sin dato':3, 'Bueno':4 }, C = { 'Riesgo inaceptable':0, 'Alarmante':1, 'Seria':2, 'Deficiente':3 };
+        return (E[a.Estado] ?? 2.5) - (E[b.Estado] ?? 2.5) || (C[a['Calificación']] ?? 9) - (C[b['Calificación']] ?? 9); } }
+  },
+  PVD: {
+    nombre:'Red departamental y vecinal', org:'PVD', titulo:'Red vial departamental y vecinal', fuente:'Base del estado situacional de los puentes a cargo de Provías Descentralizado',
+    zona:'Región', grafico:'Puentes por región', apilar:{ campo:'Tipo', vals:[['Definitivo','#0055A5'],['Modular','#7FB2E5']] },
+    kpis(rows){
+      const cu = rows.filter(r => r['Situación'] === 'Culminado'), pa = rows.filter(r => ['Paralizado','Suspendido'].includes(r['Situación']));
+      const cur = rows.filter(r => !['Culminado','Paralizado','Suspendido'].includes(r['Situación']));
+      const t = v => contar(rows, r => r.Tipo === v), tc = v => contar(cu, r => r.Tipo === v);
+      const s = v => contar(cur, r => r['Situación'] === v);
+      return [
+        { v:fmt(rows.length), e:'Puentes en la cartera', n:`${fmt(t('Modular'))} modulares y ${fmt(t('Definitivo'))} definitivos, en ${new Set(rows.map(r => r['Región'])).size} regiones` },
+        { v:fmt(cu.length), e:'Culminados', n:`${fmt(tc('Modular'))} modulares y ${fmt(tc('Definitivo'))} definitivos` },
+        { v:fmt(cur.length), e:'Por iniciar o en curso', n:`${fmt(s('Sin iniciar'))} sin iniciar, ${fmt(s('En estudios'))} en estudios, ${fmt(s('En contratación') + s('En ejecución física'))} en contratación o ejecución`, c:'ambar' },
+        { v:fmt(pa.length), e:'Paralizados o suspendidos', n:`${fmt(contar(pa, r => r.Etapa === 'Estudio definitivo'))} en etapa de estudio y ${fmt(contar(pa, r => r.Etapa === 'Ejecución'))} en ejecución`, c:'rojo' } ];
+    },
+    filtros(rows){ return [
+      { id:'sit', lab:'Situación', tipo:'pills', campo:'_sit', opts:['Todas'].concat(opciones(rows, '_sit', ['Culminado','En ejecución física','En contratación','En estudios','Sin iniciar', PARAL])) },
+      { id:'tipo', lab:'Tipo de puente', tipo:'pills', campo:'Tipo', opts:['Todos'].concat(opciones(rows, 'Tipo', ['Definitivo','Modular'])) } ]; },
+    tabla:{ titulo:'Puentes (primero los paralizados o suspendidos)', cols:[['Puente','Puente'],['Región','Región'],['Tipo','Tipo'],['Etapa','Etapa'],['CUI', r => r.CUI || '—'],['Situación', r => chip(r['Situación']), true]],
+      orden:(a, b) => { const S = { 'Paralizado':0, 'Suspendido':0, 'En ejecución física':1, 'En contratación':2, 'En estudios':3, 'Sin iniciar':4, 'Culminado':5 };
+        return (S[a['Situación']] ?? 4.5) - (S[b['Situación']] ?? 4.5) || a['Región'].localeCompare(b['Región']); } },
+    preparar(rows){ rows.forEach(r => r._sit = ['Paralizado','Suspendido'].includes(r['Situación']) ? PARAL : r['Situación']); }
+  }
+};
+
+// ── Estado y dibujo ─────────────────────────────────────────────────────────
+const DATOS = {}, CONTROL = {};
+let activa = (location.hash.replace('#','').toUpperCase() in TABS) ? location.hash.replace('#','').toUpperCase() : 'PVN';
+const sel = {};      // filtros elegidos por pestaña
+let verTodo = false;
+
+function filtrar(clave){
+  const T = TABS[clave], rows = DATOS[clave] || [], s = sel[clave] || {};
+  return rows.filter(r => T._filtros.every(f => { const v = s[f.id] || f.opts[0]; return v === f.opts[0] || r[f.campo] === v; }));
+}
+
+function dibujarTabs(){
+  document.getElementById('tabs').innerHTML = Object.keys(TABS).map(k =>
+    `<button type="button" class="tab ${k === activa ? 'on' : ''}" data-tab="${k}">${TABS[k].nombre} <span>· ${TABS[k].org}</span></button>`).join('');
+}
+
+function dibujar(){
+  dibujarTabs();
+  const T = TABS[activa], rows = DATOS[activa], cont = document.getElementById('contenido');
+  if (!rows){ cont.innerHTML = `<div class="estado error">No se pudo cargar la información de ${T.org}. ${esc(T._error || '')}</div>`; return; }
+  const s = sel[activa] = sel[activa] || {};
+  const vis = filtrar(activa);
+  const ctrl = CONTROL[activa];
+  // gráfico
+  const por = {};
+  vis.forEach(r => { const z = r[T.zona] || 'Sin dato'; por[z] = por[z] || { total:0 }; por[z].total++; if (T.apilar){ const k = r[T.apilar.campo]; por[z][k] = (por[z][k] || 0) + 1; } });
+  const sinZona = z => /^Sin /.test(z);
+  const lista = Object.keys(por).sort((a, b) => sinZona(a) - sinZona(b) || por[b].total - por[a].total);
+  const max = Math.max(1, ...lista.map(z => por[z].total));
+  const barras = lista.map(z => {
+    const segs = T.apilar
+      ? T.apilar.vals.map(([v, col]) => `<div style="width:${(por[z][v] || 0) / max * 100}%;background:${col}"></div>`).join('')
+        + `<div style="width:${(por[z].total - T.apilar.vals.reduce((a, [v]) => a + (por[z][v] || 0), 0)) / max * 100}%;background:#A7B0BC"></div>`
+      : `<div style="width:${por[z].total / max * 100}%;background:#0055A5"></div>`;
+    return `<div class="barra"><span class="nom" title="${esc(z)}">${esc(z)}</span><div class="pista">${segs}</div><b>${fmt(por[z].total)}</b></div>`;
+  }).join('');
+  // tabla
+  const ord = vis.slice().sort(T.tabla.orden);
+  const mostrar = verTodo ? ord : ord.slice(0, 10);
+  const filas = mostrar.map(r => '<tr>' + T.tabla.cols.map(([, c, html]) => { const v = typeof c === 'function' ? c(r) : r[c]; return `<td>${html ? v : esc(v || '—')}</td>`; }).join('') + '</tr>').join('');
+  // filtros
+  const filtrosHtml = T._filtros.map(f => {
+    const actual = s[f.id] || f.opts[0];
+    if (f.tipo === 'select') return `<div class="fila-f"><label for="f-${f.id}">${f.lab}</label><select id="f-${f.id}" data-f="${f.id}">${f.opts.map(o => `<option ${o === actual ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></div>`;
+    return `<div class="fila-f"><span class="lab">${f.lab}</span>${f.opts.map(o => `<button type="button" class="pill ${o === actual ? 'on' : ''}" data-f="${f.id}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
+  }).join('');
+  cont.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <div class="fuente"><b>${T.titulo}</b><small>${T.fuente}${ctrl ? ` · archivo «${esc(ctrl.Archivo)}» cargado el ${esc(ctrl.Cargado)}` : ''}</small></div>
+      <div class="kpis">${T.kpis(rows).map(k => `<div class="kpi ${k.c || ''}"><span class="v">${k.v}</span><span class="e">${k.e}</span><span class="n">${k.n}</span></div>`).join('')}</div>
+      <div class="filtros"><span class="tit">Filtros · se aplican al gráfico y a la tabla</span>${filtrosHtml}</div>
+      <div class="caja">
+        <div class="caja-head"><h2>${T.grafico} <span>· ${fmt(vis.length)} puentes</span></h2>
+          ${T.apilar ? `<div class="leyenda">${T.apilar.vals.map(([v, c]) => `<span><i style="background:${c}"></i>${v}</span>`).join('')}</div>` : ''}</div>
+        <div class="barras">${barras || '<span class="nota">Sin puentes para los filtros elegidos.</span>'}</div>
+      </div>
+      <div class="tabla-wrap">
+        <div class="tabla-head"><h2 style="font-size:16px">${T.tabla.titulo}</h2><span class="nota">Mostrando ${fmt(mostrar.length)} de ${fmt(vis.length)}</span></div>
+        <table><thead><tr>${T.tabla.cols.map(([h]) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${filas}</tbody></table>
+        ${vis.length > 10 ? `<div class="ver"><button type="button" class="link" id="ver-todo">${verTodo ? 'Mostrar solo los primeros 10' : 'Ver la lista completa'}</button></div>` : ''}
+      </div>
+      ${ctrl && ctrl.Advertencias ? `<p class="nota">Observaciones de la última carga: ${esc(ctrl.Advertencias)}</p>` : ''}
+    </div>`;
+}
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-tab]');
+  if (t){ activa = t.dataset.tab; verTodo = false; history.replaceState(null, '', '#' + activa.toLowerCase()); dibujar(); return; }
+  const p = e.target.closest('.pill[data-f]');
+  if (p){ sel[activa][p.dataset.f] = p.dataset.v; verTodo = false; dibujar(); return; }
+  if (e.target.id === 'ver-todo'){ verTodo = !verTodo; dibujar(); }
+});
+document.addEventListener('change', e => {
+  if (e.target.matches('select[data-f]')){ sel[activa][e.target.dataset.f] = e.target.value; verTodo = false; dibujar(); }
+});
+document.getElementById('btn-excel').addEventListener('click', () => {
+  if (typeof XLSX === 'undefined' || !DATOS[activa]) return;
+  const vis = filtrar(activa).map(r => { const o = { ...r }; delete o._sit; return o; });
+  const ws = XLSX.utils.json_to_sheet(vis);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, TABS[activa].org);
+  XLSX.writeFile(wb, `Puentes_${TABS[activa].org}.xlsx`);
+});
+
+(async function iniciar(){
+  dibujarTabs();
+  const url = gid => `${URL_PUBLICADA}?gid=${gid}&single=true&output=csv`;
+  try { leerCSV(await traer(url(GID.Control))).forEach(c => CONTROL[c.Fuente] = c); } catch(e) {}
+  await Promise.all(Object.keys(TABS).map(async k => {
+    try {
+      const rows = leerCSV(await traer(url(GID[k])));
+      if (TABS[k].preparar) TABS[k].preparar(rows);
+      DATOS[k] = rows; TABS[k]._filtros = TABS[k].filtros(rows);
+    } catch(e) { TABS[k]._error = e.message; }
+  }));
+  dibujar();
+})();
+</script>
+</body>
+</html>
