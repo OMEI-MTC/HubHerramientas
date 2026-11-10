@@ -59,7 +59,15 @@
   .leyenda { display:flex; gap:16px; font-size:13px; }
   .leyenda i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; }
   .barras { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:10px 32px; }
-  .barra { display:grid; grid-template-columns:130px 1fr 48px; align-items:center; gap:10px; font-size:13px; }
+  .barra { display:grid; grid-template-columns:130px 1fr 48px; align-items:center; gap:10px; font-size:13px; cursor:pointer;
+           width:100%; border:0; background:none; font-family:inherit; color:inherit; text-align:left; padding:3px 6px; border-radius:6px; }
+  .barra:hover { background:#F5F7FA; }
+  .barra:focus-visible { outline:2px solid var(--blue); outline-offset:1px; }
+  .barra.sel { background:var(--blue-lt); box-shadow:inset 0 0 0 1px var(--blue); }
+  .barra.dim { opacity:.35; }
+  .chip-sel { display:inline-flex; align-items:center; gap:8px; background:var(--blue-lt); color:var(--blue); border:1px solid var(--blue); border-radius:999px; padding:5px 6px 5px 14px; font-size:13px; font-weight:700; }
+  .chip-sel button { border:0; background:var(--blue); color:#fff; width:24px; height:24px; border-radius:50%; cursor:pointer; font-size:13px; line-height:1; }
+  .ayuda { font-size:12px; color:var(--text-3); }
   .barra .nom { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .barra .pista { display:flex; height:10px; background:#EEF1F5; border-radius:5px; overflow:hidden; }
   .barra b { text-align:right; }
@@ -222,11 +230,17 @@ const TABS = {
 const DATOS = {}, CONTROL = {};
 let activa = (location.hash.replace('#','').toUpperCase() in TABS) ? location.hash.replace('#','').toUpperCase() : 'PVN';
 const sel = {};      // filtros elegidos por pestaña
+const zonaSel = {};  // departamento o región elegido con clic en el gráfico, por pestaña
 let verTodo = false;
 
 function filtrar(clave){
   const T = TABS[clave], rows = DATOS[clave] || [], s = sel[clave] || {};
   return rows.filter(r => T._filtros.every(f => { const v = s[f.id] || f.opts[0]; return v === f.opts[0] || r[f.campo] === v; }));
+}
+
+function filtrarTabla(clave){
+  const z = zonaSel[clave], T = TABS[clave];
+  return z ? filtrar(clave).filter(r => (r[T.zona] || 'Sin dato') === z) : filtrar(clave);
 }
 
 function dibujarTabs(){
@@ -240,6 +254,8 @@ function dibujar(){
   if (!rows){ cont.innerHTML = `<div class="estado error">No se pudo cargar la información de ${T.org}. ${esc(T._error || '')}</div>`; return; }
   const s = sel[activa] = sel[activa] || {};
   const vis = filtrar(activa);
+  const zs = zonaSel[activa];
+  const visTabla = filtrarTabla(activa);
   const ctrl = CONTROL[activa];
   // gráfico
   const por = {};
@@ -249,13 +265,22 @@ function dibujar(){
   const max = Math.max(1, ...lista.map(z => por[z].total));
   const barras = lista.map(z => {
     const segs = T.apilar
-      ? T.apilar.vals.map(([v, col]) => `<div style="width:${(por[z][v] || 0) / max * 100}%;background:${col}"></div>`).join('')
-        + `<div style="width:${(por[z].total - T.apilar.vals.reduce((a, [v]) => a + (por[z][v] || 0), 0)) / max * 100}%;background:#A7B0BC"></div>`
-      : `<div style="width:${por[z].total / max * 100}%;background:#0055A5"></div>`;
-    return `<div class="barra"><span class="nom" title="${esc(z)}">${esc(z)}</span><div class="pista">${segs}</div><b>${fmt(por[z].total)}</b></div>`;
+      ? T.apilar.vals.map(([v, col]) => `<span style="width:${(por[z][v] || 0) / max * 100}%;background:${col}"></span>`).join('')
+        + `<span style="width:${(por[z].total - T.apilar.vals.reduce((a, [v]) => a + (por[z][v] || 0), 0)) / max * 100}%;background:#A7B0BC"></span>`
+      : `<span style="width:${por[z].total / max * 100}%;background:#0055A5"></span>`;
+    // Al pasar el cursor: desglose por tipo (p. ej. "Piura: 30 definitivos · 34 modulares")
+    let tip = z + ': ' + fmt(por[z].total) + ' puentes';
+    if (T.apilar){
+      const partes = T.apilar.vals.map(([v]) => fmt(por[z][v] || 0) + ' ' + v.toLowerCase() + ((por[z][v] || 0) === 1 ? '' : (/[aeiou]$/i.test(v) ? 's' : 'es')));
+      const otros = por[z].total - T.apilar.vals.reduce((a, [v]) => a + (por[z][v] || 0), 0);
+      if (otros) partes.push(fmt(otros) + ' sin tipo');
+      tip = z + ': ' + partes.join(' · ');
+    }
+    const clase = zs ? (z === zs ? 'sel' : 'dim') : '';
+    return `<button type="button" class="barra ${clase}" data-zona="${esc(z)}" aria-pressed="${z === zs}" title="${esc(tip)}"><span class="nom">${esc(z)}</span><span class="pista">${segs}</span><b>${fmt(por[z].total)}</b></button>`;
   }).join('');
   // tabla
-  const ord = vis.slice().sort(T.tabla.orden);
+  const ord = visTabla.slice().sort(T.tabla.orden);
   const mostrar = verTodo ? ord : ord.slice(0, 10);
   const filas = mostrar.map(r => '<tr>' + T.tabla.cols.map(([, c, html]) => { const v = typeof c === 'function' ? c(r) : r[c]; return `<td>${html ? v : esc(v || '—')}</td>`; }).join('') + '</tr>').join('');
   // filtros
@@ -268,35 +293,45 @@ function dibujar(){
     <div style="display:flex;flex-direction:column;gap:22px">
       <div class="fuente"><b>${T.titulo}</b><small>${T.fuente}${ctrl ? ` · archivo «${esc(ctrl.Archivo)}» cargado el ${esc(ctrl.Cargado)}` : ''}</small></div>
       <div class="kpis">${T.kpis(rows).map(k => `<div class="kpi ${k.c || ''}"><span class="v">${k.v}</span><span class="e">${k.e}</span><span class="n">${k.n}</span></div>`).join('')}</div>
-      <div class="filtros"><span class="tit">Filtros · se aplican al gráfico y a la tabla</span>${filtrosHtml}</div>
+      <div class="filtros"><span class="tit">Filtros · se aplican al gráfico y a la tabla</span>${filtrosHtml}
+        ${zs ? `<div class="fila-f"><span class="lab">${T.zona}</span><span class="chip-sel">${esc(zs)}<button type="button" id="quitar-zona" aria-label="Quitar ${esc(T.zona.toLowerCase())}">✕</button></span><span class="ayuda">Elegido en el gráfico · solo filtra la tabla</span></div>` : ''}</div>
       <div class="caja">
-        <div class="caja-head"><h2>${T.grafico} <span>· ${fmt(vis.length)} puentes</span></h2>
+        <div class="caja-head"><h2>${T.grafico} <span>· ${fmt(vis.length)} puentes</span></h2><span class="ayuda">Haz clic en ${T.zona === 'Región' ? 'una región' : 'un departamento'} para ver solo sus puentes en la tabla</span>
           ${T.apilar ? `<div class="leyenda">${T.apilar.vals.map(([v, c]) => `<span><i style="background:${c}"></i>${v}</span>`).join('')}</div>` : ''}</div>
         <div class="barras">${barras || '<span class="nota">Sin puentes para los filtros elegidos.</span>'}</div>
       </div>
       <div class="tabla-wrap">
-        <div class="tabla-head"><h2 style="font-size:16px">${T.tabla.titulo}</h2><span class="nota">Mostrando ${fmt(mostrar.length)} de ${fmt(vis.length)}</span></div>
+        <div class="tabla-head"><h2 style="font-size:16px">${T.tabla.titulo}</h2><span class="nota">Mostrando ${fmt(mostrar.length)} de ${fmt(visTabla.length)}</span></div>
         <table><thead><tr>${T.tabla.cols.map(([h]) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${filas}</tbody></table>
-        ${vis.length > 10 ? `<div class="ver"><button type="button" class="link" id="ver-todo">${verTodo ? 'Mostrar solo los primeros 10' : 'Ver la lista completa'}</button></div>` : ''}
+        ${visTabla.length > 10 ? `<div class="ver"><button type="button" class="link" id="ver-todo">${verTodo ? 'Mostrar solo los primeros 10' : 'Ver la lista completa'}</button></div>` : ''}
       </div>
       ${ctrl && ctrl.Advertencias ? `<p class="nota">Observaciones de la última carga: ${esc(ctrl.Advertencias)}</p>` : ''}
     </div>`;
+}
+
+function limpiarZona(){
+  const z = zonaSel[activa]; if (!z) return;
+  if (!filtrar(activa).some(r => (r[TABS[activa].zona] || 'Sin dato') === z)) zonaSel[activa] = null;
 }
 
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-tab]');
   if (t){ activa = t.dataset.tab; verTodo = false; history.replaceState(null, '', '#' + activa.toLowerCase()); dibujar(); return; }
   const p = e.target.closest('.pill[data-f]');
-  if (p){ sel[activa][p.dataset.f] = p.dataset.v; verTodo = false; dibujar(); return; }
-  if (e.target.id === 'ver-todo'){ verTodo = !verTodo; dibujar(); }
+  if (p){ sel[activa][p.dataset.f] = p.dataset.v; verTodo = false; limpiarZona(); dibujar(); return; }
+  if (e.target.id === 'ver-todo'){ verTodo = !verTodo; dibujar(); return; }
+  if (e.target.id === 'quitar-zona'){ zonaSel[activa] = null; verTodo = false; dibujar(); return; }
+  const b = e.target.closest('.barra[data-zona]');
+  if (b){ zonaSel[activa] = zonaSel[activa] === b.dataset.zona ? null : b.dataset.zona; verTodo = false; dibujar(); }
 });
 document.addEventListener('change', e => {
-  if (e.target.matches('select[data-f]')){ sel[activa][e.target.dataset.f] = e.target.value; verTodo = false; dibujar(); }
+  if (e.target.matches('select[data-f]')){ sel[activa][e.target.dataset.f] = e.target.value; verTodo = false; limpiarZona(); dibujar(); }
 });
 // ── Descarga a Excel (mismo formato que el módulo Intervenciones MTC) ───────
 function resumenFiltros(){
   const T = TABS[activa], s = sel[activa] || {};
   const p = (T._filtros || []).filter(f => s[f.id] && s[f.id] !== f.opts[0]).map(f => f.lab + ': ' + s[f.id]);
+  if (zonaSel[activa]) p.push(T.zona + ': ' + zonaSel[activa]);
   return p.length ? 'Filtros aplicados: ' + p.join(' · ') + '.' : 'Sin filtros (información completa).';
 }
 const ANCHOS = { 'Puente':50, 'Departamento':16, 'Región':16, 'Provincia':16, 'Distrito':18, 'Concesión':26, 'Ruta':10, 'Progresiva':12,
@@ -307,7 +342,7 @@ document.getElementById('btn-excel').addEventListener('click', () => {
   if (typeof XLSX === 'undefined'){ alert('No se pudo cargar el componente de exportación.'); return; }
   const T = TABS[activa];
   if (!DATOS[activa]){ alert('La información de esta pestaña no está disponible.'); return; }
-  const filas = filtrar(activa);
+  const filas = filtrarTabla(activa);
   if (!filas.length){ alert('No hay puentes para exportar con los filtros actuales.'); return; }
   const headers = Object.keys(filas[0]).filter(h => h !== '_sit');
   const nc = headers.length, ctrl = CONTROL[activa];
