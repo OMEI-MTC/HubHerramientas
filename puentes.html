@@ -491,20 +491,53 @@ const REFERENCIA = { PVN: ['Ruta y progresiva', r => [r.Ruta, r.Progresiva && 'k
   DGPPT: ['Concesión', r => r['Concesión']], PVD: ['CUI', r => r.CUI] };
 const CONDICION = { PVN: ['Condición', 'Condición'], DGPPT: ['Estado', 'Estado'], PVD: ['Situación', 'Situación'] };
 
+const COL_EDITABLE = 'Estado situacional', COL_ULTIMO = 'Último registro';
+function cabeceraPlantilla(k){ return ['Clave', 'Puente', TABS[k].zona, REFERENCIA[k][0], CONDICION[k][0], COL_EDITABLE, COL_ULTIMO]; }
+function filaPlantilla(k, r){
+  return [r.Clave, r.Puente || '', ubicacion(r), REFERENCIA[k][1](r) || '', r[CONDICION[k][1]] || '', r[CAMPO_ESTADO] || '',
+    [r[CAMPO_FECHA], r[CAMPO_AUTOR]].filter(Boolean).join(' · ')];
+}
+const comparable = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+
+// Clasifica las filas de una plantilla cargada. Solo la columna "Estado situacional" puede cambiar:
+// una fila con cualquier otro dato distinto, una clave repetida o una plantilla desactualizada no se guarda.
+function clasificarCarga(k, cab, filasArchivo){
+  const esperada = cabeceraPlantilla(k), iE = esperada.indexOf(COL_EDITABLE), iU = esperada.indexOf(COL_ULTIMO);
+  const pos = esperada.map(h => cab.indexOf(h));
+  const res = { cambios:[], sinCambio:0, vacias:0, noEnc:[], repetidas:[], modificadas:[], desactualizadas:[] };
+  const veces = {};
+  filasArchivo.forEach(f => { const c = comparable(f[pos[0]]); if (c) veces[c] = (veces[c] || 0) + 1; });
+  const reportada = {};
+  filasArchivo.forEach(f => {
+    const valores = pos.map(i => i < 0 ? '' : f[i]);
+    const clave = comparable(valores[0]); if (!clave) return;
+    const r = buscarFila(k, clave);
+    if (!r){ res.noEnc.push(clave); return; }
+    if (veces[clave] > 1){ if (!reportada[clave]){ reportada[clave] = true; res.repetidas.push(r.Puente); } return; }
+    const actual = filaPlantilla(k, r);
+    const distinta = esperada.findIndex((h, j) => j !== iE && j !== iU && comparable(valores[j]) !== comparable(actual[j]));
+    if (distinta >= 0){ res.modificadas.push(r.Puente + ' (columna «' + esperada[distinta] + '»)'); return; }
+    const estado = comparable(valores[iE]);
+    if (!estado){ res.vacias++; return; }
+    if (estado === comparable(actual[iE])){ res.sinCambio++; return; }
+    if (comparable(valores[iU]) !== comparable(actual[iU])){ res.desactualizadas.push(r.Puente); return; }
+    res.cambios.push({ clave, estado:String(valores[iE]).trim(), puente:r.Puente, lugar:ubicacion(r) });
+  });
+  return res;
+}
+
 function descargarPlantilla(){
   if (typeof XLSX === 'undefined'){ aviso('No se pudo cargar el componente de Excel.'); return; }
   const T = TABS[activa], filas = filtrarTabla(activa).slice().sort(T.tabla.orden);
   if (!filas.length){ aviso('No hay puentes con los filtros actuales.'); return; }
-  const [refT, refF] = REFERENCIA[activa], [condT, condC] = CONDICION[activa];
-  const cab = ['Clave', 'Puente', T.zona, refT, condT, 'Estado situacional', 'Último registro'];
+  const cab = cabeceraPlantilla(activa);
   const nc = cab.length;
   const rows = [
     ['Plantilla de estado situacional · ' + T.nombre + ' (' + T.org + ') · ' + resumenFiltros()].concat(Array(nc - 1).fill('')),
-    ['Escribe o actualiza solo la columna "Estado situacional" (en amarillo). No modifiques la columna Clave ni agregues filas. Las celdas vacías no borran el estado actual.'].concat(Array(nc - 1).fill('')),
+    ['Escribe o actualiza solo la columna "Estado situacional" (en amarillo). No modifiques las demás columnas ni agregues o copies filas: las filas con otros cambios no se cargarán. Las celdas vacías no borran el estado actual.'].concat(Array(nc - 1).fill('')),
     cab
   ];
-  filas.forEach(r => rows.push([r.Clave, r.Puente, ubicacion(r), refF(r) || '', r[condC] || '', r[CAMPO_ESTADO] || '',
-    [r[CAMPO_FECHA], r[CAMPO_AUTOR]].filter(Boolean).join(' · ')]));
+  filas.forEach(r => rows.push(filaPlantilla(activa, r)));
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:nc-1} }, { s:{r:1,c:0}, e:{r:1,c:nc-1} }];
   ws['!cols'] = [{wch:30},{wch:40},{wch:16},{wch:24},{wch:14},{wch:60},{wch:24}];
@@ -528,29 +561,28 @@ async function leerPlantilla(archivo){
   const aoa = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:false });
   const iCab = aoa.findIndex(f => f.map(x => String(x).trim()).includes('Clave') && f.map(x => String(x).trim()).includes('Estado situacional'));
   if (iCab < 0) throw new Error('El archivo no tiene las columnas "Clave" y "Estado situacional". Usa la plantilla descargada del Hub.');
-  const cab = aoa[iCab].map(x => String(x).trim()), iC = cab.indexOf('Clave'), iE = cab.indexOf('Estado situacional');
-  return aoa.slice(iCab + 1).filter(f => String(f[iC] || '').trim()).map(f => ({ clave:String(f[iC]).trim(), estado:String(f[iE] || '').trim() }));
+  return { cab: aoa[iCab].map(x => String(x).trim()), filas: aoa.slice(iCab + 1) };
 }
 
 async function cargarPlantilla(archivo){
-  let regs;
-  try { regs = await leerPlantilla(archivo); } catch (e) { aviso(e.message); return; }
-  const otra = regs.find(x => !x.clave.startsWith(activa + '|'));
-  if (otra){ aviso('La plantilla no corresponde a la pestaña ' + TABS[activa].org + '. Ábrela en su pestaña o descarga una nueva.'); return; }
-  const cambios = [], noEnc = []; let sinCambio = 0, vacias = 0;
-  regs.forEach(x => {
-    const r = buscarFila(activa, x.clave);
-    if (!r){ noEnc.push(x.clave); return; }
-    if (!x.estado){ vacias++; return; }
-    if (x.estado === (r[CAMPO_ESTADO] || '').trim()){ sinCambio++; return; }
-    cambios.push({ clave:x.clave, estado:x.estado, puente:r.Puente, lugar:ubicacion(r) });
-  });
-  const notas = [ sinCambio && `${fmt(sinCambio)} sin cambios`, vacias && `${fmt(vacias)} celdas vacías, que no borran el estado actual`,
-    noEnc.length && `${fmt(noEnc.length)} claves que ya no existen en el inventario (se ignoran)` ].filter(Boolean);
+  let hoja;
+  try { hoja = await leerPlantilla(archivo); } catch (e) { aviso(e.message); return; }
+  const faltan = cabeceraPlantilla(activa).filter(h => !hoja.cab.includes(h));
+  if (faltan.length){ aviso('La plantilla no tiene las columnas: ' + faltan.join(', ') + '. Usa la plantilla descargada desde esta pestaña.'); return; }
+  const iC = hoja.cab.indexOf('Clave');
+  if (hoja.filas.some(f => comparable(f[iC]) && !comparable(f[iC]).startsWith(activa + '|'))){ aviso('La plantilla no corresponde a la pestaña ' + TABS[activa].org + '. Ábrela en su pestaña o descarga una nueva.'); return; }
+  const c = clasificarCarga(activa, hoja.cab, hoja.filas), cambios = c.cambios;
+  const lista = (t, xs) => xs.length ? `<p class="nota" style="color:#8A3D00"><b>${t} (${fmt(xs.length)}):</b> ${esc(xs.slice(0, 8).join('; '))}${xs.length > 8 ? '…' : ''}</p>` : '';
+  const excl = lista('No se guardan porque se modificaron otras columnas además del estado situacional', c.modificadas)
+    + lista('No se guardan porque la fila está repetida en la plantilla', c.repetidas)
+    + lista('No se guardan porque otra persona registró un estado después de que descargaste la plantilla; descarga una nueva', c.desactualizadas);
+  const notas = [ c.sinCambio && `${fmt(c.sinCambio)} sin cambios`, c.vacias && `${fmt(c.vacias)} celdas vacías, que no borran el estado actual`,
+    c.noEnc.length && `${fmt(c.noEnc.length)} filas con claves que no existen en el inventario (se ignoran)` ].filter(Boolean);
   abrirModal(`
     <h3>Carga masiva · ${esc(TABS[activa].org)}</h3>
     <p style="font-size:15px"><b>${fmt(cambios.length)}</b> ${cambios.length === 1 ? 'puente cambiará' : 'puentes cambiarán'} su estado situacional.</p>
     ${notas.length ? `<p class="nota">${notas.join(' · ')}.</p>` : ''}
+    ${excl}
     ${cambios.length ? `<div class="lista-cambios">${cambios.slice(0, 50).map(c => `<div><b>${esc(c.puente)}</b> · ${esc(c.lugar)}<br>${esc(c.estado.length > 160 ? c.estado.slice(0, 160) + '…' : c.estado)}</div>`).join('')}${cambios.length > 50 ? `<div class="nota">… y ${fmt(cambios.length - 50)} más</div>` : ''}</div>
     <label for="m-autor">Registrado por (nombre u órgano)</label>
     <input type="text" id="m-autor" maxlength="80" value="${esc(autorGuardado())}" placeholder="Ej.: DGPPT – Juan Pérez">` : ''}
@@ -563,7 +595,7 @@ async function cargarPlantilla(archivo){
     btn.disabled = true; btn.textContent = 'Guardando…';
     try {
       const res = await enviar({ accion:'cargaMasiva', fuente:activa, autor, registros:cambios.map(c => ({ clave:c.clave, estado:c.estado })) });
-      recordarAutor(autor); cambios.forEach(c => { if (!res.noEncontradas.includes(c.clave)) aplicarLocal(activa, c.clave, c.estado, res); });
+      recordarAutor(autor); cambios.forEach(c => { if (!res.noEncontradas.includes(c.clave) && !(res.repetidas || []).includes(c.clave)) aplicarLocal(activa, c.clave, c.estado, res); });
       cerrarModal(); dibujar();
       aviso(`${fmt(res.guardados)} ${res.guardados === 1 ? 'estado guardado' : 'estados guardados'}` + (res.noEncontradas.length ? ` · ${res.noEncontradas.length} no encontrados` : '') + '.');
     } catch (err) { btn.disabled = false; btn.textContent = 'Guardar cambios'; aviso(err.message); }
