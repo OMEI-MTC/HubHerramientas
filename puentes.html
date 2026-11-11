@@ -412,7 +412,7 @@ document.getElementById('btn-excel').addEventListener('click', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 // ESTADO SITUACIONAL (fase beta: registro abierto, sin usuarios ni validación)
 // ═══════════════════════════════════════════════════════════════════════════
-const CAMPO_ESTADO = 'Estado situacional', CAMPO_FECHA = 'Fecha de actualización', CAMPO_AUTOR = 'Actualizado por';
+const CAMPO_ESTADO = 'Estado situacional', CAMPO_FECHA = 'Fecha de actualización', CAMPO_AUTOR = 'Actualizado por', CAMPO_ANTERIOR = 'Estado situacional anterior';
 const hayClaves = k => (DATOS[k] || []).some(r => r.Clave);
 const buscarFila = (k, clave) => (DATOS[k] || []).find(r => r.Clave === clave);
 const ubicacion = r => r.Departamento || r['Región'] || '';
@@ -455,6 +455,8 @@ async function enviar(payload){
 }
 function aplicarLocal(k, clave, estado, res){
   const r = buscarFila(k, clave); if (!r) return;
+  const previo = (r[CAMPO_ESTADO] || '').trim();
+  if (previo && previo !== estado.trim()) r[CAMPO_ANTERIOR] = previo + ' [' + [r[CAMPO_FECHA], r[CAMPO_AUTOR]].filter(Boolean).join(' · ') + ']';
   r[CAMPO_ESTADO] = estado; r[CAMPO_FECHA] = res.fecha; r[CAMPO_AUTOR] = res.autor;
   r._reg = estado.trim() ? 'Con registro' : 'Sin registro';
 }
@@ -466,6 +468,7 @@ function abrirRegistro(clave){
     <h3>${esc(r.Puente || 'Puente')}</h3>
     <span class="nota">${esc(ubicacion(r))}${r.Ruta ? ' · ' + esc(r.Ruta) : ''}${r.Progresiva ? ' km ' + esc(r.Progresiva) : ''}${r['Concesión'] ? ' · ' + esc(r['Concesión']) : ''}${r.CUI ? ' · CUI ' + esc(r.CUI) : ''}</span>
     ${r[CAMPO_FECHA] ? `<span class="nota">Último registro: ${esc(r[CAMPO_FECHA])} · ${esc(r[CAMPO_AUTOR] || '')}</span>` : ''}
+    ${r[CAMPO_ANTERIOR] ? `<span class="nota">Estado anterior: ${esc(r[CAMPO_ANTERIOR])}</span>` : ''}
     <label for="m-estado">Estado situacional</label>
     <textarea id="m-estado" maxlength="5000">${esc(r[CAMPO_ESTADO] || '')}</textarea>
     <label for="m-autor">Registrado por (nombre u órgano)</label>
@@ -550,7 +553,7 @@ async function cargarPlantilla(archivo){
     ${notas.length ? `<p class="nota">${notas.join(' · ')}.</p>` : ''}
     ${cambios.length ? `<div class="lista-cambios">${cambios.slice(0, 50).map(c => `<div><b>${esc(c.puente)}</b> · ${esc(c.lugar)}<br>${esc(c.estado.length > 160 ? c.estado.slice(0, 160) + '…' : c.estado)}</div>`).join('')}${cambios.length > 50 ? `<div class="nota">… y ${fmt(cambios.length - 50)} más</div>` : ''}</div>
     <label for="m-autor">Registrado por (nombre u órgano)</label>
-    <input type="text" id="m-autor" maxlength="80" value="${esc(autorGuardado())}" placeholder="Ej.: PVN – Unidad zonal">` : ''}
+    <input type="text" id="m-autor" maxlength="80" value="${esc(autorGuardado())}" placeholder="Ej.: DGPPT – Juan Pérez">` : ''}
     <div class="modal-pie"><button type="button" class="btn-cancelar" data-cerrar>${cambios.length ? 'Cancelar' : 'Cerrar'}</button>
       ${cambios.length ? `<button type="button" class="btn-pri" id="m-confirmar">Guardar ${fmt(cambios.length)} ${cambios.length === 1 ? 'cambio' : 'cambios'}</button>` : ''}</div>`);
   const btn = document.getElementById('m-confirmar'); if (!btn) return;
