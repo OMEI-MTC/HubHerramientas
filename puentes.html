@@ -88,6 +88,30 @@
   .estado { padding:40px; text-align:center; color:var(--text-2); }
   .error { color:#A50E26; }
   @media (max-width:640px){ .main{padding:12px} .panel{padding:20px 16px} .barra{grid-template-columns:100px 1fr 40px} }
+  /* Estado situacional (fase beta) */
+  .beta { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; background:#FFF6E8; border:1px solid #F2C17D; color:#6B3A00; border-radius:10px; padding:10px 14px; font-size:13px; }
+  .beta b { background:#8A5A00; color:#fff; border-radius:999px; padding:2px 9px; font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
+  .acciones-tabla { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .btn-sec { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--blue); background:#fff; color:var(--blue); border-radius:8px; padding:7px 12px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; min-height:36px; }
+  .btn-sec:hover { background:var(--blue-lt); }
+  td.es { min-width:240px; max-width:340px; font-weight:400 !important; }
+  .es-txt { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .es-meta { font-size:12px; color:var(--text-3); margin-top:3px; }
+  .es-vacio { font-size:12px; color:var(--text-3); font-style:italic; }
+  .btn-es { margin-top:6px; border:0; background:none; color:var(--blue); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; padding:2px 0; }
+  .modal-fondo { position:fixed; inset:0; background:rgba(15,23,42,.45); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; }
+  .modal-caja { background:#fff; border-radius:14px; width:min(640px, 100%); max-height:90vh; overflow:auto; padding:24px; display:flex; flex-direction:column; gap:12px; box-shadow:0 20px 50px rgba(0,0,0,.25); }
+  .modal-caja h3 { font-size:18px; color:var(--blue); }
+  .modal-caja label { font-size:13px; font-weight:700; }
+  .modal-caja textarea, .modal-caja input[type=text] { width:100%; font-family:inherit; font-size:14px; border:1px solid #C9D2DC; border-radius:8px; padding:10px 12px; }
+  .modal-caja textarea { min-height:140px; resize:vertical; }
+  .modal-pie { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top:4px; }
+  .btn-pri { background:var(--blue); color:#fff; border:0; border-radius:8px; padding:10px 18px; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; min-height:42px; }
+  .btn-pri:disabled { opacity:.6; cursor:wait; }
+  .btn-cancelar { background:#fff; color:#1F2933; border:1px solid #C9D2DC; border-radius:8px; padding:10px 18px; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; min-height:42px; }
+  .lista-cambios { border:1px solid var(--border); border-radius:8px; font-size:13px; max-height:220px; overflow:auto; }
+  .lista-cambios div { padding:8px 12px; border-top:1px solid #EEF1F5; } .lista-cambios div:first-child { border-top:0; }
+  .aviso-flot { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1F2933; color:#fff; padding:12px 18px; border-radius:10px; font-size:14px; z-index:60; box-shadow:0 8px 24px rgba(0,0,0,.25); max-width:90vw; }
 </style>
 </head>
 <body>
@@ -129,6 +153,8 @@
 //   (termina en .../pub). GID: el número de cada pestaña (aparece en la URL tras #gid=).
 // ═══════════════════════════════════════════════════════════════════════════
 const URL_PUBLICADA = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5SK2Gqdw1braZA5s1yKGTlKUuptHXeXi4p93pkc2pJZ0flhcDgILsWU3_lqKdvbYOXJ-h_eO39Tto/pub';
+// Aplicación web del Apps Script del Sheet (Implementar → Aplicación web). Recibe el estado situacional.
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxCVxza9_p7yd6nVYjtHmXkotJuKHre3aQwZkBKIC-OrfR21Sl9aPaurizlOSm4mys5/exec';
 const GID = { PVN: '260217824', DGPPT: '1059504539', PVD: '321728799', Control: '65635837' };
 
 const CORS_PROXIES = [ u => u, u => 'https://corsproxy.io/?' + encodeURIComponent(u), u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u) ];
@@ -287,7 +313,7 @@ function dibujar(){
   // tabla
   const ord = visTabla.slice().sort(T.tabla.orden);
   const mostrar = verTodo ? ord : ord.slice(0, 10);
-  const filas = mostrar.map(r => '<tr>' + T.tabla.cols.map(([, c, html]) => { const v = typeof c === 'function' ? c(r) : r[c]; return `<td>${html ? v : esc(v || '—')}</td>`; }).join('') + '</tr>').join('');
+  const filas = mostrar.map(r => '<tr>' + T.tabla.cols.map(([, c, html]) => { const v = typeof c === 'function' ? c(r) : r[c]; return `<td>${html ? v : esc(v || '—')}</td>`; }).join('') + celdaEstado(r) + '</tr>').join('');
   // filtros
   const filtrosHtml = T._filtros.map(f => {
     const actual = s[f.id] || f.opts[0];
@@ -307,8 +333,11 @@ function dibujar(){
         <div class="barras">${barras || '<span class="nota">Sin puentes para los filtros elegidos.</span>'}</div>
       </div>
       <div class="tabla-wrap">
-        <div class="tabla-head"><h2 style="font-size:16px">${T.tabla.titulo}${zs ? ' · ' + esc(zs) : ''}</h2><span class="nota">Mostrando ${fmt(mostrar.length)} de ${fmt(visTabla.length)}</span></div>
-        <table><thead><tr>${T.tabla.cols.map(([h]) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${filas}</tbody></table>
+        <div class="tabla-head"><h2 style="font-size:16px">${T.tabla.titulo}${zs ? ' · ' + esc(zs) : ''}</h2>
+          <div class="acciones-tabla"><span class="nota">Mostrando ${fmt(mostrar.length)} de ${fmt(visTabla.length)} · ${fmt(contar(visTabla, r => r._reg === 'Con registro'))} con estado situacional</span>
+            ${hayClaves(activa) ? `<button type="button" class="btn-sec" id="btn-plantilla">Descargar plantilla</button><button type="button" class="btn-sec" id="btn-cargar">Cargar plantilla</button><input type="file" id="archivo-plantilla" accept=".xlsx,.xls" hidden>` : ''}</div></div>
+        <div style="padding:0 20px 12px"><div class="beta"><b>Beta</b><span>El registro del estado situacional está abierto: cualquier persona con el enlace puede actualizarlo. Indica tu nombre u órgano al registrar.</span></div></div>
+        <table><thead><tr>${T.tabla.cols.map(([h]) => `<th>${h}</th>`).join('')}<th>Estado situacional</th></tr></thead><tbody>${filas}</tbody></table>
         ${visTabla.length > 10 ? `<div class="ver"><button type="button" class="link" id="ver-todo">${verTodo ? 'Mostrar solo los primeros 10' : 'Ver la lista completa'}</button></div>` : ''}
       </div>
       ${ctrl && ctrl.Advertencias ? `<p class="nota">Observaciones de la última carga: ${esc(ctrl.Advertencias)}</p>` : ''}
@@ -350,7 +379,7 @@ document.getElementById('btn-excel').addEventListener('click', () => {
   if (!DATOS[activa]){ alert('La información de esta pestaña no está disponible.'); return; }
   const filas = filtrarTabla(activa);
   if (!filas.length){ alert('No hay puentes para exportar con los filtros actuales.'); return; }
-  const headers = Object.keys(filas[0]).filter(h => h !== '_sit');
+  const headers = Object.keys(filas[0]).filter(h => !h.startsWith('_'));
   const nc = headers.length, ctrl = CONTROL[activa];
   const titulo = 'Puentes del MTC · ' + T.nombre + ' (' + T.org + ')' + (ctrl && ctrl.Cargado ? ' · información cargada el ' + ctrl.Cargado : '');
   const rows = [
@@ -380,6 +409,175 @@ document.getElementById('btn-excel').addEventListener('click', () => {
   XLSX.writeFile(wb, 'puentes_' + T.org.toLowerCase() + '_' + new Date().toISOString().slice(0, 10) + '.xlsx');
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ESTADO SITUACIONAL (fase beta: registro abierto, sin usuarios ni validación)
+// ═══════════════════════════════════════════════════════════════════════════
+const CAMPO_ESTADO = 'Estado situacional', CAMPO_FECHA = 'Fecha de actualización', CAMPO_AUTOR = 'Actualizado por';
+const hayClaves = k => (DATOS[k] || []).some(r => r.Clave);
+const buscarFila = (k, clave) => (DATOS[k] || []).find(r => r.Clave === clave);
+const ubicacion = r => r.Departamento || r['Región'] || '';
+const recordarAutor = v => { try { localStorage.setItem('puentes_autor', v); } catch (e) {} };
+const autorGuardado = () => { try { return localStorage.getItem('puentes_autor') || ''; } catch (e) { return ''; } };
+
+function celdaEstado(r){
+  const txt = (r[CAMPO_ESTADO] || '').trim();
+  const meta = [r[CAMPO_FECHA], r[CAMPO_AUTOR]].filter(Boolean).join(' · ');
+  const btn = r.Clave ? `<button type="button" class="btn-es" data-clave="${esc(r.Clave)}">${txt ? 'Actualizar' : 'Registrar'}</button>` : '';
+  return `<td class="es">${txt ? `<div class="es-txt" title="${esc(txt)}">${esc(txt)}</div><div class="es-meta">${esc(meta)}</div>` : '<span class="es-vacio">Sin registro</span>'}${btn ? '<div>' + btn + '</div>' : ''}</td>`;
+}
+
+function aviso(msg){
+  const d = document.createElement('div'); d.className = 'aviso-flot'; d.textContent = msg; d.setAttribute('role', 'status');
+  document.body.appendChild(d); setTimeout(() => d.remove(), 3500);
+}
+
+function abrirModal(html){
+  cerrarModal();
+  const f = document.createElement('div'); f.className = 'modal-fondo'; f.id = 'modal';
+  f.innerHTML = `<div class="modal-caja" role="dialog" aria-modal="true">${html}</div>`;
+  f.addEventListener('click', e => { if (e.target === f) cerrarModal(); });
+  document.body.appendChild(f);
+  const primero = f.querySelector('textarea, input[type=text]'); if (primero) primero.focus();
+}
+function cerrarModal(){ const m = document.getElementById('modal'); if (m) m.remove(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
+
+async function enviar(payload){
+  if (!/^https:\/\/script\.google\.com\//.test(WEBAPP_URL)) throw new Error('Falta configurar WEBAPP_URL con la dirección de la aplicación web del Apps Script.');
+  let resp;
+  try {
+    resp = await fetch(WEBAPP_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, redirect:'follow', body:JSON.stringify(payload) });
+  } catch (e) { throw new Error('No se pudo conectar con el Apps Script. Revisa que la aplicación web tenga acceso "Cualquier usuario".'); }
+  const t = await resp.text();
+  let d; try { d = JSON.parse(t); } catch (e) { throw new Error('El Apps Script respondió algo inesperado: ' + t.slice(0, 160)); }
+  if (!d.ok) throw new Error(d.mensaje || 'No se pudo guardar.');
+  return d;
+}
+function aplicarLocal(k, clave, estado, res){
+  const r = buscarFila(k, clave); if (!r) return;
+  r[CAMPO_ESTADO] = estado; r[CAMPO_FECHA] = res.fecha; r[CAMPO_AUTOR] = res.autor;
+  r._reg = estado.trim() ? 'Con registro' : 'Sin registro';
+}
+
+// ── Registro individual ─────────────────────────────────────────────────────
+function abrirRegistro(clave){
+  const r = buscarFila(activa, clave); if (!r) return;
+  abrirModal(`
+    <h3>${esc(r.Puente || 'Puente')}</h3>
+    <span class="nota">${esc(ubicacion(r))}${r.Ruta ? ' · ' + esc(r.Ruta) : ''}${r.Progresiva ? ' km ' + esc(r.Progresiva) : ''}${r['Concesión'] ? ' · ' + esc(r['Concesión']) : ''}${r.CUI ? ' · CUI ' + esc(r.CUI) : ''}</span>
+    ${r[CAMPO_FECHA] ? `<span class="nota">Último registro: ${esc(r[CAMPO_FECHA])} · ${esc(r[CAMPO_AUTOR] || '')}</span>` : ''}
+    <label for="m-estado">Estado situacional</label>
+    <textarea id="m-estado" maxlength="5000">${esc(r[CAMPO_ESTADO] || '')}</textarea>
+    <label for="m-autor">Registrado por (nombre u órgano)</label>
+    <input type="text" id="m-autor" maxlength="80" value="${esc(autorGuardado())}" placeholder="Ej.: DGPPT – Juan Pérez">
+    <div class="modal-pie"><button type="button" class="btn-cancelar" data-cerrar>Cancelar</button><button type="button" class="btn-pri" id="m-guardar">Guardar</button></div>`);
+  document.getElementById('m-guardar').addEventListener('click', async e => {
+    const estado = document.getElementById('m-estado').value.trim(), autor = document.getElementById('m-autor').value.trim();
+    if (!estado){ aviso('Escribe el estado situacional antes de guardar.'); return; }
+    if (!autor){ aviso('Indica tu nombre u órgano.'); return; }
+    e.target.disabled = true; e.target.textContent = 'Guardando…';
+    try {
+      const res = await enviar({ accion:'guardarEstado', fuente:activa, clave, estado, autor });
+      recordarAutor(autor); aplicarLocal(activa, clave, estado, res); cerrarModal(); dibujar(); aviso('Estado situacional guardado.');
+    } catch (err) { e.target.disabled = false; e.target.textContent = 'Guardar'; aviso(err.message); }
+  });
+}
+
+// ── Plantilla para carga masiva ─────────────────────────────────────────────
+const REFERENCIA = { PVN: ['Ruta y progresiva', r => [r.Ruta, r.Progresiva && 'km ' + r.Progresiva].filter(Boolean).join(', ')],
+  DGPPT: ['Concesión', r => r['Concesión']], PVD: ['CUI', r => r.CUI] };
+const CONDICION = { PVN: ['Condición', 'Condición'], DGPPT: ['Estado', 'Estado'], PVD: ['Situación', 'Situación'] };
+
+function descargarPlantilla(){
+  if (typeof XLSX === 'undefined'){ aviso('No se pudo cargar el componente de Excel.'); return; }
+  const T = TABS[activa], filas = filtrarTabla(activa).slice().sort(T.tabla.orden);
+  if (!filas.length){ aviso('No hay puentes con los filtros actuales.'); return; }
+  const [refT, refF] = REFERENCIA[activa], [condT, condC] = CONDICION[activa];
+  const cab = ['Clave', 'Puente', T.zona, refT, condT, 'Estado situacional', 'Último registro'];
+  const nc = cab.length;
+  const rows = [
+    ['Plantilla de estado situacional · ' + T.nombre + ' (' + T.org + ') · ' + resumenFiltros()].concat(Array(nc - 1).fill('')),
+    ['Escribe o actualiza solo la columna "Estado situacional" (en amarillo). No modifiques la columna Clave ni agregues filas. Las celdas vacías no borran el estado actual.'].concat(Array(nc - 1).fill('')),
+    cab
+  ];
+  filas.forEach(r => rows.push([r.Clave, r.Puente, ubicacion(r), refF(r) || '', r[condC] || '', r[CAMPO_ESTADO] || '',
+    [r[CAMPO_FECHA], r[CAMPO_AUTOR]].filter(Boolean).join(' · ')]));
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:nc-1} }, { s:{r:1,c:0}, e:{r:1,c:nc-1} }];
+  ws['!cols'] = [{wch:30},{wch:40},{wch:16},{wch:24},{wch:14},{wch:60},{wch:24}];
+  ws['A1'].s = { font:{ bold:true, color:{ rgb:'C8102E' }, sz:13 } };
+  ws['A2'].s = { font:{ italic:true, color:{ rgb:'444444' }, sz:9 }, alignment:{ wrapText:true } };
+  const head = { font:{ bold:true, color:{ rgb:'FFFFFF' }, sz:10 }, fill:{ fgColor:{ rgb:'0055A5' } }, alignment:{ horizontal:'center', vertical:'center', wrapText:true } };
+  for (let c = 0; c < nc; c++) ws[XLSX.utils.encode_cell({ r:2, c })].s = head;
+  for (let r = 3; r < rows.length; r++) for (let c = 0; c < nc; c++){
+    const ref = XLSX.utils.encode_cell({ r, c }); if (!ws[ref]) ws[ref] = { t:'s', v:'' };
+    ws[ref].s = { font:{ sz:10, color:{ rgb: c === 0 ? '6B7A90' : '1F2933' } }, alignment:{ vertical:'top', wrapText:true },
+      fill: c === 5 ? { fgColor:{ rgb:'FFF4D6' } } : (c === 0 ? { fgColor:{ rgb:'EEF1F5' } } : undefined) };
+  }
+  ws['!rows'] = [{ hpt:20 }, { hpt:30 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
+  XLSX.writeFile(wb, 'plantilla_estado_' + T.org.toLowerCase() + '_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+}
+
+async function leerPlantilla(archivo){
+  const wb = XLSX.read(await archivo.arrayBuffer(), { type:'array' });
+  const ws = wb.Sheets['Plantilla'] || wb.Sheets[wb.SheetNames[0]];
+  const aoa = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:false });
+  const iCab = aoa.findIndex(f => f.map(x => String(x).trim()).includes('Clave') && f.map(x => String(x).trim()).includes('Estado situacional'));
+  if (iCab < 0) throw new Error('El archivo no tiene las columnas "Clave" y "Estado situacional". Usa la plantilla descargada del Hub.');
+  const cab = aoa[iCab].map(x => String(x).trim()), iC = cab.indexOf('Clave'), iE = cab.indexOf('Estado situacional');
+  return aoa.slice(iCab + 1).filter(f => String(f[iC] || '').trim()).map(f => ({ clave:String(f[iC]).trim(), estado:String(f[iE] || '').trim() }));
+}
+
+async function cargarPlantilla(archivo){
+  let regs;
+  try { regs = await leerPlantilla(archivo); } catch (e) { aviso(e.message); return; }
+  const otra = regs.find(x => !x.clave.startsWith(activa + '|'));
+  if (otra){ aviso('La plantilla no corresponde a la pestaña ' + TABS[activa].org + '. Ábrela en su pestaña o descarga una nueva.'); return; }
+  const cambios = [], noEnc = []; let sinCambio = 0, vacias = 0;
+  regs.forEach(x => {
+    const r = buscarFila(activa, x.clave);
+    if (!r){ noEnc.push(x.clave); return; }
+    if (!x.estado){ vacias++; return; }
+    if (x.estado === (r[CAMPO_ESTADO] || '').trim()){ sinCambio++; return; }
+    cambios.push({ clave:x.clave, estado:x.estado, puente:r.Puente, lugar:ubicacion(r) });
+  });
+  const notas = [ sinCambio && `${fmt(sinCambio)} sin cambios`, vacias && `${fmt(vacias)} celdas vacías, que no borran el estado actual`,
+    noEnc.length && `${fmt(noEnc.length)} claves que ya no existen en el inventario (se ignoran)` ].filter(Boolean);
+  abrirModal(`
+    <h3>Carga masiva · ${esc(TABS[activa].org)}</h3>
+    <p style="font-size:15px"><b>${fmt(cambios.length)}</b> ${cambios.length === 1 ? 'puente cambiará' : 'puentes cambiarán'} su estado situacional.</p>
+    ${notas.length ? `<p class="nota">${notas.join(' · ')}.</p>` : ''}
+    ${cambios.length ? `<div class="lista-cambios">${cambios.slice(0, 50).map(c => `<div><b>${esc(c.puente)}</b> · ${esc(c.lugar)}<br>${esc(c.estado.length > 160 ? c.estado.slice(0, 160) + '…' : c.estado)}</div>`).join('')}${cambios.length > 50 ? `<div class="nota">… y ${fmt(cambios.length - 50)} más</div>` : ''}</div>
+    <label for="m-autor">Registrado por (nombre u órgano)</label>
+    <input type="text" id="m-autor" maxlength="80" value="${esc(autorGuardado())}" placeholder="Ej.: PVN – Unidad zonal">` : ''}
+    <div class="modal-pie"><button type="button" class="btn-cancelar" data-cerrar>${cambios.length ? 'Cancelar' : 'Cerrar'}</button>
+      ${cambios.length ? `<button type="button" class="btn-pri" id="m-confirmar">Guardar ${fmt(cambios.length)} ${cambios.length === 1 ? 'cambio' : 'cambios'}</button>` : ''}</div>`);
+  const btn = document.getElementById('m-confirmar'); if (!btn) return;
+  btn.addEventListener('click', async () => {
+    const autor = document.getElementById('m-autor').value.trim();
+    if (!autor){ aviso('Indica tu nombre u órgano.'); return; }
+    btn.disabled = true; btn.textContent = 'Guardando…';
+    try {
+      const res = await enviar({ accion:'cargaMasiva', fuente:activa, autor, registros:cambios.map(c => ({ clave:c.clave, estado:c.estado })) });
+      recordarAutor(autor); cambios.forEach(c => { if (!res.noEncontradas.includes(c.clave)) aplicarLocal(activa, c.clave, c.estado, res); });
+      cerrarModal(); dibujar();
+      aviso(`${fmt(res.guardados)} ${res.guardados === 1 ? 'estado guardado' : 'estados guardados'}` + (res.noEncontradas.length ? ` · ${res.noEncontradas.length} no encontrados` : '') + '.');
+    } catch (err) { btn.disabled = false; btn.textContent = 'Guardar cambios'; aviso(err.message); }
+  });
+}
+
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-cerrar]')){ cerrarModal(); return; }
+  const b = e.target.closest('.btn-es[data-clave]'); if (b){ abrirRegistro(b.dataset.clave); return; }
+  if (e.target.id === 'btn-plantilla'){ descargarPlantilla(); return; }
+  if (e.target.id === 'btn-cargar'){ document.getElementById('archivo-plantilla').click(); }
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'archivo-plantilla' && e.target.files[0]){ const f = e.target.files[0]; e.target.value = ''; cargarPlantilla(f); }
+});
+
+
 (async function iniciar(){
   dibujarTabs();
   const url = gid => `${URL_PUBLICADA}?gid=${gid}&single=true&output=csv`;
@@ -388,7 +586,9 @@ document.getElementById('btn-excel').addEventListener('click', () => {
     try {
       const rows = leerCSV(await traer(url(GID[k])));
       if (TABS[k].preparar) TABS[k].preparar(rows);
-      DATOS[k] = rows; TABS[k]._filtros = TABS[k].filtros(rows);
+      rows.forEach(r => r._reg = (r['Estado situacional'] || '').trim() ? 'Con registro' : 'Sin registro');
+      DATOS[k] = rows;
+      TABS[k]._filtros = TABS[k].filtros(rows).concat([{ id:'reg', lab:'Estado situacional', tipo:'pills', campo:'_reg', opts:['Todos','Con registro','Sin registro'] }]);
     } catch(e) { TABS[k]._error = e.message; }
   }));
   dibujar();
