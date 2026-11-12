@@ -14,13 +14,25 @@
  *   4. La pestaña "Control" registra fecha, archivo, puentes leídos y advertencias.
  *      Si un archivo no se puede leer, su pestaña NO se modifica (queda la versión anterior).
  *
+ * ESTADO SITUACIONAL (fase beta)
+ *   Cada pestaña termina con las columnas Clave, Estado situacional, Fecha de actualización,
+ *   Actualizado por y Estado situacional anterior. Se llenan desde el Hub; al registrar un estado
+ *   nuevo, el que se reemplaza pasa a "Estado situacional anterior" con su fecha y autor. Al recargar un inventario:
+ *     · los puentes que siguen (misma clave, o mismo nombre en la misma ruta/concesión/región)
+ *       conservan su estado situacional;
+ *     · los nuevos entran sin estado; los que ya no vienen se eliminan y se copian a la pestaña
+ *       "Eliminados en la última carga";
+ *     · si coincide menos de la mitad de los puentes, la pestaña no se modifica.
+ *   Para que el Hub pueda guardar, este script se implementa como aplicación web
+ *   (Implementar → Nueva implementación → Aplicación web → Cualquier usuario).
+ *
  * REQUISITO: servicio avanzado "Drive API" activado (Servicios → + → Drive API),
  * necesario para leer archivos Excel.
  */
 
 // ── CONFIGURACIÓN ──────────────────────────────────────────────────────────
 // ID de la carpeta "Puentes – Fuentes" (la parte de la URL después de /folders/)
-var CARPETA_FUENTES_ID = 'PEGAR_AQUI_EL_ID_DE_LA_CARPETA';
+var CARPETA_FUENTES_ID = '11b2cDDj6yGQAbCvSbp6Euvi4V10KFXEt';
 
 var FUENTES = [
   { clave: 'PVN',   subcarpeta: 'PVN',   pestana: 'PVN',   leer: function (v) { return leerPVN(v); } },
@@ -47,6 +59,11 @@ function actualizarPVD()   { procesar_([FUENTES[2]]); }
 
 // ── PROCESO ────────────────────────────────────────────────────────────────
 function procesar_(lista) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);   // evita que una carga y un registro desde el Hub escriban a la vez
+  try { procesarSinBloqueo_(lista); } finally { lock.releaseLock(); }
+}
+function procesarSinBloqueo_(lista) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var raiz = DriveApp.getFolderById(CARPETA_FUENTES_ID);
   var resumen = [];
@@ -65,10 +82,10 @@ function procesar_(lista) {
         if (!mejor && !r.ok) reg.avisos = r.error;
       });
       if (!mejor) throw new Error(reg.avisos || 'No se encontró una hoja con el formato esperado');
-      escribirPestana_(ss, fu.pestana, mejor.r.cabecera, mejor.r.filas);
+      var fus = escribirConEstado_(ss, fu.clave, fu.pestana, mejor.r.cabecera, mejor.r.filas);
       reg.hoja = mejor.nombre;
       reg.puentes = mejor.r.filas.length;
-      reg.avisos = mejor.r.avisos.join(' · ');
+      reg.avisos = [fus.resumen].concat(mejor.r.avisos).join(' · ');
       reg.resultado = 'Actualizado';
     } catch (e) {
       reg.resultado = 'NO actualizado: ' + e.message;
@@ -110,16 +127,140 @@ function leerHojas_(archivo) {
   }
 }
 
-function escribirPestana_(ss, nombre, cabecera, filas) {
+// ── ESTADO SITUACIONAL ─────────────────────────────────────────────────────
+// Columnas que se agregan al final de cada pestaña. Las llena el Hub, no el inventario.
+var COL_CLAVE = 'Clave';
+var COLS_ESTADO = ['Estado situacional', 'Fecha de actualización', 'Actualizado por', 'Estado situacional anterior'];
+function completarEstado_(a) { a = (a || []).slice(0, COLS_ESTADO.length); while (a.length < COLS_ESTADO.length) a.push(''); return a; }
+var PESTANA_ELIMINADOS = 'Eliminados en la última carga';
+var MIN_COINCIDENCIA = 0.5;   // protección: si coincide menos de la mitad, no se actualiza
+
+// Reemplaza el inventario de la pestaña conservando el estado situacional de los puentes
+// que siguen estando. Los que ya no vienen se copian a "Eliminados en la última carga".
+function escribirConEstado_(ss, fuente, nombre, cabecera, filas) {
   var h = ss.getSheetByName(nombre) || ss.insertSheet(nombre);
+  // claves de la carga nueva (con sufijo si una clave se repite)
+  var nuevas = conClaves_(fuente, cabecera, filas);
+  // lo que había antes
+  var previo = h.getLastRow() > 1 ? h.getDataRange().getDisplayValues() : [];
+  var cabPrev = previo.length ? previo[0] : [];
+  var iClave = cabPrev.indexOf(COL_CLAVE), iEst = cabPrev.indexOf(COLS_ESTADO[0]);
+  var viejas = [];
+  for (var r = 1; r < previo.length; r++) {
+    var fila = previo[r];
+    var datos = cabecera.map(function (c) { var i = cabPrev.indexOf(c); return i >= 0 ? fila[i] : ''; });
+    viejas.push({ datos: datos, estado: completarEstado_(iEst >= 0 ? fila.slice(iEst, iEst + COLS_ESTADO.length) : []), clave: iClave >= 0 ? fila[iClave] : '' });
+  }
+  if (viejas.length && !viejas[0].clave) {   // primera carga con esta versión: se calculan las claves anteriores
+    var re = conClaves_(fuente, cabecera, viejas.map(function (v) { return v.datos; }));
+    viejas.forEach(function (v, k) { v.clave = re[k].clave; });
+  }
+  var porClave = {}, porAlterna = {};
+  viejas.forEach(function (v, k) {
+    porClave[v.clave] = k;
+    var alt = claveAlterna_(fuente, cabecera, v.datos);
+    (porAlterna[alt] = porAlterna[alt] || []).push(k);
+  });
+  var usada = {}, coinciden = 0;
+  var salida = nuevas.map(function (n) {
+    var k = porClave[n.clave];
+    if (k === undefined || usada[k]) {   // segundo intento: mismo nombre en la misma ruta, concesión o región
+      var cand = (porAlterna[claveAlterna_(fuente, cabecera, n.datos)] || []).filter(function (x) { return !usada[x]; });
+      k = cand.length === 1 ? cand[0] : undefined;
+    }
+    var estado = completarEstado_([]);
+    if (k !== undefined) { usada[k] = true; coinciden++; estado = viejas[k].estado; }
+    return n.datos.concat([n.clave]).concat(estado);
+  });
+  var eliminados = viejas.filter(function (v, k) { return !usada[k]; });
+  // protección ante un archivo equivocado
+  if (viejas.length >= 10 && coinciden / viejas.length < MIN_COINCIDENCIA) {
+    throw new Error('Solo ' + coinciden + ' de ' + viejas.length + ' puentes coinciden con la carga anterior. ' +
+      'Puede ser un archivo equivocado o con otro formato: no se modificó la pestaña.');
+  }
+  var cab = cabecera.concat([COL_CLAVE]).concat(COLS_ESTADO);
   h.clearContents();
-  var datos = [cabecera].concat(filas.map(function (f) { return f.map(function (x) { return x == null ? '' : x; }); }));
-  var rango = h.getRange(1, 1, datos.length, cabecera.length);
-  rango.setNumberFormat('@');          // todo como texto: evita que Sheets cambie códigos o progresivas
-  rango.setValues(datos);
-  h.getRange(1, 1, 1, cabecera.length).setFontWeight('bold').setBackground('#E8F0FA');
+  var rango = h.getRange(1, 1, salida.length + 1, cab.length);
+  rango.setNumberFormat('@');
+  rango.setValues([cab].concat(salida));
+  h.getRange(1, 1, 1, cab.length).setFontWeight('bold').setBackground('#E8F0FA');
+  h.getRange(1, cabecera.length + 1, 1, COLS_ESTADO.length + 1).setBackground('#FFF4D6');
+  h.setFrozenRows(1);
+  registrarEliminados_(ss, fuente, cabecera, eliminados);
+  var conEstado = eliminados.filter(function (v) { return v.estado[0]; }).length;
+  return { resumen: 'Coinciden ' + coinciden + ' · nuevos ' + (nuevas.length - coinciden) + ' · eliminados ' + eliminados.length +
+    (conEstado ? ' (' + conEstado + (conEstado === 1 ? ' tenía' : ' tenían') + ' estado situacional; ver "' + PESTANA_ELIMINADOS + '")' : '') };
+}
+
+function registrarEliminados_(ss, fuente, cabecera, eliminados) {
+  var h = ss.getSheetByName(PESTANA_ELIMINADOS) || ss.insertSheet(PESTANA_ELIMINADOS);
+  var vals = h.getLastRow() > 0 ? h.getDataRange().getDisplayValues() : [];
+  var cab = ['Fuente', 'Clave', 'Puente', 'Ubicación', 'Eliminado el'].concat(COLS_ESTADO);
+  var otras = vals.slice(1).filter(function (v) { return v[0] !== fuente; });   // conserva las de las otras fuentes
+  var hoy = Utilities.formatDate(new Date(), TZ, 'dd/MM/yyyy HH:mm');
+  var iP = cabecera.indexOf('Puente'), iU = cabecera.indexOf('Departamento') >= 0 ? cabecera.indexOf('Departamento') : cabecera.indexOf('Región');
+  var nuevas = eliminados.map(function (v) { return [fuente, v.clave, v.datos[iP] || '', v.datos[iU] || '', hoy].concat(v.estado); });
+  var todo = [cab].concat(otras).concat(nuevas);
+  h.clearContents();
+  var rango = h.getRange(1, 1, todo.length, cab.length);
+  rango.setNumberFormat('@');
+  rango.setValues(todo.map(function (f) { return cab.map(function (x, i) { return f[i] == null ? '' : f[i]; }); }));
+  h.getRange(1, 1, 1, cab.length).setFontWeight('bold').setBackground('#E8F0FA');
   h.setFrozenRows(1);
 }
+
+// ── REGISTRO DESDE EL HUB (aplicación web) ─────────────────────────────────
+// Fase beta: registro abierto, sin usuarios ni validación. Quien registra escribe su nombre u órgano.
+function doGet() { return responder_({ ok: true, mensaje: 'Puentes – registro de estado situacional activo' }); }
+
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    var d = JSON.parse(e.postData.contents);
+    if (['PVN', 'DGPPT', 'PVD'].indexOf(d.fuente) < 0) return responder_({ ok: false, mensaje: 'Fuente no válida' });
+    var registros = d.accion === 'cargaMasiva' ? (d.registros || []) : (d.accion === 'guardarEstado' ? [{ clave: d.clave, estado: d.estado }] : null);
+    if (!registros) return responder_({ ok: false, mensaje: 'Acción no reconocida: ' + d.accion });
+    return responder_(guardarEstados_(d.fuente, registros, d.autor));
+  } catch (err) {
+    return responder_({ ok: false, mensaje: 'Error: ' + err.message });
+  } finally {
+    try { lock.releaseLock(); } catch (x) {}
+  }
+}
+
+function guardarEstados_(fuente, registros, autor) {
+  var h = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(fuente);
+  if (!h) return { ok: false, mensaje: 'No existe la pestaña ' + fuente };
+  var vals = h.getDataRange().getDisplayValues(), cab = vals[0];
+  var iC = cab.indexOf(COL_CLAVE), iE = cab.indexOf(COLS_ESTADO[0]), iA = cab.indexOf(COLS_ESTADO[3]);
+  if (iC < 0 || iE < 0) return { ok: false, mensaje: 'La pestaña ' + fuente + ' aún no tiene las columnas de estado situacional. Actualice primero desde Drive.' };
+  var fila = {};
+  for (var r = 1; r < vals.length; r++) fila[vals[r][iC]] = r + 1;
+  var fecha = Utilities.formatDate(new Date(), TZ, 'dd/MM/yyyy HH:mm');
+  var quien = String(autor || '').trim().slice(0, 80) || 'Sin indicar';
+  var guardados = 0, noEncontradas = [], repetidas = [];
+  // segunda barrera: una clave repetida en el mismo envío no se guarda
+  var veces = {};
+  registros.forEach(function (x) { veces[x.clave] = (veces[x.clave] || 0) + 1; });
+  registros.forEach(function (x) {
+    if (veces[x.clave] > 1) { if (repetidas.indexOf(x.clave) < 0) repetidas.push(x.clave); return; }
+    var n = fila[x.clave];
+    if (!n) { noEncontradas.push(x.clave); return; }
+    var texto = String(x.estado == null ? '' : x.estado).trim().slice(0, 5000);
+    // el estado que se reemplaza pasa a "Estado situacional anterior", con su fecha y autor
+    var act = vals[n - 1], previo = String(act[iE] || '').trim();
+    var anterior = iA >= 0 ? act[iA] : '';
+    if (previo && previo !== texto) anterior = previo + ' [' + [act[iE + 1], act[iE + 2]].filter(String).join(' · ') + ']';
+    var valores = iA >= 0 ? [texto, fecha, quien, anterior] : [texto, fecha, quien];
+    h.getRange(n, iE + 1, 1, valores.length).setNumberFormat('@').setValues([valores]);
+    vals[n - 1] = act.slice(0, iE).concat(valores).concat(act.slice(iE + valores.length));
+    guardados++;
+  });
+  return { ok: true, guardados: guardados, noEncontradas: noEncontradas, repetidas: repetidas, fecha: fecha, autor: quien };
+}
+
+function responder_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 
 function registrarControl_(ss, reg) {
   var h = ss.getSheetByName(PESTANA_CONTROL) || ss.insertSheet(PESTANA_CONTROL);
@@ -228,6 +369,33 @@ var DEF_PVN_ = [
   { key: 'lon', pats: [/LONGITUD/], req: false }
 ];
 var CONDICION_ = { 'BUENO': 'Bueno', 'BUENA': 'Bueno', 'BUEN ESTADO': 'Bueno', 'REGULAR': 'Regular', 'MALO': 'Malo', 'MALA': 'Malo', 'CRITICO': 'Crítico' };
+
+// ── CLAVES: identifican al mismo puente entre una carga y la siguiente ─────
+function normClave_(s) { return norm_(s).replace(/\s*\+\s*/g, '+').replace(/[^A-Z0-9+]/g, ''); }
+function campo_(cabecera, fila, nombre) { var i = cabecera.indexOf(nombre); return i >= 0 ? fila[i] : ''; }
+function clavePrincipal_(fuente, cab, f) {
+  var nom = normClave_(campo_(cab, f, 'Puente'));
+  if (fuente === 'PVN') { var r = normClave_(campo_(cab, f, 'Ruta')), p = normClave_(campo_(cab, f, 'Progresiva'));
+    return (r && p) ? r + '|' + p : normClave_(campo_(cab, f, 'Departamento')) + '|' + nom; }
+  if (fuente === 'DGPPT') { var r2 = normClave_(campo_(cab, f, 'Ruta')), p2 = normClave_(campo_(cab, f, 'Progresiva'));
+    return normClave_(campo_(cab, f, 'Concesión')) + '|' + ((r2 && p2) ? r2 + '|' + p2 : nom); }
+  return normClave_(campo_(cab, f, 'CUI')) + '|' + nom;   // PVD: un CUI agrupa varios puentes
+}
+function claveAlterna_(fuente, cab, f) {
+  var nom = normClave_(campo_(cab, f, 'Puente'));
+  if (fuente === 'PVN') return normClave_(campo_(cab, f, 'Ruta')) + '|' + nom;
+  if (fuente === 'DGPPT') return normClave_(campo_(cab, f, 'Concesión')) + '|' + nom;
+  return normClave_(campo_(cab, f, 'Región')) + '|' + nom;
+}
+// Asigna la clave de cada fila; si una clave se repite, agrega #2, #3…
+function conClaves_(fuente, cab, filas) {
+  var vistas = {};
+  return filas.map(function (f) {
+    var c = fuente + '|' + clavePrincipal_(fuente, cab, f);
+    vistas[c] = (vistas[c] || 0) + 1;
+    return { datos: f, clave: vistas[c] > 1 ? c + '#' + vistas[c] : c };
+  });
+}
 
 function leerPVN(valores) {
   var enc = buscarEncabezado_(valores, DEF_PVN_);
