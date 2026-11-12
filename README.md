@@ -29,11 +29,11 @@ Las páginas activas están en la raíz a propósito: su dirección web es la qu
 
 | Página | Fuente de datos | Escribe en |
 | --- | --- | --- |
-| `index.html` | Google Sheet "Configuración_Hub_OMEI" (pestañas Herramientas, KPIS y Publicaciones) | — |
+| `index.html` | Google Sheet "Configuración_Hub_OMEI", en la cuenta de reportería del Hub (pestañas Herramientas, KPIS y Publicaciones) | — |
 | `hoja-de-ruta.html` | Google Sheet "Hoja de Ruta - Intervenciones + Normativa" | Apps Script de la Hoja de Ruta |
 | `intervenciones-mtc.html` | Google Sheet "Carpeta_Departamental" (pestaña Actual) y la Hoja de Ruta | — |
 | `departamentales.html` | Google Sheets "Carpeta_Departamental" y "Datos_departamentales" | — |
-| `puentes.html` | Google Sheet "Puentes – Consolidado" | — (se actualiza con su Apps Script) |
+| `puentes.html` | Google Sheet "Puentes – Consolidado" | Apps Script de Puentes (estado situacional, fase beta) |
 
 Las direcciones de cada hoja están al inicio del código de cada página, en un bloque de configuración.
 
@@ -42,7 +42,9 @@ Las direcciones de cada hoja están al inicio del código de cada página, en un
 Los archivos de esta carpeta son **copias de referencia**. El código que realmente se ejecuta está en los proyectos de Apps Script de la cuenta de OGAME. Cuando se modifique un script, conviene actualizar también su copia aquí.
 
 - `HojaDeRuta_backend.gs`: recibe los registros y validaciones de la Hoja de Ruta. Después de cambiarlo hay que publicar una nueva versión: **Implementar → Gestionar implementaciones → lápiz → Nueva versión**. No usar "Nueva implementación", porque cambia la dirección y la página deja de conectarse.
-- `Puentes_Consolidado.gs`: está dentro del Sheet "Puentes – Consolidado". Lee los Excel que los órganos dejan en la carpeta de Drive "Puentes – Fuentes" (subcarpetas PVN, DGPPT y PVD) y se ejecuta desde el menú **Puentes → Actualizar desde Drive**. No requiere implementación.
+- `Puentes_Consolidado.gs`: está dentro del Sheet "Puentes – Consolidado". Tiene dos funciones:
+  - **Consolidar el inventario:** lee los Excel que los órganos dejan en la carpeta de Drive "Puentes – Fuentes" (subcarpetas PVN, DGPPT y PVD) desde el menú **Puentes → Actualizar desde Drive**. Al recargar, conserva el estado situacional de los puentes que siguen, agrega los nuevos sin estado y copia los que salen a la pestaña "Eliminados en la última carga". Si coincide menos de la mitad de los puentes, no modifica nada.
+  - **Recibir el estado situacional desde el Hub** (fase beta, registro abierto): está implementado como aplicación web. Después de cambiar el código hay que publicar una nueva versión, igual que el de la Hoja de Ruta.
 
 ## Íconos de la portada
 
