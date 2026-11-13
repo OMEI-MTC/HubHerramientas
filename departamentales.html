@@ -284,9 +284,9 @@ const AM_ROM = ['I','II','III','IV'];
 // Lee "30/06/2026", "2026-06-30", "29-Sep-26", "Junio 2026", "Jun-26", "jun. 2026", número de serie de Excel → {d, m, y}
 // Periodo de un dato de la ENAHO según su fecha de corte: hasta junio = I semestre; después = año completo.
 // Sin fecha (la columna aún no existe en el Sheet) → se usa el año de la configuración, como antes.
-function amPeriodoEnaho(txt) {
+function amPeriodoEnaho(txt, respaldo = AM_CONFIG.anioSocial) {
   const f = amFecha(txt);
-  if (!f) return { inicio: `En ${AM_CONFIG.anioSocial}`, frase: AM_CONFIG.anioSocial, corto: AM_CONFIG.anioSocial, fuente: null };
+  if (!f) return { inicio: `En ${respaldo}`, frase: respaldo, corto: respaldo, fuente: null };
   const sem = f.m <= 6;
   return { inicio: sem ? `En el I semestre de ${f.y}` : `En ${f.y}`, frase: sem ? `el I semestre de ${f.y}` : String(f.y),
            corto: sem ? `I sem. ${f.y}` : String(f.y), fuente: sem ? `ENAHO, I semestre de ${f.y}` : `ENAHO ${f.y}` };
@@ -345,7 +345,7 @@ const C = {
   dep: 'Departamento', macro: 'Macro región',
   act: 'Índice de la Actividad Productiva Departamental', ic: 'Índice de competitividad', icPuesto: 'Puesto IC',
   pobreza: 'Tasa de Pobreza Monetaria', desempleo: 'Tasa de Desempleo',
-  cortePob: 'Corte Pobreza', corteDes: 'Corte Desempleo',
+  cortePob: 'Corte Pobreza', corteDes: 'Corte Desempleo', corteTIC: 'Corte TIC',
   rvnExist: 'RVN existente', rvnPav: 'RVN Pavimentada', rvnBueno: 'RVN Pavimentada Buen estado',
   rvnBuenoRep: 'Rep. RVN Pavimentada Buen estado', rvnVar: 'Var RVN buen estado actual', corteVial: 'Corte Red Vial',
   rvdTot: 'RVD Total', rvdPav: 'RVD pavimentada', rvvTot: 'RVV Total', rvvPav: 'RVV pavimentada',
@@ -514,11 +514,12 @@ function amTextos(depName, rows, secRows, extra = {}) {
   const nac = k => { const v = n(k); return v !== null && v < 0.999 ? v : null; };   // ignora un "100 %" en la fila Nacional
   const itPN = nac('internetPct'), cpPN = nac('compuPct'), cePN = nac('celularPct');
   const pers = v => v !== null ? amPersonas(v) : null;
+  const PT = amPeriodoEnaho(txt('corteTIC'), AM_CONFIG.anioTIC);   // sin fecha de corte: igual que antes
   if (itP !== null || it !== null) {
     s4.push({ h2: 'Uso de tecnologías de la información' });
     let t;
     if (itP !== null) {
-      t = `En ${AM_CONFIG.anioTIC}, el ${amPct(itP)} de la población de 6 años a más de ${dep} usó internet` + (it !== null ? ` (${pers(it)})` : '');
+      t = `${PT.inicio}, el ${amPct(itP)} de la población de 6 años a más de ${dep} usó internet` + (it !== null ? ` (${pers(it)})` : '');
       if (itPN !== null) t += itP > itPN ? `, por encima del promedio nacional (${amPct(itPN)})` : itP < itPN ? `, por debajo del promedio nacional (${amPct(itPN)})` : ', igual al promedio nacional';
       t += '.';
       const det = (v, pN) => { const p = [v !== null ? pers(v) : null, pN !== null ? `nacional: ${amPct(pN)}` : null].filter(Boolean); return p.length ? ` (${p.join('; ')})` : ''; };
@@ -527,13 +528,14 @@ function amTextos(depName, rows, secRows, extra = {}) {
       if (ceP !== null) extra.push(`el ${amPct(ceP)} de la población de 18 años a más tiene celular propio${det(ce, cePN)}`);
       if (extra.length) t += ' Además, ' + amJoin(extra) + '.';
     } else {   // sin porcentajes: solo personas
-      t = `En ${AM_CONFIG.anioTIC}, ${pers(it)} de 6 años a más usaron internet en ${dep}.`;
+      t = `${PT.inicio}, ${pers(it)} de 6 años a más usaron internet en ${dep}.`;
       const extra = [];
       if (cp !== null) extra.push(`${pers(cp)} usan computadora, laptop o tablet`);
       if (ce !== null) extra.push(`${pers(ce)} de 18 años a más cuentan con celular propio`);
       if (extra.length) t += ' Asimismo, ' + amJoin(extra) + '.';
     }
-    s4.push({ p: t }, { src: AM_CONFIG.fuentes.tic });
+    s4.push({ p: t }, { src: !PT.fuente ? AM_CONFIG.fuentes.tic
+      : 'Estimaciones OMEI-OGAME-MTC con base en INEI – Encuesta Nacional de Hogares (' + PT.fuente + ').' });
   }
   if (s4.length) out.secciones.push({ titulo: 'Comunicaciones', bloques: s4 });
 
