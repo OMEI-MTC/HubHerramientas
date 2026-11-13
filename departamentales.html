@@ -288,8 +288,13 @@ function amPeriodoEnaho(txt, respaldo = AM_CONFIG.anioSocial) {
   const f = amFecha(txt);
   if (!f) return { inicio: `En ${respaldo}`, frase: respaldo, corto: respaldo, fuente: null };
   const sem = f.m <= 6;
-  return { inicio: sem ? `En el I semestre de ${f.y}` : `En ${f.y}`, frase: sem ? `el I semestre de ${f.y}` : String(f.y),
-           corto: sem ? `I sem. ${f.y}` : String(f.y), fuente: sem ? `ENAHO, I semestre de ${f.y}` : `ENAHO ${f.y}` };
+  return { sem, y: f.y, inicio: sem ? `En el semestre ${f.y}-1` : `En ${f.y}`, frase: sem ? `el semestre ${f.y}-1` : String(f.y),
+           corto: sem ? `Sem. ${f.y}-1` : String(f.y), fuente: sem ? `ENAHO Trimestral ${f.y}-T1 y ${f.y}-T2` : `ENAHO ${f.y}` };
+}
+// Texto de fuente (el documento antepone "Fuente: ")
+function amFuenteEnaho(P) {
+  return P.sem ? `INEI - Encuesta Nacional de Hogares (ENAHO) Trimestral ${P.y}-T1 y ${P.y}-T2. Elaboración: Cálculo semestral realizado por la OMEI-OGAME-MTC.`
+               : `Estimaciones OMEI-OGAME-MTC con base en INEI – Encuesta Nacional de Hogares (ENAHO ${P.y}).`;
 }
 
 function amFecha(txt) {
@@ -453,7 +458,7 @@ function amTextos(depName, rows, secRows, extra = {}) {
       if (fp) s2.push({ p: `Dentro de la macro región ${macro}, conformada por ${AM_NUM_TXT[tot] || tot} departamentos, ${dep} registra ${fp}${fd ? ' y ' + fd : ''}.` });
     }
     s2.push({ src: !PS.fuente ? AM_CONFIG.fuentes.social
-      : 'Estimaciones OMEI-OGAME-MTC con base en INEI – Encuesta Nacional de Hogares (' + PS.fuente + (desPer && PD.fuente ? '; desempleo: ' + PD.fuente : '') + ').' });
+      : amFuenteEnaho(PS) + (desPer && PD.fuente ? ' Desempleo: INEI – ' + PD.fuente + '.' : '') });
   } else falta('pobreza');
   if (s2.length) out.secciones.push({ titulo: 'Contexto social', bloques: s2 });
 
@@ -534,8 +539,7 @@ function amTextos(depName, rows, secRows, extra = {}) {
       if (ce !== null) extra.push(`${pers(ce)} de 18 años a más cuentan con celular propio`);
       if (extra.length) t += ' Asimismo, ' + amJoin(extra) + '.';
     }
-    s4.push({ p: t }, { src: !PT.fuente ? AM_CONFIG.fuentes.tic
-      : 'Estimaciones OMEI-OGAME-MTC con base en INEI – Encuesta Nacional de Hogares (' + PT.fuente + ').' });
+    s4.push({ p: t }, { src: !PT.fuente ? AM_CONFIG.fuentes.tic : amFuenteEnaho(PT) });
   }
   if (s4.length) out.secciones.push({ titulo: 'Comunicaciones', bloques: s4 });
 
