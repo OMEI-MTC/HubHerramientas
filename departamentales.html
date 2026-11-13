@@ -227,7 +227,7 @@ const AM_CONFIG = {
   cortePresupuesto: '29 de setiembre de 2026',
   fuentes: {
     actividad: 'INEI – Indicador de la Actividad Productiva Departamental, II trimestre 2026 (año base 2007 = 100).',
-    competitividad: 'Instituto Peruano de Economía (IPE) – Índice de Competitividad Regional (INCORE) 2025.',
+    competitividad: 'Instituto Peruano de Economía (IPE) – Índice de Competitividad Regional (INCORE) 2026.',
     social: 'Estimaciones OMEI-OGAME-MTC con base en INEI – Encuesta Nacional de Hogares (ENAHO) 2025.',
     vial: 'MTC – Unidad de Estadística, con información del Sistema Nacional de Carreteras (SINAC), diciembre 2025.',
     cobertura: 'Organismo Supervisor de Inversión Privada en Telecomunicaciones (OSIPTEL) – Centros poblados con cobertura reportados por las empresas operadoras, diciembre 2025.',
@@ -282,6 +282,16 @@ const AM_MES_N = { ene:1, feb:2, mar:3, abr:4, may:5, jun:6, jul:7, ago:8, set:9
   jan:1, apr:4, aug:8, dec:12 };
 const AM_ROM = ['I','II','III','IV'];
 // Lee "30/06/2026", "2026-06-30", "29-Sep-26", "Junio 2026", "Jun-26", "jun. 2026", número de serie de Excel → {d, m, y}
+// Periodo de un dato de la ENAHO según su fecha de corte: hasta junio = I semestre; después = año completo.
+// Sin fecha (la columna aún no existe en el Sheet) → se usa el año de la configuración, como antes.
+function amPeriodoEnaho(txt) {
+  const f = amFecha(txt);
+  if (!f) return { inicio: `En ${AM_CONFIG.anioSocial}`, frase: AM_CONFIG.anioSocial, corto: AM_CONFIG.anioSocial, fuente: null };
+  const sem = f.m <= 6;
+  return { inicio: sem ? `En el I semestre de ${f.y}` : `En ${f.y}`, frase: sem ? `el I semestre de ${f.y}` : String(f.y),
+           corto: sem ? `I sem. ${f.y}` : String(f.y), fuente: sem ? `ENAHO, I semestre de ${f.y}` : `ENAHO ${f.y}` };
+}
+
 function amFecha(txt) {
   const s = String(txt || '').trim(); if (!s) return null;
   const y4 = y => { y = +y; return y < 100 ? 2000 + y : y; };
@@ -335,6 +345,7 @@ const C = {
   dep: 'Departamento', macro: 'Macro región',
   act: 'Índice de la Actividad Productiva Departamental', ic: 'Índice de competitividad', icPuesto: 'Puesto IC',
   pobreza: 'Tasa de Pobreza Monetaria', desempleo: 'Tasa de Desempleo',
+  cortePob: 'Corte Pobreza', corteDes: 'Corte Desempleo',
   rvnExist: 'RVN existente', rvnPav: 'RVN Pavimentada', rvnBueno: 'RVN Pavimentada Buen estado',
   rvnBuenoRep: 'Rep. RVN Pavimentada Buen estado', rvnVar: 'Var RVN buen estado actual', corteVial: 'Corte Red Vial',
   rvdTot: 'RVD Total', rvdPav: 'RVD pavimentada', rvvTot: 'RVV Total', rvvPav: 'RVV pavimentada',
@@ -421,14 +432,16 @@ function amTextos(depName, rows, secRows, extra = {}) {
 
   // --- 2. Contexto social
   const s2 = []; const pob = g('pobreza'), pobN = n('pobreza'), des = g('desempleo'), desN = n('desempleo');
+  const PS = amPeriodoEnaho(txt('cortePob')), PD = amPeriodoEnaho(txt('corteDes') || txt('cortePob'));
+  const desPer = PD.corto !== PS.corto ? ` (${PD.corto})` : '';   // solo si el desempleo es de otro periodo
   if (pob !== null) {
-    let t = `En ${AM_CONFIG.anioSocial}, la pobreza monetaria en ${dep} alcanzó al ${amPct(pob)} de su población`;
+    let t = `${PS.inicio}, la pobreza monetaria en ${dep} alcanzó al ${amPct(pob)} de su población`;
     if (pobN !== null) t += pob === pobN ? `, igual al promedio nacional` : `, ${amPP(pob, pobN)} puntos porcentuales ${pob > pobN ? 'por encima' : 'por debajo'} del promedio nacional (${amPct(pobN)})`;
     t += '.';
     if (des !== null && desN !== null) {
       const mismoSentido = (pob > pobN) === (des > desN);
-      t += mismoSentido ? ` La tasa de desempleo fue ${amPct(des)} de la PEA, también ${des > desN ? 'superior' : 'inferior'} a la nacional (${amPct(desN)}).`
-                        : ` En contraste, la tasa de desempleo fue ${amPct(des)} de la PEA, ${des > desN ? 'superior' : 'inferior'} a la nacional (${amPct(desN)}).`;
+      t += mismoSentido ? ` La tasa de desempleo${desPer} fue ${amPct(des)} de la PEA, también ${des > desN ? 'superior' : 'inferior'} a la nacional (${amPct(desN)}).`
+                        : ` En contraste, la tasa de desempleo${desPer} fue ${amPct(des)} de la PEA, ${des > desN ? 'superior' : 'inferior'} a la nacional (${amPct(desN)}).`;
     }
     s2.push({ p: t });
     if (pares.length > 2) {
@@ -439,7 +452,8 @@ function amTextos(depName, rows, secRows, extra = {}) {
       const tot = pares.length;
       if (fp) s2.push({ p: `Dentro de la macro región ${macro}, conformada por ${AM_NUM_TXT[tot] || tot} departamentos, ${dep} registra ${fp}${fd ? ' y ' + fd : ''}.` });
     }
-    s2.push({ src: AM_CONFIG.fuentes.social });
+    s2.push({ src: !PS.fuente ? AM_CONFIG.fuentes.social
+      : 'Estimaciones OMEI-OGAME-MTC con base en INEI – Encuesta Nacional de Hogares (' + PS.fuente + (desPer && PD.fuente ? '; desempleo: ' + PD.fuente : '') + ').' });
   } else falta('pobreza');
   if (s2.length) out.secciones.push({ titulo: 'Contexto social', bloques: s2 });
 
@@ -637,7 +651,8 @@ function amTextos(depName, rows, secRows, extra = {}) {
   if (act !== null || pob !== null) {
     const a = [];
     if (act !== null) a.push(`En el ${P.act}, la actividad productiva de ${dep} ${act >= 0 ? 'creció' : 'se contrajo'} ${amFmt(Math.abs(act))} %` + (actN !== null ? `, ${act >= actN ? 'por encima' : 'por debajo'} del resultado nacional (${amFmt(actN)} %)` : '') + '.');
-    if (pob !== null && pobN !== null) a.push(`Su pobreza monetaria (${amPct(pob)}) se ubica ${amPP(pob, pobN)} puntos porcentuales ${pob > pobN ? 'por encima' : 'por debajo'} del promedio nacional.`);
+    // Con fecha de corte en el Sheet se indica el periodo; sin ella, la oración queda como antes (sin periodo).
+    if (pob !== null && pobN !== null) a.push(`${PS.fuente ? PS.inicio + ', su' : 'Su'} pobreza monetaria (${amPct(pob)}) se ubica ${amPP(pob, pobN)} puntos porcentuales ${pob > pobN ? 'por encima' : 'por debajo'} del promedio nacional.`);
     out.key.push(a.join(' '));
   }
   const b = [];
@@ -649,7 +664,7 @@ function amTextos(depName, rows, secRows, extra = {}) {
 
   // --- Cifras destacadas
   if (act !== null) out.kpis.push([`${amFmt(act)} %`, 'Actividad productiva', P.actCorto]);
-  if (pob !== null) out.kpis.push([amPct(pob), 'Pobreza monetaria', AM_CONFIG.anioSocial]);
+  if (pob !== null) out.kpis.push([amPct(pob), 'Pobreza monetaria', PS.corto]);
   if (bue !== null && pav) out.kpis.push([amPct(rep !== null ? rep : bue / pav), 'RVN pavimentada en buen estado', vialCorto]);
   if (out.kpiCob !== undefined) out.kpis.push([amPct(out.kpiCob), 'Centros poblados sin cobertura móvil', P.cobCorto]);
   if (T) out.kpis.push([amPct(T.av), 'Avance financiero transporte', P.finAnio]);
