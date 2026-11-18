@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor Cartera Priorizada · OGAME · MTC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --red:    #C8102E;
+    --blue:   #0055A5;
+    --blue-dk:#003F7D;
+    --white:  #ffffff;
+    --bg:     #F2F2F2;
+    --card:   #ffffff;
+    --border: rgba(0,0,0,0.09);
+    --text:   #1a1a1a;
+    --text-2: #4a5568;
+    --sans: 'DM Sans', system-ui, sans-serif;
+    --serif: 'DM Serif Display', serif;
+    --r: 12px;
+  }
+  html, body { height: 100%; }
+  body { font-family:var(--sans); background:var(--bg); color:var(--text); font-size:14px; line-height:1.5; }
+  .layout { min-height:100vh; display:flex; flex-direction:column; }
+
+  /* ── Topbar (idéntico al Hub) ── */
+  .topbar {
+    background: var(--red);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; min-height: 68px; flex-shrink: 0;
+  }
+  .topbar-brand { display:flex; align-items:center; gap:12px; }
+  .topbar-logo { width:40px; height:40px; border-radius:8px; overflow:hidden; flex-shrink:0; box-shadow:0 1px 6px rgba(0,0,0,0.25); }
+  .topbar-logo img { width:100%; height:100%; object-fit:cover; display:block; }
+  .topbar-name { font-size:18px; font-weight:700; color:var(--white); line-height:1.2; letter-spacing:-0.01em; }
+  .topbar-sub  { font-size:13px; color:rgba(255,255,255,0.85); margin-top:1px; font-weight:400; }
+  .btn-back {
+    display:flex; align-items:center; gap:7px;
+    background:transparent; color:#fff; border:1px solid rgba(255,255,255,0.6);
+    border-radius:20px; padding:6px 14px;
+    font-family:var(--sans); font-size:13px; font-weight:600;
+    cursor:pointer; white-space:nowrap; transition:background .12s; text-decoration:none;
+  }
+  .btn-back:hover { background:rgba(255,255,255,0.14); border-color:#fff; }
+
+  /* ── Contenido ── */
+  .main { flex:1; display:flex; flex-direction:column; padding:20px 28px 24px; min-height:0; }
+  .head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  .panel-title { font-family:var(--serif); font-size:30px; color:var(--blue); line-height:1.1; }
+  .panel-sub { font-size:15px; color:var(--text-2); margin-top:4px; }
+  .btn-open {
+    font-size:13px; font-weight:600; color:var(--blue); text-decoration:none;
+    border:1px solid #8FAADC; border-radius:20px; padding:6px 14px; background:#fff; white-space:nowrap;
+  }
+  .btn-open:hover { background:#EEF4FF; }
+
+
+  /* ── Bloque de contenido alineado con el visor ── */
+  .contenido { width:100%; max-width:1282px; margin:0 auto; }
+
+  /* ── Ayuda Memoria ── */
+  .am-card {
+    display:flex; align-items:center; gap:14px 20px; flex-wrap:wrap;
+    background:#fff; border:1px solid var(--border); border-left:6px solid var(--red);
+    border-radius:var(--r); padding:16px 20px; margin-bottom:16px;
+    box-shadow:0 2px 10px rgba(0,63,125,0.06);
+  }
+  .am-icono { width:48px; height:48px; border-radius:10px; background:#FDECEF; color:var(--red);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .am-texto { flex:1; min-width:260px; }
+  .am-titulo { font-size:18px; font-weight:700; color:var(--blue-dk); line-height:1.25; }
+  .am-desc { font-size:13.5px; color:var(--text-2); margin-top:3px; }
+  .am-controles { display:flex; align-items:center; gap:10px; flex-wrap:wrap; width:100%; padding-left:68px; }
+  .am-controles .sep { width:1px; height:28px; background:var(--border); margin:0 4px; }
+  .am-controles select {
+    font-family:var(--sans); font-size:14px; color:var(--text); height:42px; min-width:220px;
+    border:1px solid #8FAADC; border-radius:21px; padding:0 14px; background:#fff; cursor:pointer;
+  }
+  .am-controles select:focus { outline:2px solid var(--blue); outline-offset:1px; }
+  .btn-am { font-family:var(--sans); font-size:14px; font-weight:700; color:#fff; background:var(--red); border:none;
+    border-radius:21px; height:42px; padding:0 20px; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:8px; }
+  .btn-am:hover { background:#A50D26; }
+  .btn-am.excel { background:var(--blue); }
+  .btn-am.excel:hover { background:var(--blue-dk); }
+  .btn-am.pdf { background:#3B4452; }
+  .btn-am.pdf:hover { background:#262D38; }
+  .am-estado { padding-left:68px; }
+  .btn-am:disabled { background:#C9CFD8; cursor:not-allowed; }
+  .am-estado { font-size:12.5px; color:var(--text-2); width:100%; min-height:0; }
+  .am-estado:empty { display:none; }
+  .am-estado.error { color:var(--red); }
+
+  /* Contenedor del visor: ocupa todo el alto disponible */
+  /* El visor toma la proporción del reporte (16:9) + la barra inferior de Power BI (~56px),
+     con el mayor tamaño posible que quepa completo en la pantalla */
+  .visor {
+    --barra-pbi: 56px;
+    --ancho: min(100vw - 56px, (100vh - 230px - var(--barra-pbi)) * 16 / 9);
+    width: var(--ancho);
+    height: calc(var(--ancho) * 9 / 16 + var(--barra-pbi));
+    margin: 0 auto; flex: none;
+    background:var(--card); border:1px solid var(--border); border-radius:var(--r);
+    overflow:hidden;
+  }
+  .visor iframe { width:100%; height:100%; border:0; display:block; }
+
+  @media (max-width: 720px) {
+    .am-controles, .am-estado { padding-left:0; }
+    .topbar { flex-wrap:wrap; gap:12px; padding:14px 18px; }
+    .topbar-name { font-size:20px; }
+    .main { padding:16px; }
+    .visor { --ancho: calc(100vw - 32px); }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo"><img src="assets/img/mtc.jpg" alt="Logo MTC"></div>
+      <div>
+        <div class="topbar-name">Hub de Herramientas · OGAME</div>
+        <div class="topbar-sub">Oficina General de Articulación, Monitoreo, y Evaluación de Impacto</div>
+      </div>
+    </div>
+    <a class="btn-back" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Regresar a página principal
+    </a>
+  </header>
+
+  <main class="main">
+    <div class="contenido">
+      <div class="head">
+        <div>
+          <div class="panel-title">VISOR CARTERA PRIORIZADA</div>
+          <div class="panel-sub">Seguimiento de los hitos de las intervenciones de la cartera priorizada</div>
+        </div>
+        <a class="btn-open" id="btnOpen" target="_blank" rel="noopener">Abrir en pantalla completa</a>
+      </div>
+    </div>
+
+    <div class="visor">
+      <iframe id="visor" title="Visor Cartera Priorizada" allowfullscreen></iframe>
+    </div>
+  </main>
+</div>
+
+<script>
+// ====== CONFIGURACIÓN ======
+// Para cambiar de tablero, solo reemplaza este enlace.
+const VISOR_URL = 'https://app.powerbi.com/view?r=eyJrIjoiZDc3YjVjOWEtZWQyOS00ZmY0LWE5NzctNDYwMDU3YWU3ZjAyIiwidCI6IjUzYWNiMjY1LTkxMjgtNDQ2ZC1hNWJlLWI4Mzg2MDBhYTY1NyJ9';
+
+document.getElementById('visor').src = VISOR_URL;
+document.getElementById('btnOpen').href = VISOR_URL;
+
+// ====== Tamaño del visor: igual al lienzo del reporte (Formato de página → Tamaño del lienzo en Power BI) ======
+const PBI_ANCHO = 1280;   // ancho del lienzo en píxeles
+const PBI_ALTO  = 720;     // alto del lienzo en píxeles
+const PBI_BARRA = 56;     // barra inferior de Power BI (páginas, zoom)
+function ajustarVisor() {
+  const visor = document.querySelector('.visor');
+  const main = document.querySelector('.main');
+  const est = getComputedStyle(main);
+  const disponible = main.clientWidth - parseFloat(est.paddingLeft) - parseFloat(est.paddingRight);
+  const ancho = Math.min(PBI_ANCHO + 2, disponible);              // +2 por el borde del recuadro
+  const scrollH = ancho < PBI_ANCHO + 2 ? 17 : 0;                 // si no entra, Power BI agrega barra horizontal
+  visor.style.width = ancho + 'px';
+  visor.style.height = (PBI_ALTO + PBI_BARRA + scrollH + 2) + 'px';
+}
+window.addEventListener('resize', ajustarVisor);
+ajustarVisor();
+</script>
+</body>
+</html>
