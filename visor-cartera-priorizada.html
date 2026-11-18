@@ -60,7 +60,7 @@
 
 
   /* ── Bloque de contenido alineado con el visor ── */
-  .contenido { width:100%; max-width:1282px; margin:0 auto; }
+  .contenido { width:100%; margin:0 auto; }
 
   /* ── Ayuda Memoria ── */
   .am-card {
@@ -159,19 +159,22 @@ const VISOR_URL = 'https://app.powerbi.com/view?r=eyJrIjoiZDc3YjVjOWEtZWQyOS00Zm
 document.getElementById('visor').src = VISOR_URL;
 document.getElementById('btnOpen').href = VISOR_URL;
 
-// ====== Tamaño del visor: igual al lienzo del reporte (Formato de página → Tamaño del lienzo en Power BI) ======
-const PBI_ANCHO = 1280;   // ancho del lienzo en píxeles
-const PBI_ALTO  = 720;     // alto del lienzo en píxeles
-const PBI_BARRA = 56;     // barra inferior de Power BI (páginas, zoom)
+// ====== Tamaño del visor ======
+// Las páginas del reporte tienen tamaños distintos (Portada 920×1300, Reporte general 1900×1700,
+// Seguimiento de hitos 2100×1720, Programación mensualizada 1600×1720). Por eso el recuadro no usa
+// un tamaño fijo: ocupa todo el ancho y el alto libres de la pantalla, y cada página se adapta
+// porque en Power BI Desktop está configurada con Ver → Vista de página → "Ajustar al ancho".
+const ALTO_MINIMO = 560;  // alto mínimo del recuadro en pantallas pequeñas
 function ajustarVisor() {
   const visor = document.querySelector('.visor');
   const main = document.querySelector('.main');
   const est = getComputedStyle(main);
   const disponible = main.clientWidth - parseFloat(est.paddingLeft) - parseFloat(est.paddingRight);
-  const ancho = Math.min(PBI_ANCHO + 2, disponible);              // +2 por el borde del recuadro
-  const scrollH = ancho < PBI_ANCHO + 2 ? 17 : 0;                 // si no entra, Power BI agrega barra horizontal
-  visor.style.width = ancho + 'px';
-  visor.style.height = (PBI_ALTO + PBI_BARRA + scrollH + 2) + 'px';
+  visor.style.width = disponible + 'px';
+  document.querySelector('.contenido').style.maxWidth = disponible + 'px';
+  const arriba = visor.getBoundingClientRect().top + window.scrollY;   // lo que ocupan franja y título
+  const alto = Math.max(ALTO_MINIMO, window.innerHeight - arriba - parseFloat(est.paddingBottom));
+  visor.style.height = alto + 'px';
 }
 window.addEventListener('resize', ajustarVisor);
 ajustarVisor();
