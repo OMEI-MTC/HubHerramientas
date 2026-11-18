@@ -1832,8 +1832,14 @@ const ESTADOS_CUMPL = [
   { value: 'En proceso',  label: '🔄 En proceso' },
   { value: 'Reprogramado',label: '📅 Reprogramado' },
   { value: 'No iniciado', label: '⏸ No iniciado' },
-  { value: '__sin__',     label: 'Sin estado' },
 ];
+
+// Estado de un hito: si no tiene estado registrado se considera "No iniciado".
+// Se usa en la tabla, filtros, resumen, ficha de edición y exportaciones.
+function estadoHito(eh) {
+  const e = String((eh && eh.estadoCumplimiento) || '').trim();
+  return e || 'No iniciado';
+}
 
 // Construye la lista de meses a partir de los hitos de las intervenciones
 // que pasan los demás filtros (cascada). Respeta también el checkbox "solo
@@ -2106,9 +2112,7 @@ function hitosVisibles(interv) {
   if (estadoCumplSeleccion.size > 0) {
     lista = lista.filter(h => {
       const eh = vistaHitos[h.codhito] || {};
-      const est = eh.estadoCumplimiento || '';
-      if (estadoCumplSeleccion.has('__sin__') && est === '') return true;
-      return estadoCumplSeleccion.has(est);
+      return estadoCumplSeleccion.has(estadoHito(eh));
     });
   }
 
@@ -2395,7 +2399,7 @@ function renderTabla() {
       const fechaChip = eh.fechaCumplimiento
         ? `<span class="fecha-chip con-fecha">${esc(fechaTexto)}</span>`
         : `<span class="fecha-chip sin-fecha">Sin fecha</span>`;
-      const estadoChip = chipEstadoCumpl(eh.estadoCumplimiento);
+      const estadoChip = chipEstadoCumpl(estadoHito(eh));
 
       const esUltimo = idx === hitosMostrar.length - 1;
       const bordeInferior = esUltimo ? 'border-bottom:2px solid #CBD5E1' : 'border-bottom:1px solid #E5E7EB';
@@ -2529,7 +2533,7 @@ function abrirModal(codigo) {
     const p = parseCumplimiento(eh.fechaCumplimiento);
     const mesSel = p ? p.mes : '';
     const anioSel = p ? p.anio : '';
-    const estadoSel = eh.estadoCumplimiento || '';
+    const estadoSel = estadoHito(eh);   // sin estado → No iniciado
 
     const opcionesMes = MESES_ABR.map((m, idx) =>
       `<option value="${idx + 1}" ${mesSel === idx + 1 ? 'selected' : ''}>${m}</option>`
@@ -2538,7 +2542,6 @@ function abrirModal(codigo) {
       `<option value="${a}" ${anioSel === a ? 'selected' : ''}>${a}</option>`
     ).join('');
     const opcionesEstado = [
-      { v: '', label: '—' },
       { v: 'Cumplido',    label: '✅ Cumplido' },
       { v: 'En proceso',  label: '🔄 En proceso' },
       { v: 'Reprogramado',label: '📅 Reprogramado' },
@@ -3019,7 +3022,7 @@ function calcularResumen() {
     g.ids.add(i.id);
     i.hitos.forEach(h => {
       const eh = vistaHitos[h.codhito] || {};
-      const est = (eh.estadoCumplimiento || '').trim();
+      const est = estadoHito(eh);
       g.totalHitos++;
       if      (est === 'Cumplido')     g.cumplido++;
       else if (est === 'En proceso')   g.enProceso++;
@@ -3178,7 +3181,7 @@ function descargarResumen() {
   const totales = { hitos:0, cumplido:0, enProceso:0, reprogramado:0, noIniciado:0, sinEstado:0 };
   datos.forEach(r => { totales.hitos+=r.totalHitos; totales.cumplido+=r.cumplido; totales.enProceso+=r.enProceso; totales.reprogramado+=r.reprogramado; totales.noIniciado+=r.noIniciado; totales.sinEstado+=r.sinEstado; });
 
-  const rows = [['N°', 'Unidad / Oficina Responsable', 'Registros', 'Total Hitos', 'Cumplido', 'En proceso', 'Reprogramado', 'No iniciado', 'Sin estado']];
+  const rows = [['N°', 'Unidad / Oficina Responsable', 'Registros', 'Total Hitos', 'Cumplido', 'En proceso', 'Reprogramado', 'No iniciado']];
   const filasSubtotal = [];
   let numero = 0;
   const subtotalAcum = {};
@@ -3191,16 +3194,16 @@ function descargarResumen() {
     subtotalAcum[g].cumplido+=r.cumplido; subtotalAcum[g].enProceso+=r.enProceso;
     subtotalAcum[g].reprogramado+=r.reprogramado; subtotalAcum[g].noIniciado+=r.noIniciado; subtotalAcum[g].sinEstado+=r.sinEstado;
 
-    rows.push([numero, r.equipo, r.total, r.totalHitos, r.cumplido, r.enProceso, r.reprogramado, r.noIniciado, r.sinEstado]);
+    rows.push([numero, r.equipo, r.total, r.totalHitos, r.cumplido, r.enProceso, r.reprogramado, r.noIniciado]);
 
     const grupoSiguiente = datos[idx + 1] ? datos[idx + 1].resumenGrupo : null;
     if (g !== grupoSiguiente) {
       const d = subtotalAcum[g];
-      rows.push(['', 'TOTAL ' + g, d.total, d.hitos, d.cumplido, d.enProceso, d.reprogramado, d.noIniciado, d.sinEstado]);
+      rows.push(['', 'TOTAL ' + g, d.total, d.hitos, d.cumplido, d.enProceso, d.reprogramado, d.noIniciado]);
       filasSubtotal.push(rows.length - 1);
     }
   });
-  rows.push(['', 'TOTAL GENERAL', totalGeneral, totales.hitos, totales.cumplido, totales.enProceso, totales.reprogramado, totales.noIniciado, totales.sinEstado]);
+  rows.push(['', 'TOTAL GENERAL', totalGeneral, totales.hitos, totales.cumplido, totales.enProceso, totales.reprogramado, totales.noIniciado]);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
   const NCOLS = 9;
@@ -3262,7 +3265,7 @@ function resumenFiltrosActivos() {
   if (document.getElementById('f-ultimo')?.checked ||
       document.getElementById('f-ultimo-select')?.value === 'si') partes.push('Solo el último hito');
   const estadoC = [...estadoCumplSeleccion].join(', ');
-  if (estadoC) partes.push('Estado de cumplimiento: ' + (estadoC === '__sin__' ? 'Sin estado' : estadoC));
+  if (estadoC) partes.push('Estado de cumplimiento: ' + estadoC);
 
   return partes.length ? partes.join('  ·  ') : 'Ninguno (todas las intervenciones)';
 }
@@ -3405,7 +3408,7 @@ function exportarExcel() {
         est.fechaReg || '', (interv.priorizadas||[]).join('; ') || '', interv.vice || '',
         interv.organo, interv.area || '', interv.cui || '',
         interv.detalle || '', interv.nombre, interv.relevancia || '', est.estado || '',
-        h.nombre, p ? p.label : (eh.fechaCumplimiento || ''), eh.estadoCumplimiento || ''
+        h.nombre, p ? p.label : (eh.fechaCumplimiento || ''), estadoHito(eh)
       ]);
     });
     const filaFin = rows.length - 1;
