@@ -596,6 +596,13 @@ if (sessionStorage.getItem(ACCESS_KEY) === '1') {
 } else {
   loadUsers();
 }
+// ¿El enlace apunta a una página del propio Hub? (relativo, o del mismo sitio web)
+function esEnlaceInterno(url) {
+  const u = String(url || '').trim();
+  if (!/^[a-z]+:\/\//i.test(u)) return true;               // relativo: "puentes.html"
+  try { return new URL(u).host === window.location.host; }  // absoluto del mismo sitio
+  catch (e) { return false; }
+}
 const SHEET_URL     = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTbK_4P2lWh6RGL2Z7hP_qdP1Q2prpXFw_1TV4xlxKeY2z6h-21i4gzhahEL22iCJW--oz81SPNyPY7/pub?gid=647280895&single=true&output=tsv';
 const KPIS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTbK_4P2lWh6RGL2Z7hP_qdP1Q2prpXFw_1TV4xlxKeY2z6h-21i4gzhahEL22iCJW--oz81SPNyPY7/pub?gid=149753430&single=true&output=tsv';
 const PUB_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTbK_4P2lWh6RGL2Z7hP_qdP1Q2prpXFw_1TV4xlxKeY2z6h-21i4gzhahEL22iCJW--oz81SPNyPY7/pub?gid=1920445386&single=true&output=tsv';
@@ -830,8 +837,13 @@ function renderCards() {
         const primary = /tablero|visor/i.test(l.herramienta);
         const registro = /registr/i.test(l.herramienta);
         if (pending) return `<span class="mc-btn disabled">${l.herramienta}</span>`;
-        if (registro) return `<a class="mc-btn registro" href="${l.url}" target="_blank" rel="noopener">${l.herramienta}</a>`;
-        return `<a class="mc-btn${primary?' primary':''}" href="${l.url}" target="_blank" rel="noopener">${l.herramienta} ↗</a>`;
+        // Páginas del propio Hub (enlace relativo como "hoja-de-ruta.html" o del mismo sitio):
+        // se abren en la misma pestaña. Enlaces externos (Power BI, Drive, formularios): pestaña nueva.
+        const interno = esEnlaceInterno(l.url);
+        const destino = interno ? '' : ' target="_blank" rel="noopener"';
+        const flecha  = interno ? '' : ' ↗';
+        if (registro) return `<a class="mc-btn registro" href="${l.url}"${destino}>${l.herramienta}</a>`;
+        return `<a class="mc-btn${primary?' primary':''}" href="${l.url}"${destino}>${l.herramienta}${flecha}</a>`;
       }).join('');
 
       const card = document.createElement('div');
