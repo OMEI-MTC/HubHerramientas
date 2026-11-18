@@ -115,6 +115,11 @@
     .main { padding:16px; }
     .visor { --ancho: calc(100vw - 32px); }
   }
+  /* Cabecera compacta: deja más alto libre para el reporte */
+  .main { padding:14px 28px 16px; }
+  .head { margin-bottom:10px; align-items:center; }
+  .panel-title { font-size:24px; }
+  .panel-sub { font-size:14px; margin-top:2px; }
 </style>
 </head>
 <body>
@@ -160,18 +165,21 @@ document.getElementById('visor').src = VISOR_URL;
 document.getElementById('btnOpen').href = VISOR_URL;
 
 // ====== Tamaño del visor ======
-// Las páginas del reporte tienen tamaños distintos (Portada 920×1300, Reporte general 1900×1700,
-// Seguimiento de hitos 2100×1720, Programación mensualizada 1600×1720). Por eso el recuadro no usa
-// un tamaño fijo: ocupa todo el ancho y el alto libres de la pantalla, y cada página se adapta
-// porque en Power BI Desktop está configurada con Ver → Vista de página → "Ajustar al ancho".
-const ALTO_MINIMO = 560;  // alto mínimo del recuadro en pantallas pequeñas
+// Las páginas del reporte tienen tamaños distintos (ancho × alto): Portada 1300×920,
+// Reporte general 1700×1900, Seguimiento de hitos 1720×2100, Programación mensualizada 1720×1600.
+// El recuadro ocupa el alto libre de la pantalla y el ancho libre hasta VISOR_ANCHO_MAX.
+// En Power BI Desktop (Ver → Vista de página): Portada = "Ajustar a la página" (se ve completa);
+// las demás = "Ajustar al ancho" (se recorren hacia abajo dentro del reporte).
+const VISOR_ANCHO_MAX = 1200;  // ancho máximo del recuadro en píxeles (subir o bajar para ajustar)
+const ALTO_MINIMO = 560;       // alto mínimo del recuadro en pantallas pequeñas
 function ajustarVisor() {
   const visor = document.querySelector('.visor');
   const main = document.querySelector('.main');
   const est = getComputedStyle(main);
   const disponible = main.clientWidth - parseFloat(est.paddingLeft) - parseFloat(est.paddingRight);
-  visor.style.width = disponible + 'px';
-  document.querySelector('.contenido').style.maxWidth = disponible + 'px';
+  const ancho = Math.min(VISOR_ANCHO_MAX, disponible);
+  visor.style.width = ancho + 'px';
+  document.querySelector('.contenido').style.maxWidth = ancho + 'px';
   const arriba = visor.getBoundingClientRect().top + window.scrollY;   // lo que ocupan franja y título
   const alto = Math.max(ALTO_MINIMO, window.innerHeight - arriba - parseFloat(est.paddingBottom));
   visor.style.height = alto + 'px';
