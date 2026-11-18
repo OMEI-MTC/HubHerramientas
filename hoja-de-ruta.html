@@ -88,12 +88,9 @@
   .btn-salir-ogame:hover { background: rgba(255,255,255,0.25); }
   /* fondo tintado cuando la vista OGAME está activa */
   .card.ogame-activa { background: #F5F9FF; border-color: #BFD9F2; }
-  /* columna "Habilitar hitos" solo visible en modo priorización */
+  /* columna "Habilitar hitos" solo visible en modo gestión de hitos */
   .col-ogame { display: none; }
   .card.modo-priorizacion .col-ogame { display: table-cell; }
-  /* columna "Priorización" oculta en modo validación y edición */
-  .card.modo-validacion .col-prio,
-  .card.modo-edicion .col-prio { display: none; }
   /* columna "Responsable" oculta en modo edición y validación (se muestra dentro de intervención) */
   .card.modo-validacion .col-responsable,
   .card.modo-edicion .col-responsable { display: none; }
@@ -111,7 +108,6 @@
   .card.modo-edicion tbody .col-val-edicion { display: table-cell !important; }
   /* vista OGAME: igual que validación (filtro y columna de validación visibles;
      Responsable y Priorización ocultas para que encabezados y celdas coincidan) */
-  .card.modo-ogame .col-prio,
   .card.modo-ogame .col-responsable { display: none; }
   .card.modo-ogame .col-val-filtro { display: block !important; }
   .card.modo-ogame thead .col-val-filtro,
@@ -817,7 +813,7 @@
           </button>
           <button class="btn-ogame" id="btn-priorizacion" onclick="abrirLoginPriorizacion()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-            Priorización
+            Gestión de hitos
           </button>
         </div>
       </div>
@@ -956,9 +952,8 @@
             <th class="col-val-edicion" style="width:12%; text-align:center; vertical-align:middle; display:none">Estado de<br>validación</th>
             <th class="col-responsable" style="width:8%; vertical-align:middle">Responsable</th>
             <th style="width:9%; vertical-align:middle">Área de influencia</th>
-            <th class="col-prio" style="width:5%; text-align:center; vertical-align:middle">Priorización</th>
             <th class="col-ogame" style="width:5%; text-align:center; vertical-align:middle">Habilitar<br>hitos</th>
-            <th style="width:18%; vertical-align:middle">Estado situacional</th>
+            <th style="width:23%; vertical-align:middle">Estado situacional</th>
                         <th style="width:14%; vertical-align:middle">Hitos claves</th>
             <th style="width:7%; text-align:center; vertical-align:middle">Fecha de<br>Cumplimiento</th>
             <th style="width:8%; text-align:center; vertical-align:middle">Estado de<br>cumplimiento</th>
@@ -1568,8 +1563,8 @@ function navegarUsuarios(e) {
 
 function abrirLoginPriorizacion() {
   modoLoginActual = 'priorizacion';
-  document.getElementById('login-titulo').textContent = 'Priorización';
-  document.getElementById('login-subtitulo').textContent = 'Ingresa la contraseña para habilitar la priorización';
+  document.getElementById('login-titulo').textContent = 'Gestión de hitos';
+  document.getElementById('login-subtitulo').textContent = 'Ingresa la contraseña para habilitar o bloquear la edición de hitos';
   document.getElementById('login-oficina-group').style.display = 'none';
   prepararLogin('Contraseña');
 }
@@ -1659,7 +1654,7 @@ function entrarModo(modo, oficina, usuario) {
   const toastMsg = modo === 'edicion'    ? `Edición${per}: ${usuarioActivo}` :
                    modo === 'validacion' ? `Validación${per}: ${oficina}` :
                    modo === 'ogame'      ? `Modo OGAME: ${usuarioActivo}` :
-                                          'Modo priorización activado';
+                                          'Modo gestión de hitos activado';
   mostrarToast(toastMsg, 'exito');
 }
 
@@ -1727,7 +1722,7 @@ function aplicarModo() {
       ? `<strong>Validación${per} — ${esc(oficinaEdicion)}</strong> · revisando y validando registros de tus órganos subordinados`
       : modoApp === 'ogame'
       ? `<strong>Modo OGAME — ${esc(usuarioActivo)}</strong> · revisando y validando intervenciones semanales asignadas`
-      : `<strong>Modo priorización activo</strong> · marca las intervenciones prioritarias`;
+      : `<strong>Modo gestión de hitos activo</strong> · habilita o bloquea la edición de hitos por intervención`;
     // En modo edición: fijar organoSeleccion a la oficina del usuario
     if (modoApp === 'edicion') {
       organoSeleccion.clear();
@@ -2270,11 +2265,6 @@ function renderTabla() {
       ? `<span style="font-weight:700;color:var(--texto)">${fmtAvance(est.avance)}</span>`
       : '—';
 
-    // Priorización: editable solo en modo Priorización; en otros modos, gris/consulta
-    const prioHtml = esPriorizacion()
-      ? `<button class="toggle-prio ${est.priorizado ? 'on' : ''}" onclick="togglePriorizacion('${esc(interv.codigo)}', this)" title="${est.priorizado ? 'Priorizada' : 'No priorizada'}"></button>`
-      : `<span class="toggle-prio ${est.priorizado ? 'on' : ''} deshab" title="${est.priorizado ? 'Priorizada' : 'No priorizada'}"></span>`;
-
     // Habilitar hitos (columna solo visible en modo priorización)
     const habil = est.hitosHabilitados !== false; // por defecto true
     const habilHtml = `<button class="toggle-prio ${habil ? 'on' : ''}" onclick="toggleHitosHabilitados('${esc(interv.codigo)}', this)" title="${habil ? 'Hitos habilitados' : 'Hitos bloqueados'}"></button>`;
@@ -2377,7 +2367,6 @@ function renderTabla() {
       </td>` : ''}
       ${(esValidacion() || esEdicion() || esOgame()) ? '' : `<td class="col-responsable" rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.organo)}</td>`}
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px;font-size:12px;color:var(--texto-2)">${esc(interv.area) || "—"}</td>
-      <td class="col-prio" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${prioHtml}</td>
       <td class="col-ogame" rowspan="${nHitos}" style="text-align:center;vertical-align:top;padding:12px;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1">${habilHtml}</td>
       <td rowspan="${nHitos}" style="vertical-align:top;border-right:1px solid #E5E7EB;border-bottom:2px solid #CBD5E1;padding:10px 12px">
         ${estadoHtml}
