@@ -318,6 +318,15 @@ function amFecha(txt) {
 const amMesLargo = f => AM_MESES[f.m - 1].toLowerCase() + ' de ' + f.y;               // junio de 2026
 const amMesCorto = f => AM_MESES[f.m - 1].slice(0, 3) + '. ' + f.y;                   // Jun. 2026
 const amDiaLargo = f => (f.d ? f.d + ' de ' : '') + amMesLargo(f);                     // 29 de setiembre de 2026
+// «Corte del 12-noviembre» (encabezado de la base de intervenciones) → fecha. El año se toma de la fecha de referencia.
+function amCorteModulo(txt, ref) {
+  const m = String(txt || '').match(/(\d{1,2})\s*[-\s\/.]\s*(?:de\s+)?([A-Za-zÁÉÍÓÚáéíóú]+)(?:[-\s\/.]+(?:de\s+)?(\d{2,4}))?/);
+  if (!m) return null;
+  const mm = AM_MES_N[m[2].slice(0, 3).toLowerCase()]; if (!mm) return null;
+  let y = m[3] ? (+m[3] < 100 ? 2000 + +m[3] : +m[3]) : (ref ? ref.y : new Date().getFullYear());
+  if (!m[3] && ref && mm < ref.m - 6) y += 1;   // p. ej., base de enero y datos de diciembre
+  return { d: +m[1], m: mm, y };
+}
 // Trimestre: acepta una fecha o un texto como "II Trim. 2026"
 function amTrimestre(txt) {
   const s = String(txt || '').trim();
@@ -385,7 +394,7 @@ function amTextos(depName, rows, secRows, extra = {}) {
   const dep = R[C.dep].trim();
   const macro = (R[C.macro] || '').trim();
   const pares = macro ? rows.filter(r => (r[C.macro] || '').trim() === macro) : [];
-  const out = { dep, macro, key: [], kpis: [], secciones: [], faltantes: [] };
+  const out = { dep, macro, key: [], kpis: [], secciones: [], faltantes: [], avisos: [] };
   const falta = (...keys) => keys.filter(k => g(k) === null).forEach(k => out.faltantes.push(C[k]));
   const txt = key => (R[C[key]] || N[C[key]] || '').trim();
   const trim = amTrimestre(txt('corteAct'));
@@ -595,7 +604,16 @@ function amTextos(depName, rows, secRows, extra = {}) {
     if (pim && devI !== null) avI = devI / pim;   // se recalcula para evitar redondeos de la hoja
     const pro = amNum(col(IV, 'Proyectos')), ser = amNum(col(IV, 'Servicios'));
     const fc6 = amFecha(col(IV, 'Corte', 'Última fecha: Fecha de Corte'));
-    const corte6 = fc6 ? amDiaLargo(fc6) : null;
+    let corte6 = fc6 ? amDiaLargo(fc6) : null;
+    // Corte oficial del módulo: el encabezado «Corte del …» de la base de intervenciones, el mismo que usan
+    // los listados y el resto del Hub. Si las tablas de esta sección son de un corte anterior, no se reetiquetan:
+    // se avisa al usuario para que actualice las pestañas Intervenciones, Modalidades y Responsables.
+    const fm = amCorteModulo(extra.corteModulo, fc6);
+    if (fm) {
+      const dias = fc6 ? (Date.UTC(fm.y, fm.m - 1, fm.d || 1) - Date.UTC(fc6.y, fc6.m - 1, fc6.d || 1)) / 864e5 : 0;
+      if (dias > 20) out.avisos.push(`la sección Intervenciones MTC tiene datos al ${corte6} y la base al ${amDiaLargo(fm)}; falta actualizar las pestañas Intervenciones, Modalidades y Responsables`);
+      else corte6 = amDiaLargo(fm);
+    }
     const s6 = [];
     if (nI) {
       let t = `${corte6 ? 'Al ' + corte6 + ', el' : 'El'} MTC registra ${amFmt(nI, 0)} ${nI === 1 ? 'intervención' : 'intervenciones'} en ${dep}`;
@@ -798,6 +816,7 @@ amBtn.addEventListener('click', async () => {
   if (typeof docx === 'undefined') { amMsg('La librería de Word aún no carga; intenta en unos segundos.', true); return; }
   amBtn.disabled = true; amMsg('Generando documento…');
   try {
+    try { AM_EXTRA.corteModulo = (await lsDatos()).corteTxt; } catch (e) { console.warn('No se pudo leer el corte de la base:', e); }
     const am = amTextos(dep, AM_FILAS, AM_SECT, AM_EXTRA);
     const blob = await docx.Packer.toBlob(amDocumento(am));
     const a = document.createElement('a');
@@ -805,7 +824,8 @@ amBtn.addEventListener('click', async () => {
     a.download = 'AM_' + dep.replace(/\s+/g, '_') + '.docx';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    amMsg(am.faltantes.length ? 'Descargado. Datos vacíos en la base: ' + am.faltantes.join(', ') : 'Descargado.', am.faltantes.length > 0);
+    const avisos = (am.avisos || []).concat(am.faltantes.length ? ['datos vacíos en la base: ' + am.faltantes.join(', ')] : []);
+    amMsg(avisos.length ? 'Descargado. Revisar: ' + avisos.join(' | ') : 'Descargado.', avisos.length > 0);
   } catch (e) {
     console.error(e); amMsg('Error al generar: ' + e.message, true);
   } finally { amBtn.disabled = false; }
