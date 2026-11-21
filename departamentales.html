@@ -606,14 +606,9 @@ function amTextos(depName, rows, secRows, extra = {}) {
     const fc6 = amFecha(col(IV, 'Corte', 'Última fecha: Fecha de Corte'));
     let corte6 = fc6 ? amDiaLargo(fc6) : null;
     // Corte oficial del módulo: el encabezado «Corte del …» de la base de intervenciones, el mismo que usan
-    // los listados y el resto del Hub. Si las tablas de esta sección son de un corte anterior, no se reetiquetan:
-    // se avisa al usuario para que actualice las pestañas Intervenciones, Modalidades y Responsables.
+    // los listados y el resto del Hub.
     const fm = amCorteModulo(extra.corteModulo, fc6);
-    if (fm) {
-      const dias = fc6 ? (Date.UTC(fm.y, fm.m - 1, fm.d || 1) - Date.UTC(fc6.y, fc6.m - 1, fc6.d || 1)) / 864e5 : 0;
-      if (dias > 20) out.avisos.push(`la sección Intervenciones MTC tiene datos al ${corte6} y la base al ${amDiaLargo(fm)}; falta actualizar las pestañas Intervenciones, Modalidades y Responsables`);
-      else corte6 = amDiaLargo(fm);
-    }
+    if (fm) corte6 = amDiaLargo(fm);   // siempre el corte del módulo
     const s6 = [];
     if (nI) {
       let t = `${corte6 ? 'Al ' + corte6 + ', el' : 'El'} MTC registra ${amFmt(nI, 0)} ${nI === 1 ? 'intervención' : 'intervenciones'} en ${dep}`;
