@@ -360,6 +360,9 @@ const COLS = {
   entidad:    'Entidad Reportante',
   tipoOrgano: 'Tipo de Órgano ejecutor',
   monto:      'Monto de la intervención S/',
+  fuente:     'Fuente del monto',
+  compartido: 'CUI compartido',
+  detalleCUI: 'Detalle del monto por CUI',
   benef:      'Beneficiarios',
   modalidad:  'Modalidad de ejecución',
   fase:       'Fase (Depende de la Modalidad)',
@@ -576,6 +579,9 @@ function parseData(txt){
       tipoOrgano: norm(get(c,'tipoOrgano')),
       montoTxt: norm(get(c,'monto')),
       monto: aNumero(get(c,'monto')),
+      fuente: norm(get(c,'fuente')),
+      compartido: norm(get(c,'compartido')),
+      detalleCUI: detalleCUI(get(c,'detalleCUI')),
       benef: aNumero(get(c,'benef')),
       benefTxt: norm(get(c,'benef')),
       modalidad: norm(get(c,'modalidad')).toUpperCase(),
@@ -629,6 +635,20 @@ function ordenFecha(s){
 function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function uniqSort(arr){ return [...new Set(arr.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es')); }
 function fmtSoles(v){ if(isNaN(v)) return '—'; return 'S/ ' + v.toLocaleString('es-PE',{maximumFractionDigits:0}); }
+// «CUI 2318526 = 651,116,096 | CUI 2629833 = 182,572,080» → [['2318526', 651116096], ...]
+function detalleCUI(txt){
+  return [...String(txt||'').matchAll(/CUI\s*(\d+)\s*=\s*([\d.,]+)/gi)].map(m=>[m[1], Number(m[2].replace(/,/g,''))||0]);
+}
+// Monto total de un grupo de intervenciones: cada CUI compartido se cuenta una sola vez
+function totalMonto(filas){
+  const vistos=new Set(); let t=0;
+  filas.forEach(r=>{
+    if(r.detalleCUI && r.detalleCUI.length) r.detalleCUI.forEach(([cui,v])=>{ if(!vistos.has(cui)){ vistos.add(cui); t+=v; } });
+    else if(!isNaN(r.monto)) t+=r.monto;
+  });
+  return t;
+}
+const textoMonto = r => isNaN(r.monto) ? '' : 'Monto: '+fmtSoles(r.monto)+(r.compartido?' (CUI compartido)':'');
 function fmtMillones(v){ if(isNaN(v)||!v) return 'S/ 0'; return 'S/ ' + (v/1e6).toLocaleString('es-PE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' M'; }
 function textoCodigo(r){
   if(!r.codigo) return '';
@@ -782,7 +802,7 @@ function render(filas){
   tbody.innerHTML = filas.map(r=>{
     const i=DATA.indexOf(r);
     const cod=textoCodigo(r);
-    const meta=[cod, r.tipoInfra, isNaN(r.monto)?'':'Costo de Inv.: '+fmtSoles(r.monto), textoBenef(r)?'Beneficiarios: '+textoBenef(r):'', isNaN(r.montoCred)?'':'Crédito suplementario del CUI: '+fmtSoles(r.montoCred)].filter(Boolean).map(escapeHtml).join(' · ');
+    const meta=[cod, r.tipoInfra, textoMonto(r), textoBenef(r)?'Beneficiarios: '+textoBenef(r):'', isNaN(r.montoCred)?'':'Crédito suplementario del CUI: '+fmtSoles(r.montoCred)].filter(Boolean).map(escapeHtml).join(' · ');
     const largo=r.situacional.length>320 || (r.situacional.match(/\n/g)||[]).length>5;
     return '<tr>'+
       '<td class="c-corte">'+escapeHtml(r.corte||'—')+'</td>'+
@@ -819,9 +839,10 @@ function abrirResumen(){
   document.getElementById('resFiltros').textContent = resumenFiltros();
   const bloque=(titulo, campo)=>{
     const g={};
-    filas.forEach(r=>{ const k=r[campo]||'(Sin dato)'; g[k]=g[k]||{n:0,m:0,si:0}; g[k].n++; if(!isNaN(r.monto)) g[k].m+=r.monto; if(r.finan.startsWith('SI')) g[k].si++; });
+    filas.forEach(r=>{ const k=r[campo]||'(Sin dato)'; g[k]=g[k]||{n:0,m:0,si:0,filas:[]}; g[k].n++; g[k].filas.push(r); if(r.finan.startsWith('SI')) g[k].si++; });
+    Object.values(g).forEach(v=>{ v.m=totalMonto(v.filas); });
     const orden=Object.entries(g).sort((a,b)=>b[1].n-a[1].n);
-    const tot=orden.reduce((a,[,v])=>({n:a.n+v.n,m:a.m+v.m,si:a.si+v.si}),{n:0,m:0,si:0});
+    const tot=orden.reduce((a,[,v])=>({n:a.n+v.n,m:0,si:a.si+v.si}),{n:0,m:0,si:0}); tot.m=totalMonto(filas);
     return '<div class="res-bloque"><h4>'+titulo+'</h4><div class="tabla-wrap"><table class="res-tabla"><thead><tr><th>'+titulo+'</th><th class="num">N.º</th><th class="num">Con financ. 2026</th><th class="num">Monto</th></tr></thead><tbody>'+
       orden.map(([k,v])=>'<tr><td>'+escapeHtml(k)+'</td><td class="num">'+v.n+'</td><td class="num">'+v.si+'</td><td class="num">'+fmtMillones(v.m)+'</td></tr>').join('')+
       '</tbody><tfoot><tr><td>Total</td><td class="num">'+tot.n+'</td><td class="num">'+tot.si+'</td><td class="num">'+fmtMillones(tot.m)+'</td></tr></tfoot></table></div></div>';
@@ -834,14 +855,17 @@ function abrirResumen(){
 
 // Tabla tipo matriz: cada modalidad con sus fases debajo (se expanden con clic)
 function bloqueModalidadFase(filas){
-  const acum=(o,r)=>{ o.n++; if(!isNaN(r.monto)) o.m+=r.monto; if(r.finan.startsWith('SI')) o.si++; };
-  const g={}; const tot={n:0,m:0,si:0};
+  const acum=(o,r)=>{ o.n++; o.filas.push(r); if(r.finan.startsWith('SI')) o.si++; };
+  const g={}; const tot={n:0,m:0,si:0,filas:[]};
   filas.forEach(r=>{
     const mod=r.modalidad||'(Sin dato)', fase=r.fase||'(Sin dato)';
-    g[mod]=g[mod]||{n:0,m:0,si:0,fases:{}};
-    g[mod].fases[fase]=g[mod].fases[fase]||{n:0,m:0,si:0};
+    g[mod]=g[mod]||{n:0,m:0,si:0,filas:[],fases:{}};
+    g[mod].fases[fase]=g[mod].fases[fase]||{n:0,m:0,si:0,filas:[]};
     acum(g[mod],r); acum(g[mod].fases[fase],r); acum(tot,r);
   });
+  // Monto de cada grupo sin duplicar CUI compartidos
+  tot.m=totalMonto(tot.filas);
+  Object.values(g).forEach(v=>{ v.m=totalMonto(v.filas); Object.values(v.fases).forEach(f=>{ f.m=totalMonto(f.filas); }); });
   const celdas=v=>'<td class="num">'+v.n+'</td><td class="num">'+v.si+'</td><td class="num">'+fmtMillones(v.m)+'</td>';
   let cuerpo=''; let gi=0;
   Object.entries(g).sort((a,b)=>b[1].n-a[1].n).forEach(([mod,v])=>{
@@ -898,8 +922,12 @@ function exportarXLSX(){
   ];
   filas.forEach(r=>rows.push([r.corte,r.vicem,r.prio,r.codInterno,r.nombre,r.areaTxt,r.tipoCodigo,r.codigo,r.proySer,r.tipoInfra,r.entidad,r.tipoOrgano,
     isNaN(r.monto)?'':r.monto, isNaN(r.benef)?(textoBenef(r)):r.benef, r.modalidad,r.fase,r.finan,r.credito,r.situacional]));
+  // Total del monto (cada CUI compartido una sola vez) y nota
+  const nFil=rows.length;
+  rows.push(['Total (cada CUI se cuenta una sola vez)'].concat(Array(11).fill(''),[totalMonto(filas)],Array(nc-13).fill('')));
+  rows.push(['Nota: El total cuenta una sola vez las intervenciones que comparten un mismo CUI (filas resaltadas). Monto de la intervención: para las intervenciones con CUI se usa el monto registrado en el MEF; para las que no tienen CUI o lo tienen pendiente, el monto reportado por la unidad.'].concat(Array(nc-1).fill('')));
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:nc-1}},{s:{r:1,c:0},e:{r:1,c:nc-1}}];
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:nc-1}},{s:{r:1,c:0},e:{r:1,c:nc-1}},{s:{r:rows.length-1,c:0},e:{r:rows.length-1,c:nc-1}}];
   ws['!cols']=[12,12,11,14,50,20,10,12,12,16,12,12,16,13,20,24,12,12,70].map(w=>({wch:w}));
   ws['A1'].s={ font:{bold:true,color:{rgb:'C8102E'},sz:13} };
   ws['A2'].s={ font:{italic:true,color:{rgb:'444444'},sz:9}, alignment:{wrapText:true} };
@@ -907,9 +935,18 @@ function exportarXLSX(){
   const estCel={ font:{sz:10}, alignment:{vertical:'top',wrapText:true} };
   const estNum={ font:{sz:10}, alignment:{vertical:'top'}, numFmt:'#,##0' };
   for(let c=0;c<nc;c++){ const ref=XLSX.utils.encode_cell({r:2,c}); if(ws[ref]) ws[ref].s=estHead; }
-  for(let r=3;r<rows.length;r++) for(let c=0;c<nc;c++){
-    const ref=XLSX.utils.encode_cell({r,c}); if(ws[ref]) ws[ref].s=(c===12||c===13)?estNum:estCel;
+  const ambar={fgColor:{rgb:'FFF1CC'}};
+  for(let r=3;r<nFil;r++){
+    const comp=!!filas[r-3].compartido;
+    for(let c=0;c<nc;c++){
+      const ref=XLSX.utils.encode_cell({r,c}); if(!ws[ref]) continue;
+      const base=(c===12||c===13)?estNum:estCel;
+      ws[ref].s=comp?{...base,fill:ambar}:base;
+    }
   }
+  for(let c=0;c<nc;c++){ const ref=XLSX.utils.encode_cell({r:nFil,c}); if(ws[ref]) ws[ref].s={font:{bold:true,sz:10},numFmt:'#,##0'}; }
+  const refNota=XLSX.utils.encode_cell({r:nFil+1,c:0}); ws[refNota].s={font:{italic:true,color:{rgb:'5A6472'},sz:9},alignment:{wrapText:true,vertical:'top'}};
+  ws['!rows']=[]; ws['!rows'][nFil+1]={hpt:30};
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Intervenciones');
   XLSX.writeFile(wb,'intervenciones_mtc_'+new Date().toISOString().slice(0,10)+'.xlsx');
@@ -974,7 +1011,7 @@ async function exportarWord(){
 
   const filasTabla=filas.map(r=>{
     const c1=[P(T(r.nombre||'—',{bold:true,color:AZUL}),{after:60})];
-    [r.entidad, textoCodigo(r), r.tipoInfra, isNaN(r.monto)?'':'Costo de Inv.: '+fmtSoles(r.monto), textoBenef(r)?'Beneficiarios: '+textoBenef(r):'', isNaN(r.montoCred)?'':'Crédito suplementario del CUI: '+fmtSoles(r.montoCred)].filter(Boolean).forEach(t=>c1.push(P(T(t),{after:20})));
+    [r.entidad, textoCodigo(r), r.tipoInfra, textoMonto(r), textoBenef(r)?'Beneficiarios: '+textoBenef(r):'', isNaN(r.montoCred)?'':'Crédito suplementario del CUI: '+fmtSoles(r.montoCred)].filter(Boolean).forEach(t=>c1.push(P(T(t),{after:20})));
     if(r.finan) c1.push(P([T('Financiamiento 2026: '),T(r.finan,{bold:true})],{after:20}));
     const c3=[P(T(r.modalidad||'—',{bold:true}),{after:40})]; if(r.fase) c3.push(P([T('Fase: '),T(r.fase)]));
     const c4=(r.situacional||'Sin registro').split('\n').filter(l=>l.trim()).map(l=>P(T(l.trim(),{italics:!r.situacional}),{align:AlignmentType.JUSTIFIED,after:60}));
