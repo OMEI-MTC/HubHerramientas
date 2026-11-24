@@ -367,6 +367,10 @@
     padding: 2px 8px; border-radius: 20px;
     white-space: nowrap;
   }
+  /* "Incluida en": compromisos o discursos, bajo el nombre de la intervención */
+  .incluida-en { margin-top: 6px; font-size: 11px; color: var(--gris-texto); line-height: 1.4; }
+  .incluida-en-label { font-weight: 600; }
+  .incluida-en-item { font-style: italic; padding-left: 8px; }
   .badge-sin-datos {
     display: inline-flex; align-items: center;
     background: #F3F4F6; color: var(--gris-texto);
@@ -2376,6 +2380,7 @@ function renderTabla() {
                ${interv.detalle ? `<div style="margin-top:4px;font-size:11px;color:var(--azul);font-style:italic;line-height:1.4">${esc(interv.detalle)}</div>` : ''}
              </div>`}
         ${interv.relevancia ? `<div style="margin-top:7px;font-size:11px;color:var(--texto-2);display:flex;align-items:flex-start;gap:5px;line-height:1.35">🎯 <span>${esc(interv.relevancia)}</span></div>` : ''}
+        ${(interv.priorizadas || []).length ? `<div class="incluida-en"><span class="incluida-en-label">Incluida en:</span>${interv.priorizadas.map(p => `<div class="incluida-en-item">• ${esc(p)}</div>`).join('')}</div>` : ''}
       </td>
       ${colValidacion}
       ${colOgame}
