@@ -225,6 +225,9 @@ const AM_CONFIG = {
   anioTIC: '2025',
   anioPresupuesto: '2026',
   cortePresupuesto: '29 de setiembre de 2026',
+  // Contexto económico: comparar la actividad productiva del departamento con el resultado nacional.
+  // Desactivado a pedido (nov-2026). Para volver a mostrarlo, cambiar a true.
+  compararActividadNacional: false,
   fuentes: {
     actividad: 'INEI – Indicador de la Actividad Productiva Departamental, II trimestre 2026 (año base 2007 = 100).',
     competitividad: 'Instituto Peruano de Economía (IPE) – Índice de Competitividad Regional (INCORE) 2026.',
@@ -418,7 +421,7 @@ function amTextos(depName, rows, secRows, extra = {}) {
   const act = g('act'), actN = n('act');
   if (act !== null) {
     let t = `En el ${P.act}, la actividad productiva de ${dep} ${act >= 0 ? 'creció' : 'se contrajo'} ${amFmt(Math.abs(act))} % respecto al mismo periodo de ${P.actAnt}`;
-    if (actN !== null) t += act >= actN ? `, por encima del resultado nacional (${amFmt(actN)} %)` : `, frente a un resultado nacional de ${amFmt(actN)} %`;
+    if (AM_CONFIG.compararActividadNacional && actN !== null) t += act >= actN ? `, por encima del resultado nacional (${amFmt(actN)} %)` : `, frente a un resultado nacional de ${amFmt(actN)} %`;
     t += '.';
     const secs = secRows.filter(r => (r[C.secDep] || '').trim().toLowerCase() === dep.toLowerCase())
       .map(r => ({ nom: AM_SECTORES[(r[C.secAct] || '').trim()], v: amNum(r[C.secVar]) }))
