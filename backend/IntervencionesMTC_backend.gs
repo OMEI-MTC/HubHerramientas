@@ -81,8 +81,9 @@ ENC[H.CAT_LISTAS] = ['Lista', 'Valor'];
 var ROLES = { PF: 'Punto focal', ESP: 'Especialista', ADMIN: 'Administrador', DIR: 'Dirección' };
 var AMBITO_CARPETA = 'Carpeta Departamental', AMBITO_HR = 'Hoja de Ruta';
 var TIPOS_CODIGO = ['CUI', 'IDEA', 'PENDIENTE', 'No aplica'];
-// Datos de identificación que la unidad puede cambiar directamente en su reporte (con motivo)
-var CAMPOS_CAMBIO_DIRECTO = ['Tipo de Código', 'Código', 'Crédito suplementario', 'Monto del crédito S/'];
+// Ningún dato de identificación (código, CUI, crédito suplementario…) se cambia desde el reporte del corte:
+// todos se cambian por «Solicitar corrección», que aprueba OMEI. Así no hay dos vías que se crucen.
+var CAMPOS_CAMBIO_DIRECTO = [];
 // Datos de identificación que se cambian por solicitud de corrección
 var CAMPOS_IDENTIDAD = ['Tipo', 'Nombre de la intervención', 'Área de influencia', 'Tipo de Código', 'Código',
   'Tipo de Infraestructura', 'Tipo de Órgano ejecutor', 'Crédito suplementario', 'Monto del crédito S/',
@@ -148,6 +149,7 @@ function hoja(nombre, crear) {
   return h;
 }
 function txt(v) { return v === null || v === undefined ? '' : String(v).trim(); }
+function nombreNormal(v) { return txt(v).replace(/\s+/g, ' ').toUpperCase(); }
 function clave(v) { return txt(v).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').toUpperCase(); }
 function esSi(v) { return clave(v) === 'SI'; }
 function ahora() { return Utilities.formatDate(new Date(), CONFIG_INT.ZONA, 'dd/MM/yyyy HH:mm'); }
@@ -319,6 +321,7 @@ function validarIdentidad(d, cat) {
 function normalizarIdentidad(d, cat) {
   var o = {}; CAMPOS_IDENTIDAD.forEach(function (k) { o[k] = txt(d[k]); });
   o['Unidad reportante'] = txt(d['Unidad reportante']);
+  o['Nombre de la intervención'] = nombreNormal(o['Nombre de la intervención']);   // siempre en mayúsculas y sin saltos ni espacios dobles
   var t = tipoDe(cat, o['Tipo']);
   o['Tipo de Código'] = normTipoCodigo(o['Tipo de Código']);
   o['Código'] = (o['Tipo de Código'] === 'CUI' || o['Tipo de Código'] === 'IDEA') ? unirCodigos(partirCodigos(o['Código'])) : '';
@@ -482,7 +485,9 @@ function accGuardarReportes(u, d) {
     if (!enModulo(cat, fila)) { errores.push(it.cod + ': no forma parte del módulo'); return; }
     var previo = idx[it.cod] !== undefined ? reportes[idx[it.cod]] : null;
     if (previo && previo['Estado'] === 'Validado') { errores.push(it.cod + ': ya fue validado'); return; }
-    // Cambios directos de identificación (solo los permitidos) con motivo
+    if (Object.keys(it.cambios || {}).some(function (k) { return txt(it.cambios[k]) !== txt(fila[k]); })) {
+      errores.push(it.cod + ': el código y el crédito se cambian con «Solicitar corrección»'); return;
+    }
     var cambios = {};
     Object.keys(it.cambios || {}).forEach(function (k) {
       if (CAMPOS_CAMBIO_DIRECTO.indexOf(k) >= 0 && txt(it.cambios[k]) !== txt(fila[k])) cambios[k] = txt(it.cambios[k]);
@@ -1097,7 +1102,7 @@ function importarCargaInicial() {
     var area = campo(r, ['Área de influencia']);
     universo.push({
       'COD INTERNO': cod, 'Tipo': tipo, 'Vigente': esSi(campo(r, ['Vigente'])) ? 'SI' : 'NO', 'Viceministerio': vice,
-      'Unidad reportante': sigla, 'Nombre de la intervención': campo(r, ['Nombre de la intervención']),
+      'Unidad reportante': sigla, 'Nombre de la intervención': nombreNormal(campo(r, ['Nombre de la intervención'])),
       'Área de influencia': clave(area) === 'NACIONAL' ? 'NACIONAL' : area.split(',').map(function (x) { return txt(x).toUpperCase(); }).filter(Boolean).join(', '),
       'Tipo de Código': tc, 'Código': (tc === 'CUI' || tc === 'IDEA') ? unirCodigos(cods) : '',
       'Tipo de Infraestructura': infra, 'Tipo de Órgano ejecutor': organo,

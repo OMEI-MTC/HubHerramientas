@@ -113,6 +113,7 @@ a.num.cero{color:var(--t3);border-bottom-color:transparent;font-weight:500}
 .vacio{padding:26px;text-align:center;color:var(--t3)}
 .chk{width:15px;height:15px;cursor:pointer}
 @media (max-width:1100px){.dos{grid-template-columns:1fr}.panel{position:static;max-height:none}}
+[data-k="Nombre de la intervención"]{text-transform:uppercase}
 </style>
 </head>
 <body>
@@ -147,7 +148,6 @@ const partir = v => String(v ?? '').split(/[,;\/\n]+/).map(p => p.trim().replace
 const CAMPOS_REP = ['Monto reportado S/', 'Beneficiarios', 'Modalidad de ejecución', 'Fase', 'Financiamiento (SI/NO)', 'Estado situacional'];
 const CAMPOS_ID = ['Tipo', 'Nombre de la intervención', 'Área de influencia', 'Tipo de Código', 'Código', 'Tipo de Infraestructura',
   'Tipo de Órgano ejecutor', 'Crédito suplementario', 'Monto del crédito S/', 'Hoja de Ruta', 'Cartera Priorizada', 'Relevancia sectorial', 'Incluida en'];
-const CAMBIO_DIRECTO = ['Tipo de Código', 'Código', 'Crédito suplementario', 'Monto del crédito S/'];
 
 // ── API ──────────────────────────────────────────────────────────────────────
 async function api(accion, datos = {}) {
@@ -524,11 +524,12 @@ function pfAbrir(cod) {
   VISTA.sel = cod; document.querySelectorAll('#pf-tb tr').forEach(tr => tr.classList.toggle('sel', tr.getAttribute('onclick') === `pfAbrir('${cod}')`));
   const r = S.porCod[cod]; const rep = S.rep[cod]; const base = rep || S.ult[cod] || {};
   const e = estadoDe(cod); const editable = !!S.corte && e !== 'Validado';
-  const cambios = rep && rep['Cambios de identificación'] ? JSON.parse(rep['Cambios de identificación']) : {};
   const st = {}; CAMPOS_REP.forEach(k => { st[k] = base[k] || ''; });
-  CAMBIO_DIRECTO.forEach(k => { st[k] = k in cambios ? cambios[k] : r[k]; });
-  st['Tipo'] = r['Tipo']; st['COD INTERNO'] = cod; st._motivo = rep ? rep['Motivo de los cambios'] : ''; st._cambiar = Object.keys(cambios).length > 0;
+  st['Tipo'] = r['Tipo']; st['COD INTERNO'] = cod;
   const t = tipoDe(r['Tipo']);
+  // Solicitud de corrección pendiente (los cambios de identificación, código y crédito van solo por esta vía)
+  const solPend = (S.solicitudes || []).find(x => x['COD INTERNO'] === cod && x['Tipo'] === 'Corrección' && x['Estado'] === 'Pendiente');
+  const datosPend = solPend ? JSON.parse(solPend['Datos'] || '{}') : null;
   const p = $('#pf-panel');
   p.innerHTML = `<div class="panel"><div style="display:flex;justify-content:space-between;gap:8px"><div class="tit">${esc(cod)} · ${esc(r['Nombre de la intervención'])}</div>${chip(e)}</div>
     ${e === 'Devuelto' ? `<div class="errores"><b>Devuelto por OMEI:</b> ${esc(rep['Observación'])}</div>` : ''}
@@ -537,23 +538,16 @@ function pfAbrir(cod) {
     <div class="fg">${campo('Tipo', fRo(r['Tipo']))}${campo('Área de influencia', fRo(r['Área de influencia']))}
     ${t.datos ? campo('Tipo de Infraestructura', fRo(r['Tipo de Infraestructura'])) + campo('Tipo de Órgano ejecutor', fRo(r['Tipo de Órgano ejecutor'])) : ''}
     ${campo('Hoja de Ruta', fRo(r['Hoja de Ruta'] + (r['Hoja de Ruta'] === 'SI' ? ' · Cartera Priorizada: ' + (r['Cartera Priorizada'] || 'NO') : '')))}</div>
-    <div class="meta" style="margin-top:6px">¿Otro dato mal registrado? <a href="#" onclick="formCorreccion('${esc(cod)}');return false">Solicitar corrección</a> · <a href="#" onclick="formBaja('${esc(cod)}');return false">Solicitar baja</a></div>
+    ${t.datos ? `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="blk n">CÓDIGO Y CRÉDITO SUPLEMENTARIO (del universo)</span></div>
+    <div class="fg">${campo('Tipo de Código', fRo(r['Tipo de Código']))}${campo('Código(s)', (r['Tipo de Código'] === 'CUI' || r['Tipo de Código'] === 'IDEA') ? fChips('Código', r['Código'], 'texto', true, r['Tipo de Código']) : fRo('No lleva código'))}
+    ${campo('¿Tiene crédito suplementario?', fRo(r['Crédito suplementario'] || 'NO'))}${campo('Monto del crédito S/', fRo(r['Crédito suplementario'] === 'SI' ? 'S/ ' + fmt(r['Monto del crédito S/']) : 'Sin crédito suplementario'))}</div>` : ''}
+    ${datosPend ? `<div class="nota" style="margin-top:8px;background:#FFF6D9"><b>Corrección pendiente de aprobación de OMEI</b> (${esc(solPend['Fecha de solicitud'])}): ${Object.keys(datosPend).map(k => esc(k + ': ' + (r[k] || '—') + ' → ' + (datosPend[k] || '—'))).join(' · ')}</div>` : ''}
+    <div class="toolbar" style="margin:10px 0 0">${solPend ? '<span class="muted">Ya hay una corrección pendiente para esta intervención.</span>' : `<button class="btn s" onclick="formCorreccion('${esc(cod)}')">✎ Solicitar corrección${t.datos ? ' (código, crédito u otro dato)' : ''}</button>`}<button class="btn s r" onclick="formBaja('${esc(cod)}')">Solicitar baja</button>
+      <span class="meta">Los cambios de identificación se aplican cuando OMEI los aprueba.</span></div>
     <div id="pf-form"></div><div id="pf-err"></div>
     <div class="acciones">${editable ? `<button class="btn" id="pf-borr">Guardar borrador</button><button class="btn p" id="pf-env">Guardar y enviar a OMEI</button>` : (S.corte ? '<span class="muted">Validado por OMEI: ya no se puede modificar en este corte.</span>' : '<span class="muted">Sin corte abierto.</span>')}</div></div>`;
   const dibujar = st => {
-    const tc = st['Tipo de Código']; const cuis = tc === 'CUI' ? partir(st['Código']) : [];
     let h = '';
-    // Código y crédito: siempre visibles; se editan solo al pulsar «Cambiar»
-    const ed = editable && !!st._cambiar;
-    h += `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="blk n">CÓDIGO Y CRÉDITO SUPLEMENTARIO${ed ? ' · CAMBIO EN CURSO (lo valida OMEI)' : ''}</span>` +
-      (editable ? (ed ? '<button class="btn s" data-seg="_cambiar" data-v="1" data-toggle="1">✕ Cancelar el cambio</button>' : '<button class="btn s" data-seg="_cambiar" data-v="1">✎ Cambiar código o crédito</button>') : '') + '</div><div class="fg">';
-    h += campo('Tipo de Código', fSeg('Tipo de Código', t.codigos, tc, !ed));
-    h += campo('Código(s)' + (ed ? ' <span class="muted">(Enter o clic fuera para añadir)</span>' : ''), (tc === 'CUI' || tc === 'IDEA') ? fChips('Código', st['Código'], 'texto', !ed, tc) : '<input class="inp" disabled placeholder="No lleva código">', '',
-      ed && cuis.length && !cuis.every(c => /^\d{7}$/.test(c)) ? '<span class="err">El CUI debe tener 7 dígitos</span>' : (ed && r['Código'] ? '<span class="muted">antes: ' + esc(textoCodigo(r)) + '</span>' : ''));
-    h += campo('¿Tiene crédito suplementario?', fSeg('Crédito suplementario', ['SI', 'NO'], st['Crédito suplementario'], !ed));
-    h += campo('Monto del crédito S/', st['Crédito suplementario'] === 'SI' ? (ed ? fInp('Monto del crédito S/', st['Monto del crédito S/'], 'S/') : fRo('S/ ' + fmt(st['Monto del crédito S/']))) : '<input class="inp" disabled placeholder="Sin crédito suplementario">');
-    if (ed) h += campo('Motivo del cambio *', fInp('_motivo', st._motivo, 'Ej.: se registró el CUI en el Banco de Inversiones'), 'full');
-    h += '</div>';
     h += '<span class="blk b">REPORTE DEL CORTE ' + esc(S.corte ? S.corte['Corte'] : '') + (rep ? '' : ' (precargado con el último corte)') + '</span><div class="fg">';
     if (t.datos) {
       const tcf = st['Tipo de Código'];
@@ -569,19 +563,11 @@ function pfAbrir(cod) {
     h += campo('Estado situacional * <span class="muted">(últimas actividades al ' + esc(S.corte ? S.corte['Corte'] : '') + ')</span>', fTxt('Estado situacional', st['Estado situacional'], '', !editable), 'full') + '</div>';
     return h;
   };
-  const F = montarForm($('#pf-form'), st, dibujar, k => {
-    if (k !== '_cambiar') return;
-    if (!st._cambiar) { CAMBIO_DIRECTO.forEach(x => { st[x] = r[x]; }); st._motivo = ''; F.repintar(); }   // al cancelar vuelve a lo del universo
-  });
+  montarForm($('#pf-form'), st, dibujar);
   if (!editable) return;
   const guardar = enviar => conCarga(async () => {
-    const cambiosIt = {}; if (st._cambiar) CAMBIO_DIRECTO.forEach(k => { if (String(st[k] || '') !== String(r[k] || '')) cambiosIt[k] = st[k]; });
-    if (enviar) {
-      const errs = erroresReporte(st, r['Tipo'], st['Tipo de Código']);
-      if (Object.keys(cambiosIt).length) { const prop = Object.assign({}, r, cambiosIt); errs.push(...erroresIdentidad(prop).filter(x => /código|CUI|IDEA|crédito/i.test(x))); if ((st._motivo || '').trim().length < 5) errs.push('Indica el motivo del cambio'); }
-      if (errs.length) return mostrarErrores('#pf-err', errs);
-    }
-    const res = await api('guardarReportes', { items: [{ cod, campos: pick(st, CAMPOS_REP), cambios: cambiosIt, motivo: st._motivo, enviar }] });
+    if (enviar) { const errs = erroresReporte(st, r['Tipo'], r['Tipo de Código']); if (errs.length) return mostrarErrores('#pf-err', errs); }
+    const res = await api('guardarReportes', { items: [{ cod, campos: pick(st, CAMPOS_REP), enviar }] });
     if (!res.ok) return mostrarErrores('#pf-err', res.errores && res.errores.length ? res.errores : [res.mensaje]);
     toast(enviar ? 'Enviado a OMEI' : 'Borrador guardado');
     const filas = S.universo.filter(enModulo); const i = filas.findIndex(x => x['COD INTERNO'] === cod);
@@ -596,10 +582,10 @@ async function enviarBorradores() {
   const filas = S.universo.filter(enModulo).filter(r => ['Borrador', 'Devuelto'].includes(estadoDe(r['COD INTERNO'])));
   const items = [], malos = [];
   filas.forEach(r => {
-    const rep = S.rep[r['COD INTERNO']]; const cambios = rep['Cambios de identificación'] ? JSON.parse(rep['Cambios de identificación']) : {};
-    const errs = erroresReporte(rep, r['Tipo'], cambios['Tipo de Código'] || r['Tipo de Código']);
+    const rep = S.rep[r['COD INTERNO']];
+    const errs = erroresReporte(rep, r['Tipo'], r['Tipo de Código']);
     if (errs.length) malos.push(r['COD INTERNO'] + ': ' + errs.join('; '));
-    else items.push({ cod: r['COD INTERNO'], campos: pick(rep, CAMPOS_REP), cambios, motivo: rep['Motivo de los cambios'], enviar: true });
+    else items.push({ cod: r['COD INTERNO'], campos: pick(rep, CAMPOS_REP), enviar: true });
   });
   if (!items.length) return toast('Ningún borrador está completo: ' + malos.slice(0, 2).join(' | '), true);
   if (!confirmar(`Se enviarán ${items.length} borradores completos a OMEI.` + (malos.length ? ` ${malos.length} quedan como borrador porque les faltan datos.` : ''))) return;
@@ -649,7 +635,7 @@ function formBaja(cod) {
 }
 
 // Matriz Excel del punto focal (descarga y carga masiva con vista previa)
-const COLS_MATRIZ = ['COD INTERNO', 'Nombre de la intervención', 'Tipo de Código', 'Código', 'Monto reportado S/', 'Beneficiarios', 'Modalidad de ejecución', 'Fase', 'Financiamiento (SI/NO)', 'Estado situacional', 'Motivo del cambio de código'];
+const COLS_MATRIZ = ['COD INTERNO', 'Nombre de la intervención', 'Tipo de Código', 'Código', 'Monto reportado S/', 'Beneficiarios', 'Modalidad de ejecución', 'Fase', 'Financiamiento (SI/NO)', 'Estado situacional'];
 function requiereXLSX() { if (!window.XLSX) { toast('No se pudo cargar la librería de Excel. Revisa la conexión a internet y recarga la página.', true); return false; } return true; }
 // Libro Excel con listas desplegables (ExcelJS, se carga solo al descargar)
 async function cargarExcelJS() {
@@ -676,23 +662,24 @@ async function descargarMatriz() {
   if (!(await cargarExcelJS())) return;
   const cat = S.catalogos; const mods = cat.ordenModalidades;
   const filas = S.universo.filter(enModulo).map(r => {
-    const cod = r['COD INTERNO']; const b = S.rep[cod] || S.ult[cod] || {}; const c = (S.rep[cod] && S.rep[cod]['Cambios de identificación']) ? JSON.parse(S.rep[cod]['Cambios de identificación']) : {};
+    const cod = r['COD INTERNO']; const b = S.rep[cod] || S.ult[cod] || {};
     const n = v => { const x = num(v); return isNaN(x) ? null : x; };
-    return [cod, r['Nombre de la intervención'], c['Tipo de Código'] || r['Tipo de Código'], c['Código'] ?? r['Código'], n(b['Monto reportado S/']), n(b['Beneficiarios']), b['Modalidad de ejecución'] || '', b['Fase'] || '', b['Financiamiento (SI/NO)'] || '', b['Estado situacional'] || '', ''];
+    return [cod, r['Nombre de la intervención'], r['Tipo de Código'], r['Código'], n(b['Monto reportado S/']), n(b['Beneficiarios']), b['Modalidad de ejecución'] || '', b['Fase'] || '', b['Financiamiento (SI/NO)'] || '', b['Estado situacional'] || ''];
   });
   const wb = new ExcelJS.Workbook();
   hojaInstrucciones(wb, ['Matriz de reporte · ' + S.usuario.unidad + ' · corte al ' + S.corte['Corte'],
     'Completa una fila por intervención. No cambies el COD INTERNO, el nombre ni el orden de las columnas.',
-    'Modalidad de ejecución, Fase, Financiamiento y Tipo de Código se eligen de la lista desplegable de cada celda.',
+    'Las columnas verdes (COD INTERNO, nombre, Tipo de Código y Código) son informativas: no se cargan.',
+    'Para cambiar el código, el crédito suplementario u otro dato de identificación, usa «Solicitar corrección» en el Hub (lo aprueba OMEI).',
+    'Modalidad de ejecución, Fase y Financiamiento se eligen de la lista desplegable de cada celda.',
     'La lista de Fase muestra solo las fases de la modalidad elegida en la columna G: elige primero la modalidad.',
-    'Si cambias el Tipo de Código o el Código (varios CUI separados por coma), escribe el motivo en la última columna.',
     'Con CUI, el monto es informativo (se usa el costo del MEF). Sin CUI, el monto es obligatorio.',
     'Estado situacional: mínimo 15 caracteres, con las últimas actividades a la fecha de corte.',
     'Guarda el archivo y súbelo en el Hub con «Cargar matriz»: verás una vista previa antes de guardar o enviar.']);
   const ws = wb.addWorksheet('Matriz', { views: [{ state: 'frozen', ySplit: 1, xSplit: 2 }] });
-  ws.columns = COLS_MATRIZ.map((h, i) => ({ header: h, width: [14, 50, 13, 22, 17, 14, 32, 36, 15, 80, 34][i] }));
+  ws.columns = COLS_MATRIZ.map((h, i) => ({ header: h, width: [14, 50, 13, 22, 17, 14, 32, 36, 15, 80][i] }));
   filas.forEach(f => ws.addRow(f));
-  encabezado(ws, j => j <= 4 ? '1D7A55' : j === 11 ? 'B7791F' : '0055A5');
+  encabezado(ws, j => j <= 4 ? '1D7A55' : '0055A5');
   // Listas para los desplegables: modalidades y, en una columna por modalidad, sus fases
   const L = wb.addWorksheet('Listas', { state: 'hidden' });
   L.getCell(1, 1).value = 'Modalidad'; mods.forEach((m, i) => { L.getCell(i + 2, 1).value = m; });
@@ -704,15 +691,14 @@ async function descargarMatriz() {
   });
   const lista = (formula, msg) => ({ type: 'list', allowBlank: true, formulae: [formula], showErrorMessage: true, errorStyle: 'stop', errorTitle: 'Valor no válido', error: msg });
   for (let r = 2; r <= filas.length + 1; r++) {
-    ws.getCell('C' + r).dataValidation = lista('"CUI,IDEA,PENDIENTE,No aplica"', 'Elige un tipo de código de la lista');
     ws.getCell('G' + r).dataValidation = lista('Modalidades', 'Elige una modalidad de la lista');
     ws.getCell('H' + r).dataValidation = lista(`INDIRECT("F_"&MATCH($G${r},Modalidades,0))`, 'Elige una fase de la modalidad de la columna G (elige primero la modalidad)');
     ws.getCell('I' + r).dataValidation = lista('"SI,NO"', 'Escribe SI o NO');
     ws.getCell('J' + r).alignment = { wrapText: true, vertical: 'top' };
     ['E', 'F'].forEach(c => { ws.getCell(c + r).numFmt = '#,##0'; });
-    ['A', 'B'].forEach(c => { ws.getCell(c + r).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F8F5' } }; });
+    ['A', 'B', 'C', 'D'].forEach(c => { ws.getCell(c + r).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F8F5' } }; });
   }
-  ws.autoFilter = { from: 'A1', to: 'K1' };
+  ws.autoFilter = { from: 'A1', to: 'J1' };
   wb.views = [{ activeTab: 1 }];
   await bajarLibro(wb, 'Matriz_' + S.usuario.unidad + '_corte_' + S.corte['Corte'].replace(/\//g, '-') + '.xlsx');
 }
@@ -724,7 +710,7 @@ function cargarMatriz() {
     const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
     const ws = wb.Sheets['Matriz'] || wb.Sheets[wb.SheetNames[0]];
     const filas = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
-    const items = [], errores = [], sinCambio = [];
+    const items = [], errores = [], avisos = [];
     filas.forEach((x, i) => {
       const cod = String(x['COD INTERNO'] || '').trim(); if (!cod) return;
       const r = S.porCod[cod];
@@ -732,26 +718,23 @@ function cargarMatriz() {
       if (estadoDe(cod) === 'Validado') return;
       const campos = {}; CAMPOS_REP.forEach(k => { campos[k] = String(x[k] ?? '').trim(); });
       campos['Financiamiento (SI/NO)'] = clave(campos['Financiamiento (SI/NO)']);
-      const cambios = {}; const tc = String(x['Tipo de Código'] || '').trim(); const cd = partir(x['Código']).join(', ');
-      if (tc && tc !== r['Tipo de Código']) cambios['Tipo de Código'] = tc;
-      if (cd !== partir(r['Código']).join(', ')) { cambios['Código'] = cd; if (!cambios['Tipo de Código']) cambios['Tipo de Código'] = r['Tipo de Código']; }
-      const errs = erroresReporte(campos, r['Tipo'], cambios['Tipo de Código'] || r['Tipo de Código']);
-      if (Object.keys(cambios).length && String(x['Motivo del cambio de código'] || '').trim().length < 5) errs.push('falta el motivo del cambio de código');
+      // El código no se carga desde la matriz: si cambió, se avisa que debe pedirse con «Solicitar corrección»
+      const tc = String(x['Tipo de Código'] || '').trim(); const cd = partir(x['Código']).join(', ');
+      if ((tc && tc !== r['Tipo de Código']) || cd !== partir(r['Código']).join(', ')) avisos.push(cod + ': el cambio de código no se carga; pídelo con «Solicitar corrección»');
+      const errs = erroresReporte(campos, r['Tipo'], r['Tipo de Código']);
       if (errs.length) errores.push(cod + ': ' + errs.join('; '));
-      const base = S.rep[cod] || S.ult[cod] || {};
-      const igual = CAMPOS_REP.every(k => String(base[k] || '') === String(campos[k] || '')) && !Object.keys(cambios).length && S.rep[cod];
-      if (igual) sinCambio.push(cod);
-      items.push({ cod, campos, cambios, motivo: x['Motivo del cambio de código'] || '', completo: !errs.length });
+      items.push({ cod, campos, completo: !errs.length });
     });
     const completos = items.filter(i => i.completo);
     modal('Cargar matriz · vista previa', `<div class="kpis"><div class="kpi"><div class="v">${items.length}</div><div class="l">Filas leídas de tu unidad</div></div>
       <div class="kpi"><div class="v" style="color:var(--green-dk)">${completos.length}</div><div class="l">Completas (se pueden enviar)</div></div>
       <div class="kpi"><div class="v" style="color:var(--red)">${errores.length}</div><div class="l">Con observaciones</div></div></div>
       ${errores.length ? '<div class="errores" style="max-height:220px;overflow:auto"><ul>' + errores.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul></div>' : ''}
+      ${avisos.length ? '<div class="nota" style="margin-top:8px;background:#FFF6D9;max-height:140px;overflow:auto"><b>Cambios de código no cargados (' + avisos.length + '):</b><ul style="margin-left:18px">' + avisos.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul></div>' : ''}
       <p class="sub" style="margin-top:10px">«Guardar como borrador» guarda todas las filas (también las incompletas) para que las termines en el Hub. «Guardar y enviar» envía a OMEI solo las completas.</p>`,
       `<button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn" id="mx-b">Guardar como borrador (${items.length})</button><button class="btn g" id="mx-e" ${completos.length ? '' : 'disabled'}>Guardar y enviar (${completos.length})</button>`);
     const ir = enviar => conCarga(async () => {
-      const lote = (enviar ? completos : items).map(i => ({ cod: i.cod, campos: i.campos, cambios: i.cambios, motivo: i.motivo, enviar }));
+      const lote = (enviar ? completos : items).map(i => ({ cod: i.cod, campos: i.campos, enviar }));
       const r = await api('guardarReportes', { items: lote }); cerrarModal(); toast(r.mensaje, !r.ok); await recargar();
     });
     $('#mx-b').onclick = () => ir(false); $('#mx-e').onclick = () => ir(true);
@@ -825,8 +808,9 @@ function rvAbrir(cod) {
   const r = S.porCod[cod]; const rep = S.rep[cod]; const ult = S.ult[cod] || {}; const e = estadoDe(cod);
   const p = $('#rv-panel'); const t = tipoDe(r['Tipo']);
   if (!rep) { p.innerHTML = `<div class="panel"><div class="tit">${esc(cod)}</div><div class="vacio">La unidad aún no registra el reporte de este corte.</div></div>`; return; }
-  const cambiosU = rep['Cambios de identificación'] ? JSON.parse(rep['Cambios de identificación']) : {};
-  const st = {}; CAMPOS_REP.forEach(k => { st[k] = rep[k] || ''; }); CAMBIO_DIRECTO.forEach(k => { st[k] = k in cambiosU ? cambiosU[k] : r[k]; });
+  const st = {}; CAMPOS_REP.forEach(k => { st[k] = rep[k] || ''; });
+  st['Tipo de Código'] = r['Tipo de Código']; st['Código'] = r['Código'];   // el código viene del universo; se cambia solo por solicitud de corrección
+  const solPend = (S.solicitudes || []).find(x => x['COD INTERNO'] === cod && x['Tipo'] === 'Corrección' && x['Estado'] === 'Pendiente');
   const orig = Object.assign({}, st);
   st._editar = false;
   const fila = (k, a, b, corr) => `<tr><td>${esc(k)}</td><td class="${a !== b ? '' : ''}">${esc(a) || '<span class="muted">—</span>'}</td><td>${a !== b ? '<span class="diff">' + esc(b) + '</span>' : esc(b)}</td>${corr !== undefined ? `<td>${corr !== b ? '<span class="corr">' + esc(corr) + '</span>' : ''}</td>` : ''}</tr>`;
@@ -836,9 +820,8 @@ function rvAbrir(cod) {
       <div class="meta">Registró ${esc(rep['Registrado por'])} · ${esc(rep['Fecha de registro'])}${rep['Revisado por'] ? ' · Revisó ' + esc(rep['Revisado por']) + ' ' + esc(rep['Fecha de revisión']) : ''}</div>`;
     h += `<h2>Cambios frente al último corte publicado</h2><table><thead><tr><th>Campo</th><th>Último validado</th><th>Reportó la unidad</th>${edit ? '<th>Corregido por OMEI</th>' : ''}</tr></thead><tbody>`;
     (t.datos ? CAMPOS_REP : ['Estado situacional']).forEach(k => { h += fila(k, String(ult[k] || ''), String(orig[k] || ''), edit ? String(st[k] || '') : undefined); });
-    CAMBIO_DIRECTO.forEach(k => { if (k in cambiosU || (edit && String(st[k] || '') !== String(r[k] || ''))) h += fila(k, String(r[k] || ''), String(orig[k] || ''), edit ? String(st[k] || '') : undefined); });
     h += '</tbody></table>';
-    if (rep['Motivo de los cambios']) h += `<div class="meta" style="margin-top:4px">Motivo del cambio de código/crédito: ${esc(rep['Motivo de los cambios'])}</div>`;
+    if (solPend) h += `<div class="nota" style="margin-top:8px;background:#FFF6D9">Esta intervención tiene una <b>solicitud de corrección</b> pendiente (código, crédito u otro dato). Se revisa aparte, en <a href="#" onclick="VISTA.tab='solicitudes';render();setTimeout(()=>abrirSolicitud('${esc(solPend['ID'])}'),50);return false">Solicitudes</a>.</div>`;
     // Controles automáticos
     const errs = erroresReporte(st, r['Tipo'], st['Tipo de Código']);
     const cuis = tc === 'CUI' ? partir(st['Código']) : [];
@@ -857,9 +840,7 @@ function rvAbrir(cod) {
           h += campo('Modalidad de ejecución', fSel('Modalidad de ejecución', S.catalogos.ordenModalidades, st['Modalidad de ejecución']));
           h += campo('Fase', st['Modalidad de ejecución'] ? fSel('Fase', fases, st['Fase'], 'Elige la fase…') : '<select class="inp" disabled><option>🔒 Elige la modalidad</option></select>');
           h += campo('Financiamiento del año', fSeg('Financiamiento (SI/NO)', ['SI', 'NO'], st['Financiamiento (SI/NO)']));
-          h += campo('Tipo de Código', fSeg('Tipo de Código', t.codigos, tc));
-          if (tc === 'CUI' || tc === 'IDEA') h += campo('Código(s)', fChips('Código', st['Código'], 'texto', false, tc), 'full');
-          h += campo('Crédito suplementario', fSeg('Crédito suplementario', ['SI', 'NO'], st['Crédito suplementario'])) + campo('Monto del crédito S/', st['Crédito suplementario'] === 'SI' ? fInp('Monto del crédito S/', st['Monto del crédito S/']) : '<input class="inp" disabled placeholder="🔒 Solo si tiene crédito">');
+          h += '<div></div>';
         }
         h += campo('Estado situacional', fTxt('Estado situacional', st['Estado situacional']), 'full');
         h += campo('Sustento de la corrección * <span class="muted">(p. ej. coordinado por teléfono con el punto focal)</span>', fInp('_sustento', st._sustento, 'Con quién y cómo se coordinó'), 'full') + '</div>';
@@ -878,9 +859,8 @@ function rvAbrir(cod) {
       const it = { cod, accion: 'validar' };
       if (st._editar) {
         it.campos = pick(st, CAMPOS_REP);
-        it.cambios = {}; CAMBIO_DIRECTO.forEach(k => { if (String(st[k] || '') !== String(r[k] || '')) it.cambios[k] = st[k]; });
         it.sustento = st._sustento || '';
-        const hayCorr = CAMPOS_REP.concat(CAMBIO_DIRECTO).some(k => String(st[k] || '') !== String(orig[k] || ''));
+        const hayCorr = CAMPOS_REP.some(k => String(st[k] || '') !== String(orig[k] || ''));
         const errs = erroresReporte(st, r['Tipo'], st['Tipo de Código']);
         if (hayCorr && (it.sustento || '').trim().length < 5) errs.push('Indica el sustento de la corrección');
         if (errs.length) return mostrarErrores('#rv-err', errs);
