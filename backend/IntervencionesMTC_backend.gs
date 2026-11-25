@@ -301,8 +301,10 @@ function validarIdentidad(d, cat) {
     if (!enLista(cat, 'Tipo de Infraestructura', d['Tipo de Infraestructura'])) e.push('Tipo de Infraestructura no válido');
     if (!enLista(cat, 'Tipo de Órgano ejecutor', d['Tipo de Órgano ejecutor'])) e.push('Tipo de Órgano ejecutor no válido');
   }
-  if (['SI', 'NO'].indexOf(clave(d['Crédito suplementario'])) < 0) e.push('Indica si tiene crédito suplementario');
-  if (esSi(d['Crédito suplementario']) && !(num(d['Monto del crédito S/']) > 0)) e.push('Monto del crédito obligatorio (mayor que 0)');
+  if (t.datos) {   // código, monto y crédito solo para los tipos con datos de intervención (Proyecto, Servicio)
+    if (['SI', 'NO'].indexOf(clave(d['Crédito suplementario'])) < 0) e.push('Indica si tiene crédito suplementario');
+    if (esSi(d['Crédito suplementario']) && !(num(d['Monto del crédito S/']) > 0)) e.push('Monto del crédito obligatorio (mayor que 0)');
+  }
   if (['SI', 'NO'].indexOf(clave(d['Hoja de Ruta'])) < 0) e.push('Indica si forma parte de la Hoja de Ruta');
   if (esSi(d['Hoja de Ruta'])) {
     if (['SI', 'NO'].indexOf(clave(d['Cartera Priorizada'])) < 0) e.push('Indica si es Cartera Priorizada');
@@ -328,8 +330,11 @@ function normalizarIdentidad(d, cat) {
     o['Tipo de Infraestructura'] = valorCatalogo(cat, 'Tipo de Infraestructura', o['Tipo de Infraestructura']);
     o['Tipo de Órgano ejecutor'] = valorCatalogo(cat, 'Tipo de Órgano ejecutor', o['Tipo de Órgano ejecutor']);
   }
-  o['Crédito suplementario'] = esSi(o['Crédito suplementario']) ? 'SI' : 'NO';
-  o['Monto del crédito S/'] = o['Crédito suplementario'] === 'SI' ? String(num(o['Monto del crédito S/'])) : '';
+  if (t && !t.datos) { o['Crédito suplementario'] = ''; o['Monto del crédito S/'] = ''; }
+  else {
+    o['Crédito suplementario'] = esSi(o['Crédito suplementario']) ? 'SI' : 'NO';
+    o['Monto del crédito S/'] = o['Crédito suplementario'] === 'SI' ? String(num(o['Monto del crédito S/'])) : '';
+  }
   o['Hoja de Ruta'] = esSi(o['Hoja de Ruta']) ? 'SI' : 'NO';
   if (o['Hoja de Ruta'] === 'SI') {
     o['Cartera Priorizada'] = esSi(o['Cartera Priorizada']) ? 'SI' : 'NO';

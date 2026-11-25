@@ -200,8 +200,8 @@ function erroresIdentidad(d) {
     if (!enLista('Tipo de Infraestructura', d['Tipo de Infraestructura'])) e.push('Elige el tipo de infraestructura');
     if (!enLista('Tipo de Órgano ejecutor', d['Tipo de Órgano ejecutor'])) e.push('Elige el tipo de órgano ejecutor');
   }
-  if (!['SI', 'NO'].includes(d['Crédito suplementario'])) e.push('Indica si tiene crédito suplementario');
-  if (d['Crédito suplementario'] === 'SI' && !(num(d['Monto del crédito S/']) > 0)) e.push('Monto del crédito obligatorio');
+  if (t.datos && !['SI', 'NO'].includes(d['Crédito suplementario'])) e.push('Indica si tiene crédito suplementario');
+  if (t.datos && d['Crédito suplementario'] === 'SI' && !(num(d['Monto del crédito S/']) > 0)) e.push('Monto del crédito obligatorio');
   if (!['SI', 'NO'].includes(d['Hoja de Ruta'])) e.push('Indica si forma parte de la Hoja de Ruta');
   if (d['Hoja de Ruta'] === 'SI') {
     if (!['SI', 'NO'].includes(d['Cartera Priorizada'])) e.push('Indica si es Cartera Priorizada');
@@ -299,7 +299,7 @@ function reglas(st, k) {
   const t = tipoDe(st['Tipo']);
   if (k === 'Tipo' && t) {
     if (!t.codigos.includes(st['Tipo de Código'])) st['Tipo de Código'] = t.codigos.length === 1 ? t.codigos[0] : '';
-    if (!t.datos) ['Tipo de Infraestructura', 'Tipo de Órgano ejecutor', 'Monto reportado S/', 'Beneficiarios', 'Modalidad de ejecución', 'Fase', 'Financiamiento (SI/NO)'].forEach(x => { st[x] = ''; });
+    if (!t.datos) ['Tipo de Infraestructura', 'Tipo de Órgano ejecutor', 'Monto reportado S/', 'Beneficiarios', 'Modalidad de ejecución', 'Fase', 'Financiamiento (SI/NO)', 'Código', 'Crédito suplementario', 'Monto del crédito S/'].forEach(x => { st[x] = ''; });
   }
   if (k === 'Tipo de Código' && !['CUI', 'IDEA'].includes(st['Tipo de Código'])) st['Código'] = '';
   if (k === 'Modalidad de ejecución') { const f = S.catalogos.modalidades[st['Modalidad de ejecución']] || []; if (!f.some(x => x.fase === st['Fase'])) st['Fase'] = ''; }
@@ -367,24 +367,28 @@ function dibujarIntervencion(st, op) {
     h += campo('Tipo de Infraestructura *', fSel('Tipo de Infraestructura', cat.listas['Tipo de Infraestructura'] || [], st['Tipo de Infraestructura'], 'Elige…', dis('Tipo de Infraestructura')));
     h += campo('Tipo de Órgano ejecutor *', fSel('Tipo de Órgano ejecutor', cat.listas['Tipo de Órgano ejecutor'] || [], st['Tipo de Órgano ejecutor'], 'Elige…', dis('Tipo de Órgano ejecutor')));
   }
-  h += '</div><span class="blk g">2 · CÓDIGO' + (t.datos ? ', MONTO' : '') + ' Y CRÉDITO SUPLEMENTARIO</span><div class="fg">';
-  h += campo('Tipo de Código * <span class="muted">(según el tipo)</span>', fSeg('Tipo de Código', t.codigos, tc, dis('Tipo de Código') || t.codigos.length === 1),
-    '', t.codigos.length === 1 ? '<span class="lock">Única opción para este tipo</span>' : '');
-  if (tc === 'CUI' || tc === 'IDEA')
-    h += campo((tc === 'CUI' ? 'CUI(s)' : 'Código(s) IDEA') + ' * <span class="muted">(Enter, coma o clic fuera para añadir; ✕ para quitar)</span>', fChips('Código', st['Código'], 'texto', dis('Código'), tc), '',
-      tc === 'CUI' && cuis.length ? (cuis.every(c => /^\d{7}$/.test(c)) ? (uso.length ? '<span class="warn">⚠ CUI ya usado: ' + esc(uso.join(', ')) + ' (quedará como CUI compartido)</span>' : '<span class="ok">✓ 7 dígitos · no están en otra intervención vigente</span>') : '<span class="err">El CUI debe tener 7 dígitos</span>') : '');
-  else h += campo('Código', `<input class="inp" disabled placeholder="${tc ? 'No lleva código' : '🔒 Elige primero el tipo de código'}">`);
-  if (op.rep && t.datos) {
-    h += campo('Monto ' + (tc === 'CUI' ? 'reportado S/ <span class="muted">(informativo: manda el costo MEF)</span>' : 'de la intervención S/ * <span class="muted">(es el monto oficial)</span>'),
-      fInp('Monto reportado S/', st['Monto reportado S/'], 'S/', dis('Monto reportado S/'), 'inputmode="decimal"'));
-    h += campo('Beneficiarios *', fInp('Beneficiarios', st['Beneficiarios'], 'Número', dis('Beneficiarios'), 'inputmode="numeric"'));
-  }
-  h += campo('¿Tiene crédito suplementario? *', fSeg('Crédito suplementario', ['SI', 'NO'], st['Crédito suplementario'], dis('Crédito suplementario')));
-  h += campo('Monto del crédito S/ *', st['Crédito suplementario'] === 'SI' ? fInp('Monto del crédito S/', st['Monto del crédito S/'], 'S/', dis('Monto del crédito S/'), 'inputmode="decimal"')
-    : '<input class="inp" disabled placeholder="🔒 Solo si tiene crédito suplementario">');
   h += '</div>';
+  let nb = 1;
+  if (t.datos) {
+    h += '<span class="blk g">' + (++nb) + ' · CÓDIGO, MONTO Y CRÉDITO SUPLEMENTARIO</span><div class="fg">';
+    h += campo('Tipo de Código * <span class="muted">(según el tipo)</span>', fSeg('Tipo de Código', t.codigos, tc, dis('Tipo de Código') || t.codigos.length === 1),
+      '', t.codigos.length === 1 ? '<span class="lock">Única opción para este tipo</span>' : '');
+    if (tc === 'CUI' || tc === 'IDEA')
+      h += campo((tc === 'CUI' ? 'CUI(s)' : 'Código(s) IDEA') + ' * <span class="muted">(Enter, coma o clic fuera para añadir; ✕ para quitar)</span>', fChips('Código', st['Código'], 'texto', dis('Código'), tc), '',
+        tc === 'CUI' && cuis.length ? (cuis.every(c => /^\d{7}$/.test(c)) ? (uso.length ? '<span class="warn">⚠ CUI ya usado: ' + esc(uso.join(', ')) + ' (quedará como CUI compartido)</span>' : '<span class="ok">✓ 7 dígitos · no están en otra intervención vigente</span>') : '<span class="err">El CUI debe tener 7 dígitos</span>') : '');
+    else h += campo('Código', `<input class="inp" disabled placeholder="${tc ? 'No lleva código' : '🔒 Elige primero el tipo de código'}">`);
+    if (op.rep && t.datos) {
+      h += campo('Monto ' + (tc === 'CUI' ? 'reportado S/ <span class="muted">(informativo: manda el costo MEF)</span>' : 'de la intervención S/ * <span class="muted">(es el monto oficial)</span>'),
+        fInp('Monto reportado S/', st['Monto reportado S/'], 'S/', dis('Monto reportado S/'), 'inputmode="decimal"'));
+      h += campo('Beneficiarios *', fInp('Beneficiarios', st['Beneficiarios'], 'Número', dis('Beneficiarios'), 'inputmode="numeric"'));
+    }
+    h += campo('¿Tiene crédito suplementario? *', fSeg('Crédito suplementario', ['SI', 'NO'], st['Crédito suplementario'], dis('Crédito suplementario')));
+    h += campo('Monto del crédito S/ *', st['Crédito suplementario'] === 'SI' ? fInp('Monto del crédito S/', st['Monto del crédito S/'], 'S/', dis('Monto del crédito S/'), 'inputmode="decimal"')
+      : '<input class="inp" disabled placeholder="🔒 Solo si tiene crédito suplementario">');
+    h += '</div>';
+  }
   if (op.rep) {
-    h += '<span class="blk b">3 · ' + (t.datos ? 'EJECUCIÓN Y ' : '') + 'ESTADO SITUACIONAL' + (S.corte ? ' AL ' + esc(S.corte['Corte']) : '') + '</span><div class="fg">';
+    h += '<span class="blk b">' + (++nb) + ' · ' + (t.datos ? 'EJECUCIÓN Y ' : '') + 'ESTADO SITUACIONAL' + (S.corte ? ' AL ' + esc(S.corte['Corte']) : '') + '</span><div class="fg">';
     if (t.datos) {
       const fases = (cat.modalidades[st['Modalidad de ejecución']] || []).map(f => f.fase);
       h += campo('Modalidad de ejecución *', fSel('Modalidad de ejecución', cat.ordenModalidades, st['Modalidad de ejecución'], 'Elige…', dis('Modalidad de ejecución')));
@@ -396,7 +400,7 @@ function dibujarIntervencion(st, op) {
     h += campo('Estado situacional * <span class="muted">(últimas actividades a la fecha de corte)</span>', fTxt('Estado situacional', st['Estado situacional'], '', dis('Estado situacional')), 'full');
     h += '</div>';
   }
-  h += '<span class="blk r">' + (op.rep ? '4' : '3') + ' · HOJA DE RUTA</span><div class="fg">';
+  h += '<span class="blk r">' + (++nb) + ' · HOJA DE RUTA</span><div class="fg">';
   const hr = st['Hoja de Ruta'] === 'SI';
   h += campo('¿Forma parte de la Hoja de Ruta? *', fSeg('Hoja de Ruta', ['SI', 'NO'], st['Hoja de Ruta'], dis('Hoja de Ruta')));
   h += campo('Cartera Priorizada *', hr ? fSeg('Cartera Priorizada', ['SI', 'NO'], st['Cartera Priorizada'], dis('Cartera Priorizada')) : '<input class="inp" disabled placeholder="🔒 Solo si forma parte de la Hoja de Ruta">');
