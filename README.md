@@ -19,6 +19,7 @@ Las páginas son archivos HTML que no guardan datos: los leen de hojas de cálcu
 ├── assets/
 │   ├── img/                   Logo y foto de portada
 │   └── iconos/                Íconos de los indicadores de la portada
+├── beta/                      Módulos en prueba, paralelos al Hub (ver beta/README.md)
 ├── backend/                   Copia de referencia de los Apps Script
 └── archivo/                   Páginas retiradas e imágenes sin uso (no borrar sin revisar)
 ```
@@ -34,6 +35,7 @@ Las páginas activas están en la raíz a propósito: su dirección web es la qu
 | `intervenciones-mtc.html` | Google Sheet "Carpeta_Departamental" (pestaña Actual) y la Hoja de Ruta | — |
 | `departamentales.html` | Google Sheets "Carpeta_Departamental" y "Datos_departamentales" | — |
 | `puentes.html` | Google Sheet "Puentes – Consolidado" | Apps Script de Puentes (estado situacional, fase beta) |
+| `beta/registro-intervenciones.html` | Apps Script del Sheet "Base de Intervenciones MTC" (en prueba; sin URL configurada funciona en modo demo) | Apps Script de Intervenciones MTC (registro del corte) |
 
 Las direcciones de cada hoja están al inicio del código de cada página, en un bloque de configuración.
 
@@ -42,6 +44,7 @@ Las direcciones de cada hoja están al inicio del código de cada página, en un
 Los archivos de esta carpeta son **copias de referencia**. El código que realmente se ejecuta está en los proyectos de Apps Script de la cuenta de OGAME. Cuando se modifique un script, conviene actualizar también su copia aquí.
 
 - `HojaDeRuta_backend.gs`: recibe los registros y validaciones de la Hoja de Ruta. Después de cambiarlo hay que publicar una nueva versión: **Implementar → Gestionar implementaciones → lápiz → Nueva versión**. No usar "Nueva implementación", porque cambia la dirección y la página deja de conectarse.
+- `IntervencionesMTC_backend.gs` (en prueba): está dentro del Sheet "Base de Intervenciones MTC". Recibe el registro del corte de Intervenciones MTC desde `beta/registro-intervenciones.html` (reportes de las unidades, validación OMEI, altas y bajas, financiera y publicación de la pestaña Actual). Verifica las contraseñas en el servidor: la pestaña Accesos no se publica. Instalación en `beta/README.md`.
 - `Puentes_Consolidado.gs`: está dentro del Sheet "Puentes – Consolidado". Tiene dos funciones:
   - **Consolidar el inventario:** lee los Excel que los órganos dejan en la carpeta de Drive "Puentes – Fuentes" (subcarpetas PVN, DGPPT y PVD) desde el menú **Puentes → Actualizar desde Drive**. Al recargar, conserva el estado situacional de los puentes que siguen, agrega los nuevos sin estado y copia los que salen a la pestaña "Eliminados en la última carga". Si coincide menos de la mitad de los puentes, no modifica nada.
   - **Recibir el estado situacional desde el Hub** (fase beta, registro abierto): está implementado como aplicación web. Después de cambiar el código hay que publicar una nueva versión, igual que el de la Hoja de Ruta.

@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Registro del corte · Intervenciones MTC (beta) · OGAME</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--red:#C8102E;--blue:#0055A5;--blue-dk:#003F7D;--blue-lt:#EEF4FF;--bg:#F2F2F2;--border:rgba(0,0,0,.1);--t2:#4a5568;--t3:#8a9ab0;
+  --green:#1D9E75;--green-dk:#0F6E56;--amber:#C98A00;--amber-lt:#FFF6DC;--gray-lt:#f4f6f9;--sans:'DM Sans',system-ui,sans-serif}
+body{font-family:var(--sans);background:var(--bg);color:#1a1a1a;font-size:13.5px;line-height:1.45;min-height:100vh}
+button,input,select,textarea{font-family:inherit;font-size:inherit}
+.topbar{background:var(--red);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 26px;min-height:64px;gap:16px}
+.topbar b{font-size:19px;display:block}.topbar small{opacity:.85;font-size:12px}
+.tb-der{display:flex;gap:10px;align-items:center}
+.chip-user{background:rgba(255,255,255,.16);border-radius:20px;padding:6px 14px;font-size:12.5px}
+.btn-top{background:#003F7D;color:#fff;border:0;border-radius:20px;padding:7px 15px;font-weight:700;cursor:pointer;text-decoration:none;font-size:13px}
+.aviso-beta{background:#FFF1D6;color:#6b4a00;padding:7px 26px;font-size:12.5px;border-bottom:1px solid #f0d58a}
+.aviso-demo{background:#F1E9FF;color:#4b2390;padding:7px 26px;font-size:12.5px;border-bottom:1px solid #d9c6ff;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.aviso-demo button{background:none;border:1px solid #9b7ad8;color:#4b2390;border-radius:12px;padding:2px 10px;cursor:pointer;font-size:12px}
+.main{padding:22px 26px;max-width:1800px;margin:0 auto}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 22px}
+h1{font-size:22px;color:var(--blue);letter-spacing:-.01em}h2{font-size:15px;color:var(--blue-dk);margin:14px 0 8px}
+.sub{color:var(--t2);font-size:13px}.muted{color:var(--t3)}
+.kpis{display:flex;gap:10px;margin:14px 0;flex-wrap:wrap}
+.kpi{flex:1;min-width:150px;border:1px solid #e3e7ee;border-radius:10px;padding:10px 12px;background:#fff}
+.kpi .v{font-size:21px;font-weight:700;color:var(--blue-dk)}.kpi .l{font-size:12px;color:var(--t2)}
+.bar{height:7px;background:#e9edf3;border-radius:6px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--green)}
+.mini{height:7px;width:110px;background:#e9edf3;border-radius:6px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:6px}.mini i{display:block;height:100%;background:var(--green)}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 12px}
+.sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:5px;border-radius:8px;padding:7px 13px;font-weight:700;font-size:12.5px;border:1.5px solid var(--blue);color:var(--blue);background:#fff;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--blue-lt)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.p{background:var(--blue);color:#fff}.btn.p:hover{background:var(--blue-dk)}
+.btn.g{background:var(--green);border-color:var(--green);color:#fff}.btn.g:hover{background:var(--green-dk)}
+.btn.a{border-color:var(--amber);color:#8a5d00}.btn.r{border-color:var(--red);color:var(--red)}
+.btn.s{padding:4px 9px;font-size:11.5px}
+.inp,select.inp,textarea.inp{border:1px solid #cfd6e1;border-radius:7px;padding:7px 9px;background:#fff;width:100%;font-size:13px;color:#1a1a1a}
+.inp:focus{outline:2px solid #b9d2f5;border-color:var(--blue)}
+.inp:disabled,select.inp:disabled{background:#f3f4f6;color:#9aa3b0;border-style:dashed;cursor:not-allowed}
+.inp.ro{background:#F3F8F5;border-color:#d4e7dc;color:#2d4a3a}
+textarea.inp{min-height:84px;resize:vertical}
+.inp.filtro,select.inp.filtro{width:auto;min-width:170px}
+.tbl{border:1px solid #e3e7ee;border-radius:9px;overflow:auto;background:#fff}
+table{border-collapse:collapse;width:100%;font-size:12.6px}
+th{background:var(--gray-lt);text-align:left;padding:7px 8px;font-weight:700;color:#334;border-bottom:1px solid #dde2ea;position:sticky;top:0;z-index:1;white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid #eef0f4;vertical-align:top}
+tr.click{cursor:pointer}tr.click:hover td{background:#f7faff}tr.sel td{background:#eaf2ff!important}
+.chip{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap}
+.c-Pendiente{background:#eef0f3;color:#5a6577}.c-Borrador{background:var(--blue-lt);color:var(--blue)}.c-Enviado{background:#E7F0FF;color:var(--blue-dk)}
+.c-Devuelto{background:var(--amber-lt);color:#8a5d00}.c-Validado{background:#E3F5EE;color:var(--green-dk)}.c-Nueva{background:#F1E9FF;color:#5B2DA8}
+.c-Rechazada{background:#FDECEF;color:var(--red)}.c-Aprobada{background:#E3F5EE;color:var(--green-dk)}
+.meta{color:var(--t3);font-size:11.5px}
+.trunc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:520px}
+.dos{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
+.panel{border:1.5px solid var(--blue);border-radius:12px;background:#fff;padding:14px 16px;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+.panel .tit{font-weight:700;color:var(--blue-dk);font-size:14.5px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px}.full{grid-column:1/-1}
+.f label{display:block;font-size:11.5px;font-weight:700;color:var(--t2);margin-bottom:3px}
+.f label .muted{font-weight:500}
+.blk{font-size:11px;font-weight:700;padding:4px 9px;border-radius:6px;margin:14px 0 8px;display:inline-block;letter-spacing:.02em}
+.blk.g{background:#E3F2E9;color:#155c3a}.blk.b{background:#E3EDFB;color:var(--blue-dk)}.blk.r{background:#FDECEF;color:#9b0c24}.blk.n{background:#FFF1D6;color:#7a5200}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button{border:1px solid #cfd6e1;border-radius:7px;padding:5px 10px;font-size:12.5px;background:#fff;color:var(--t2);cursor:pointer}
+.seg button.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700}
+.seg button:disabled{opacity:.5;cursor:not-allowed}
+.chips{display:flex;flex-wrap:wrap;gap:4px;align-items:center;border:1px solid #cfd6e1;border-radius:7px;padding:5px 6px;background:#fff;min-height:36px}
+.chips.dis{background:#f3f4f6;border-style:dashed}
+.cchip{display:inline-flex;align-items:center;gap:4px;background:var(--blue-lt);color:var(--blue-dk);border:1px solid #cfe0fb;border-radius:12px;padding:1px 8px;font-size:12px;font-weight:600}
+.cchip button{background:none;border:0;color:var(--blue-dk);cursor:pointer;font-weight:700}
+.chips input{border:0;outline:0;flex:1;min-width:110px;padding:3px}
+.chips select{border:0;outline:0;flex:1;min-width:140px;background:transparent}
+.plus{width:24px;height:24px;border-radius:50%;background:var(--blue);color:#fff;border:0;font-weight:700;cursor:pointer;font-size:15px;line-height:1}
+.ayuda{font-size:11px;margin-top:3px}
+.ok{color:var(--green-dk);font-weight:600}.warn{color:#8a5d00;font-weight:600}.err{color:var(--red);font-weight:600}
+.lock{font-size:11px;color:#a0a8b5}
+.errores{background:#FDECEF;border:1px solid #f5b8c3;color:#8f0a22;border-radius:8px;padding:8px 12px;font-size:12.5px;margin-top:10px}
+.errores li{margin-left:16px}
+.diff{background:var(--amber-lt);border-radius:5px;padding:1px 4px}
+.corr{background:#E3F5EE;border-radius:5px;padding:1px 4px}
+.acciones{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+.nota{background:var(--gray-lt);border-radius:8px;padding:9px 12px;font-size:12.5px;color:var(--t2)}
+.tabs{display:flex;gap:4px;border-bottom:2px solid #e3e7ee;margin:4px 0 14px;flex-wrap:wrap}
+.tabs button{padding:8px 15px;font-weight:700;font-size:13px;color:var(--t2);border:0;background:none;border-radius:8px 8px 0 0;cursor:pointer}
+.tabs button.on{background:var(--blue);color:#fff}
+.modal-bg{position:fixed;inset:0;background:rgba(10,25,50,.45);display:flex;align-items:flex-start;justify-content:center;padding:24px;z-index:50;overflow:auto}
+.modal{background:#fff;border-radius:14px;width:min(980px,100%);box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-h{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #e3e7ee}
+.modal-h b{color:var(--blue-dk);font-size:16px}.modal-b{padding:6px 20px 18px}
+.x{background:none;border:0;font-size:20px;cursor:pointer;color:var(--t2)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1d2a3a;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;z-index:80;max-width:90vw;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.toast.e{background:#8f0a22}
+.cargando{position:fixed;inset:0;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;z-index:90;font-weight:700;color:var(--blue-dk)}
+.login{max-width:420px;margin:60px auto}
+.wl{display:inline-block;height:8px;border-radius:5px;background:var(--blue);vertical-align:middle;margin-right:6px}
+.vacio{padding:26px;text-align:center;color:var(--t3)}
+.chk{width:15px;height:15px;cursor:pointer}
+@media (max-width:1100px){.dos{grid-template-columns:1fr}.panel{position:static;max-height:none}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div><b id="tb-titulo">Registro del corte · Intervenciones MTC</b><small id="tb-sub">Hub de Herramientas OGAME · módulo beta</small></div>
+  <div class="tb-der"><span class="chip-user" id="tb-user" style="display:none"></span>
+    <button class="btn-top" id="tb-salir" style="display:none" onclick="salir()">Salir</button>
+    <a class="btn-top" href="../index.html">← Hub</a></div>
+</div>
+<div class="aviso-beta"><b>Módulo en prueba.</b> Funciona en paralelo y no reemplaza todavía al proceso vigente por Excel ni a la base publicada del Hub.</div>
+<div class="aviso-demo" id="aviso-demo" style="display:none"></div>
+<div class="main" id="app"></div>
+
+<script>
+'use strict';
+// ── CONFIGURACIÓN ─────────────────────────────────────────────────────────────
+// URL de la aplicación web del Apps Script «IntervencionesMTC_backend.gs» (termina en /exec).
+// Si se deja vacía, la página funciona en MODO DEMO con datos de ejemplo guardados en el navegador.
+const BACKEND_URL = '';
+const MODO_DEMO = !BACKEND_URL || new URLSearchParams(location.search).has('demo');
+
+// ── ESTADO ───────────────────────────────────────────────────────────────────
+let S = null;                 // datos del servidor (respuesta de «datos»)
+let VISTA = { tab: null, unidad: null, filtroEstado: '', busca: '', sel: null, marcados: new Set(), subtab: 'carpeta' };
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const clave = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
+const num = v => { if (typeof v === 'number') return v; const t = String(v ?? '').replace(/[S\/\s]/g, '').replace(/,/g, ''); if (t === '' || t === '-') return NaN; const n = Number(t); return isNaN(n) ? NaN : n; };
+const fmt = v => { const n = num(v); return isNaN(n) ? '' : n.toLocaleString('es-PE', { maximumFractionDigits: 2 }); };
+const fmtMM = v => 'S/ ' + (v / 1e6).toLocaleString('es-PE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' MM';
+const partir = v => String(v ?? '').split(/[,;\/\n]+/).map(p => p.trim().replace(/\.0+$/, '')).filter(p => p && !['NO APLICA', 'PENDIENTE'].includes(clave(p)));
+const CAMPOS_REP = ['Monto reportado S/', 'Beneficiarios', 'Modalidad de ejecución', 'Fase', 'Financiamiento (SI/NO)', 'Estado situacional'];
+const CAMPOS_ID = ['Tipo', 'Nombre de la intervención', 'Área de influencia', 'Tipo de Código', 'Código', 'Tipo de Infraestructura',
+  'Tipo de Órgano ejecutor', 'Crédito suplementario', 'Monto del crédito S/', 'Hoja de Ruta', 'Cartera Priorizada', 'Relevancia sectorial', 'Incluida en'];
+const CAMBIO_DIRECTO = ['Tipo de Código', 'Código', 'Crédito suplementario', 'Monto del crédito S/'];
+
+// ── API ──────────────────────────────────────────────────────────────────────
+async function api(accion, datos = {}) {
+  const payload = Object.assign({ accion, token: sessionStorage.getItem('intmtc_token') || '' }, datos);
+  let r;
+  if (MODO_DEMO) { await new Promise(x => setTimeout(x, 120)); r = window.DEMO.api(payload); }
+  else {
+    const resp = await fetch(BACKEND_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+    const t = await resp.text();
+    try { r = JSON.parse(t); } catch (e) { throw new Error('El servidor no respondió en formato JSON. Revisa la URL del Apps Script.'); }
+  }
+  if (r && r.sesion === false) { sessionStorage.removeItem('intmtc_token'); toast(r.mensaje, true); verLogin(); throw new Error(r.mensaje); }
+  return r;
+}
+async function conCarga(fn) {
+  const c = document.createElement('div'); c.className = 'cargando'; c.textContent = 'Procesando…'; document.body.appendChild(c);
+  try { return await fn(); } catch (e) { console.error(e); toast(e.message || String(e), true); } finally { c.remove(); }
+}
+function toast(msg, error) {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const t = document.createElement('div'); t.className = 'toast' + (error ? ' e' : ''); t.textContent = msg; document.body.appendChild(t);
+  setTimeout(() => t.remove(), error ? 7000 : 3800);
+}
+async function recargar() {
+  const r = await api('datos'); if (!r.ok) throw new Error(r.mensaje);
+  S = r;
+  S.ult = {}; (S.ultimos || []).forEach(x => { S.ult[x['COD INTERNO']] = x; });
+  S.rep = {}; (S.reportes || []).forEach(x => { if (x['COD INTERNO']) S.rep[x['COD INTERNO']] = x; });
+  S.porCod = {}; (S.universo || []).forEach(x => { S.porCod[x['COD INTERNO']] = x; });
+  render();
+}
+
+// ── REGLAS (mismas que el servidor; el servidor vuelve a validar todo) ───────
+const tipoDe = t => S.catalogos.tipos[t] || null;
+const enModulo = r => { const t = tipoDe(r['Tipo']); return !!(t && t.modulo && r['Vigente'] === 'SI'); };
+const enLista = (lista, v) => (S.catalogos.listas[lista] || []).some(x => clave(x) === clave(v));
+function erroresIdentidad(d) {
+  const e = []; const t = tipoDe(d['Tipo']);
+  if (!t) return ['Elige el tipo'];
+  if ((d['Nombre de la intervención'] || '').trim().length < 10) e.push('Nombre de la intervención: mínimo 10 caracteres');
+  const areas = String(d['Área de influencia'] || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (!areas.length) e.push('Área de influencia obligatoria');
+  const tc = d['Tipo de Código'];
+  if (!tc) e.push('Elige el tipo de código');
+  else if (!t.codigos.includes(tc)) e.push('Tipo de Código no corresponde al tipo');
+  const cods = partir(d['Código']);
+  if (tc === 'CUI') { if (!cods.length) e.push('Ingresa al menos un CUI'); cods.forEach(c => { if (!/^\d{7}$/.test(c)) e.push('CUI no válido (7 dígitos): ' + c); }); }
+  if (tc === 'IDEA') { if (!cods.length) e.push('Ingresa el código IDEA'); cods.forEach(c => { if (!/^\d{5,7}$/.test(c)) e.push('Código IDEA no válido: ' + c); }); }
+  if (t.datos) {
+    if (!enLista('Tipo de Infraestructura', d['Tipo de Infraestructura'])) e.push('Elige el tipo de infraestructura');
+    if (!enLista('Tipo de Órgano ejecutor', d['Tipo de Órgano ejecutor'])) e.push('Elige el tipo de órgano ejecutor');
+  }
+  if (!['SI', 'NO'].includes(d['Crédito suplementario'])) e.push('Indica si tiene crédito suplementario');
+  if (d['Crédito suplementario'] === 'SI' && !(num(d['Monto del crédito S/']) > 0)) e.push('Monto del crédito obligatorio');
+  if (!['SI', 'NO'].includes(d['Hoja de Ruta'])) e.push('Indica si forma parte de la Hoja de Ruta');
+  if (d['Hoja de Ruta'] === 'SI') {
+    if (!['SI', 'NO'].includes(d['Cartera Priorizada'])) e.push('Indica si es Cartera Priorizada');
+    if ((d['Relevancia sectorial'] || '').trim().length < 20) e.push('Relevancia sectorial: mínimo 20 caracteres');
+  }
+  return e;
+}
+function erroresReporte(r, tipo, tipoCodigo) {
+  const e = []; const t = tipoDe(tipo);
+  if ((r['Estado situacional'] || '').trim().length < 15) e.push('Estado situacional: mínimo 15 caracteres');
+  if (!t || !t.datos) return e;
+  const fases = S.catalogos.modalidades[r['Modalidad de ejecución']];
+  if (!fases) e.push('Elige la modalidad de ejecución');
+  else if (!fases.some(f => f.fase === r['Fase'])) e.push('Elige la fase (de la modalidad ' + r['Modalidad de ejecución'] + ')');
+  if (!['SI', 'NO'].includes(r['Financiamiento (SI/NO)'])) e.push('Indica el financiamiento del año');
+  const b = num(r['Beneficiarios']); if (isNaN(b) || b < 0) e.push('Beneficiarios: número obligatorio');
+  const m = num(r['Monto reportado S/']);
+  if (tipoCodigo !== 'CUI' && (isNaN(m) || m < 0)) e.push('Monto obligatorio (sin CUI es el monto oficial)');
+  return e;
+}
+// Avisos de posibles duplicados (no bloquean)
+function palabras(s) { return new Set(clave(s).replace(/[^A-Z0-9 ]/g, ' ').split(' ').filter(w => w.length > 3)); }
+function similares(nombre, excluir) {
+  const a = palabras(nombre); if (a.size < 2) return [];
+  return (S.indice || []).filter(i => i[0] !== excluir).map(i => {
+    const b = palabras(i[2]); let c = 0; a.forEach(w => { if (b.has(w)) c++; });
+    return { cod: i[0], unidad: i[1], nombre: i[2], s: c / Math.max(1, Math.min(a.size, b.size)) };
+  }).filter(x => x.s >= 0.6).sort((x, y) => y.s - x.s).slice(0, 3);
+}
+function cuiEnUso(cuis, excluir) {
+  const out = [];
+  (S.indice || []).forEach(i => { if (i[0] === excluir || !i[3]) return; partir(i[3]).forEach(c => { if (cuis.includes(c)) out.push(c + ' en ' + i[0]); }); });
+  return out;
+}
+function sugerirCodigo(sigla) {
+  const anio = (S.corte ? S.corte['Corte'] : '').slice(-4) || String(new Date().getFullYear());
+  const pref = sigla + '-' + anio; let max = 0;
+  (S.indice || []).concat((S.universo || []).map(r => [r['COD INTERNO']])).forEach(i => {
+    const c = String(i[0]); if (c.indexOf(pref) === 0) { const n = Number(c.slice(pref.length).split('-')[0]); if (!isNaN(n) && n > max) max = n; }
+  });
+  return pref + String(max + 1).padStart(3, '0');
+}
+
+// ── COMPONENTE DE CAMPOS (desplegables encadenados) ──────────────────────────
+// Crea un formulario en «cont» a partir de un estado y una función que devuelve el HTML.
+// Los botones de opción y las listas vuelven a dibujar el formulario (y aplican las reglas);
+// los textos solo actualizan el estado, para no perder el cursor.
+function montarForm(cont, estado, dibujar, alCambiar) {
+  const pintar = () => { cont.innerHTML = dibujar(estado); };
+  cont.onclick = e => {
+    const b = e.target.closest('[data-seg]'); if (b && !b.disabled) { const [k, v] = [b.dataset.seg, b.dataset.v]; estado[k] = estado[k] === v && b.dataset.toggle ? '' : v; reglas(estado, k); pintar(); alCambiar && alCambiar(k); return; }
+    const q = e.target.closest('[data-quitar]'); if (q) { const k = q.dataset.quitar; const lista = lst(estado[k], k); lista.splice(Number(q.dataset.i), 1); estado[k] = unir(lista, k); pintar(); alCambiar && alCambiar(k); return; }
+    const a = e.target.closest('[data-agregar]'); if (a) { agregarChip(cont, estado, a.dataset.agregar); pintar(); alCambiar && alCambiar(a.dataset.agregar); const i = cont.querySelector('[data-chipin="' + a.dataset.agregar + '"]'); i && i.focus(); }
+  };
+  cont.onchange = e => {
+    const el = e.target;
+    if (el.dataset.chipsel) { const k = el.dataset.chipsel; if (el.value) { const l = lst(estado[k], k); if (el.value === 'NACIONAL') estado[k] = 'NACIONAL'; else if (!l.includes(el.value)) { estado[k] = unir(l.filter(x => x !== 'NACIONAL').concat(el.value), k); } } pintar(); alCambiar && alCambiar(k); return; }
+    if (el.dataset.k && el.tagName === 'SELECT') { estado[el.dataset.k] = el.value; reglas(estado, el.dataset.k); pintar(); alCambiar && alCambiar(el.dataset.k); }
+  };
+  cont.oninput = e => { const el = e.target; if (el.dataset.k && el.tagName !== 'SELECT') { estado[el.dataset.k] = el.value; alCambiar && alCambiar(el.dataset.k, true); } };
+  cont.onkeydown = e => { if (e.key === 'Enter' && e.target.dataset.chipin) { e.preventDefault(); agregarChip(cont, estado, e.target.dataset.chipin); pintar(); alCambiar && alCambiar(e.target.dataset.chipin); const i = cont.querySelector('[data-chipin="' + e.target.dataset.chipin + '"]'); i && i.focus(); } };
+  pintar();
+  return { repintar: pintar, estado };
+}
+const lst = (v, k) => k === 'Incluida en' ? String(v || '').split(';').map(s => s.trim()).filter(Boolean)
+  : k === 'Área de influencia' ? String(v || '').split(',').map(s => s.trim()).filter(Boolean) : partir(v);
+const unir = (l, k) => l.join(k === 'Incluida en' ? '; ' : ', ');
+function agregarChip(cont, estado, k) {
+  const i = cont.querySelector('[data-chipin="' + k + '"]'); if (!i) return;
+  const nuevos = partir(i.value); if (!nuevos.length) return;
+  const l = lst(estado[k], k); nuevos.forEach(n => { if (!l.includes(n)) l.push(n); });
+  estado[k] = unir(l, k); i.value = '';
+}
+// Reglas que limpian lo que deja de aplicar cuando cambia un dato «padre»
+function reglas(st, k) {
+  const t = tipoDe(st['Tipo']);
+  if (k === 'Tipo' && t) {
+    if (!t.codigos.includes(st['Tipo de Código'])) st['Tipo de Código'] = t.codigos.length === 1 ? t.codigos[0] : '';
+    if (!t.datos) ['Tipo de Infraestructura', 'Tipo de Órgano ejecutor', 'Monto reportado S/', 'Beneficiarios', 'Modalidad de ejecución', 'Fase', 'Financiamiento (SI/NO)'].forEach(x => { st[x] = ''; });
+  }
+  if (k === 'Tipo de Código' && !['CUI', 'IDEA'].includes(st['Tipo de Código'])) st['Código'] = '';
+  if (k === 'Modalidad de ejecución') { const f = S.catalogos.modalidades[st['Modalidad de ejecución']] || []; if (!f.some(x => x.fase === st['Fase'])) st['Fase'] = ''; }
+  if (k === 'Crédito suplementario' && st['Crédito suplementario'] !== 'SI') st['Monto del crédito S/'] = '';
+  if (k === 'Hoja de Ruta' && st['Hoja de Ruta'] !== 'SI') { st['Cartera Priorizada'] = ''; st['Relevancia sectorial'] = ''; st['Incluida en'] = ''; }
+}
+// Piezas de formulario
+function fSeg(k, opciones, v, dis, toggle) {
+  return '<div class="seg">' + opciones.map(o => `<button type="button" data-seg="${esc(k)}" data-v="${esc(o)}" ${toggle ? 'data-toggle="1"' : ''} class="${v === o ? 'on' : ''}" ${dis ? 'disabled' : ''}>${esc(o)}</button>`).join('') + '</div>';
+}
+function fSel(k, opciones, v, ph, dis) {
+  return `<select class="inp" data-k="${esc(k)}" ${dis ? 'disabled' : ''}><option value="">${esc(ph || 'Elige…')}</option>` +
+    opciones.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('') + '</select>';
+}
+const fInp = (k, v, ph, dis, extra) => `<input class="inp" data-k="${esc(k)}" value="${esc(v || '')}" placeholder="${esc(ph || '')}" ${dis ? 'disabled' : ''} ${extra || ''}>`;
+const fTxt = (k, v, ph, dis) => `<textarea class="inp" data-k="${esc(k)}" placeholder="${esc(ph || '')}" ${dis ? 'disabled' : ''}>${esc(v || '')}</textarea>`;
+const fRo = v => `<input class="inp ro" value="${esc(v || '—')}" disabled>`;
+function fChips(k, v, modo, dis) {
+  const l = lst(v, k);
+  let h = `<div class="chips ${dis ? 'dis' : ''}">` + l.map((x, i) => `<span class="cchip">${esc(x)}${dis ? '' : `<button type="button" data-quitar="${esc(k)}" data-i="${i}" title="Quitar">✕</button>`}</span>`).join('');
+  if (!dis) {
+    if (modo === 'texto') h += `<input data-chipin="${esc(k)}" placeholder="${l.length ? 'otro…' : 'escribe y pulsa ＋'}" inputmode="numeric"><button type="button" class="plus" data-agregar="${esc(k)}" title="Añadir">＋</button>`;
+    else { const ops = (modo === 'depto' ? ['NACIONAL'].concat(S.catalogos.listas['Departamento'] || []) : (S.catalogos.listas[k] || [])).filter(o => !l.includes(o));
+      h += `<select data-chipsel="${esc(k)}"><option value="">＋ añadir…</option>${ops.map(o => `<option>${esc(o)}</option>`).join('')}</select>`; }
+  }
+  return h + '</div>';
+}
+const campo = (lab, html, cls, ayuda) => `<div class="f ${cls || ''}"><label>${lab}</label>${html}${ayuda ? `<div class="ayuda">${ayuda}</div>` : ''}</div>`;
+
+// Formulario completo de intervención (identificación + reporte + Hoja de Ruta)
+// op: {rep:true|false (bloque del corte), ro:Set de campos solo lectura, unidad}
+function dibujarIntervencion(st, op) {
+  op = op || {}; const cat = S.catalogos; const t = tipoDe(st['Tipo']); const ro = op.ro || new Set();
+  const dis = k => ro.has(k);
+  const tc = st['Tipo de Código'];
+  const cuis = tc === 'CUI' ? partir(st['Código']) : [];
+  const uso = cuis.length ? cuiEnUso(cuis, st['COD INTERNO']) : [];
+  const sim = op.avisos !== false && (st['Nombre de la intervención'] || '').length > 12 ? similares(st['Nombre de la intervención'], st['COD INTERNO']) : [];
+  let h = '';
+  h += '<span class="blk g">1 · IDENTIFICACIÓN</span><div class="fg">';
+  const u = cat.unidades[st['Unidad reportante']] || {};
+  h += campo('Unidad reportante', fRo(st['Unidad reportante']));
+  h += campo('Viceministerio <span class="muted">(automático)</span>', fRo(u.vice));
+  h += campo('Tipo *', fSeg('Tipo', Object.keys(cat.tipos), st['Tipo'], dis('Tipo')), 'full');
+  h += campo('Nombre de la intervención *', fInp('Nombre de la intervención', st['Nombre de la intervención'], 'Nombre completo', dis('Nombre de la intervención')), 'full',
+    sim.length ? '<span class="warn">⚠ Parecida a: ' + sim.map(s => esc(s.cod + ' «' + s.nombre.slice(0, 70) + '»')).join(' · ') + '. Verifica que no sea la misma.</span>' : '');
+  h += campo('Área de influencia * <span class="muted">(uno o varios)</span>', fChips('Área de influencia', st['Área de influencia'], 'depto', dis('Área de influencia')), 'full');
+  if (!t) return h + '</div><div class="nota" style="margin-top:10px">Elige el tipo para continuar.</div>';
+  if (t.datos) {
+    h += campo('Tipo de Infraestructura *', fSel('Tipo de Infraestructura', cat.listas['Tipo de Infraestructura'] || [], st['Tipo de Infraestructura'], 'Elige…', dis('Tipo de Infraestructura')));
+    h += campo('Tipo de Órgano ejecutor *', fSel('Tipo de Órgano ejecutor', cat.listas['Tipo de Órgano ejecutor'] || [], st['Tipo de Órgano ejecutor'], 'Elige…', dis('Tipo de Órgano ejecutor')));
+  }
+  h += '</div><span class="blk g">2 · CÓDIGO' + (t.datos ? ', MONTO' : '') + ' Y CRÉDITO SUPLEMENTARIO</span><div class="fg">';
+  h += campo('Tipo de Código * <span class="muted">(según el tipo)</span>', fSeg('Tipo de Código', t.codigos, tc, dis('Tipo de Código') || t.codigos.length === 1),
+    '', t.codigos.length === 1 ? '<span class="lock">Única opción para este tipo</span>' : '');
+  if (tc === 'CUI' || tc === 'IDEA')
+    h += campo((tc === 'CUI' ? 'CUI(s)' : 'Código(s) IDEA') + ' * <span class="muted">— ＋ para añadir otro</span>', fChips('Código', st['Código'], 'texto', dis('Código')), '',
+      tc === 'CUI' && cuis.length ? (cuis.every(c => /^\d{7}$/.test(c)) ? (uso.length ? '<span class="warn">⚠ CUI ya usado: ' + esc(uso.join(', ')) + ' (quedará como CUI compartido)</span>' : '<span class="ok">✓ 7 dígitos · no están en otra intervención vigente</span>') : '<span class="err">El CUI debe tener 7 dígitos</span>') : '');
+  else h += campo('Código', `<input class="inp" disabled placeholder="${tc ? 'No lleva código' : '🔒 Elige primero el tipo de código'}">`);
+  if (op.rep && t.datos) {
+    h += campo('Monto ' + (tc === 'CUI' ? 'reportado S/ <span class="muted">(informativo: manda el costo MEF)</span>' : 'de la intervención S/ * <span class="muted">(es el monto oficial)</span>'),
+      fInp('Monto reportado S/', st['Monto reportado S/'], 'S/', dis('Monto reportado S/'), 'inputmode="decimal"'));
+    h += campo('Beneficiarios *', fInp('Beneficiarios', st['Beneficiarios'], 'Número', dis('Beneficiarios'), 'inputmode="numeric"'));
+  }
+  h += campo('¿Tiene crédito suplementario? *', fSeg('Crédito suplementario', ['SI', 'NO'], st['Crédito suplementario'], dis('Crédito suplementario')));
+  h += campo('Monto del crédito S/ *', st['Crédito suplementario'] === 'SI' ? fInp('Monto del crédito S/', st['Monto del crédito S/'], 'S/', dis('Monto del crédito S/'), 'inputmode="decimal"')
+    : '<input class="inp" disabled placeholder="🔒 Solo si tiene crédito suplementario">');
+  h += '</div>';
+  if (op.rep) {
+    h += '<span class="blk b">3 · ' + (t.datos ? 'EJECUCIÓN Y ' : '') + 'ESTADO SITUACIONAL' + (S.corte ? ' AL ' + esc(S.corte['Corte']) : '') + '</span><div class="fg">';
+    if (t.datos) {
+      const fases = (cat.modalidades[st['Modalidad de ejecución']] || []).map(f => f.fase);
+      h += campo('Modalidad de ejecución *', fSel('Modalidad de ejecución', cat.ordenModalidades, st['Modalidad de ejecución'], 'Elige…', dis('Modalidad de ejecución')));
+      h += campo('Fase * ' + (st['Modalidad de ejecución'] ? '<span class="muted">(solo las de ' + esc(st['Modalidad de ejecución']) + ')</span>' : ''),
+        st['Modalidad de ejecución'] ? fSel('Fase', fases, st['Fase'], 'Elige la fase…', dis('Fase')) : '<select class="inp" disabled><option>🔒 Elige primero la modalidad</option></select>');
+      h += campo('Financiamiento del año *', fSeg('Financiamiento (SI/NO)', ['SI', 'NO'], st['Financiamiento (SI/NO)'], dis('Financiamiento (SI/NO)')));
+      h += '<div></div>';
+    }
+    h += campo('Estado situacional * <span class="muted">(últimas actividades a la fecha de corte)</span>', fTxt('Estado situacional', st['Estado situacional'], '', dis('Estado situacional')), 'full');
+    h += '</div>';
+  }
+  h += '<span class="blk r">' + (op.rep ? '4' : '3') + ' · HOJA DE RUTA</span><div class="fg">';
+  const hr = st['Hoja de Ruta'] === 'SI';
+  h += campo('¿Forma parte de la Hoja de Ruta? *', fSeg('Hoja de Ruta', ['SI', 'NO'], st['Hoja de Ruta'], dis('Hoja de Ruta')));
+  h += campo('Cartera Priorizada *', hr ? fSeg('Cartera Priorizada', ['SI', 'NO'], st['Cartera Priorizada'], dis('Cartera Priorizada')) : '<input class="inp" disabled placeholder="🔒 Solo si forma parte de la Hoja de Ruta">');
+  h += campo('Relevancia sectorial *', hr ? fTxt('Relevancia sectorial', st['Relevancia sectorial'], 'Por qué es relevante para el sector', dis('Relevancia sectorial')) : '<input class="inp" disabled placeholder="🔒 Solo si forma parte de la Hoja de Ruta">', 'full');
+  h += campo('Incluida en <span class="muted">(uno o varios)</span>', hr ? fChips('Incluida en', st['Incluida en'], 'lista', dis('Incluida en')) : '<input class="inp" disabled placeholder="🔒 Solo si forma parte de la Hoja de Ruta">', 'full');
+  h += '</div>';
+  return h;
+}
+
+// ── MODAL ────────────────────────────────────────────────────────────────────
+function modal(titulo, cuerpo, pie) {
+  cerrarModal();
+  const bg = document.createElement('div'); bg.className = 'modal-bg'; bg.id = 'modal';
+  bg.innerHTML = `<div class="modal"><div class="modal-h"><b>${titulo}</b><button class="x" onclick="cerrarModal()">✕</button></div><div class="modal-b"><div id="modal-cuerpo">${cuerpo || ''}</div><div id="modal-err"></div><div class="acciones" id="modal-pie">${pie || ''}</div></div></div>`;
+  document.body.appendChild(bg); document.body.style.overflow = 'hidden';
+  return bg;
+}
+function cerrarModal() { const m = $('#modal'); if (m) m.remove(); document.body.style.overflow = ''; }
+function mostrarErrores(sel, lista) { const c = typeof sel === 'string' ? $(sel) : sel; if (!c) return; c.innerHTML = lista.length ? '<div class="errores"><b>Revisa:</b><ul>' + lista.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>' : ''; }
+
+// ── LOGIN ────────────────────────────────────────────────────────────────────
+function verLogin() {
+  S = null; $('#tb-user').style.display = 'none'; $('#tb-salir').style.display = 'none';
+  $('#tb-titulo').textContent = 'Registro del corte · Intervenciones MTC';
+  $('#app').innerHTML = `<div class="card login"><h1>Ingresar</h1><p class="sub" style="margin:4px 0 14px">Usuario y contraseña asignados por la OGAME.</p>
+    <div class="f" style="margin-bottom:10px"><label>Usuario</label><input class="inp" id="lg-u" autocomplete="username"></div>
+    <div class="f"><label>Contraseña</label><input class="inp" id="lg-c" type="password" autocomplete="current-password"></div>
+    <div id="lg-err"></div><div class="acciones"><button class="btn p" id="lg-b">Ingresar</button></div></div>`;
+  const ir = () => conCarga(async () => {
+    const r = await api('login', { usuario: $('#lg-u').value, clave: $('#lg-c').value });
+    if (!r.ok) { mostrarErrores('#lg-err', [r.mensaje]); return; }
+    sessionStorage.setItem('intmtc_token', r.token); VISTA = { tab: null, unidad: null, filtroEstado: '', busca: '', sel: null, marcados: new Set(), subtab: 'carpeta' };
+    await recargar();
+  });
+  $('#lg-b').onclick = ir; $('#lg-c').onkeydown = e => { if (e.key === 'Enter') ir(); };
+  $('#lg-u').focus();
+}
+async function salir() { try { await api('salir'); } catch (e) {} sessionStorage.removeItem('intmtc_token'); verLogin(); }
+
+// ── RENDER PRINCIPAL ─────────────────────────────────────────────────────────
+function render() {
+  const u = S.usuario;
+  $('#tb-user').style.display = ''; $('#tb-salir').style.display = '';
+  $('#tb-user').textContent = (u.unidad ? u.unidad + ' · ' : '') + u.usuario + ' (' + u.rol.toLowerCase() + ')';
+  const c = S.corte;
+  $('#tb-sub').textContent = c ? 'Corte al ' + c['Corte'] + ' · plazo ' + c['Plazo'] : 'Sin corte abierto' + (S.ultimoPublicado ? ' · último publicado: ' + S.ultimoPublicado['Corte'] : '');
+  if (u.rol === 'Punto focal') { $('#tb-titulo').textContent = 'Reporte de intervenciones · ' + u.unidad; return vistaPuntoFocal(); }
+  const tabs = u.rol === 'Especialista' ? [['revision', 'Revisión del corte'], ['solicitudes', 'Solicitudes']]
+    : [['corte', 'Gestión del corte'], ['revision', 'Revisión'], ['solicitudes', 'Solicitudes'], ['asignaciones', 'Asignaciones'], ['universo', 'Universo']];
+  if (!VISTA.tab || !tabs.some(t => t[0] === VISTA.tab)) VISTA.tab = tabs[0][0];
+  $('#tb-titulo').textContent = u.rol === 'Especialista' ? 'Revisión del corte · Intervenciones MTC' : 'Gestión del corte · Intervenciones MTC';
+  const nPend = (S.solicitudes || []).filter(s => s['Estado'] === 'Pendiente').length;
+  $('#app').innerHTML = '<div class="tabs">' + tabs.map(([k, l]) => `<button class="${VISTA.tab === k ? 'on' : ''}" onclick="VISTA.tab='${k}';VISTA.sel=null;render()">${l}${k === 'solicitudes' && nPend ? ' (' + nPend + ')' : ''}</button>`).join('') + '</div><div id="vista"></div>';
+  ({ revision: vistaRevision, solicitudes: vistaSolicitudes, corte: vistaCorte, asignaciones: vistaAsignaciones, universo: vistaUniverso })[VISTA.tab]();
+}
+function estadoDe(cod) { const r = S.rep[cod]; return r ? r['Estado'] : 'Pendiente'; }
+function chip(e, texto) { return `<span class="chip c-${esc(e)}">${esc(texto ?? e)}</span>`; }
+function textoCodigo(r) { return r['Tipo de Código'] === 'CUI' || r['Tipo de Código'] === 'IDEA' ? r['Tipo de Código'] + ' ' + r['Código'] : (r['Tipo de Código'] || ''); }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PUNTO FOCAL
+// ═════════════════════════════════════════════════════════════════════════════
+function vistaPuntoFocal() {
+  const filas = S.universo.filter(enModulo);
+  const altas = (S.solicitudes || []).filter(s => s['Tipo'] === 'Alta' && s['Estado'] === 'Pendiente');
+  const cuenta = e => filas.filter(r => estadoDe(r['COD INTERNO']) === e).length;
+  const listos = filas.filter(r => ['Enviado', 'Validado'].includes(estadoDe(r['COD INTERNO']))).length;
+  const borr = filas.filter(r => ['Borrador', 'Devuelto'].includes(estadoDe(r['COD INTERNO'])));
+  const pct = filas.length ? Math.round(listos / filas.length * 100) : 0;
+  const pendSol = (S.solicitudes || []).filter(s => s['Estado'] === 'Pendiente').length;
+  let h = '';
+  if (!S.corte) h += '<div class="nota" style="margin-bottom:12px"><b>No hay un corte abierto.</b> Cuando la Dirección OMEI abra el corte podrás registrar el estado situacional. Puedes consultar tus intervenciones y registrar altas.</div>';
+  h += `<div class="kpis">
+    <div class="kpi"><div class="v">${filas.length}</div><div class="l">Intervenciones a reportar</div></div>
+    <div class="kpi"><div class="v">${listos}</div><div class="l">Enviadas o validadas (${pct} %)</div><div class="bar"><i style="width:${pct}%"></i></div></div>
+    <div class="kpi"><div class="v" style="color:#8a5d00">${cuenta('Devuelto')}</div><div class="l">Devueltas por OMEI</div></div>
+    <div class="kpi"><div class="v" style="color:#5B2DA8">${pendSol}</div><div class="l">Solicitudes pendientes</div></div>
+    <div class="kpi"><div class="v">${esc(S.ultimoPublicado ? S.ultimoPublicado['Corte'].slice(0, 5) : '—')}</div><div class="l">Último corte publicado</div></div></div>`;
+  h += `<div class="toolbar"><input class="inp filtro" id="pf-busca" placeholder="🔍 Buscar por nombre o código" value="${esc(VISTA.busca)}">
+    <select class="inp filtro" id="pf-estado"><option value="">Estado: todos</option>${['Pendiente', 'Borrador', 'Enviado', 'Devuelto', 'Validado'].map(e => `<option ${VISTA.filtroEstado === e ? 'selected' : ''}>${e}</option>`).join('')}</select>
+    <span class="sp"></span>
+    <button class="btn" onclick="descargarMatriz()" ${S.corte ? '' : 'disabled'}>⬇ Descargar matriz</button>
+    <button class="btn" onclick="cargarMatriz()" ${S.corte ? '' : 'disabled'}>⬆ Cargar matriz</button>
+    <button class="btn" onclick="formAlta()">＋ Nueva intervención</button>
+    <button class="btn g" onclick="enviarBorradores()" ${S.corte && borr.length ? '' : 'disabled'}>Enviar borradores (${borr.length})</button></div>`;
+  h += '<div class="dos"><div><div class="tbl"><table><thead><tr><th>COD INTERNO</th><th>Intervención</th><th>Fase</th><th>Estado situacional</th><th>Estado</th></tr></thead><tbody id="pf-tb"></tbody></table></div>';
+  h += '<h2>Mis solicitudes</h2><div class="tbl" id="pf-sol"></div></div><div id="pf-panel"></div></div>';
+  $('#app').innerHTML = h;
+  $('#pf-busca').oninput = e => { VISTA.busca = e.target.value; pfTabla(); };
+  $('#pf-estado').onchange = e => { VISTA.filtroEstado = e.target.value; pfTabla(); };
+  pfTabla(); pfSolicitudes();
+  if (VISTA.sel) pfAbrir(VISTA.sel); else $('#pf-panel').innerHTML = '<div class="panel"><div class="vacio">Elige una intervención de la lista para registrar su estado situacional.</div></div>';
+}
+function pfTabla() {
+  const q = clave(VISTA.busca);
+  const filas = S.universo.filter(enModulo).filter(r => (!q || clave(r['Nombre de la intervención'] + ' ' + r['COD INTERNO'] + ' ' + r['Código']).includes(q)) && (!VISTA.filtroEstado || estadoDe(r['COD INTERNO']) === VISTA.filtroEstado));
+  const altas = (S.solicitudes || []).filter(s => s['Tipo'] === 'Alta' && s['Estado'] === 'Pendiente');
+  const bajas = new Set((S.solicitudes || []).filter(s => s['Tipo'] === 'Baja' && s['Estado'] === 'Pendiente').map(s => s['COD INTERNO']));
+  let h = filas.map(r => {
+    const cod = r['COD INTERNO']; const rep = S.rep[cod] || S.ult[cod] || {}; const e = estadoDe(cod);
+    return `<tr class="click ${VISTA.sel === cod ? 'sel' : ''}" onclick="pfAbrir('${esc(cod)}')" style="${e === 'Devuelto' ? 'background:#FFFBEF' : ''}"><td>${esc(cod)}</td>
+      <td>${esc(r['Nombre de la intervención'])}<div class="meta">${esc(textoCodigo(r))} · ${esc(r['Área de influencia'])}</div></td>
+      <td>${esc(rep['Fase'] || '')}</td><td><div class="trunc">${S.rep[cod] ? esc(rep['Estado situacional']) : '<span class="muted">(sin registrar en este corte)</span>'}</div>${e === 'Devuelto' ? '<div class="warn" style="font-size:11.5px">OMEI: ' + esc(S.rep[cod]['Observación']) + '</div>' : ''}</td>
+      <td>${chip(e)}${bajas.has(cod) ? '<div style="margin-top:3px">' + chip('Rechazada', 'Baja solicitada') + '</div>' : ''}</td></tr>`;
+  }).join('');
+  h += altas.map(s => { const d = JSON.parse(s['Datos'] || '{}').identidad || {}; return `<tr><td>${chip('Nueva')}</td><td>${esc(d['Nombre de la intervención'])}<div class="meta">sin COD INTERNO · lo asigna OMEI al validar</div></td><td>${esc((JSON.parse(s['Datos'] || '{}').reporte || {})['Fase'] || '')}</td><td class="muted">Alta enviada el ${esc(s['Fecha de solicitud'])}</td><td>${chip('Enviado')}</td></tr>`; }).join('');
+  $('#pf-tb').innerHTML = h || '<tr><td colspan="5" class="vacio">Sin intervenciones con esos filtros</td></tr>';
+}
+function pfSolicitudes() {
+  const l = (S.solicitudes || []).slice().reverse();
+  $('#pf-sol').innerHTML = l.length ? '<table><thead><tr><th>Tipo</th><th>Intervención</th><th>Motivo</th><th>Fecha</th><th>Estado</th><th>Respuesta OMEI</th></tr></thead><tbody>' + l.map(s => {
+    const d = JSON.parse(s['Datos'] || '{}'); const nom = s['COD INTERNO'] || (d.identidad || {})['Nombre de la intervención'] || '';
+    return `<tr><td>${esc(s['Tipo'])}</td><td>${esc(nom)}${s['COD asignado'] ? '<div class="meta">COD asignado: ' + esc(s['COD asignado']) + '</div>' : ''}</td><td>${esc(s['Motivo'])}</td><td>${esc(s['Fecha de solicitud'])}</td><td>${chip(s['Estado'] === 'Pendiente' ? 'Enviado' : s['Estado'], s['Estado'])}</td><td>${esc(s['Sustento OMEI'] || '')}</td></tr>`;
+  }).join('') + '</tbody></table>' : '<div class="vacio">Sin solicitudes</div>';
+}
+// Panel de registro de una intervención
+function pfAbrir(cod) {
+  VISTA.sel = cod; document.querySelectorAll('#pf-tb tr').forEach(tr => tr.classList.toggle('sel', tr.getAttribute('onclick') === `pfAbrir('${cod}')`));
+  const r = S.porCod[cod]; const rep = S.rep[cod]; const base = rep || S.ult[cod] || {};
+  const e = estadoDe(cod); const editable = !!S.corte && e !== 'Validado';
+  const cambios = rep && rep['Cambios de identificación'] ? JSON.parse(rep['Cambios de identificación']) : {};
+  const st = {}; CAMPOS_REP.forEach(k => { st[k] = base[k] || ''; });
+  CAMBIO_DIRECTO.forEach(k => { st[k] = k in cambios ? cambios[k] : r[k]; });
+  st['Tipo'] = r['Tipo']; st['COD INTERNO'] = cod; st._motivo = rep ? rep['Motivo de los cambios'] : ''; st._cambiar = Object.keys(cambios).length > 0;
+  const t = tipoDe(r['Tipo']);
+  const p = $('#pf-panel');
+  p.innerHTML = `<div class="panel"><div style="display:flex;justify-content:space-between;gap:8px"><div class="tit">${esc(cod)} · ${esc(r['Nombre de la intervención'])}</div>${chip(e)}</div>
+    ${e === 'Devuelto' ? `<div class="errores"><b>Devuelto por OMEI:</b> ${esc(rep['Observación'])}</div>` : ''}
+    ${rep && rep['Correcciones OMEI'] ? `<div class="nota" style="margin-top:8px"><b>Corregido por OMEI al validar:</b> ${JSON.parse(rep['Correcciones OMEI']).map(c => esc(c.campo + ': ' + c.unidad + ' → ' + c.omei)).join(' · ')}<br><span class="muted">${esc(rep['Sustento OMEI'])}</span></div>` : ''}
+    <span class="blk g">IDENTIFICACIÓN (del universo)</span>
+    <div class="fg">${campo('Tipo', fRo(r['Tipo']))}${campo('Área de influencia', fRo(r['Área de influencia']))}
+    ${t.datos ? campo('Tipo de Infraestructura', fRo(r['Tipo de Infraestructura'])) + campo('Tipo de Órgano ejecutor', fRo(r['Tipo de Órgano ejecutor'])) : ''}
+    ${campo('Hoja de Ruta', fRo(r['Hoja de Ruta'] + (r['Hoja de Ruta'] === 'SI' ? ' · Cartera Priorizada: ' + (r['Cartera Priorizada'] || 'NO') : '')))}${campo('Crédito suplementario', fRo(r['Crédito suplementario'] + (r['Crédito suplementario'] === 'SI' ? ' · S/ ' + fmt(r['Monto del crédito S/']) : '')))}</div>
+    <div class="meta" style="margin-top:6px">¿Otro dato mal registrado? <a href="#" onclick="formCorreccion('${esc(cod)}');return false">Solicitar corrección</a> · <a href="#" onclick="formBaja('${esc(cod)}');return false">Solicitar baja</a></div>
+    <div id="pf-form"></div><div id="pf-err"></div>
+    <div class="acciones">${editable ? `<button class="btn" id="pf-borr">Guardar borrador</button><button class="btn p" id="pf-env">Guardar y enviar a OMEI</button>` : (S.corte ? '<span class="muted">Validado por OMEI: ya no se puede modificar en este corte.</span>' : '<span class="muted">Sin corte abierto.</span>')}</div></div>`;
+  const dibujar = st => {
+    const tc = st['Tipo de Código']; const cuis = tc === 'CUI' ? partir(st['Código']) : [];
+    let h = '';
+    if (editable && !st._cambiar) h += `<div style="margin-top:10px"><button class="btn s" data-seg="_cambiar" data-v="1">Cambiar código o crédito suplementario</button> <span class="meta">Código actual: ${esc(textoCodigo(r) || 'sin código')}</span></div>`;
+    if (st._cambiar) {
+      h += '<span class="blk n">CAMBIO DE CÓDIGO O CRÉDITO (lo valida OMEI)</span><div class="fg">';
+      h += campo('Tipo de Código', fSeg('Tipo de Código', t.codigos, tc, !editable));
+      h += campo('Código(s) — ＋ para añadir', (tc === 'CUI' || tc === 'IDEA') ? fChips('Código', st['Código'], 'texto', !editable) : '<input class="inp" disabled placeholder="No lleva código">', '',
+        cuis.length && !cuis.every(c => /^\d{7}$/.test(c)) ? '<span class="err">El CUI debe tener 7 dígitos</span>' : (r['Código'] ? '<span class="muted">antes: ' + esc(textoCodigo(r)) + '</span>' : ''));
+      h += campo('¿Tiene crédito suplementario?', fSeg('Crédito suplementario', ['SI', 'NO'], st['Crédito suplementario'], !editable));
+      h += campo('Monto del crédito S/', st['Crédito suplementario'] === 'SI' ? fInp('Monto del crédito S/', st['Monto del crédito S/'], 'S/', !editable) : '<input class="inp" disabled placeholder="🔒 Solo si tiene crédito">');
+      h += campo('Motivo del cambio *', fInp('_motivo', st._motivo, 'Ej.: se registró el CUI en el Banco de Inversiones', !editable), 'full') + '</div>';
+    }
+    h += '<span class="blk b">REPORTE DEL CORTE ' + esc(S.corte ? S.corte['Corte'] : '') + (rep ? '' : ' (precargado con el último corte)') + '</span><div class="fg">';
+    if (t.datos) {
+      const tcf = st['Tipo de Código'];
+      h += campo('Monto ' + (tcf === 'CUI' ? 'reportado S/ <span class="muted">(informativo)</span>' : 'de la intervención S/ *'), fInp('Monto reportado S/', st['Monto reportado S/'], 'S/', !editable, 'inputmode="decimal"'));
+      h += campo('Beneficiarios *', fInp('Beneficiarios', st['Beneficiarios'], '', !editable, 'inputmode="numeric"'));
+      const fases = (S.catalogos.modalidades[st['Modalidad de ejecución']] || []).map(f => f.fase);
+      h += campo('Modalidad de ejecución *', fSel('Modalidad de ejecución', S.catalogos.ordenModalidades, st['Modalidad de ejecución'], 'Elige…', !editable));
+      h += campo('Fase * <span class="muted">' + (st['Modalidad de ejecución'] ? '(de ' + esc(st['Modalidad de ejecución']) + ')' : '') + '</span>', st['Modalidad de ejecución'] ? fSel('Fase', fases, st['Fase'], 'Elige la fase…', !editable) : '<select class="inp" disabled><option>🔒 Elige la modalidad</option></select>', '',
+        st['Fase'] && fases.includes(st['Fase']) ? '<span class="ok">✓ La fase corresponde a la modalidad</span>' : (st['Fase'] ? '<span class="err">La fase no corresponde a la modalidad</span>' : ''));
+      h += campo('Financiamiento del año *', fSeg('Financiamiento (SI/NO)', ['SI', 'NO'], st['Financiamiento (SI/NO)'], !editable));
+      h += '<div></div>';
+    }
+    h += campo('Estado situacional * <span class="muted">(últimas actividades al ' + esc(S.corte ? S.corte['Corte'] : '') + ')</span>', fTxt('Estado situacional', st['Estado situacional'], '', !editable), 'full') + '</div>';
+    return h;
+  };
+  const F = montarForm($('#pf-form'), st, dibujar, k => { if (k === '_cambiar') { st._cambiar = true; F.repintar(); } });
+  if (!editable) return;
+  const guardar = enviar => conCarga(async () => {
+    const cambiosIt = {}; if (st._cambiar) CAMBIO_DIRECTO.forEach(k => { if (String(st[k] || '') !== String(r[k] || '')) cambiosIt[k] = st[k]; });
+    if (enviar) {
+      const errs = erroresReporte(st, r['Tipo'], st['Tipo de Código']);
+      if (Object.keys(cambiosIt).length) { const prop = Object.assign({}, r, cambiosIt); errs.push(...erroresIdentidad(prop).filter(x => /código|CUI|IDEA|crédito/i.test(x))); if ((st._motivo || '').trim().length < 5) errs.push('Indica el motivo del cambio'); }
+      if (errs.length) return mostrarErrores('#pf-err', errs);
+    }
+    const res = await api('guardarReportes', { items: [{ cod, campos: pick(st, CAMPOS_REP), cambios: cambiosIt, motivo: st._motivo, enviar }] });
+    if (!res.ok) return mostrarErrores('#pf-err', res.errores && res.errores.length ? res.errores : [res.mensaje]);
+    toast(enviar ? 'Enviado a OMEI' : 'Borrador guardado');
+    const filas = S.universo.filter(enModulo); const i = filas.findIndex(x => x['COD INTERNO'] === cod);
+    const sig = enviar ? filas.slice(i + 1).concat(filas.slice(0, i)).find(x => !['Enviado', 'Validado'].includes(estadoDe(x['COD INTERNO'])) && x['COD INTERNO'] !== cod) : null;
+    VISTA.sel = sig ? sig['COD INTERNO'] : cod;
+    await recargar();
+  });
+  $('#pf-borr').onclick = () => guardar(false); $('#pf-env').onclick = () => guardar(true);
+}
+const pick = (o, ks) => { const r = {}; ks.forEach(k => { r[k] = o[k] ?? ''; }); return r; };
+async function enviarBorradores() {
+  const filas = S.universo.filter(enModulo).filter(r => ['Borrador', 'Devuelto'].includes(estadoDe(r['COD INTERNO'])));
+  const items = [], malos = [];
+  filas.forEach(r => {
+    const rep = S.rep[r['COD INTERNO']]; const cambios = rep['Cambios de identificación'] ? JSON.parse(rep['Cambios de identificación']) : {};
+    const errs = erroresReporte(rep, r['Tipo'], cambios['Tipo de Código'] || r['Tipo de Código']);
+    if (errs.length) malos.push(r['COD INTERNO'] + ': ' + errs.join('; '));
+    else items.push({ cod: r['COD INTERNO'], campos: pick(rep, CAMPOS_REP), cambios, motivo: rep['Motivo de los cambios'], enviar: true });
+  });
+  if (!items.length) return toast('Ningún borrador está completo: ' + malos.slice(0, 2).join(' | '), true);
+  if (!confirmar(`Se enviarán ${items.length} borradores completos a OMEI.` + (malos.length ? ` ${malos.length} quedan como borrador porque les faltan datos.` : ''))) return;
+  await conCarga(async () => { const r = await api('guardarReportes', { items }); toast(r.mensaje, !r.ok); await recargar(); });
+}
+function confirmar(msg) { return window.confirm(msg); }
+
+// Alta (punto focal)
+function formAlta() {
+  const st = { 'Unidad reportante': S.usuario.unidad, 'Tipo': '', 'Tipo de Código': '', 'Crédito suplementario': '', 'Hoja de Ruta': '' };
+  modal('＋ Nueva intervención · ' + esc(S.usuario.unidad), '', `<button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn p" id="alta-ok">Registrar y enviar a OMEI</button>`);
+  $('#modal-cuerpo').insertAdjacentHTML('beforebegin', '<p class="sub" style="margin:8px 0">La unidad completa todos los datos; OMEI valida y asigna el COD INTERNO. Los campos se habilitan según lo que vas eligiendo.</p>');
+  const F = montarForm($('#modal-cuerpo'), st, s => dibujarIntervencion(s, { rep: !!S.corte }), (k, texto) => { if (k === 'Nombre de la intervención' && texto) { clearTimeout(F._t); F._t = setTimeout(() => { const pos = document.activeElement && document.activeElement.selectionStart; F.repintar(); const i = $('#modal-cuerpo [data-k="Nombre de la intervención"]'); if (i) { i.focus(); try { i.setSelectionRange(pos, pos); } catch (e) {} } }, 700); } });
+  $('#alta-ok').onclick = () => conCarga(async () => {
+    const errs = erroresIdentidad(st).concat(S.corte ? erroresReporte(st, st['Tipo'], st['Tipo de Código']) : []);
+    if (errs.length) return mostrarErrores('#modal-err', errs);
+    const r = await api('registrarAlta', { identidad: pick(st, CAMPOS_ID), reporte: pick(st, CAMPOS_REP) });
+    if (!r.ok) return mostrarErrores('#modal-err', r.errores || [r.mensaje]);
+    cerrarModal(); toast(r.mensaje); await recargar();
+  });
+}
+function formCorreccion(cod) {
+  const r = S.porCod[cod]; const st = Object.assign({}, r);
+  modal('Solicitar corrección · ' + esc(cod), '', `<button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn p" id="cor-ok">Enviar solicitud</button>`);
+  const cuerpo = $('#modal-cuerpo'); cuerpo.insertAdjacentHTML('beforebegin', '<p class="sub" style="margin:8px 0">Modifica los datos que estén mal registrados. OMEI valida la corrección antes de aplicarla al universo.</p><div id="cor-mot"></div>');
+  $('#cor-mot').innerHTML = campo('Motivo de la corrección *', '<input class="inp" id="cor-motivo" placeholder="Ej.: nombre según la resolución de aprobación">', 'full');
+  montarForm(cuerpo, st, s => dibujarIntervencion(s, { rep: false, avisos: false }));
+  $('#cor-ok').onclick = () => conCarga(async () => {
+    const cambios = {}; CAMPOS_ID.forEach(k => { if (String(st[k] || '') !== String(r[k] || '')) cambios[k] = st[k]; });
+    const errs = erroresIdentidad(st); if (!Object.keys(cambios).length) errs.push('No hay cambios'); if ($('#cor-motivo').value.trim().length < 5) errs.push('Indica el motivo');
+    if (errs.length) return mostrarErrores('#modal-err', errs);
+    const res = await api('solicitar', { tipo: 'Corrección', cod, cambios, motivo: $('#cor-motivo').value });
+    if (!res.ok) return mostrarErrores('#modal-err', [res.mensaje]);
+    cerrarModal(); toast(res.mensaje); await recargar();
+  });
+}
+function formBaja(cod) {
+  const r = S.porCod[cod];
+  modal('Solicitar baja · ' + esc(cod), `<p style="margin:10px 0">${esc(r['Nombre de la intervención'])}</p><div class="nota">Al aprobarse, la intervención pasa a <b>Vigente = NO</b> en el universo (no se borra) y deja de exigirse en el corte.</div>
+    <div class="f" style="margin-top:10px"><label>Motivo de la baja *</label><input class="inp" id="baja-mot" placeholder="Ej.: duplicada con …, culminada y liquidada, transferida a …"></div>`,
+    `<button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn r" id="baja-ok">Enviar solicitud de baja</button>`);
+  $('#baja-ok').onclick = () => conCarga(async () => {
+    const res = await api('solicitar', { tipo: 'Baja', cod, motivo: $('#baja-mot').value });
+    if (!res.ok) return mostrarErrores('#modal-err', [res.mensaje]);
+    cerrarModal(); toast(res.mensaje); await recargar();
+  });
+}
+
+// Matriz Excel del punto focal (descarga y carga masiva con vista previa)
+const COLS_MATRIZ = ['COD INTERNO', 'Nombre de la intervención', 'Tipo de Código', 'Código', 'Monto reportado S/', 'Beneficiarios', 'Modalidad de ejecución', 'Fase', 'Financiamiento (SI/NO)', 'Estado situacional', 'Motivo del cambio de código'];
+function requiereXLSX() { if (!window.XLSX) { toast('No se pudo cargar la librería de Excel. Revisa la conexión a internet y recarga la página.', true); return false; } return true; }
+function descargarMatriz() {
+  if (!requiereXLSX()) return;
+  const filas = S.universo.filter(enModulo).map(r => {
+    const cod = r['COD INTERNO']; const b = S.rep[cod] || S.ult[cod] || {}; const c = (S.rep[cod] && S.rep[cod]['Cambios de identificación']) ? JSON.parse(S.rep[cod]['Cambios de identificación']) : {};
+    return [cod, r['Nombre de la intervención'], c['Tipo de Código'] || r['Tipo de Código'], c['Código'] ?? r['Código'], num(b['Monto reportado S/']) || '', num(b['Beneficiarios']) || '', b['Modalidad de ejecución'] || '', b['Fase'] || '', b['Financiamiento (SI/NO)'] || '', b['Estado situacional'] || '', ''];
+  });
+  const ws = XLSX.utils.aoa_to_sheet([COLS_MATRIZ].concat(filas));
+  ws['!cols'] = [14, 50, 12, 22, 16, 14, 26, 32, 14, 80, 30].map(w => ({ wch: w }));
+  COLS_MATRIZ.forEach((_, j) => { const c = ws[XLSX.utils.encode_cell({ r: 0, c: j })]; if (c) c.s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: j < 4 ? '1D7A55' : '0055A5' } }, alignment: { wrapText: true, vertical: 'center' } }; });
+  const mf = [['Modalidad de ejecución', 'Fase']]; S.catalogos.ordenModalidades.forEach(m => S.catalogos.modalidades[m].forEach(f => mf.push([m, f.fase])));
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Matriz'); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(mf), 'Modalidad-Fase');
+  XLSX.writeFile(wb, 'Matriz_' + S.usuario.unidad + '_corte_' + S.corte['Corte'].replace(/\//g, '-') + '.xlsx');
+}
+function cargarMatriz() {
+  if (!requiereXLSX()) return;
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.xls';
+  inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return;
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const ws = wb.Sheets['Matriz'] || wb.Sheets[wb.SheetNames[0]];
+    const filas = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+    const items = [], errores = [], sinCambio = [];
+    filas.forEach((x, i) => {
+      const cod = String(x['COD INTERNO'] || '').trim(); if (!cod) return;
+      const r = S.porCod[cod];
+      if (!r || !enModulo(r)) { errores.push('Fila ' + (i + 2) + ': ' + cod + ' no es de tu unidad'); return; }
+      if (estadoDe(cod) === 'Validado') return;
+      const campos = {}; CAMPOS_REP.forEach(k => { campos[k] = String(x[k] ?? '').trim(); });
+      campos['Financiamiento (SI/NO)'] = clave(campos['Financiamiento (SI/NO)']);
+      const cambios = {}; const tc = String(x['Tipo de Código'] || '').trim(); const cd = partir(x['Código']).join(', ');
+      if (tc && tc !== r['Tipo de Código']) cambios['Tipo de Código'] = tc;
+      if (cd !== partir(r['Código']).join(', ')) { cambios['Código'] = cd; if (!cambios['Tipo de Código']) cambios['Tipo de Código'] = r['Tipo de Código']; }
+      const errs = erroresReporte(campos, r['Tipo'], cambios['Tipo de Código'] || r['Tipo de Código']);
+      if (Object.keys(cambios).length && String(x['Motivo del cambio de código'] || '').trim().length < 5) errs.push('falta el motivo del cambio de código');
+      if (errs.length) errores.push(cod + ': ' + errs.join('; '));
+      const base = S.rep[cod] || S.ult[cod] || {};
+      const igual = CAMPOS_REP.every(k => String(base[k] || '') === String(campos[k] || '')) && !Object.keys(cambios).length && S.rep[cod];
+      if (igual) sinCambio.push(cod);
+      items.push({ cod, campos, cambios, motivo: x['Motivo del cambio de código'] || '', completo: !errs.length });
+    });
+    const completos = items.filter(i => i.completo);
+    modal('Cargar matriz · vista previa', `<div class="kpis"><div class="kpi"><div class="v">${items.length}</div><div class="l">Filas leídas de tu unidad</div></div>
+      <div class="kpi"><div class="v" style="color:var(--green-dk)">${completos.length}</div><div class="l">Completas (se pueden enviar)</div></div>
+      <div class="kpi"><div class="v" style="color:var(--red)">${errores.length}</div><div class="l">Con observaciones</div></div></div>
+      ${errores.length ? '<div class="errores" style="max-height:220px;overflow:auto"><ul>' + errores.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul></div>' : ''}
+      <p class="sub" style="margin-top:10px">«Guardar como borrador» guarda todas las filas (también las incompletas) para que las termines en el Hub. «Guardar y enviar» envía a OMEI solo las completas.</p>`,
+      `<button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn" id="mx-b">Guardar como borrador (${items.length})</button><button class="btn g" id="mx-e" ${completos.length ? '' : 'disabled'}>Guardar y enviar (${completos.length})</button>`);
+    const ir = enviar => conCarga(async () => {
+      const lote = (enviar ? completos : items).map(i => ({ cod: i.cod, campos: i.campos, cambios: i.cambios, motivo: i.motivo, enviar }));
+      const r = await api('guardarReportes', { items: lote }); cerrarModal(); toast(r.mensaje, !r.ok); await recargar();
+    });
+    $('#mx-b').onclick = () => ir(false); $('#mx-e').onclick = () => ir(true);
+  };
+  inp.click();
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// REVISIÓN (especialista, administrador)
+// ═════════════════════════════════════════════════════════════════════════════
+function resumenUnidades() {
+  const out = {};
+  Object.keys(S.catalogos.unidades).forEach(s => { out[s] = { n: 0, Pendiente: 0, Borrador: 0, Enviado: 0, Devuelto: 0, Validado: 0, sol: 0 }; });
+  S.universo.filter(enModulo).forEach(r => { const o = out[r['Unidad reportante']]; if (!o) return; o.n++; o[estadoDe(r['COD INTERNO'])]++; });
+  (S.solicitudes || []).filter(s => s['Estado'] === 'Pendiente').forEach(s => { if (out[s['Unidad reportante']]) out[s['Unidad reportante']].sol++; });
+  const asign = {}; (S.asignaciones || []).filter(a => a['Ámbito'] === 'Carpeta Departamental').forEach(a => { asign[a['Clave']] = a['Especialista']; });
+  return Object.entries(out).filter(([s, o]) => o.n || o.sol).map(([s, o]) => Object.assign(o, { s, esp: asign[s] || '' }));
+}
+function vistaRevision() {
+  const v = $('#vista');
+  if (!S.corte) { v.innerHTML = '<div class="nota">No hay un corte abierto. ' + (S.ultimoPublicado ? 'Último publicado: ' + esc(S.ultimoPublicado['Corte']) + '.' : '') + '</div>'; return; }
+  const res = resumenUnidades();
+  let h = '<div class="tbl"><table><thead><tr><th>Unidad reportante</th><th>Especialista</th><th>Intervenciones</th><th>Avance de la unidad</th><th>Por revisar</th><th>Devueltas</th><th>Validadas</th><th>Sin registrar</th><th>Solicitudes</th><th></th></tr></thead><tbody>';
+  h += res.map(o => {
+    const env = o.Enviado + o.Validado; const pct = o.n ? Math.round(env / o.n * 100) : 0;
+    return `<tr class="click ${VISTA.unidad === o.s ? 'sel' : ''}" onclick="VISTA.unidad='${esc(o.s)}';VISTA.sel=null;VISTA.marcados=new Set();vistaRevision()"><td><b>${esc(o.s)}</b></td><td>${o.esp ? esc(o.esp) : '<span class="warn">Sin asignar</span>'}</td><td>${o.n}</td>
+      <td><span class="mini"><i style="width:${pct}%"></i></span>${pct} %</td><td>${o.Enviado ? '<b>' + o.Enviado + '</b>' : 0}</td><td>${o.Devuelto}</td><td>${o.Validado}</td><td>${o.Pendiente + o.Borrador}</td>
+      <td>${o.sol ? chip('Nueva', o.sol) : '—'}</td><td>${o.n && o.Validado === o.n ? chip('Validado', 'Completa') : '<button class="btn s p">Revisar</button>'}</td></tr>`;
+  }).join('') + '</tbody></table></div>';
+  if (VISTA.unidad) {
+    const filas = S.universo.filter(r => enModulo(r) && r['Unidad reportante'] === VISTA.unidad);
+    const fe = VISTA.filtroEstado || 'Enviado';
+    const vis = filas.filter(r => fe === 'Todos' || estadoDe(r['COD INTERNO']) === fe || (fe === 'Sin registrar' && ['Pendiente', 'Borrador'].includes(estadoDe(r['COD INTERNO']))));
+    h += `<h2>${esc(VISTA.unidad)}</h2><div class="toolbar"><select class="inp filtro" id="rv-f">${['Enviado', 'Devuelto', 'Validado', 'Sin registrar', 'Todos'].map(e => `<option ${fe === e ? 'selected' : ''} value="${e}">${e === 'Enviado' ? 'Por revisar (enviadas)' : e}</option>`).join('')}</select><span class="sp"></span>
+      <button class="btn g" id="rv-lote" ${fe === 'Enviado' ? '' : 'disabled'}>Validar seleccionadas sin cambios (<span id="rv-n">${VISTA.marcados.size}</span>)</button></div>
+      <div class="dos"><div class="tbl"><table><thead><tr><th>${fe === 'Enviado' ? '<input type="checkbox" class="chk" id="rv-todos">' : ''}</th><th>COD INTERNO</th><th>Intervención</th><th>Fase</th><th>Cambios</th><th>Estado</th></tr></thead><tbody>` +
+      (vis.map(r => {
+        const cod = r['COD INTERNO']; const rep = S.rep[cod]; const e = estadoDe(cod); const ult = S.ult[cod] || {};
+        const cambios = rep ? CAMPOS_REP.filter(k => String(rep[k] || '') !== String(ult[k] || '')).length + (rep['Cambios de identificación'] ? 1 : 0) : 0;
+        return `<tr class="click ${VISTA.sel === cod ? 'sel' : ''}" data-cod="${esc(cod)}"><td>${e === 'Enviado' ? `<input type="checkbox" class="chk" data-m="${esc(cod)}" ${VISTA.marcados.has(cod) ? 'checked' : ''}>` : ''}</td><td>${esc(cod)}</td><td>${esc(r['Nombre de la intervención'])}<div class="meta">${esc(textoCodigo(r))}</div></td>
+          <td>${esc(rep ? rep['Fase'] : '')}</td><td>${rep ? (cambios ? '<span class="warn">' + cambios + ' campo' + (cambios > 1 ? 's' : '') + '</span>' : '<span class="muted">sin cambios</span>') + (rep['Cambios de identificación'] ? ' <span class="chip c-Devuelto">código</span>' : '') : ''}</td><td>${chip(e)}</td></tr>`;
+      }).join('') || '<tr><td colspan="6" class="vacio">Nada en este estado</td></tr>') + '</tbody></table></div><div id="rv-panel"><div class="panel"><div class="vacio">Elige una intervención para revisarla.</div></div></div></div>';
+  }
+  v.innerHTML = h;
+  if (!VISTA.unidad) return;
+  $('#rv-f').onchange = e => { VISTA.filtroEstado = e.target.value; VISTA.marcados = new Set(); vistaRevision(); };
+  v.querySelectorAll('tr[data-cod]').forEach(tr => tr.onclick = e => { if (e.target.dataset.m) return; rvAbrir(tr.dataset.cod); });
+  v.querySelectorAll('[data-m]').forEach(c => c.onchange = () => { c.checked ? VISTA.marcados.add(c.dataset.m) : VISTA.marcados.delete(c.dataset.m); $('#rv-n').textContent = VISTA.marcados.size; });
+  const td = $('#rv-todos'); if (td) td.onchange = () => { v.querySelectorAll('[data-m]').forEach(c => { c.checked = td.checked; td.checked ? VISTA.marcados.add(c.dataset.m) : VISTA.marcados.delete(c.dataset.m); }); $('#rv-n').textContent = VISTA.marcados.size; };
+  $('#rv-lote').onclick = () => {
+    if (!VISTA.marcados.size) return toast('Marca las intervenciones a validar', true);
+    if (!confirmar('Se validarán ' + VISTA.marcados.size + ' reportes tal como los envió la unidad.')) return;
+    conCarga(async () => { const r = await api('revisarReportes', { items: [...VISTA.marcados].map(cod => ({ cod, accion: 'validar' })) }); toast(r.mensaje, !r.ok); VISTA.marcados = new Set(); VISTA.sel = null; await recargar(); });
+  };
+  if (VISTA.sel) rvAbrir(VISTA.sel);
+}
+// Panel de revisión de un reporte: ver cambios, editar (corregir) y validar o devolver
+function rvAbrir(cod) {
+  VISTA.sel = cod; document.querySelectorAll('tr[data-cod]').forEach(tr => tr.classList.toggle('sel', tr.dataset.cod === cod));
+  const r = S.porCod[cod]; const rep = S.rep[cod]; const ult = S.ult[cod] || {}; const e = estadoDe(cod);
+  const p = $('#rv-panel'); const t = tipoDe(r['Tipo']);
+  if (!rep) { p.innerHTML = `<div class="panel"><div class="tit">${esc(cod)}</div><div class="vacio">La unidad aún no registra el reporte de este corte.</div></div>`; return; }
+  const cambiosU = rep['Cambios de identificación'] ? JSON.parse(rep['Cambios de identificación']) : {};
+  const st = {}; CAMPOS_REP.forEach(k => { st[k] = rep[k] || ''; }); CAMBIO_DIRECTO.forEach(k => { st[k] = k in cambiosU ? cambiosU[k] : r[k]; });
+  const orig = Object.assign({}, st);
+  st._editar = false;
+  const fila = (k, a, b, corr) => `<tr><td>${esc(k)}</td><td class="${a !== b ? '' : ''}">${esc(a) || '<span class="muted">—</span>'}</td><td>${a !== b ? '<span class="diff">' + esc(b) + '</span>' : esc(b)}</td>${corr !== undefined ? `<td>${corr !== b ? '<span class="corr">' + esc(corr) + '</span>' : ''}</td>` : ''}</tr>`;
+  const dibujar = st => {
+    const edit = st._editar; const tc = st['Tipo de Código'];
+    let h = `<div style="display:flex;justify-content:space-between;gap:8px"><div class="tit">${esc(cod)} · ${esc(r['Nombre de la intervención'])}</div>${chip(e)}</div>
+      <div class="meta">Registró ${esc(rep['Registrado por'])} · ${esc(rep['Fecha de registro'])}${rep['Revisado por'] ? ' · Revisó ' + esc(rep['Revisado por']) + ' ' + esc(rep['Fecha de revisión']) : ''}</div>`;
+    h += `<h2>Cambios frente al último corte publicado</h2><table><thead><tr><th>Campo</th><th>Último validado</th><th>Reportó la unidad</th>${edit ? '<th>Corregido por OMEI</th>' : ''}</tr></thead><tbody>`;
+    (t.datos ? CAMPOS_REP : ['Estado situacional']).forEach(k => { h += fila(k, String(ult[k] || ''), String(orig[k] || ''), edit ? String(st[k] || '') : undefined); });
+    CAMBIO_DIRECTO.forEach(k => { if (k in cambiosU || (edit && String(st[k] || '') !== String(r[k] || ''))) h += fila(k, String(r[k] || ''), String(orig[k] || ''), edit ? String(st[k] || '') : undefined); });
+    h += '</tbody></table>';
+    if (rep['Motivo de los cambios']) h += `<div class="meta" style="margin-top:4px">Motivo del cambio de código/crédito: ${esc(rep['Motivo de los cambios'])}</div>`;
+    // Controles automáticos
+    const errs = erroresReporte(st, r['Tipo'], st['Tipo de Código']);
+    const cuis = tc === 'CUI' ? partir(st['Código']) : [];
+    const sinFin = S.financiera && cuis.filter(c => !S.financiera.cuis.includes(c));
+    h += '<h2>Controles automáticos</h2>';
+    if (t.datos) h += st['Fase'] && (S.catalogos.modalidades[st['Modalidad de ejecución']] || []).some(f => f.fase === st['Fase']) ? '<div class="ok">✓ La fase corresponde a la modalidad (Anexo 04)</div>' : '<div class="err">✗ La fase no corresponde a la modalidad</div>';
+    h += errs.length ? errs.map(x => '<div class="err">✗ ' + esc(x) + '</div>').join('') : '<div class="ok">✓ Campos obligatorios completos</div>';
+    if (cuis.length) { const uso = cuiEnUso(cuis, cod); if (uso.length) h += '<div class="warn">⚠ CUI compartido: ' + esc(uso.join(', ')) + '</div>'; }
+    if (sinFin && sinFin.length) h += '<div class="warn">⚠ CUI sin dato en la financiera cargada: ' + esc(sinFin.join(', ')) + ' (tomará costo 0 hasta la próxima consulta)</div>';
+    if (e === 'Enviado') {
+      if (edit) {
+        h += '<span class="blk n">CORRECCIÓN DE OMEI</span><div class="fg">';
+        if (t.datos) {
+          const fases = (S.catalogos.modalidades[st['Modalidad de ejecución']] || []).map(f => f.fase);
+          h += campo('Monto reportado S/', fInp('Monto reportado S/', st['Monto reportado S/'])) + campo('Beneficiarios', fInp('Beneficiarios', st['Beneficiarios']));
+          h += campo('Modalidad de ejecución', fSel('Modalidad de ejecución', S.catalogos.ordenModalidades, st['Modalidad de ejecución']));
+          h += campo('Fase', st['Modalidad de ejecución'] ? fSel('Fase', fases, st['Fase'], 'Elige la fase…') : '<select class="inp" disabled><option>🔒 Elige la modalidad</option></select>');
+          h += campo('Financiamiento del año', fSeg('Financiamiento (SI/NO)', ['SI', 'NO'], st['Financiamiento (SI/NO)']));
+          h += campo('Tipo de Código', fSeg('Tipo de Código', t.codigos, tc));
+          if (tc === 'CUI' || tc === 'IDEA') h += campo('Código(s)', fChips('Código', st['Código'], 'texto'), 'full');
+          h += campo('Crédito suplementario', fSeg('Crédito suplementario', ['SI', 'NO'], st['Crédito suplementario'])) + campo('Monto del crédito S/', st['Crédito suplementario'] === 'SI' ? fInp('Monto del crédito S/', st['Monto del crédito S/']) : '<input class="inp" disabled placeholder="🔒 Solo si tiene crédito">');
+        }
+        h += campo('Estado situacional', fTxt('Estado situacional', st['Estado situacional']), 'full');
+        h += campo('Sustento de la corrección * <span class="muted">(p. ej. coordinado por teléfono con el punto focal)</span>', fInp('_sustento', st._sustento, 'Con quién y cómo se coordinó'), 'full') + '</div>';
+      }
+    }
+    return h;
+  };
+  p.innerHTML = '<div class="panel"><div id="rv-form"></div><div id="rv-err"></div><div class="acciones" id="rv-acc"></div></div>';
+  const F = montarForm($('#rv-form'), st, dibujar, (k, texto) => { if (!texto && k !== '_sustento') pintarAcc(); });
+  const pintarAcc = () => {
+    const acc = $('#rv-acc');
+    if (e !== 'Enviado') { acc.innerHTML = e === 'Validado' ? '<span class="muted">Validado.</span>' : '<span class="muted">Esperando el envío de la unidad.</span>'; return; }
+    acc.innerHTML = `<button class="btn a" id="rv-dev">Devolver a la unidad</button>${st._editar ? '' : '<button class="btn" id="rv-ed">✎ Editar</button>'}<button class="btn g" id="rv-val">${st._editar ? 'Validar con corrección' : 'Validar'}</button>`;
+    const ed = $('#rv-ed'); if (ed) ed.onclick = () => { st._editar = true; F.repintar(); pintarAcc(); };
+    $('#rv-val').onclick = () => conCarga(async () => {
+      const it = { cod, accion: 'validar' };
+      if (st._editar) {
+        it.campos = pick(st, CAMPOS_REP);
+        it.cambios = {}; CAMBIO_DIRECTO.forEach(k => { if (String(st[k] || '') !== String(r[k] || '')) it.cambios[k] = st[k]; });
+        it.sustento = st._sustento || '';
+        const hayCorr = CAMPOS_REP.concat(CAMBIO_DIRECTO).some(k => String(st[k] || '') !== String(orig[k] || ''));
+        const errs = erroresReporte(st, r['Tipo'], st['Tipo de Código']);
+        if (hayCorr && (it.sustento || '').trim().length < 5) errs.push('Indica el sustento de la corrección');
+        if (errs.length) return mostrarErrores('#rv-err', errs);
+      }
+      const res = await api('revisarReportes', { items: [it] });
+      if (!res.ok) return mostrarErrores('#rv-err', res.errores && res.errores.length ? res.errores : [res.mensaje]);
+      toast('Validado' + (st._editar ? ' con corrección' : ''));
+      siguienteRevision(cod); await recargar();
+    });
+    $('#rv-dev').onclick = () => {
+      modal('Devolver a la unidad · ' + esc(cod), `<div class="nota">Úsalo solo si la corrección no se puede coordinar directamente con el punto focal. La unidad corrige y vuelve a enviar.</div><div class="f" style="margin-top:10px"><label>Observación para la unidad *</label><textarea class="inp" id="dev-obs"></textarea></div>`,
+        `<button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn a" id="dev-ok">Devolver</button>`);
+      $('#dev-ok').onclick = () => conCarga(async () => {
+        const res = await api('revisarReportes', { items: [{ cod, accion: 'devolver', observacion: $('#dev-obs').value }] });
+        if (!res.ok) return mostrarErrores('#modal-err', res.errores || [res.mensaje]);
+        cerrarModal(); toast('Devuelto a la unidad'); siguienteRevision(cod); await recargar();
+      });
+    };
+  };
+  pintarAcc();
+}
+function siguienteRevision(cod) {
+  const filas = S.universo.filter(r => enModulo(r) && r['Unidad reportante'] === VISTA.unidad && estadoDe(r['COD INTERNO']) === 'Enviado' && r['COD INTERNO'] !== cod);
+  VISTA.sel = filas.length ? filas[0]['COD INTERNO'] : null;
+}
+
+// ── SOLICITUDES (especialista, administrador) ────────────────────────────────
+function vistaSolicitudes() {
+  const v = $('#vista');
+  const pend = (S.solicitudes || []).filter(s => s['Estado'] === 'Pendiente');
+  const res = (S.solicitudes || []).filter(s => s['Estado'] !== 'Pendiente').slice(-30).reverse();
+  const fila = s => { const d = JSON.parse(s['Datos'] || '{}'); const nom = s['COD INTERNO'] ? (S.porCod[s['COD INTERNO']] || {})['Nombre de la intervención'] : (d.identidad || {})['Nombre de la intervención'];
+    return `<tr class="click" onclick="abrirSolicitud('${esc(s['ID'])}')"><td>${chip(s['Tipo'] === 'Alta' ? 'Nueva' : s['Tipo'] === 'Baja' ? 'Rechazada' : 'Devuelto', s['Tipo'])}</td><td>${esc(s['Unidad reportante'])}</td><td>${esc(s['COD INTERNO'] || s['COD asignado'] || '—')}</td><td>${esc(nom || '')}</td><td>${esc(s['Motivo'])}</td><td>${esc(s['Fecha de solicitud'])}</td><td>${chip(s['Estado'] === 'Pendiente' ? 'Enviado' : s['Estado'], s['Estado'])}</td></tr>`; };
+  v.innerHTML = '<h2>Pendientes (' + pend.length + ')</h2><div class="tbl"><table><thead><tr><th>Tipo</th><th>Unidad</th><th>COD INTERNO</th><th>Intervención</th><th>Motivo</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>' +
+    (pend.map(fila).join('') || '<tr><td colspan="7" class="vacio">Sin solicitudes pendientes</td></tr>') + '</tbody></table></div>' +
+    (res.length ? '<h2>Resueltas recientes</h2><div class="tbl"><table><thead><tr><th>Tipo</th><th>Unidad</th><th>COD INTERNO</th><th>Intervención</th><th>Motivo</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>' + res.map(fila).join('') + '</tbody></table></div>' : '');
+}
+function abrirSolicitud(id) {
+  const s = (S.solicitudes || []).find(x => x['ID'] === id); if (!s) return;
+  const d = JSON.parse(s['Datos'] || '{}'); const pendiente = s['Estado'] === 'Pendiente';
+  const pie = pendiente ? `<button class="btn r" id="sol-rech">Rechazar</button>${s['Tipo'] !== 'Baja' ? '<button class="btn" id="sol-ed">✎ Editar</button>' : ''}<button class="btn g" id="sol-ok">${s['Tipo'] === 'Alta' ? 'Aprobar e incorporar al universo' : 'Aprobar'}</button>` : '<button class="btn" onclick="cerrarModal()">Cerrar</button>';
+  modal(esc(s['Tipo']) + ' · ' + esc(s['Unidad reportante']) + (s['COD INTERNO'] ? ' · ' + esc(s['COD INTERNO']) : ''), '', pie);
+  const cuerpo = $('#modal-cuerpo');
+  const cab = `<div class="nota" style="margin:10px 0"><b>Solicitó</b> ${esc(s['Solicitado por'])} el ${esc(s['Fecha de solicitud'])} · <b>Motivo:</b> ${esc(s['Motivo'] || '—')}${!pendiente ? '<br><b>' + esc(s['Estado']) + '</b> por ' + esc(s['Resuelto por']) + ' · ' + esc(s['Sustento OMEI'] || '') : ''}</div>`;
+  let st = null, F = null, roTodo = null;
+  if (s['Tipo'] === 'Alta') {
+    st = Object.assign({}, d.identidad || {}, d.reporte || {}, { 'Unidad reportante': s['Unidad reportante'] });
+    const orig = Object.assign({}, st); roTodo = new Set(CAMPOS_ID.concat(CAMPOS_REP));
+    cuerpo.insertAdjacentHTML('beforebegin', cab + (pendiente ? `<div class="fg"><div class="f"><label>COD INTERNO a asignar <span class="muted">(siguiente correlativo, editable)</span></label><input class="inp" id="sol-cod" value="${esc(sugerirCodigo(s['Unidad reportante']))}"></div><div class="f" id="sol-sus-w" style="display:none"><label>Sustento de la corrección *</label><input class="inp" id="sol-sus" placeholder="Coordinado con el punto focal…"></div></div>` : ''));
+    let editar = false;
+    F = montarForm(cuerpo, st, x => dibujarIntervencion(x, { rep: true, ro: editar ? new Set() : roTodo }));
+    const ed = $('#sol-ed'); if (ed) ed.onclick = () => { editar = true; F.repintar(); ed.remove(); $('#sol-sus-w').style.display = ''; };
+    if (pendiente) $('#sol-ok').onclick = () => conCarga(async () => {
+      const errs = erroresIdentidad(st).concat(S.corte ? erroresReporte(st, st['Tipo'], st['Tipo de Código']) : []);
+      const cambio = CAMPOS_ID.concat(CAMPOS_REP).some(k => String(st[k] || '') !== String(orig[k] || ''));
+      if (cambio && $('#sol-sus').value.trim().length < 5) errs.push('Indica el sustento de la corrección');
+      if (errs.length) return mostrarErrores('#modal-err', errs);
+      const r = await api('resolverSolicitud', { id, decision: 'aprobar', identidad: pick(st, CAMPOS_ID), reporte: pick(st, CAMPOS_REP), codAsignado: $('#sol-cod').value.trim(), sustento: $('#sol-sus').value });
+      if (!r.ok) return mostrarErrores('#modal-err', [r.mensaje]);
+      cerrarModal(); toast(r.mensaje); await recargar();
+    });
+  } else if (s['Tipo'] === 'Baja') {
+    const r = S.porCod[s['COD INTERNO']] || {};
+    cuerpo.innerHTML = cab + `<p><b>${esc(r['Nombre de la intervención'])}</b></p><div class="meta">${esc(textoCodigo(r))} · ${esc(r['Área de influencia'])}</div><div class="nota" style="margin-top:8px">Al aprobar, pasa a Vigente = NO en el universo y deja de exigirse en el corte.</div>`;
+    if (pendiente) $('#sol-ok').onclick = () => conCarga(async () => { const r2 = await api('resolverSolicitud', { id, decision: 'aprobar' }); if (!r2.ok) return mostrarErrores('#modal-err', [r2.mensaje]); cerrarModal(); toast(r2.mensaje); await recargar(); });
+  } else {
+    const r = S.porCod[s['COD INTERNO']] || {};
+    st = Object.assign({}, r, d);
+    cuerpo.insertAdjacentHTML('beforebegin', cab + '<h2>Cambios propuestos</h2><table><thead><tr><th>Campo</th><th>Actual</th><th>Propuesto</th></tr></thead><tbody>' +
+      Object.keys(d).map(k => `<tr><td>${esc(k)}</td><td>${esc(r[k] || '—')}</td><td><span class="diff">${esc(d[k] || '—')}</span></td></tr>`).join('') + '</tbody></table>' +
+      (pendiente ? '<div class="f" id="sol-sus-w" style="display:none;margin-top:8px"><label>Sustento de la corrección *</label><input class="inp" id="sol-sus"></div>' : ''));
+    let editar = false; roTodo = new Set(CAMPOS_ID);
+    F = montarForm(cuerpo, st, x => editar ? dibujarIntervencion(x, { rep: false, avisos: false }) : '');
+    const ed = $('#sol-ed'); if (ed) ed.onclick = () => { editar = true; F.repintar(); ed.remove(); $('#sol-sus-w').style.display = ''; };
+    if (pendiente) $('#sol-ok').onclick = () => conCarga(async () => {
+      const cambios = {}; CAMPOS_ID.forEach(k => { if (String(st[k] || '') !== String(r[k] || '')) cambios[k] = st[k]; });
+      const errs = erroresIdentidad(st); const dif = Object.keys(d).some(k => String(st[k] || '') !== String(d[k] || ''));
+      if (dif && (($('#sol-sus') || {}).value || '').trim().length < 5) errs.push('Indica el sustento de la corrección');
+      if (errs.length) return mostrarErrores('#modal-err', errs);
+      const r2 = await api('resolverSolicitud', { id, decision: 'aprobar', cambios, sustento: ($('#sol-sus') || {}).value || '' });
+      if (!r2.ok) return mostrarErrores('#modal-err', [r2.mensaje]); cerrarModal(); toast(r2.mensaje); await recargar();
+    });
+  }
+  if (pendiente) $('#sol-rech').onclick = () => {
+    const mot = window.prompt('Motivo del rechazo (se muestra a la unidad):'); if (!mot) return;
+    conCarga(async () => { const r = await api('resolverSolicitud', { id, decision: 'rechazar', sustento: mot }); if (!r.ok) return mostrarErrores('#modal-err', [r.mensaje]); cerrarModal(); toast(r.mensaje); await recargar(); });
+  };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// GESTIÓN DEL CORTE (administrador, Dirección)
+// ═════════════════════════════════════════════════════════════════════════════
+function vistaCorte() {
+  const v = $('#vista'); const c = S.corte;
+  const hist = (S.cortes || []).slice().sort((a, b) => ordenF(b['Corte']) - ordenF(a['Corte']));
+  let h = '';
+  if (!c) {
+    h += `<div class="card" style="max-width:640px"><h1>Abrir un nuevo corte</h1><p class="sub">Fija la fecha de corte y el plazo de entrega. Luego envía a las unidades el correo de solicitud con el enlace de esta página.</p>
+      <div class="fg" style="margin-top:12px"><div class="f"><label>Fecha de corte *</label><input class="inp" id="nc-c" type="date"></div><div class="f"><label>Plazo de entrega *</label><input class="inp" id="nc-p" type="date"></div></div>
+      <div id="nc-err"></div><div class="acciones"><button class="btn p" id="nc-ok">Abrir corte</button></div></div>`;
+  } else {
+    const res = resumenUnidades(); const tot = res.reduce((a, o) => ({ n: a.n + o.n, v: a.v + o.Validado, e: a.e + o.Enviado }), { n: 0, v: 0, e: 0 });
+    const sinEnviar = res.filter(o => o.n && o.Enviado + o.Validado === 0).length;
+    const pct = tot.n ? Math.round(tot.v / tot.n * 100) : 0;
+    const cuisV = new Set(); S.universo.filter(enModulo).forEach(r => { if (r['Tipo de Código'] === 'CUI') partir(r['Código']).forEach(x => cuisV.add(x)); });
+    h += `<div class="toolbar"><b style="font-size:16px;color:var(--blue-dk)">Corte al ${esc(c['Corte'])}</b>${chip('Enviado', 'Abierto')}<span class="muted">abierto el ${esc(c['Fecha de apertura'])} por ${esc(c['Abierto por'])} · plazo ${esc(c['Plazo'])}</span></div>
+      <div class="kpis"><div class="kpi"><div class="v">${tot.n}</div><div class="l">Universo vigente del módulo</div></div>
+      <div class="kpi"><div class="v">${tot.v}</div><div class="l">Validadas (${pct} %)</div><div class="bar"><i style="width:${pct}%"></i></div></div>
+      <div class="kpi"><div class="v">${tot.e}</div><div class="l">Por revisar</div></div>
+      <div class="kpi"><div class="v">${sinEnviar} / ${res.filter(o => o.n).length}</div><div class="l">Unidades sin enviar</div></div>
+      <div class="kpi"><div class="v">${cuisV.size}</div><div class="l">CUI vigentes</div></div></div>
+      <div class="dos" style="grid-template-columns:1fr 1fr">
+      <div class="panel" style="position:static"><div class="tit">Paso 4 · Información financiera</div>
+        <p class="sub" style="margin:4px 0 10px">Descarga la lista de CUI vigentes para el especialista financiero y carga su archivo «CUIs_Carpeta_Departamental_inversiones…xlsx» (pestaña <b>base</b>).</p>
+        <div class="toolbar"><button class="btn" onclick="descargarCuis()">⬇ Lista de CUI vigentes (${cuisV.size})</button><button class="btn p" onclick="cargarFinanciera()">⬆ Cargar archivo de la consulta masiva</button></div>
+        <div class="nota">${c['Financiera cargada'] === 'SI' ? '<span class="ok">✓ Financiera cargada para este corte</span> · ' + esc(c['Fecha financiera']) : '<span class="warn">Pendiente de cargar en este corte</span>'}${S.financiera ? ' · ' + S.financiera.n + ' CUI en la base · consulta ' + esc(S.financiera.fecha) : ''}</div></div>
+      <div class="panel" style="position:static"><div class="tit">Pasos 7–8 · Publicar el corte</div><div id="pub-est" class="muted" style="margin:8px 0">Verificando…</div>
+        <div class="nota">Al publicar: la pestaña Actual anterior se guarda como «${esc(S.ultimoPublicado ? etiqueta(S.ultimoPublicado['Corte']) : 'dd-mm')}», se escribe la nueva Actual con el criterio único del monto, se actualizan CUI vigentes y los KPIs, y los reportes pasan al histórico.</div>
+        <div class="acciones"><button class="btn g" id="pub-ok" disabled>Publicar corte</button></div></div></div>`;
+  }
+  h += '<h2>Cortes</h2><div class="tbl"><table><thead><tr><th>Corte</th><th>Plazo</th><th>Estado</th><th>Abierto por</th><th>Financiera</th><th>Publicado</th><th>Intervenciones</th><th>Monto total</th></tr></thead><tbody>' +
+    hist.map(x => `<tr><td>${esc(x['Corte'])}</td><td>${esc(x['Plazo'])}</td><td>${esc(x['Estado'])}</td><td>${esc(x['Abierto por'])}</td><td>${esc(x['Financiera cargada'])}</td><td>${esc(x['Fecha de publicación'] || '')}</td><td>${esc(x['Intervenciones'] || '')}</td><td>${x['Monto total S/'] ? fmtMM(num(x['Monto total S/'])) : ''}</td></tr>`).join('') + '</tbody></table></div>';
+  v.innerHTML = h;
+  if (!c) {
+    $('#nc-ok').onclick = () => conCarga(async () => {
+      const f = x => x ? x.split('-').reverse().join('/') : '';
+      const r = await api('abrirCorte', { corte: f($('#nc-c').value), plazo: f($('#nc-p').value) });
+      if (!r.ok) return mostrarErrores('#nc-err', [r.mensaje]); toast(r.mensaje); await recargar();
+    });
+    return;
+  }
+  api('publicarCorte', { soloVerificar: true }).then(r => {
+    const el = $('#pub-est'); if (!el) return;
+    el.innerHTML = r.listo ? '<span class="ok">✓ Listo para publicar: 100 % validado, sin solicitudes pendientes y con financiera.</span>' : '<b>Aún no se puede publicar:</b><ul style="margin-left:18px">' + r.faltan.map(x => '<li class="err">' + esc(x) + '</li>').join('') + '</ul>';
+    const b = $('#pub-ok'); b.disabled = !r.listo;
+    b.onclick = () => { if (!confirmar('¿Publicar el corte del ' + c['Corte'] + '? Se reemplazará la pestaña Actual de la base beta.')) return;
+      conCarga(async () => { const x = await api('publicarCorte', {}); if (!x.ok) return toast(x.mensaje, true); toast(x.mensaje); await recargar();
+        if (x.kpis && x.kpis.cuisSinCosto && x.kpis.cuisSinCosto.length) modal('Corte publicado', `<p style="margin:10px 0">${esc(x.mensaje)}</p><div class="nota"><b>${x.kpis.cuisSinCosto.length} CUI sin dato en la financiera</b> (quedan con costo 0, criterio único 7.6.4): ${esc(x.kpis.cuisSinCosto.join(', '))}. Comunícalos al especialista responsable (7.6.6).</div>`, '<button class="btn p" onclick="cerrarModal()">Entendido</button>'); });
+    };
+  });
+}
+const ordenF = s => { const m = String(s || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); return m ? +m[3] * 10000 + +m[2] * 100 + +m[1] : 0; };
+const etiqueta = s => String(s).slice(0, 5).replace('/', '-');
+function descargarCuis() {
+  if (!requiereXLSX()) return;
+  const filas = []; S.universo.filter(enModulo).forEach(r => { if (r['Tipo de Código'] === 'CUI') partir(r['Código']).forEach(c => filas.push([c, r['COD INTERNO'], r['Unidad reportante']])); });
+  const unicos = [...new Map(filas.map(f => [f[0], f])).values()];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['CUI', 'COD INTERNO', 'Unidad reportante']].concat(unicos)), 'CUISvigentes');
+  XLSX.writeFile(wb, 'CUIs_vigentes_corte_' + S.corte['Corte'].replace(/\//g, '-') + '.xlsx');
+}
+function cargarFinanciera() {
+  if (!requiereXLSX()) return;
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.xls';
+  inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return;
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const ws = wb.Sheets['base'] || wb.Sheets[wb.SheetNames[0]];
+    const filas = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    if (!filas.length) return toast('El archivo no tiene filas', true);
+    const k = Object.keys(filas[0]); const col = re => k.find(x => re.test(String(x).trim()));
+    const cCui = col(/^cui$/i), cCosto = col(/^costo_inversion$|^costo de inversi/i), cPia = col(/^pia(_\d{4})?$/i), cPim = col(/^pim(_\d{4})?$/i), cDev = col(/^dev(_\d{4})?$|^devengado/i), cFue = col(/fuente_costo|fuente del costo/i);
+    if (!cCui || !cCosto) return toast('No se encontraron las columnas CUI y costo_inversion en la pestaña base', true);
+    const datos = filas.map(x => ({ CUI: String(x[cCui]).replace(/\.0+$/, '').trim(), costo: x[cCosto], pia: cPia ? x[cPia] : 0, pim: cPim ? x[cPim] : 0, dev: cDev ? x[cDev] : 0, fuente: cFue ? x[cFue] : '' })).filter(x => x.CUI);
+    const enArch = new Set(datos.map(x => x.CUI));
+    const vig = new Set(); S.universo.filter(enModulo).forEach(r => { if (r['Tipo de Código'] === 'CUI') partir(r['Código']).forEach(c => vig.add(c)); });
+    const faltan = [...vig].filter(c => !enArch.has(c));
+    const porFuente = {}; datos.forEach(x => { const k2 = String(x.fuente || 'sin fuente'); porFuente[k2] = (porFuente[k2] || 0) + 1; });
+    const m = (f.name.match(/(\d{8})_(\d{4})/) || []); const fecha = m[1] ? m[1].slice(6, 8) + '/' + m[1].slice(4, 6) + '/' + m[1].slice(0, 4) : '';
+    modal('Cargar financiera · vista previa', `<p class="sub" style="margin:8px 0">${esc(f.name)} · pestaña «${esc(wb.Sheets['base'] ? 'base' : wb.SheetNames[0])}» · columnas: ${esc([cCui, cCosto, cPia, cPim, cDev, cFue].filter(Boolean).join(', '))}</p>
+      <table><tr><td>CUI en el archivo / vigentes del corte</td><td class="${faltan.length ? 'warn' : 'ok'}">${enArch.size} / ${vig.size}</td></tr>
+      <tr><td>Por fuente del costo</td><td>${Object.entries(porFuente).map(([a, b]) => esc(a) + ': ' + b).join(' · ')}</td></tr>
+      <tr><td>CUI vigentes que no están en el archivo</td><td>${faltan.length ? '<span class="warn">' + esc(faltan.join(', ')) + '</span> (tomarán costo 0)' : '<span class="ok">ninguno</span>'}</td></tr></table>
+      <div class="f" style="margin-top:10px"><label>Fecha de la consulta</label><input class="inp" id="fin-f" value="${esc(fecha)}" placeholder="dd/mm/aaaa"></div>`,
+      `<button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn g" id="fin-ok">Confirmar financiera (${datos.length} CUI)</button>`);
+    $('#fin-ok').onclick = () => conCarga(async () => { const r = await api('cargarFinanciera', { filas: datos, fechaConsulta: $('#fin-f').value }); if (!r.ok) return mostrarErrores('#modal-err', [r.mensaje]); cerrarModal(); toast(r.mensaje); await recargar(); });
+  };
+  inp.click();
+}
+
+// ── ASIGNACIONES ─────────────────────────────────────────────────────────────
+function vistaAsignaciones() {
+  const v = $('#vista'); const esp = S.especialistas || [];
+  const asig = {}; (S.asignaciones || []).forEach(a => { asig[a['Ámbito'] + '|' + a['Clave']] = a; });
+  const res = resumenUnidades();
+  const carga = {}; esp.forEach(e => { carga[e.usuario] = { c: 0, h: 0 }; }); let sinC = 0, sinH = 0;
+  res.forEach(o => { const a = asig['Carpeta Departamental|' + o.s]; if (a && carga[a['Especialista']]) carga[a['Especialista']].c += o.n; else sinC += o.n; });
+  (S.hojaDeRuta || []).forEach(x => { const a = asig['Hoja de Ruta|' + x.cod]; if (a && carga[a['Especialista']]) carga[a['Especialista']].h++; else sinH++; });
+  const opts = (sel) => '<option value="">Sin asignar</option>' + esp.map(e => `<option value="${esc(e.usuario)}" ${sel === e.usuario ? 'selected' : ''}>${esc(e.nombre)} (${esc(e.usuario)})</option>`).join('');
+  let h = `<div class="dos" style="grid-template-columns:1.6fr 1fr"><div><div class="tabs"><button class="${VISTA.subtab === 'carpeta' ? 'on' : ''}" onclick="VISTA.subtab='carpeta';vistaAsignaciones()">Carpeta Departamental · por unidad reportante</button><button class="${VISTA.subtab === 'hr' ? 'on' : ''}" onclick="VISTA.subtab='hr';vistaAsignaciones()">Hoja de Ruta y Cartera Priorizada · por intervención</button></div>`;
+  if (VISTA.subtab === 'carpeta') {
+    h += '<div class="tbl"><table><thead><tr><th>Unidad reportante</th><th>Intervenciones vigentes</th><th>Especialista responsable</th><th>Desde</th></tr></thead><tbody>' +
+      res.map(o => { const a = asig['Carpeta Departamental|' + o.s]; return `<tr><td><b>${esc(o.s)}</b></td><td>${o.n}</td><td><select class="inp" data-asig="Carpeta Departamental|${esc(o.s)}">${opts(a ? a['Especialista'] : '')}</select></td><td class="muted">${esc(a ? a['Desde'] : '—')}</td></tr>`; }).join('') + '</tbody></table></div>';
+  } else {
+    const q = clave(VISTA.busca); const fc = VISTA.filtroCartera || ''; const fr = VISTA.filtroResp || '';
+    const lista = (S.hojaDeRuta || []).filter(x => (!q || clave(x.cod + ' ' + x.nombre).includes(q)) && (!fc || x.cartera === fc) && (!fr || (fr === '_sin' ? !asig['Hoja de Ruta|' + x.cod] : (asig['Hoja de Ruta|' + x.cod] || {})['Especialista'] === fr)));
+    h += `<div class="toolbar"><input class="inp filtro" id="as-q" placeholder="🔍 Buscar" value="${esc(VISTA.busca)}"><select class="inp filtro" id="as-c"><option value="">Cartera: todas</option><option ${fc === 'SI' ? 'selected' : ''} value="SI">Cartera Priorizada: SI</option><option ${fc === 'NO' ? 'selected' : ''} value="NO">Cartera Priorizada: NO</option></select>
+      <select class="inp filtro" id="as-r"><option value="">Responsable: todos</option><option value="_sin" ${fr === '_sin' ? 'selected' : ''}>Sin asignar</option>${esp.map(e => `<option ${fr === e.usuario ? 'selected' : ''} value="${esc(e.usuario)}">${esc(e.usuario)}</option>`).join('')}</select><span class="sp"></span>
+      <select class="inp filtro" id="as-dest">${opts('')}</select><button class="btn p" id="as-lote">Reasignar seleccionadas (<span id="as-n">0</span>)</button></div>
+      <div class="tbl" style="max-height:62vh"><table><thead><tr><th><input type="checkbox" class="chk" id="as-todos"></th><th>COD INTERNO</th><th>Intervención</th><th>Unidad</th><th>Cartera</th><th>Responsable OGAME</th><th>Desde</th></tr></thead><tbody>` +
+      (lista.map(x => { const a = asig['Hoja de Ruta|' + x.cod]; return `<tr><td><input type="checkbox" class="chk" data-hr="${esc(x.cod)}"></td><td>${esc(x.cod)}</td><td>${esc(x.nombre)}</td><td>${esc(x.unidad)}</td><td>${esc(x.cartera || 'NO')}</td><td><select class="inp" data-asig="Hoja de Ruta|${esc(x.cod)}">${opts(a ? a['Especialista'] : '')}</select></td><td class="muted">${esc(a ? a['Desde'] : '—')}</td></tr>`; }).join('') || '<tr><td colspan="7" class="vacio">Sin intervenciones</td></tr>') + '</tbody></table></div>';
+  }
+  h += `</div><div><div class="panel" style="position:static"><div class="tit">Carga de trabajo</div><table style="margin-top:8px"><thead><tr><th>Especialista</th><th>Carpeta (interv.)</th><th>HR / Cartera (interv.)</th></tr></thead><tbody>` +
+    esp.map(e => `<tr><td>${esc(e.nombre)}<div class="meta">${esc(e.usuario)}</div></td><td><span class="wl" style="width:${Math.min(110, carga[e.usuario].c / 3)}px"></span>${carga[e.usuario].c}</td><td><span class="wl" style="width:${Math.min(110, carga[e.usuario].h * 2)}px"></span>${carga[e.usuario].h}</td></tr>`).join('') +
+    `<tr><td class="warn">Sin asignar</td><td>${sinC}</td><td class="warn">${sinH}</td></tr></tbody></table></div>
+    <div class="nota" style="margin-top:12px">Lo que no tiene especialista aparece en la bandeja de <b>todos</b> los especialistas hasta que se asigne. Cada cambio cierra la asignación anterior y abre una nueva, así queda el historial.</div></div></div>`;
+  v.innerHTML = h;
+  v.querySelectorAll('[data-asig]').forEach(s => s.onchange = () => { const [ambito, cl] = s.dataset.asig.split('|'); conCarga(async () => { const r = await api('guardarAsignaciones', { cambios: [{ ambito, clave: cl, especialista: s.value }] }); toast(r.mensaje, !r.ok); await recargar(); }); });
+  if (VISTA.subtab === 'hr') {
+    $('#as-q').oninput = e => { VISTA.busca = e.target.value; clearTimeout(window._asq); window._asq = setTimeout(() => { vistaAsignaciones(); const i = $('#as-q'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 350); };
+    $('#as-c').onchange = e => { VISTA.filtroCartera = e.target.value; vistaAsignaciones(); };
+    $('#as-r').onchange = e => { VISTA.filtroResp = e.target.value; vistaAsignaciones(); };
+    const cuenta = () => { $('#as-n').textContent = v.querySelectorAll('[data-hr]:checked').length; };
+    v.querySelectorAll('[data-hr]').forEach(c => c.onchange = cuenta);
+    $('#as-todos').onchange = e => { v.querySelectorAll('[data-hr]').forEach(c => { c.checked = e.target.checked; }); cuenta(); };
+    $('#as-lote').onclick = () => { const sel = [...v.querySelectorAll('[data-hr]:checked')].map(c => c.dataset.hr); if (!sel.length) return toast('Marca las intervenciones', true);
+      conCarga(async () => { const r = await api('guardarAsignaciones', { cambios: sel.map(cl => ({ ambito: 'Hoja de Ruta', clave: cl, especialista: $('#as-dest').value })) }); toast(r.mensaje, !r.ok); await recargar(); }); };
+  }
+}
+
+// ── UNIVERSO (administrador: consulta y edición con sustento) ────────────────
+function vistaUniverso() {
+  const v = $('#vista'); const q = clave(VISTA.busca);
+  const lista = S.universo.filter(r => !q || clave(r['COD INTERNO'] + ' ' + r['Nombre de la intervención'] + ' ' + r['Código'] + ' ' + r['Unidad reportante']).includes(q));
+  const porTipo = {}; S.universo.filter(r => r['Vigente'] === 'SI').forEach(r => { porTipo[r['Tipo']] = (porTipo[r['Tipo']] || 0) + 1; });
+  v.innerHTML = `<div class="kpis">${Object.entries(porTipo).map(([t, n]) => `<div class="kpi"><div class="v">${n}</div><div class="l">${esc(t)} vigentes</div></div>`).join('')}<div class="kpi"><div class="v">${S.universo.filter(r => r['Vigente'] !== 'SI').length}</div><div class="l">No vigentes</div></div></div>
+    <div class="toolbar"><input class="inp filtro" style="min-width:320px" id="un-q" placeholder="🔍 Buscar por código, nombre, CUI o unidad" value="${esc(VISTA.busca)}"><span class="muted">${lista.length} resultados</span></div>
+    <div class="tbl" style="max-height:66vh"><table><thead><tr><th>COD INTERNO</th><th>Tipo</th><th>Unidad</th><th>Intervención</th><th>Código</th><th>Vigente</th><th>Hoja de Ruta</th><th>Cartera</th><th>Crédito</th></tr></thead><tbody>` +
+    lista.slice(0, 400).map(r => `<tr class="click" onclick="editarUniverso('${esc(r['COD INTERNO'])}')"><td>${esc(r['COD INTERNO'])}</td><td>${esc(r['Tipo'])}</td><td>${esc(r['Unidad reportante'])}</td><td>${esc(r['Nombre de la intervención'])}</td><td>${esc(textoCodigo(r))}</td><td>${r['Vigente'] === 'SI' ? 'SI' : '<span class="err">NO</span>'}</td><td>${esc(r['Hoja de Ruta'])}</td><td>${esc(r['Cartera Priorizada'])}</td><td>${esc(r['Crédito suplementario'])}</td></tr>`).join('') + '</tbody></table></div>';
+  $('#un-q').oninput = e => { VISTA.busca = e.target.value; clearTimeout(window._unq); window._unq = setTimeout(() => { vistaUniverso(); const i = $('#un-q'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 350); };
+}
+function editarUniverso(cod) {
+  const r = S.porCod[cod]; const st = Object.assign({}, r); const admin = S.usuario.rol === 'Administrador';
+  modal('Universo · ' + esc(cod), '', admin ? `<button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn p" id="un-ok">Guardar cambios</button>` : '<button class="btn" onclick="cerrarModal()">Cerrar</button>');
+  $('#modal-cuerpo').insertAdjacentHTML('beforebegin', `<div class="meta" style="margin:8px 0">Alta: ${esc(r['Fecha de alta'])} · ${esc(r['Registrado por'])}${r['Última modificación'] ? ' · Última modificación: ' + esc(r['Última modificación']) + ' por ' + esc(r['Modificado por']) : ''}</div>` +
+    (admin ? `<div class="fg"><div class="f"><label>Vigente</label><select class="inp" id="un-vig"><option ${r['Vigente'] === 'SI' ? 'selected' : ''}>SI</option><option ${r['Vigente'] !== 'SI' ? 'selected' : ''}>NO</option></select></div><div class="f"><label>Sustento del cambio *</label><input class="inp" id="un-sus"></div></div>` : ''));
+  montarForm($('#modal-cuerpo'), st, x => dibujarIntervencion(x, { rep: false, avisos: false, ro: admin ? new Set() : new Set(CAMPOS_ID) }));
+  if (admin) $('#un-ok').onclick = () => conCarga(async () => {
+    const cambios = {}; CAMPOS_ID.forEach(k => { if (String(st[k] || '') !== String(r[k] || '')) cambios[k] = st[k]; });
+    if ($('#un-vig').value !== r['Vigente']) cambios['Vigente'] = $('#un-vig').value;
+    const errs = erroresIdentidad(st); if (errs.length) return mostrarErrores('#modal-err', errs);
+    const x = await api('editarUniverso', { cod, cambios, sustento: $('#un-sus').value });
+    if (!x.ok) return mostrarErrores('#modal-err', [x.mensaje]); cerrarModal(); toast(x.mensaje); await recargar();
+  });
+}
+
+// ── ARRANQUE ─────────────────────────────────────────────────────────────────
+async function cargarScript(src) { return new Promise((ok, mal) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => mal(new Error('No se pudo cargar ' + src)); document.head.appendChild(s); }); }
+async function iniciar() {
+  if (MODO_DEMO) {
+    await cargarScript('demo/simulador-sheets.js');
+    await cargarScript('demo/datos-demo.js'); await cargarScript('demo/iniciar-demo.js');
+    const src = await (await fetch('../backend/IntervencionesMTC_backend.gs', { cache: 'no-cache' })).text();
+    window.cargarBackendDemo(src);
+    window.DEMO.asegurar();
+    const ad = $('#aviso-demo'); ad.style.display = 'flex';
+    const usuarios = window.DEMO.usuarios();
+    ad.innerHTML = `<b>MODO DEMO</b> · datos de ejemplo guardados solo en este navegador (montos y estados son ficticios). Contraseña: <code>demo</code>. Usuarios:` +
+      usuarios.map(u => `<button onclick="demoEntrar('${u.usuario}')" title="${esc(u.rol)}">${esc(u.usuario)}</button>`).join('') + `<button onclick="if(confirm('¿Reiniciar los datos del demo?')){DEMO.reiniciar();sessionStorage.removeItem('intmtc_token');verLogin();}">↺ Reiniciar demo</button>`;
+  }
+  if (sessionStorage.getItem('intmtc_token')) { try { await recargar(); return; } catch (e) { console.warn(e); } }
+  verLogin();
+}
+function demoEntrar(u) { verLogin(); $('#lg-u').value = u; $('#lg-c').value = 'demo'; $('#lg-b').click(); }
+iniciar().catch(e => { console.error(e); $('#app').innerHTML = '<div class="errores">No se pudo iniciar: ' + esc(e.message) + '</div>'; });
+</script>
+</body>
+</html>
