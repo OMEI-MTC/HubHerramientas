@@ -719,7 +719,7 @@ function sugerirCodigo(sigla, universo, anio) {
 }
 
 
-// ── ACCIÓN: ABRIR CORTE (administrador o Dirección) ────────────────────────
+// ── ACCIÓN: ABRIR CORTE (Dirección o administrador) ────────────────────────
 function accAbrirCorte(u, d) {
   if (!esGestor(u)) return { ok: false, mensaje: 'Sin permiso' };
   if (corteAbierto()) return { ok: false, mensaje: 'Ya hay un corte abierto' };
@@ -740,7 +740,7 @@ function accAbrirCorte(u, d) {
 // ── ACCIÓN: CARGAR FINANCIERA (administrador) ──────────────────────────────
 // d.filas = [{CUI, costo, pia, pim, dev, fuente}], d.fechaConsulta
 function accCargarFinanciera(u, d) {
-  if (!esGestor(u)) return { ok: false, mensaje: 'Sin permiso' };
+  if (u.rol !== ROLES.ADMIN) return { ok: false, mensaje: 'Solo el administrador de la plataforma carga la financiera' };
   var corte = corteAbierto(); if (!corte) return { ok: false, mensaje: 'Abre el corte antes de cargar la financiera' };
   var vistos = {}, filas = [], errores = [];
   (d.filas || []).forEach(function (f, i) {
@@ -867,6 +867,7 @@ function accPublicarCorte(u, d) {
   var cat = leerCatalogos(); var universo = leer(H.UNIVERSO); var reportes = leer(H.REPORTES);
   var est = estadoPublicacion(corte, cat, universo, reportes, leer(H.SOLICITUDES));
   if (d.soloVerificar) return { ok: true, listo: est.listo, faltan: est.faltan };
+  if (u.rol !== ROLES.ADMIN) return { ok: false, mensaje: 'Solo el administrador de la plataforma publica el corte' };
   if (!est.listo) return { ok: false, mensaje: 'Aún no se puede publicar: ' + est.faltan.join('; '), faltan: est.faltan };
   var calc = calcularActual(corte['Corte'], est.alcance, est.enCorte, leer(H.FINANCIERA), []);
   // 1) Respaldo de Actual anterior con la etiqueta de su corte

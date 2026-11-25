@@ -52,8 +52,20 @@ th{background:var(--gray-lt);text-align:left;padding:7px 8px;font-weight:700;col
 td{padding:7px 8px;border-bottom:1px solid #eef0f4;vertical-align:top}
 tr.click{cursor:pointer}tr.click:hover td{background:#f7faff}tr.sel td{background:#eaf2ff!important}
 .chip{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap}
-.c-Pendiente{background:#eef0f3;color:#5a6577}.c-Borrador{background:var(--blue-lt);color:var(--blue)}.c-Enviado{background:#E7F0FF;color:var(--blue-dk)}
-.c-Devuelto{background:var(--amber-lt);color:#8a5d00}.c-Validado{background:#E3F5EE;color:var(--green-dk)}.c-Nueva{background:#F1E9FF;color:#5B2DA8}
+.chip.est{min-width:92px;text-align:center;padding:3px 9px}
+.c-Pendiente{background:#F3F4F6;color:#5a6577;border:1px dashed #c3c9d2}
+.c-Borrador{background:#FFF6D9;color:#8a6100;border:1px solid #F0DC9A}
+.c-Enviado{background:#E8F1FC;color:#0055A5;border:1px solid #C3D8F2}
+.c-Devuelto{background:#FDEDE9;color:#B3261E;border:1px solid #F4C9BE}
+.c-Validado{background:#E5F6EF;color:#0F6E56;border:1px solid #B9E3D1}
+.c-Nueva{background:#F1E9FF;color:#5B2DA8}
+tr.e-Pendiente td:first-child{box-shadow:inset 3px 0 0 #d5d9df}tr.e-Borrador td:first-child{box-shadow:inset 3px 0 0 #F0D27A}
+tr.e-Enviado td:first-child{box-shadow:inset 3px 0 0 #8DB6E6}tr.e-Devuelto td:first-child{box-shadow:inset 3px 0 0 #EBA394}tr.e-Validado td:first-child{box-shadow:inset 3px 0 0 #86CDB1}
+.leyenda{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--t2);margin:4px 0 8px}
+.cnt{font-size:11px;margin-top:2px;color:var(--t3)}.cnt.falta{color:#b45309;font-weight:600}.cnt.ok{color:var(--green-dk)}
+.cchip.bad{background:#FDECEF;border-color:#f5b8c3;color:#8f0a22}
+a.num{color:var(--blue);font-weight:700;text-decoration:none;border-bottom:1px dotted var(--blue);cursor:pointer;padding:0 3px}a.num:hover{background:var(--blue-lt)}
+a.num.cero{color:var(--t3);border-bottom-color:transparent;font-weight:500}
 .c-Rechazada{background:#FDECEF;color:var(--red)}.c-Aprobada{background:#E3F5EE;color:var(--green-dk)}
 .meta{color:var(--t3);font-size:11.5px}
 .trunc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:520px}
@@ -250,7 +262,26 @@ function montarForm(cont, estado, dibujar, alCambiar) {
     if (el.dataset.k && el.tagName === 'SELECT') { estado[el.dataset.k] = el.value; reglas(estado, el.dataset.k); pintar(); alCambiar && alCambiar(el.dataset.k); }
   };
   cont.oninput = e => { const el = e.target; if (el.dataset.k && el.tagName !== 'SELECT') { estado[el.dataset.k] = el.value; alCambiar && alCambiar(el.dataset.k, true); } };
-  cont.onkeydown = e => { if (e.key === 'Enter' && e.target.dataset.chipin) { e.preventDefault(); agregarChip(cont, estado, e.target.dataset.chipin); pintar(); alCambiar && alCambiar(e.target.dataset.chipin); const i = cont.querySelector('[data-chipin="' + e.target.dataset.chipin + '"]'); i && i.focus(); } };
+  // Códigos: se registran al pulsar Enter, coma, punto y coma o espacio, o al salir del cuadro (no solo con ＋)
+  cont.onkeydown = e => {
+    const k = e.target.dataset && e.target.dataset.chipin; if (!k) return;
+    if (['Enter', ',', ';', ' '].includes(e.key)) {
+      e.preventDefault(); if (!e.target.value.trim()) return;
+      agregarChip(cont, estado, k); pintar(); alCambiar && alCambiar(k);
+      const i = cont.querySelector('[data-chipin="' + k + '"]'); i && i.focus();
+    }
+  };
+  if (cont._alSalir) cont.removeEventListener('focusout', cont._alSalir);
+  cont._alSalir = e => {
+    const k = e.target.dataset && e.target.dataset.chipin; if (!k || !e.target.value.trim()) return;
+    agregarChip(cont, estado, k);
+    // Si el clic fue en otro control, no se vuelve a dibujar (para no perder ese clic): la tarjeta se añade aquí mismo
+    if (!e.relatedTarget) { pintar(); alCambiar && alCambiar(k); return; }
+    const caja = e.target.closest('.chips'); const l = lst(estado[k], k);
+    caja.querySelectorAll('.cchip').forEach(c => c.remove());
+    e.target.insertAdjacentHTML('beforebegin', l.map((x, i) => tarjeta(k, x, i, false, caja.dataset.tc)).join(''));
+  };
+  cont.addEventListener('focusout', cont._alSalir);
   pintar();
   return { repintar: pintar, estado };
 }
@@ -283,14 +314,29 @@ function fSel(k, opciones, v, ph, dis) {
   return `<select class="inp" data-k="${esc(k)}" ${dis ? 'disabled' : ''}><option value="">${esc(ph || 'Elige…')}</option>` +
     opciones.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('') + '</select>';
 }
-const fInp = (k, v, ph, dis, extra) => `<input class="inp" data-k="${esc(k)}" value="${esc(v || '')}" placeholder="${esc(ph || '')}" ${dis ? 'disabled' : ''} ${extra || ''}>`;
-const fTxt = (k, v, ph, dis) => `<textarea class="inp" data-k="${esc(k)}" placeholder="${esc(ph || '')}" ${dis ? 'disabled' : ''}>${esc(v || '')}</textarea>`;
+// Contador de caracteres: se actualiza mientras se escribe (no recién al guardar)
+const MINIMOS = { 'Nombre de la intervención': 10, 'Estado situacional': 15, 'Relevancia sectorial': 20, '_motivo': 5, '_sustento': 5 };
+function contador(v, min) { const n = String(v || '').trim().length; return `<div class="cnt ${n >= min ? 'ok' : 'falta'}">${n >= min ? '✓ ' : ''}${n} / mínimo ${min} caracteres</div>`; }
+const attrMin = (k, dis) => MINIMOS[k] && !dis ? `data-min="${MINIMOS[k]}"` : '';
+const fInp = (k, v, ph, dis, extra) => `<input class="inp" data-k="${esc(k)}" value="${esc(v || '')}" placeholder="${esc(ph || (MINIMOS[k] ? 'Mínimo ' + MINIMOS[k] + ' caracteres' : ''))}" ${dis ? 'disabled' : ''} ${attrMin(k, dis)} ${extra || ''}>` + (MINIMOS[k] && !dis ? contador(v, MINIMOS[k]) : '');
+const fTxt = (k, v, ph, dis) => `<textarea class="inp" data-k="${esc(k)}" placeholder="${esc(ph || (MINIMOS[k] ? 'Mínimo ' + MINIMOS[k] + ' caracteres' : ''))}" ${dis ? 'disabled' : ''} ${attrMin(k, dis)}>${esc(v || '')}</textarea>` + (MINIMOS[k] && !dis ? contador(v, MINIMOS[k]) : '');
+// Campos sueltos (fuera de un formulario) con mínimo de caracteres
+const inpMin = (id, min, ph, area) => (area ? `<textarea class="inp" id="${id}" data-min="${min}" placeholder="${esc(ph || 'Mínimo ' + min + ' caracteres')}"></textarea>` : `<input class="inp" id="${id}" data-min="${min}" placeholder="${esc(ph || 'Mínimo ' + min + ' caracteres')}">`) + contador('', min);
+document.addEventListener('input', e => {
+  const el = e.target; if (!el.dataset || !el.dataset.min) return;
+  const c = el.nextElementSibling; if (c && c.classList.contains('cnt')) c.outerHTML = contador(el.value, Number(el.dataset.min));
+});
 const fRo = v => `<input class="inp ro" value="${esc(v || '—')}" disabled>`;
-function fChips(k, v, modo, dis) {
+// Tarjeta de un valor; los códigos con formato no válido se marcan en rojo
+function tarjeta(k, x, i, dis, tc) {
+  const mal = (tc === 'CUI' && !/^\d{7}$/.test(x)) || (tc === 'IDEA' && !/^\d{5,7}$/.test(x));
+  return `<span class="cchip ${mal ? 'bad' : ''}" ${mal ? `title="${tc === 'CUI' ? 'El CUI debe tener 7 dígitos' : 'Código IDEA no válido'}"` : ''}>${mal ? '⚠ ' : ''}${esc(x)}${dis ? '' : `<button type="button" data-quitar="${esc(k)}" data-i="${i}" title="Quitar">✕</button>`}</span>`;
+}
+function fChips(k, v, modo, dis, tc) {
   const l = lst(v, k);
-  let h = `<div class="chips ${dis ? 'dis' : ''}">` + l.map((x, i) => `<span class="cchip">${esc(x)}${dis ? '' : `<button type="button" data-quitar="${esc(k)}" data-i="${i}" title="Quitar">✕</button>`}</span>`).join('');
+  let h = `<div class="chips ${dis ? 'dis' : ''}" data-tc="${esc(tc || '')}">` + l.map((x, i) => tarjeta(k, x, i, dis, tc)).join('');
   if (!dis) {
-    if (modo === 'texto') h += `<input data-chipin="${esc(k)}" placeholder="${l.length ? 'otro…' : 'escribe y pulsa ＋'}" inputmode="numeric"><button type="button" class="plus" data-agregar="${esc(k)}" title="Añadir">＋</button>`;
+    if (modo === 'texto') h += `<input data-chipin="${esc(k)}" placeholder="${l.length ? 'otro código…' : 'escribe el código y pulsa Enter'}" inputmode="numeric"><button type="button" class="plus" data-agregar="${esc(k)}" title="Añadir otro">＋</button>`;
     else { const ops = (modo === 'depto' ? ['NACIONAL'].concat(S.catalogos.listas['Departamento'] || []) : (S.catalogos.listas[k] || [])).filter(o => !l.includes(o));
       h += `<select data-chipsel="${esc(k)}"><option value="">＋ añadir…</option>${ops.map(o => `<option>${esc(o)}</option>`).join('')}</select>`; }
   }
@@ -325,7 +371,7 @@ function dibujarIntervencion(st, op) {
   h += campo('Tipo de Código * <span class="muted">(según el tipo)</span>', fSeg('Tipo de Código', t.codigos, tc, dis('Tipo de Código') || t.codigos.length === 1),
     '', t.codigos.length === 1 ? '<span class="lock">Única opción para este tipo</span>' : '');
   if (tc === 'CUI' || tc === 'IDEA')
-    h += campo((tc === 'CUI' ? 'CUI(s)' : 'Código(s) IDEA') + ' * <span class="muted">— ＋ para añadir otro</span>', fChips('Código', st['Código'], 'texto', dis('Código')), '',
+    h += campo((tc === 'CUI' ? 'CUI(s)' : 'Código(s) IDEA') + ' * <span class="muted">(Enter, coma o clic fuera para añadir; ✕ para quitar)</span>', fChips('Código', st['Código'], 'texto', dis('Código'), tc), '',
       tc === 'CUI' && cuis.length ? (cuis.every(c => /^\d{7}$/.test(c)) ? (uso.length ? '<span class="warn">⚠ CUI ya usado: ' + esc(uso.join(', ')) + ' (quedará como CUI compartido)</span>' : '<span class="ok">✓ 7 dígitos · no están en otra intervención vigente</span>') : '<span class="err">El CUI debe tener 7 dígitos</span>') : '');
   else h += campo('Código', `<input class="inp" disabled placeholder="${tc ? 'No lleva código' : '🔒 Elige primero el tipo de código'}">`);
   if (op.rep && t.datos) {
@@ -399,15 +445,18 @@ function render() {
   $('#tb-sub').textContent = c ? 'Corte al ' + c['Corte'] + ' · plazo ' + c['Plazo'] : 'Sin corte abierto' + (S.ultimoPublicado ? ' · último publicado: ' + S.ultimoPublicado['Corte'] : '');
   if (u.rol === 'Punto focal') { $('#tb-titulo').textContent = 'Reporte de intervenciones · ' + u.unidad; return vistaPuntoFocal(); }
   const tabs = u.rol === 'Especialista' ? [['revision', 'Revisión del corte'], ['solicitudes', 'Solicitudes']]
+    : u.rol === 'Dirección' ? [['seguimiento', 'Seguimiento del corte'], ['revision', 'Revisión'], ['solicitudes', 'Solicitudes'], ['asignaciones', 'Asignaciones'], ['universo', 'Universo']]
     : [['corte', 'Gestión del corte'], ['revision', 'Revisión'], ['solicitudes', 'Solicitudes'], ['asignaciones', 'Asignaciones'], ['universo', 'Universo']];
   if (!VISTA.tab || !tabs.some(t => t[0] === VISTA.tab)) VISTA.tab = tabs[0][0];
-  $('#tb-titulo').textContent = u.rol === 'Especialista' ? 'Revisión del corte · Intervenciones MTC' : 'Gestión del corte · Intervenciones MTC';
+  $('#tb-titulo').textContent = (u.rol === 'Especialista' ? 'Revisión del corte' : u.rol === 'Dirección' ? 'Seguimiento del corte' : 'Gestión del corte') + ' · Intervenciones MTC';
   const nPend = (S.solicitudes || []).filter(s => s['Estado'] === 'Pendiente').length;
-  $('#app').innerHTML = '<div class="tabs">' + tabs.map(([k, l]) => `<button class="${VISTA.tab === k ? 'on' : ''}" onclick="VISTA.tab='${k}';VISTA.sel=null;render()">${l}${k === 'solicitudes' && nPend ? ' (' + nPend + ')' : ''}</button>`).join('') + '</div><div id="vista"></div>';
-  ({ revision: vistaRevision, solicitudes: vistaSolicitudes, corte: vistaCorte, asignaciones: vistaAsignaciones, universo: vistaUniverso })[VISTA.tab]();
+  $('#app').innerHTML = '<div class="tabs">' + tabs.map(([k, l]) => `<button class="${VISTA.tab === k ? 'on' : ''}" onclick="VISTA.tab='${k}';VISTA.sel=null;VISTA.solUnidad='';render()">${l}${k === 'solicitudes' && nPend ? ' (' + nPend + ')' : ''}</button>`).join('') + '</div><div id="vista"></div>';
+  ({ revision: vistaRevision, solicitudes: vistaSolicitudes, corte: vistaCorte, seguimiento: vistaSeguimiento, asignaciones: vistaAsignaciones, universo: vistaUniverso })[VISTA.tab]();
 }
 function estadoDe(cod) { const r = S.rep[cod]; return r ? r['Estado'] : 'Pendiente'; }
-function chip(e, texto) { return `<span class="chip c-${esc(e)}">${esc(texto ?? e)}</span>`; }
+const ICONO = { Pendiente: '○', Borrador: '✎', Enviado: '➤', Devuelto: '↩', Validado: '✓' };
+function chip(e, texto) { const est = ICONO[e] && texto === undefined; return `<span class="chip c-${esc(e)}${est ? ' est' : ''}">${est ? ICONO[e] + ' ' : ''}${esc(texto ?? e)}</span>`; }
+const LEYENDA = '<div class="leyenda">Estados: ' + ['Pendiente', 'Borrador', 'Enviado', 'Devuelto', 'Validado'].map(e => chip(e)).join('') + '</div>';
 function textoCodigo(r) { return r['Tipo de Código'] === 'CUI' || r['Tipo de Código'] === 'IDEA' ? r['Tipo de Código'] + ' ' + r['Código'] : (r['Tipo de Código'] || ''); }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -436,7 +485,7 @@ function vistaPuntoFocal() {
     <button class="btn" onclick="cargarMatriz()" ${S.corte ? '' : 'disabled'}>⬆ Cargar matriz</button>
     <button class="btn" onclick="formAlta()">＋ Nueva intervención</button>
     <button class="btn g" onclick="enviarBorradores()" ${S.corte && borr.length ? '' : 'disabled'}>Enviar borradores (${borr.length})</button></div>`;
-  h += '<div class="dos"><div><div class="tbl"><table><thead><tr><th>COD INTERNO</th><th>Intervención</th><th>Fase</th><th>Estado situacional</th><th>Estado</th></tr></thead><tbody id="pf-tb"></tbody></table></div>';
+  h += LEYENDA + '<div class="dos"><div><div class="tbl"><table><thead><tr><th>COD INTERNO</th><th>Intervención</th><th>Fase</th><th>Estado situacional</th><th>Estado</th></tr></thead><tbody id="pf-tb"></tbody></table></div>';
   h += '<h2>Mis solicitudes</h2><div class="tbl" id="pf-sol"></div></div><div id="pf-panel"></div></div>';
   $('#app').innerHTML = h;
   $('#pf-busca').oninput = e => { VISTA.busca = e.target.value; pfTabla(); };
@@ -451,7 +500,7 @@ function pfTabla() {
   const bajas = new Set((S.solicitudes || []).filter(s => s['Tipo'] === 'Baja' && s['Estado'] === 'Pendiente').map(s => s['COD INTERNO']));
   let h = filas.map(r => {
     const cod = r['COD INTERNO']; const rep = S.rep[cod] || S.ult[cod] || {}; const e = estadoDe(cod);
-    return `<tr class="click ${VISTA.sel === cod ? 'sel' : ''}" onclick="pfAbrir('${esc(cod)}')" style="${e === 'Devuelto' ? 'background:#FFFBEF' : ''}"><td>${esc(cod)}</td>
+    return `<tr class="click e-${e} ${VISTA.sel === cod ? 'sel' : ''}" onclick="pfAbrir('${esc(cod)}')" style="${e === 'Devuelto' ? 'background:#FFF8F6' : ''}"><td>${esc(cod)}</td>
       <td>${esc(r['Nombre de la intervención'])}<div class="meta">${esc(textoCodigo(r))} · ${esc(r['Área de influencia'])}</div></td>
       <td>${esc(rep['Fase'] || '')}</td><td><div class="trunc">${S.rep[cod] ? esc(rep['Estado situacional']) : '<span class="muted">(sin registrar en este corte)</span>'}</div>${e === 'Devuelto' ? '<div class="warn" style="font-size:11.5px">OMEI: ' + esc(S.rep[cod]['Observación']) + '</div>' : ''}</td>
       <td>${chip(e)}${bajas.has(cod) ? '<div style="margin-top:3px">' + chip('Rechazada', 'Baja solicitada') + '</div>' : ''}</td></tr>`;
@@ -494,7 +543,7 @@ function pfAbrir(cod) {
     if (st._cambiar) {
       h += '<span class="blk n">CAMBIO DE CÓDIGO O CRÉDITO (lo valida OMEI)</span><div class="fg">';
       h += campo('Tipo de Código', fSeg('Tipo de Código', t.codigos, tc, !editable));
-      h += campo('Código(s) — ＋ para añadir', (tc === 'CUI' || tc === 'IDEA') ? fChips('Código', st['Código'], 'texto', !editable) : '<input class="inp" disabled placeholder="No lleva código">', '',
+      h += campo('Código(s) <span class="muted">(Enter o clic fuera para añadir)</span>', (tc === 'CUI' || tc === 'IDEA') ? fChips('Código', st['Código'], 'texto', !editable, tc) : '<input class="inp" disabled placeholder="No lleva código">', '',
         cuis.length && !cuis.every(c => /^\d{7}$/.test(c)) ? '<span class="err">El CUI debe tener 7 dígitos</span>' : (r['Código'] ? '<span class="muted">antes: ' + esc(textoCodigo(r)) + '</span>' : ''));
       h += campo('¿Tiene crédito suplementario?', fSeg('Crédito suplementario', ['SI', 'NO'], st['Crédito suplementario'], !editable));
       h += campo('Monto del crédito S/', st['Crédito suplementario'] === 'SI' ? fInp('Monto del crédito S/', st['Monto del crédito S/'], 'S/', !editable) : '<input class="inp" disabled placeholder="🔒 Solo si tiene crédito">');
@@ -568,7 +617,7 @@ function formCorreccion(cod) {
   const r = S.porCod[cod]; const st = Object.assign({}, r);
   modal('Solicitar corrección · ' + esc(cod), '', `<button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn p" id="cor-ok">Enviar solicitud</button>`);
   const cuerpo = $('#modal-cuerpo'); cuerpo.insertAdjacentHTML('beforebegin', '<p class="sub" style="margin:8px 0">Modifica los datos que estén mal registrados. OMEI valida la corrección antes de aplicarla al universo.</p><div id="cor-mot"></div>');
-  $('#cor-mot').innerHTML = campo('Motivo de la corrección *', '<input class="inp" id="cor-motivo" placeholder="Ej.: nombre según la resolución de aprobación">', 'full');
+  $('#cor-mot').innerHTML = campo('Motivo de la corrección *', inpMin('cor-motivo', 5, 'Ej.: nombre según la resolución de aprobación'), 'full');
   montarForm(cuerpo, st, s => dibujarIntervencion(s, { rep: false, avisos: false }));
   $('#cor-ok').onclick = () => conCarga(async () => {
     const cambios = {}; CAMPOS_ID.forEach(k => { if (String(st[k] || '') !== String(r[k] || '')) cambios[k] = st[k]; });
@@ -582,7 +631,7 @@ function formCorreccion(cod) {
 function formBaja(cod) {
   const r = S.porCod[cod];
   modal('Solicitar baja · ' + esc(cod), `<p style="margin:10px 0">${esc(r['Nombre de la intervención'])}</p><div class="nota">Al aprobarse, la intervención pasa a <b>Vigente = NO</b> en el universo (no se borra) y deja de exigirse en el corte.</div>
-    <div class="f" style="margin-top:10px"><label>Motivo de la baja *</label><input class="inp" id="baja-mot" placeholder="Ej.: duplicada con …, culminada y liquidada, transferida a …"></div>`,
+    <div class="f" style="margin-top:10px"><label>Motivo de la baja *</label>${inpMin('baja-mot', 5, 'Ej.: duplicada con …, culminada y liquidada, transferida a …')}</div>`,
     `<button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn r" id="baja-ok">Enviar solicitud de baja</button>`);
   $('#baja-ok').onclick = () => conCarga(async () => {
     const res = await api('solicitar', { tipo: 'Baja', cod, motivo: $('#baja-mot').value });
@@ -594,18 +643,70 @@ function formBaja(cod) {
 // Matriz Excel del punto focal (descarga y carga masiva con vista previa)
 const COLS_MATRIZ = ['COD INTERNO', 'Nombre de la intervención', 'Tipo de Código', 'Código', 'Monto reportado S/', 'Beneficiarios', 'Modalidad de ejecución', 'Fase', 'Financiamiento (SI/NO)', 'Estado situacional', 'Motivo del cambio de código'];
 function requiereXLSX() { if (!window.XLSX) { toast('No se pudo cargar la librería de Excel. Revisa la conexión a internet y recarga la página.', true); return false; } return true; }
-function descargarMatriz() {
-  if (!requiereXLSX()) return;
+// Libro Excel con listas desplegables (ExcelJS, se carga solo al descargar)
+async function cargarExcelJS() {
+  if (window.ExcelJS) return true;
+  try { await cargarScript('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js'); } catch (e) { }
+  if (!window.ExcelJS) toast('No se pudo cargar la librería de Excel. Revisa la conexión a internet y vuelve a intentar.', true);
+  return !!window.ExcelJS;
+}
+async function bajarLibro(wb, nombre) {
+  const buf = await wb.xlsx.writeBuffer();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  a.download = nombre; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+function encabezado(ws, color) {
+  const f = ws.getRow(1); f.height = 32;
+  f.eachCell((c, j) => { c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + color(j) } }; c.alignment = { wrapText: true, vertical: 'middle' }; });
+}
+function hojaInstrucciones(wb, lineas) {
+  const h = wb.addWorksheet('Instrucciones'); h.getColumn(1).width = 120;
+  lineas.forEach((t, i) => { const c = h.getCell(i + 1, 1); c.value = t; if (i === 0) c.font = { bold: true, size: 13, color: { argb: 'FF003F7D' } }; c.alignment = { wrapText: true }; });
+}
+const letra = n => { let s = ''; n++; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+async function descargarMatriz() {
+  if (!(await cargarExcelJS())) return;
+  const cat = S.catalogos; const mods = cat.ordenModalidades;
   const filas = S.universo.filter(enModulo).map(r => {
     const cod = r['COD INTERNO']; const b = S.rep[cod] || S.ult[cod] || {}; const c = (S.rep[cod] && S.rep[cod]['Cambios de identificación']) ? JSON.parse(S.rep[cod]['Cambios de identificación']) : {};
-    return [cod, r['Nombre de la intervención'], c['Tipo de Código'] || r['Tipo de Código'], c['Código'] ?? r['Código'], num(b['Monto reportado S/']) || '', num(b['Beneficiarios']) || '', b['Modalidad de ejecución'] || '', b['Fase'] || '', b['Financiamiento (SI/NO)'] || '', b['Estado situacional'] || '', ''];
+    const n = v => { const x = num(v); return isNaN(x) ? null : x; };
+    return [cod, r['Nombre de la intervención'], c['Tipo de Código'] || r['Tipo de Código'], c['Código'] ?? r['Código'], n(b['Monto reportado S/']), n(b['Beneficiarios']), b['Modalidad de ejecución'] || '', b['Fase'] || '', b['Financiamiento (SI/NO)'] || '', b['Estado situacional'] || '', ''];
   });
-  const ws = XLSX.utils.aoa_to_sheet([COLS_MATRIZ].concat(filas));
-  ws['!cols'] = [14, 50, 12, 22, 16, 14, 26, 32, 14, 80, 30].map(w => ({ wch: w }));
-  COLS_MATRIZ.forEach((_, j) => { const c = ws[XLSX.utils.encode_cell({ r: 0, c: j })]; if (c) c.s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: j < 4 ? '1D7A55' : '0055A5' } }, alignment: { wrapText: true, vertical: 'center' } }; });
-  const mf = [['Modalidad de ejecución', 'Fase']]; S.catalogos.ordenModalidades.forEach(m => S.catalogos.modalidades[m].forEach(f => mf.push([m, f.fase])));
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Matriz'); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(mf), 'Modalidad-Fase');
-  XLSX.writeFile(wb, 'Matriz_' + S.usuario.unidad + '_corte_' + S.corte['Corte'].replace(/\//g, '-') + '.xlsx');
+  const wb = new ExcelJS.Workbook();
+  hojaInstrucciones(wb, ['Matriz de reporte · ' + S.usuario.unidad + ' · corte al ' + S.corte['Corte'],
+    'Completa una fila por intervención. No cambies el COD INTERNO, el nombre ni el orden de las columnas.',
+    'Modalidad de ejecución, Fase, Financiamiento y Tipo de Código se eligen de la lista desplegable de cada celda.',
+    'La lista de Fase muestra solo las fases de la modalidad elegida en la columna G: elige primero la modalidad.',
+    'Si cambias el Tipo de Código o el Código (varios CUI separados por coma), escribe el motivo en la última columna.',
+    'Con CUI, el monto es informativo (se usa el costo del MEF). Sin CUI, el monto es obligatorio.',
+    'Estado situacional: mínimo 15 caracteres, con las últimas actividades a la fecha de corte.',
+    'Guarda el archivo y súbelo en el Hub con «Cargar matriz»: verás una vista previa antes de guardar o enviar.']);
+  const ws = wb.addWorksheet('Matriz', { views: [{ state: 'frozen', ySplit: 1, xSplit: 2 }] });
+  ws.columns = COLS_MATRIZ.map((h, i) => ({ header: h, width: [14, 50, 13, 22, 17, 14, 32, 36, 15, 80, 34][i] }));
+  filas.forEach(f => ws.addRow(f));
+  encabezado(ws, j => j <= 4 ? '1D7A55' : j === 11 ? 'B7791F' : '0055A5');
+  // Listas para los desplegables: modalidades y, en una columna por modalidad, sus fases
+  const L = wb.addWorksheet('Listas', { state: 'hidden' });
+  L.getCell(1, 1).value = 'Modalidad'; mods.forEach((m, i) => { L.getCell(i + 2, 1).value = m; });
+  wb.definedNames.add(`Listas!$A$2:$A$${mods.length + 1}`, 'Modalidades');
+  mods.forEach((m, j) => {
+    const col = j + 2; L.getCell(1, col).value = m;
+    cat.modalidades[m].forEach((f, i) => { L.getCell(i + 2, col).value = f.fase; });
+    wb.definedNames.add(`Listas!$${letra(col - 1)}$2:$${letra(col - 1)}$${cat.modalidades[m].length + 1}`, 'F_' + (j + 1));
+  });
+  const lista = (formula, msg) => ({ type: 'list', allowBlank: true, formulae: [formula], showErrorMessage: true, errorStyle: 'stop', errorTitle: 'Valor no válido', error: msg });
+  for (let r = 2; r <= filas.length + 1; r++) {
+    ws.getCell('C' + r).dataValidation = lista('"CUI,IDEA,PENDIENTE,No aplica"', 'Elige un tipo de código de la lista');
+    ws.getCell('G' + r).dataValidation = lista('Modalidades', 'Elige una modalidad de la lista');
+    ws.getCell('H' + r).dataValidation = lista(`INDIRECT("F_"&MATCH($G${r},Modalidades,0))`, 'Elige una fase de la modalidad de la columna G (elige primero la modalidad)');
+    ws.getCell('I' + r).dataValidation = lista('"SI,NO"', 'Escribe SI o NO');
+    ws.getCell('J' + r).alignment = { wrapText: true, vertical: 'top' };
+    ['E', 'F'].forEach(c => { ws.getCell(c + r).numFmt = '#,##0'; });
+    ['A', 'B'].forEach(c => { ws.getCell(c + r).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F8F5' } }; });
+  }
+  ws.autoFilter = { from: 'A1', to: 'K1' };
+  wb.views = [{ activeTab: 1 }];
+  await bajarLibro(wb, 'Matriz_' + S.usuario.unidad + '_corte_' + S.corte['Corte'].replace(/\//g, '-') + '.xlsx');
 }
 function cargarMatriz() {
   if (!requiereXLSX()) return;
@@ -661,17 +762,28 @@ function resumenUnidades() {
   const asign = {}; (S.asignaciones || []).filter(a => a['Ámbito'] === 'Carpeta Departamental').forEach(a => { asign[a['Clave']] = a['Especialista']; });
   return Object.entries(out).filter(([s, o]) => o.n || o.sol).map(([s, o]) => Object.assign(o, { s, esp: asign[s] || '' }));
 }
+// Tabla resumen por unidad: cada número abre la lista de esa unidad con ese filtro
+function tablaResumen(res) {
+  const n = (v, u, f) => `<a class="num ${v ? '' : 'cero'}" onclick="event.stopPropagation();irA('${esc(u)}','${f}')" title="Ver en la lista">${v}</a>`;
+  return '<div class="tbl"><table><thead><tr><th>Unidad reportante</th><th>Especialista</th><th>Intervenciones</th><th>Avance de la unidad</th><th>Sin registrar</th><th>Solicitudes</th><th>Por revisar</th><th>Devueltas</th><th>Validadas</th><th></th></tr></thead><tbody>' +
+    res.map(o => {
+      const pct = o.n ? Math.round((o.Enviado + o.Validado) / o.n * 100) : 0;
+      return `<tr class="click ${VISTA.unidad === o.s ? 'sel' : ''}" onclick="irA('${esc(o.s)}','Enviado')"><td><b>${esc(o.s)}</b></td><td>${o.esp ? esc(o.esp) : '<span class="warn">Sin asignar</span>'}</td><td>${n(o.n, o.s, 'Todos')}</td>
+        <td style="white-space:nowrap"><span class="mini"><i style="width:${pct}%"></i></span>${pct} %</td><td>${n(o.Pendiente + o.Borrador, o.s, 'Sin registrar')}</td>
+        <td>${o.sol ? `<a class="num" onclick="event.stopPropagation();VISTA.tab='solicitudes';VISTA.solUnidad='${esc(o.s)}';render()">${o.sol}</a>` : '<span class="muted">0</span>'}</td>
+        <td>${n(o.Enviado, o.s, 'Enviado')}</td><td>${n(o.Devuelto, o.s, 'Devuelto')}</td><td>${n(o.Validado, o.s, 'Validado')}</td>
+        <td>${o.n && o.Validado === o.n ? chip('Validado', 'Completa') : '<button class="btn s p">Revisar</button>'}</td></tr>`;
+    }).join('') + '</tbody></table></div>';
+}
+function irA(unidad, filtro) {
+  VISTA.unidad = unidad; VISTA.filtroEstado = filtro; VISTA.sel = null; VISTA.marcados = new Set();
+  if (VISTA.tab !== 'revision') { VISTA.tab = 'revision'; render(); } else vistaRevision();
+  const t = document.querySelector('#vista h2'); t && t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 function vistaRevision() {
   const v = $('#vista');
   if (!S.corte) { v.innerHTML = '<div class="nota">No hay un corte abierto. ' + (S.ultimoPublicado ? 'Último publicado: ' + esc(S.ultimoPublicado['Corte']) + '.' : '') + '</div>'; return; }
-  const res = resumenUnidades();
-  let h = '<div class="tbl"><table><thead><tr><th>Unidad reportante</th><th>Especialista</th><th>Intervenciones</th><th>Avance de la unidad</th><th>Por revisar</th><th>Devueltas</th><th>Validadas</th><th>Sin registrar</th><th>Solicitudes</th><th></th></tr></thead><tbody>';
-  h += res.map(o => {
-    const env = o.Enviado + o.Validado; const pct = o.n ? Math.round(env / o.n * 100) : 0;
-    return `<tr class="click ${VISTA.unidad === o.s ? 'sel' : ''}" onclick="VISTA.unidad='${esc(o.s)}';VISTA.sel=null;VISTA.marcados=new Set();vistaRevision()"><td><b>${esc(o.s)}</b></td><td>${o.esp ? esc(o.esp) : '<span class="warn">Sin asignar</span>'}</td><td>${o.n}</td>
-      <td><span class="mini"><i style="width:${pct}%"></i></span>${pct} %</td><td>${o.Enviado ? '<b>' + o.Enviado + '</b>' : 0}</td><td>${o.Devuelto}</td><td>${o.Validado}</td><td>${o.Pendiente + o.Borrador}</td>
-      <td>${o.sol ? chip('Nueva', o.sol) : '—'}</td><td>${o.n && o.Validado === o.n ? chip('Validado', 'Completa') : '<button class="btn s p">Revisar</button>'}</td></tr>`;
-  }).join('') + '</tbody></table></div>';
+  let h = tablaResumen(resumenUnidades());
   if (VISTA.unidad) {
     const filas = S.universo.filter(r => enModulo(r) && r['Unidad reportante'] === VISTA.unidad);
     const fe = VISTA.filtroEstado || 'Enviado';
@@ -682,7 +794,7 @@ function vistaRevision() {
       (vis.map(r => {
         const cod = r['COD INTERNO']; const rep = S.rep[cod]; const e = estadoDe(cod); const ult = S.ult[cod] || {};
         const cambios = rep ? CAMPOS_REP.filter(k => String(rep[k] || '') !== String(ult[k] || '')).length + (rep['Cambios de identificación'] ? 1 : 0) : 0;
-        return `<tr class="click ${VISTA.sel === cod ? 'sel' : ''}" data-cod="${esc(cod)}"><td>${e === 'Enviado' ? `<input type="checkbox" class="chk" data-m="${esc(cod)}" ${VISTA.marcados.has(cod) ? 'checked' : ''}>` : ''}</td><td>${esc(cod)}</td><td>${esc(r['Nombre de la intervención'])}<div class="meta">${esc(textoCodigo(r))}</div></td>
+        return `<tr class="click e-${e} ${VISTA.sel === cod ? 'sel' : ''}" data-cod="${esc(cod)}"><td>${e === 'Enviado' ? `<input type="checkbox" class="chk" data-m="${esc(cod)}" ${VISTA.marcados.has(cod) ? 'checked' : ''}>` : ''}</td><td>${esc(cod)}</td><td>${esc(r['Nombre de la intervención'])}<div class="meta">${esc(textoCodigo(r))}</div></td>
           <td>${esc(rep ? rep['Fase'] : '')}</td><td>${rep ? (cambios ? '<span class="warn">' + cambios + ' campo' + (cambios > 1 ? 's' : '') + '</span>' : '<span class="muted">sin cambios</span>') + (rep['Cambios de identificación'] ? ' <span class="chip c-Devuelto">código</span>' : '') : ''}</td><td>${chip(e)}</td></tr>`;
       }).join('') || '<tr><td colspan="6" class="vacio">Nada en este estado</td></tr>') + '</tbody></table></div><div id="rv-panel"><div class="panel"><div class="vacio">Elige una intervención para revisarla.</div></div></div></div>';
   }
@@ -738,7 +850,7 @@ function rvAbrir(cod) {
           h += campo('Fase', st['Modalidad de ejecución'] ? fSel('Fase', fases, st['Fase'], 'Elige la fase…') : '<select class="inp" disabled><option>🔒 Elige la modalidad</option></select>');
           h += campo('Financiamiento del año', fSeg('Financiamiento (SI/NO)', ['SI', 'NO'], st['Financiamiento (SI/NO)']));
           h += campo('Tipo de Código', fSeg('Tipo de Código', t.codigos, tc));
-          if (tc === 'CUI' || tc === 'IDEA') h += campo('Código(s)', fChips('Código', st['Código'], 'texto'), 'full');
+          if (tc === 'CUI' || tc === 'IDEA') h += campo('Código(s)', fChips('Código', st['Código'], 'texto', false, tc), 'full');
           h += campo('Crédito suplementario', fSeg('Crédito suplementario', ['SI', 'NO'], st['Crédito suplementario'])) + campo('Monto del crédito S/', st['Crédito suplementario'] === 'SI' ? fInp('Monto del crédito S/', st['Monto del crédito S/']) : '<input class="inp" disabled placeholder="🔒 Solo si tiene crédito">');
         }
         h += campo('Estado situacional', fTxt('Estado situacional', st['Estado situacional']), 'full');
@@ -771,7 +883,7 @@ function rvAbrir(cod) {
       siguienteRevision(cod); await recargar();
     });
     $('#rv-dev').onclick = () => {
-      modal('Devolver a la unidad · ' + esc(cod), `<div class="nota">Úsalo solo si la corrección no se puede coordinar directamente con el punto focal. La unidad corrige y vuelve a enviar.</div><div class="f" style="margin-top:10px"><label>Observación para la unidad *</label><textarea class="inp" id="dev-obs"></textarea></div>`,
+      modal('Devolver a la unidad · ' + esc(cod), `<div class="nota">Úsalo solo si la corrección no se puede coordinar directamente con el punto focal. La unidad corrige y vuelve a enviar.</div><div class="f" style="margin-top:10px"><label>Observación para la unidad *</label>${inpMin('dev-obs', 5, '', true)}</div>`,
         `<button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn a" id="dev-ok">Devolver</button>`);
       $('#dev-ok').onclick = () => conCarga(async () => {
         const res = await api('revisarReportes', { items: [{ cod, accion: 'devolver', observacion: $('#dev-obs').value }] });
@@ -790,11 +902,12 @@ function siguienteRevision(cod) {
 // ── SOLICITUDES (especialista, administrador) ────────────────────────────────
 function vistaSolicitudes() {
   const v = $('#vista');
-  const pend = (S.solicitudes || []).filter(s => s['Estado'] === 'Pendiente');
-  const res = (S.solicitudes || []).filter(s => s['Estado'] !== 'Pendiente').slice(-30).reverse();
+  const deU = s => !VISTA.solUnidad || s['Unidad reportante'] === VISTA.solUnidad;
+  const pend = (S.solicitudes || []).filter(s => s['Estado'] === 'Pendiente' && deU(s));
+  const res = (S.solicitudes || []).filter(s => s['Estado'] !== 'Pendiente' && deU(s)).slice(-30).reverse();
   const fila = s => { const d = JSON.parse(s['Datos'] || '{}'); const nom = s['COD INTERNO'] ? (S.porCod[s['COD INTERNO']] || {})['Nombre de la intervención'] : (d.identidad || {})['Nombre de la intervención'];
     return `<tr class="click" onclick="abrirSolicitud('${esc(s['ID'])}')"><td>${chip(s['Tipo'] === 'Alta' ? 'Nueva' : s['Tipo'] === 'Baja' ? 'Rechazada' : 'Devuelto', s['Tipo'])}</td><td>${esc(s['Unidad reportante'])}</td><td>${esc(s['COD INTERNO'] || s['COD asignado'] || '—')}</td><td>${esc(nom || '')}</td><td>${esc(s['Motivo'])}</td><td>${esc(s['Fecha de solicitud'])}</td><td>${chip(s['Estado'] === 'Pendiente' ? 'Enviado' : s['Estado'], s['Estado'])}</td></tr>`; };
-  v.innerHTML = '<h2>Pendientes (' + pend.length + ')</h2><div class="tbl"><table><thead><tr><th>Tipo</th><th>Unidad</th><th>COD INTERNO</th><th>Intervención</th><th>Motivo</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>' +
+  v.innerHTML = (VISTA.solUnidad ? `<div class="toolbar"><span class="chip c-Nueva">Unidad: ${esc(VISTA.solUnidad)}</span><button class="btn s" onclick="VISTA.solUnidad='';vistaSolicitudes()">✕ Ver todas</button></div>` : '') + '<h2>Pendientes (' + pend.length + ')</h2><div class="tbl"><table><thead><tr><th>Tipo</th><th>Unidad</th><th>COD INTERNO</th><th>Intervención</th><th>Motivo</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>' +
     (pend.map(fila).join('') || '<tr><td colspan="7" class="vacio">Sin solicitudes pendientes</td></tr>') + '</tbody></table></div>' +
     (res.length ? '<h2>Resueltas recientes</h2><div class="tbl"><table><thead><tr><th>Tipo</th><th>Unidad</th><th>COD INTERNO</th><th>Intervención</th><th>Motivo</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>' + res.map(fila).join('') + '</tbody></table></div>' : '');
 }
@@ -809,7 +922,7 @@ function abrirSolicitud(id) {
   if (s['Tipo'] === 'Alta') {
     st = Object.assign({}, d.identidad || {}, d.reporte || {}, { 'Unidad reportante': s['Unidad reportante'] });
     const orig = Object.assign({}, st); roTodo = new Set(CAMPOS_ID.concat(CAMPOS_REP));
-    cuerpo.insertAdjacentHTML('beforebegin', cab + (pendiente ? `<div class="fg"><div class="f"><label>COD INTERNO a asignar <span class="muted">(siguiente correlativo, editable)</span></label><input class="inp" id="sol-cod" value="${esc(sugerirCodigo(s['Unidad reportante']))}"></div><div class="f" id="sol-sus-w" style="display:none"><label>Sustento de la corrección *</label><input class="inp" id="sol-sus" placeholder="Coordinado con el punto focal…"></div></div>` : ''));
+    cuerpo.insertAdjacentHTML('beforebegin', cab + (pendiente ? `<div class="fg"><div class="f"><label>COD INTERNO a asignar <span class="muted">(siguiente correlativo, editable)</span></label><input class="inp" id="sol-cod" value="${esc(sugerirCodigo(s['Unidad reportante']))}"></div><div class="f" id="sol-sus-w" style="display:none"><label>Sustento de la corrección *</label>${inpMin('sol-sus', 5, 'Coordinado con el punto focal…')}</div></div>` : ''));
     let editar = false;
     F = montarForm(cuerpo, st, x => dibujarIntervencion(x, { rep: true, ro: editar ? new Set() : roTodo }));
     const ed = $('#sol-ed'); if (ed) ed.onclick = () => { editar = true; F.repintar(); ed.remove(); $('#sol-sus-w').style.display = ''; };
@@ -831,7 +944,7 @@ function abrirSolicitud(id) {
     st = Object.assign({}, r, d);
     cuerpo.insertAdjacentHTML('beforebegin', cab + '<h2>Cambios propuestos</h2><table><thead><tr><th>Campo</th><th>Actual</th><th>Propuesto</th></tr></thead><tbody>' +
       Object.keys(d).map(k => `<tr><td>${esc(k)}</td><td>${esc(r[k] || '—')}</td><td><span class="diff">${esc(d[k] || '—')}</span></td></tr>`).join('') + '</tbody></table>' +
-      (pendiente ? '<div class="f" id="sol-sus-w" style="display:none;margin-top:8px"><label>Sustento de la corrección *</label><input class="inp" id="sol-sus"></div>' : ''));
+      (pendiente ? '<div class="f" id="sol-sus-w" style="display:none;margin-top:8px"><label>Sustento de la corrección *</label>' + inpMin('sol-sus', 5) + '</div>' : ''));
     let editar = false; roTodo = new Set(CAMPOS_ID);
     F = montarForm(cuerpo, st, x => editar ? dibujarIntervencion(x, { rep: false, avisos: false }) : '');
     const ed = $('#sol-ed'); if (ed) ed.onclick = () => { editar = true; F.repintar(); ed.remove(); $('#sol-sus-w').style.display = ''; };
@@ -851,11 +964,16 @@ function abrirSolicitud(id) {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// GESTIÓN DEL CORTE (administrador, Dirección)
+// GESTIÓN DEL CORTE (administrador; la Dirección usa «Seguimiento del corte»)
 // ═════════════════════════════════════════════════════════════════════════════
+// CUI vigentes del módulo: únicos, solo códigos válidos de 7 dígitos (sin «por definir» ni textos)
+function cuisVigentes() {
+  const out = new Set();
+  S.universo.filter(enModulo).forEach(r => { if (r['Tipo de Código'] === 'CUI') partir(r['Código']).forEach(x => { if (/^\d{7}$/.test(x)) out.add(x); }); });
+  return out;
+}
 function vistaCorte() {
   const v = $('#vista'); const c = S.corte;
-  const hist = (S.cortes || []).slice().sort((a, b) => ordenF(b['Corte']) - ordenF(a['Corte']));
   let h = '';
   if (!c) {
     h += `<div class="card" style="max-width:640px"><h1>Abrir un nuevo corte</h1><p class="sub">Fija la fecha de corte y el plazo de entrega. Luego envía a las unidades el correo de solicitud con el enlace de esta página.</p>
@@ -865,7 +983,7 @@ function vistaCorte() {
     const res = resumenUnidades(); const tot = res.reduce((a, o) => ({ n: a.n + o.n, v: a.v + o.Validado, e: a.e + o.Enviado }), { n: 0, v: 0, e: 0 });
     const sinEnviar = res.filter(o => o.n && o.Enviado + o.Validado === 0).length;
     const pct = tot.n ? Math.round(tot.v / tot.n * 100) : 0;
-    const cuisV = new Set(); S.universo.filter(enModulo).forEach(r => { if (r['Tipo de Código'] === 'CUI') partir(r['Código']).forEach(x => cuisV.add(x)); });
+    const cuisV = cuisVigentes();
     h += `<div class="toolbar"><b style="font-size:16px;color:var(--blue-dk)">Corte al ${esc(c['Corte'])}</b>${chip('Enviado', 'Abierto')}<span class="muted">abierto el ${esc(c['Fecha de apertura'])} por ${esc(c['Abierto por'])} · plazo ${esc(c['Plazo'])}</span></div>
       <div class="kpis"><div class="kpi"><div class="v">${tot.n}</div><div class="l">Universo vigente del módulo</div></div>
       <div class="kpi"><div class="v">${tot.v}</div><div class="l">Validadas (${pct} %)</div><div class="bar"><i style="width:${pct}%"></i></div></div>
@@ -874,16 +992,15 @@ function vistaCorte() {
       <div class="kpi"><div class="v">${cuisV.size}</div><div class="l">CUI vigentes</div></div></div>
       <div class="dos" style="grid-template-columns:1fr 1fr">
       <div class="panel" style="position:static"><div class="tit">Paso 4 · Información financiera</div>
-        <p class="sub" style="margin:4px 0 10px">Descarga la lista de CUI vigentes para el especialista financiero y carga su archivo «CUIs_Carpeta_Departamental_inversiones…xlsx» (pestaña <b>base</b>).</p>
-        <div class="toolbar"><button class="btn" onclick="descargarCuis()">⬇ Lista de CUI vigentes (${cuisV.size})</button><button class="btn p" onclick="cargarFinanciera()">⬆ Cargar archivo de la consulta masiva</button></div>
+        <p class="sub" style="margin:4px 0 10px">1) Descarga la plantilla: trae los CUI vigentes (sin repetir) y las columnas a completar. 2) El especialista financiero completa costo, PIA, PIM, devengado y fuente. 3) Carga la misma plantilla completa (pestaña <b>base</b>).</p>
+        <div class="toolbar"><button class="btn" onclick="descargarCuis()">⬇ Plantilla con los CUI vigentes (${cuisV.size})</button><button class="btn p" onclick="cargarFinanciera()">⬆ Cargar archivo de la consulta masiva</button></div>
         <div class="nota">${c['Financiera cargada'] === 'SI' ? '<span class="ok">✓ Financiera cargada para este corte</span> · ' + esc(c['Fecha financiera']) : '<span class="warn">Pendiente de cargar en este corte</span>'}${S.financiera ? ' · ' + S.financiera.n + ' CUI en la base · consulta ' + esc(S.financiera.fecha) : ''}</div></div>
       <div class="panel" style="position:static"><div class="tit">Pasos 7–8 · Publicar el corte</div><div id="pub-est" class="muted" style="margin:8px 0">Verificando…</div>
         <div class="nota">Al publicar: la pestaña Actual anterior se guarda como «${esc(S.ultimoPublicado ? etiqueta(S.ultimoPublicado['Corte']) : 'dd-mm')}», se escribe la nueva Actual con el criterio único del monto, se actualizan CUI vigentes y los KPIs, y los reportes pasan al histórico.</div>
-        <div class="acciones"><button class="btn g" id="pub-ok" disabled>Publicar corte</button></div></div></div>`;
+        <div class="acciones"><button class="btn g" id="pub-ok" disabled>Publicar corte</button></div></div></div>
+      <h2>Avance por unidad reportante</h2>${tablaResumen(res)}`;
   }
-  h += '<h2>Cortes</h2><div class="tbl"><table><thead><tr><th>Corte</th><th>Plazo</th><th>Estado</th><th>Abierto por</th><th>Financiera</th><th>Publicado</th><th>Intervenciones</th><th>Monto total</th></tr></thead><tbody>' +
-    hist.map(x => `<tr><td>${esc(x['Corte'])}</td><td>${esc(x['Plazo'])}</td><td>${esc(x['Estado'])}</td><td>${esc(x['Abierto por'])}</td><td>${esc(x['Financiera cargada'])}</td><td>${esc(x['Fecha de publicación'] || '')}</td><td>${esc(x['Intervenciones'] || '')}</td><td>${x['Monto total S/'] ? fmtMM(num(x['Monto total S/'])) : ''}</td></tr>`).join('') + '</tbody></table></div>';
-  v.innerHTML = h;
+  v.innerHTML = h + historialCortes();
   if (!c) {
     $('#nc-ok').onclick = () => conCarga(async () => {
       const f = x => x ? x.split('-').reverse().join('/') : '';
@@ -902,14 +1019,62 @@ function vistaCorte() {
     };
   });
 }
+// ── SEGUIMIENTO DEL CORTE (Dirección OMEI): indicadores para dar seguimiento y acceso a la revisión
+function diasA(fecha) { const m = String(fecha || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if (!m) return null; const d = new Date(+m[3], +m[2] - 1, +m[1]); const h = new Date(); h.setHours(0, 0, 0, 0); return Math.round((d - h) / 864e5); }
+function vistaSeguimiento() {
+  const v = $('#vista'); const c = S.corte;
+  if (!c) { vistaCorte(); return; }
+  const res = resumenUnidades();
+  const t = res.reduce((a, o) => { ['n', 'Pendiente', 'Borrador', 'Enviado', 'Devuelto', 'Validado', 'sol'].forEach(k => { a[k] = (a[k] || 0) + o[k]; }); return a; }, {});
+  const reg = t.Enviado + t.Validado; const pReg = t.n ? Math.round(reg / t.n * 100) : 0; const pVal = t.n ? Math.round(t.Validado / t.n * 100) : 0;
+  const sinEnviar = res.filter(o => o.n && o.Enviado + o.Validado + o.Devuelto === 0);
+  const dias = diasA(c['Plazo']);
+  const plazo = dias === null ? '' : dias > 0 ? `faltan <b>${dias}</b> día${dias > 1 ? 's' : ''} para el plazo` : dias === 0 ? '<b class="warn">el plazo vence hoy</b>' : `<b class="err">plazo vencido hace ${-dias} día${dias < -1 ? 's' : ''}</b>`;
+  let h = `<div class="toolbar"><b style="font-size:16px;color:var(--blue-dk)">Corte al ${esc(c['Corte'])}</b>${chip('Enviado', 'Abierto')}<span class="muted">plazo ${esc(c['Plazo'])} · ${plazo}</span></div>
+    <div class="kpis"><div class="kpi"><div class="v">${t.n}</div><div class="l">Intervenciones del corte</div></div>
+    <div class="kpi"><div class="v">${reg}</div><div class="l">Registradas por las unidades (${pReg} %)</div><div class="bar"><i style="width:${pReg}%;background:var(--blue)"></i></div></div>
+    <div class="kpi"><div class="v">${t.Validado}</div><div class="l">Validadas por OMEI (${pVal} %)</div><div class="bar"><i style="width:${pVal}%"></i></div></div>
+    <div class="kpi"><div class="v">${t.Enviado}</div><div class="l">Por revisar</div></div>
+    <div class="kpi"><div class="v" style="color:#D93B1F">${t.Devuelto}</div><div class="l">Devueltas a la unidad</div></div>
+    <div class="kpi"><div class="v" style="color:#5B2DA8">${t.sol}</div><div class="l">Solicitudes pendientes</div></div></div>
+    <div class="dos" style="grid-template-columns:1.6fr 1fr;margin-bottom:10px"><div><h2 style="margin-top:0">Avance por unidad reportante</h2>${tablaResumen(res)}</div>
+    <div><div class="panel" style="position:static"><div class="tit">Unidades sin enviar (${sinEnviar.length})</div>
+      ${sinEnviar.length ? '<p class="sub" style="margin:4px 0 8px">Para el reiterativo:</p><table>' + sinEnviar.map(o => `<tr><td><b>${esc(o.s)}</b></td><td>${o.n} intervenciones</td><td>${o.esp ? esc(o.esp) : '<span class="warn">sin especialista</span>'}</td></tr>`).join('') + '</table>' : '<div class="ok" style="margin-top:6px">✓ Todas las unidades enviaron su reporte</div>'}</div>
+    <div class="panel" style="position:static;margin-top:12px"><div class="tit">Publicación</div>
+      <div style="margin:6px 0">${c['Financiera cargada'] === 'SI' ? '<span class="ok">✓ Información financiera cargada</span>' : '<span class="warn">Información financiera pendiente</span>'}</div>
+      <div id="seg-pub" class="muted">Verificando…</div><div class="meta" style="margin-top:6px">La publica el administrador de la plataforma.</div></div></div></div>`;
+  v.innerHTML = h + historialCortes();
+  api('publicarCorte', { soloVerificar: true }).then(r => { const el = $('#seg-pub'); if (el) el.innerHTML = r.listo ? '<span class="ok">✓ Lista para publicar</span>' : r.faltan.map(x => '<div class="err">• ' + esc(x) + '</div>').join(''); });
+}
+function historialCortes() {
+  const hist = (S.cortes || []).slice().sort((a, b) => ordenF(b['Corte']) - ordenF(a['Corte']));
+  return '<h2>Cortes</h2><div class="tbl"><table><thead><tr><th>Corte</th><th>Plazo</th><th>Estado</th><th>Abierto por</th><th>Financiera</th><th>Publicado</th><th>Intervenciones</th><th>Monto total</th></tr></thead><tbody>' +
+    hist.map(x => `<tr><td>${esc(x['Corte'])}</td><td>${esc(x['Plazo'])}</td><td>${esc(x['Estado'])}</td><td>${esc(x['Abierto por'])}</td><td>${esc(x['Financiera cargada'])}</td><td>${esc(x['Fecha de publicación'] || '')}</td><td>${esc(x['Intervenciones'] || '')}</td><td>${x['Monto total S/'] ? fmtMM(num(x['Monto total S/'])) : ''}</td></tr>`).join('') + '</tbody></table></div>';
+}
 const ordenF = s => { const m = String(s || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); return m ? +m[3] * 10000 + +m[2] * 100 + +m[1] : 0; };
 const etiqueta = s => String(s).slice(0, 5).replace('/', '-');
-function descargarCuis() {
-  if (!requiereXLSX()) return;
-  const filas = []; S.universo.filter(enModulo).forEach(r => { if (r['Tipo de Código'] === 'CUI') partir(r['Código']).forEach(c => filas.push([c, r['COD INTERNO'], r['Unidad reportante']])); });
-  const unicos = [...new Map(filas.map(f => [f[0], f])).values()];
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['CUI', 'COD INTERNO', 'Unidad reportante']].concat(unicos)), 'CUISvigentes');
-  XLSX.writeFile(wb, 'CUIs_vigentes_corte_' + S.corte['Corte'].replace(/\//g, '-') + '.xlsx');
+// Plantilla de la consulta masiva: CUI vigentes únicos y las columnas a completar (se carga la misma tabla)
+async function descargarCuis() {
+  if (!(await cargarExcelJS())) return;
+  const anio = S.corte['Corte'].slice(-4);
+  const cuis = [...cuisVigentes()].sort();
+  const wb = new ExcelJS.Workbook();
+  hojaInstrucciones(wb, ['Consulta masiva MEF · CUI vigentes del corte al ' + S.corte['Corte'] + ' (' + cuis.length + ' CUI, sin repetir)',
+    'Completa una fila por CUI en la pestaña «base». No cambies los nombres de las columnas ni la columna CUI.',
+    'costo_inversion: costo del Seguimiento de Proyectos de Inversión; si el CUI no figura, costo actualizado del Banco de Inversiones; si no figura en ninguno, 0.',
+    'pia_' + anio + ', pim_' + anio + ', dev_' + anio + ': PIA, PIM y devengado del año en curso, en soles.',
+    'fuente_costo: SEGUIMIENTO, BANCO_INVERSIONES o SIN_DATO (lista desplegable).',
+    'Guarda el archivo y súbelo en el Hub con «Cargar archivo de la consulta masiva»: verás una vista previa antes de confirmar.']);
+  const ws = wb.addWorksheet('base', { views: [{ state: 'frozen', ySplit: 1 }] });
+  ws.columns = ['CUI', 'costo_inversion', 'pia_' + anio, 'pim_' + anio, 'dev_' + anio, 'fuente_costo'].map((h, i) => ({ header: h, width: [12, 20, 18, 18, 18, 22][i] }));
+  cuis.forEach(c => ws.addRow([c, null, null, null, null, '']));
+  encabezado(ws, j => j === 1 ? '1D7A55' : '0055A5');
+  for (let r = 2; r <= cuis.length + 1; r++) {
+    ws.getCell('A' + r).numFmt = '@'; ws.getCell('A' + r).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F8F5' } };
+    ['B', 'C', 'D', 'E'].forEach(c => { ws.getCell(c + r).numFmt = '#,##0.00'; ws.getCell(c + r).dataValidation = { type: 'decimal', operator: 'greaterThanOrEqual', allowBlank: true, formulae: [0], showErrorMessage: true, error: 'Ingresa un monto en soles (número mayor o igual a 0)' }; });
+    ws.getCell('F' + r).dataValidation = { type: 'list', allowBlank: true, formulae: ['"SEGUIMIENTO,BANCO_INVERSIONES,SIN_DATO"'], showErrorMessage: true, error: 'Elige una fuente de la lista' };
+  }
+  await bajarLibro(wb, 'CUIs_Carpeta_Departamental_inversiones_plantilla_corte_' + S.corte['Corte'].replace(/\//g, '-') + '.xlsx');
 }
 function cargarFinanciera() {
   if (!requiereXLSX()) return;
@@ -928,10 +1093,12 @@ function cargarFinanciera() {
     const vig = new Set(); S.universo.filter(enModulo).forEach(r => { if (r['Tipo de Código'] === 'CUI') partir(r['Código']).forEach(c => vig.add(c)); });
     const faltan = [...vig].filter(c => !enArch.has(c));
     const porFuente = {}; datos.forEach(x => { const k2 = String(x.fuente || 'sin fuente'); porFuente[k2] = (porFuente[k2] || 0) + 1; });
+    const sinCompletar = datos.filter(x => String(x.costo ?? '').trim() === '').map(x => x.CUI);
     const m = (f.name.match(/(\d{8})_(\d{4})/) || []); const fecha = m[1] ? m[1].slice(6, 8) + '/' + m[1].slice(4, 6) + '/' + m[1].slice(0, 4) : '';
     modal('Cargar financiera · vista previa', `<p class="sub" style="margin:8px 0">${esc(f.name)} · pestaña «${esc(wb.Sheets['base'] ? 'base' : wb.SheetNames[0])}» · columnas: ${esc([cCui, cCosto, cPia, cPim, cDev, cFue].filter(Boolean).join(', '))}</p>
       <table><tr><td>CUI en el archivo / vigentes del corte</td><td class="${faltan.length ? 'warn' : 'ok'}">${enArch.size} / ${vig.size}</td></tr>
       <tr><td>Por fuente del costo</td><td>${Object.entries(porFuente).map(([a, b]) => esc(a) + ': ' + b).join(' · ')}</td></tr>
+      <tr><td>CUI sin costo completado</td><td>${sinCompletar.length ? '<span class="warn">' + sinCompletar.length + ' (se cargarán con 0): ' + esc(sinCompletar.slice(0, 12).join(', ')) + (sinCompletar.length > 12 ? '…' : '') + '</span>' : '<span class="ok">ninguno</span>'}</td></tr>
       <tr><td>CUI vigentes que no están en el archivo</td><td>${faltan.length ? '<span class="warn">' + esc(faltan.join(', ')) + '</span> (tomarán costo 0)' : '<span class="ok">ninguno</span>'}</td></tr></table>
       <div class="f" style="margin-top:10px"><label>Fecha de la consulta</label><input class="inp" id="fin-f" value="${esc(fecha)}" placeholder="dd/mm/aaaa"></div>`,
       `<button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn g" id="fin-ok">Confirmar financiera (${datos.length} CUI)</button>`);
@@ -995,7 +1162,7 @@ function editarUniverso(cod) {
   const r = S.porCod[cod]; const st = Object.assign({}, r); const admin = S.usuario.rol === 'Administrador';
   modal('Universo · ' + esc(cod), '', admin ? `<button class="btn" onclick="cerrarModal()">Cancelar</button><button class="btn p" id="un-ok">Guardar cambios</button>` : '<button class="btn" onclick="cerrarModal()">Cerrar</button>');
   $('#modal-cuerpo').insertAdjacentHTML('beforebegin', `<div class="meta" style="margin:8px 0">Alta: ${esc(r['Fecha de alta'])} · ${esc(r['Registrado por'])}${r['Última modificación'] ? ' · Última modificación: ' + esc(r['Última modificación']) + ' por ' + esc(r['Modificado por']) : ''}</div>` +
-    (admin ? `<div class="fg"><div class="f"><label>Vigente</label><select class="inp" id="un-vig"><option ${r['Vigente'] === 'SI' ? 'selected' : ''}>SI</option><option ${r['Vigente'] !== 'SI' ? 'selected' : ''}>NO</option></select></div><div class="f"><label>Sustento del cambio *</label><input class="inp" id="un-sus"></div></div>` : ''));
+    (admin ? `<div class="fg"><div class="f"><label>Vigente</label><select class="inp" id="un-vig"><option ${r['Vigente'] === 'SI' ? 'selected' : ''}>SI</option><option ${r['Vigente'] !== 'SI' ? 'selected' : ''}>NO</option></select></div><div class="f"><label>Sustento del cambio *</label>${inpMin('un-sus', 5)}</div></div>` : ''));
   montarForm($('#modal-cuerpo'), st, x => dibujarIntervencion(x, { rep: false, avisos: false, ro: admin ? new Set() : new Set(CAMPOS_ID) }));
   if (admin) $('#un-ok').onclick = () => conCarga(async () => {
     const cambios = {}; CAMPOS_ID.forEach(k => { if (String(st[k] || '') !== String(r[k] || '')) cambios[k] = st[k]; });
