@@ -532,23 +532,24 @@ function pfAbrir(cod) {
     <span class="blk g">IDENTIFICACIÓN (del universo)</span>
     <div class="fg">${campo('Tipo', fRo(r['Tipo']))}${campo('Área de influencia', fRo(r['Área de influencia']))}
     ${t.datos ? campo('Tipo de Infraestructura', fRo(r['Tipo de Infraestructura'])) + campo('Tipo de Órgano ejecutor', fRo(r['Tipo de Órgano ejecutor'])) : ''}
-    ${campo('Hoja de Ruta', fRo(r['Hoja de Ruta'] + (r['Hoja de Ruta'] === 'SI' ? ' · Cartera Priorizada: ' + (r['Cartera Priorizada'] || 'NO') : '')))}${campo('Crédito suplementario', fRo(r['Crédito suplementario'] + (r['Crédito suplementario'] === 'SI' ? ' · S/ ' + fmt(r['Monto del crédito S/']) : '')))}</div>
+    ${campo('Hoja de Ruta', fRo(r['Hoja de Ruta'] + (r['Hoja de Ruta'] === 'SI' ? ' · Cartera Priorizada: ' + (r['Cartera Priorizada'] || 'NO') : '')))}</div>
     <div class="meta" style="margin-top:6px">¿Otro dato mal registrado? <a href="#" onclick="formCorreccion('${esc(cod)}');return false">Solicitar corrección</a> · <a href="#" onclick="formBaja('${esc(cod)}');return false">Solicitar baja</a></div>
     <div id="pf-form"></div><div id="pf-err"></div>
     <div class="acciones">${editable ? `<button class="btn" id="pf-borr">Guardar borrador</button><button class="btn p" id="pf-env">Guardar y enviar a OMEI</button>` : (S.corte ? '<span class="muted">Validado por OMEI: ya no se puede modificar en este corte.</span>' : '<span class="muted">Sin corte abierto.</span>')}</div></div>`;
   const dibujar = st => {
     const tc = st['Tipo de Código']; const cuis = tc === 'CUI' ? partir(st['Código']) : [];
     let h = '';
-    if (editable && !st._cambiar) h += `<div style="margin-top:10px"><button class="btn s" data-seg="_cambiar" data-v="1">Cambiar código o crédito suplementario</button> <span class="meta">Código actual: ${esc(textoCodigo(r) || 'sin código')}</span></div>`;
-    if (st._cambiar) {
-      h += '<span class="blk n">CAMBIO DE CÓDIGO O CRÉDITO (lo valida OMEI)</span><div class="fg">';
-      h += campo('Tipo de Código', fSeg('Tipo de Código', t.codigos, tc, !editable));
-      h += campo('Código(s) <span class="muted">(Enter o clic fuera para añadir)</span>', (tc === 'CUI' || tc === 'IDEA') ? fChips('Código', st['Código'], 'texto', !editable, tc) : '<input class="inp" disabled placeholder="No lleva código">', '',
-        cuis.length && !cuis.every(c => /^\d{7}$/.test(c)) ? '<span class="err">El CUI debe tener 7 dígitos</span>' : (r['Código'] ? '<span class="muted">antes: ' + esc(textoCodigo(r)) + '</span>' : ''));
-      h += campo('¿Tiene crédito suplementario?', fSeg('Crédito suplementario', ['SI', 'NO'], st['Crédito suplementario'], !editable));
-      h += campo('Monto del crédito S/', st['Crédito suplementario'] === 'SI' ? fInp('Monto del crédito S/', st['Monto del crédito S/'], 'S/', !editable) : '<input class="inp" disabled placeholder="🔒 Solo si tiene crédito">');
-      h += campo('Motivo del cambio *', fInp('_motivo', st._motivo, 'Ej.: se registró el CUI en el Banco de Inversiones', !editable), 'full') + '</div>';
-    }
+    // Código y crédito: siempre visibles; se editan solo al pulsar «Cambiar»
+    const ed = editable && !!st._cambiar;
+    h += `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="blk n">CÓDIGO Y CRÉDITO SUPLEMENTARIO${ed ? ' · CAMBIO EN CURSO (lo valida OMEI)' : ''}</span>` +
+      (editable ? (ed ? '<button class="btn s" data-seg="_cambiar" data-v="1" data-toggle="1">✕ Cancelar el cambio</button>' : '<button class="btn s" data-seg="_cambiar" data-v="1">✎ Cambiar código o crédito</button>') : '') + '</div><div class="fg">';
+    h += campo('Tipo de Código', fSeg('Tipo de Código', t.codigos, tc, !ed));
+    h += campo('Código(s)' + (ed ? ' <span class="muted">(Enter o clic fuera para añadir)</span>' : ''), (tc === 'CUI' || tc === 'IDEA') ? fChips('Código', st['Código'], 'texto', !ed, tc) : '<input class="inp" disabled placeholder="No lleva código">', '',
+      ed && cuis.length && !cuis.every(c => /^\d{7}$/.test(c)) ? '<span class="err">El CUI debe tener 7 dígitos</span>' : (ed && r['Código'] ? '<span class="muted">antes: ' + esc(textoCodigo(r)) + '</span>' : ''));
+    h += campo('¿Tiene crédito suplementario?', fSeg('Crédito suplementario', ['SI', 'NO'], st['Crédito suplementario'], !ed));
+    h += campo('Monto del crédito S/', st['Crédito suplementario'] === 'SI' ? (ed ? fInp('Monto del crédito S/', st['Monto del crédito S/'], 'S/') : fRo('S/ ' + fmt(st['Monto del crédito S/']))) : '<input class="inp" disabled placeholder="Sin crédito suplementario">');
+    if (ed) h += campo('Motivo del cambio *', fInp('_motivo', st._motivo, 'Ej.: se registró el CUI en el Banco de Inversiones'), 'full');
+    h += '</div>';
     h += '<span class="blk b">REPORTE DEL CORTE ' + esc(S.corte ? S.corte['Corte'] : '') + (rep ? '' : ' (precargado con el último corte)') + '</span><div class="fg">';
     if (t.datos) {
       const tcf = st['Tipo de Código'];
@@ -564,7 +565,10 @@ function pfAbrir(cod) {
     h += campo('Estado situacional * <span class="muted">(últimas actividades al ' + esc(S.corte ? S.corte['Corte'] : '') + ')</span>', fTxt('Estado situacional', st['Estado situacional'], '', !editable), 'full') + '</div>';
     return h;
   };
-  const F = montarForm($('#pf-form'), st, dibujar, k => { if (k === '_cambiar') { st._cambiar = true; F.repintar(); } });
+  const F = montarForm($('#pf-form'), st, dibujar, k => {
+    if (k !== '_cambiar') return;
+    if (!st._cambiar) { CAMBIO_DIRECTO.forEach(x => { st[x] = r[x]; }); st._motivo = ''; F.repintar(); }   // al cancelar vuelve a lo del universo
+  });
   if (!editable) return;
   const guardar = enviar => conCarga(async () => {
     const cambiosIt = {}; if (st._cambiar) CAMBIO_DIRECTO.forEach(k => { if (String(st[k] || '') !== String(r[k] || '')) cambiosIt[k] = st[k]; });
