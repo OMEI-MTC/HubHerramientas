@@ -91,6 +91,8 @@ var CAMPOS_IDENTIDAD = ['Tipo', 'Nombre de la intervención', 'Área de influenc
 // Campos que se piden por «Solicitar corrección»: la identificación (sin el nombre, que no se modifica por esta vía)
 // más el traspaso a otra unidad reportante (intervenciones que cambian de unidad según la fase).
 var CAMPOS_CORRECCION = CAMPOS_IDENTIDAD.filter(function (k) { return k !== 'Nombre de la intervención'; }).concat(['Unidad reportante']);
+// Catálogo fijo del Tipo de Órgano ejecutor (nivel de gobierno del ejecutor; verificable en el Banco de Inversiones para los CUI)
+var ORGANOS_EJECUTORES = ['NACIONAL', 'REGIONAL', 'PROVINCIAL', 'DISTRITAL'];
 var CAMPOS_REPORTE = ['Monto reportado S/', 'Beneficiarios', 'Modalidad de ejecución', 'Fase',
   'Financiamiento (SI/NO)', 'Estado situacional'];
 var DEPARTAMENTOS = ['AMAZONAS', 'ÁNCASH', 'APURÍMAC', 'AREQUIPA', 'AYACUCHO', 'CAJAMARCA', 'CALLAO', 'CUSCO',
@@ -1019,6 +1021,9 @@ function prepararBase() {
   if (!listas.some(function (l) { return l['Lista'] === 'Departamento'; })) {
     agregar(H.CAT_LISTAS, DEPARTAMENTOS.map(function (d) { return { 'Lista': 'Departamento', 'Valor': d }; }));
   }
+  var organos = listas.filter(function (l) { return l['Lista'] === 'Tipo de Órgano ejecutor'; }).map(function (l) { return clave(l['Valor']); });
+  var faltan = ORGANOS_EJECUTORES.filter(function (o) { return organos.indexOf(clave(o)) < 0; });
+  if (faltan.length) agregar(H.CAT_LISTAS, faltan.map(function (o) { return { 'Lista': 'Tipo de Órgano ejecutor', 'Valor': o }; }));
   if (!listas.some(function (l) { return l['Lista'] === 'Incluida en'; })) {
     agregar(H.CAT_LISTAS, ['Discurso 28', 'Discurso Premier', 'Plan de Gobierno'].map(function (d) { return { 'Lista': 'Incluida en', 'Valor': d }; }));
   }
@@ -1116,8 +1121,10 @@ function importarCargaInicial() {
     var cods = partirCodigos(campo(r, ['Código']));
     var infra = campo(r, ['Tipo de Infraestructura']) || campo(a, ['Tipo de Infraestructura']);
     var organo = campo(a, ['Tipo de Órgano ejecutor']);
+    ORGANOS_EJECUTORES.forEach(function (o) { if (clave(o) === clave(organo)) organo = o; });   // «Nacional» y «NACIONAL» → NACIONAL
     if (infra) listas['Tipo de Infraestructura'][infra] = 1;
     if (organo) listas['Tipo de Órgano ejecutor'][organo] = 1;
+    ORGANOS_EJECUTORES.forEach(function (o) { listas['Tipo de Órgano ejecutor'][o] = 1; });
     var hr = esSi(campo(r, ['HOJA DE RUTA'])) ? 'SI' : 'NO';
     var cartera = '', relev = '', incl = '';
     if (hr === 'SI') {
@@ -1158,7 +1165,11 @@ function importarCargaInicial() {
   escribir(H.CAT_UNIDADES, Object.keys(unidades).sort().map(function (s) { return { 'Sigla': s, 'Nombre': s, 'Viceministerio': unidades[s] }; }));
   var otras = leer(H.CAT_LISTAS).filter(function (l) { return !listas[l['Lista']] || !Object.keys(listas[l['Lista']]).length; });
   var nuevas = [];
-  Object.keys(listas).forEach(function (n) { Object.keys(listas[n]).sort().forEach(function (v) { nuevas.push({ 'Lista': n, 'Valor': v }); }); });
+  Object.keys(listas).forEach(function (n) {
+    var vals = Object.keys(listas[n]).sort();
+    if (n === 'Tipo de Órgano ejecutor') vals = ORGANOS_EJECUTORES.concat(vals.filter(function (v) { return ORGANOS_EJECUTORES.indexOf(v) < 0; }));   // orden del catálogo
+    vals.forEach(function (v) { nuevas.push({ 'Lista': n, 'Valor': v }); });
+  });
   escribir(H.CAT_LISTAS, otras.concat(nuevas));
   // Fases fuera del catálogo: se informa para corregir en el primer corte
   var mf = {}; catalogoModalidadFase().forEach(function (f) { mf[f['Modalidad'] + '|' + clave(f['Fase'])] = f['Fase']; });
