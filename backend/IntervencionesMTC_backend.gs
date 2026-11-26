@@ -88,6 +88,9 @@ var CAMPOS_CAMBIO_DIRECTO = [];
 var CAMPOS_IDENTIDAD = ['Tipo', 'Nombre de la intervención', 'Área de influencia', 'Tipo de Código', 'Código',
   'Tipo de Infraestructura', 'Tipo de Órgano ejecutor', 'Crédito suplementario', 'Monto del crédito S/',
   'Hoja de Ruta', 'Cartera Priorizada', 'Relevancia sectorial', 'Incluida en'];
+// Campos que se piden por «Solicitar corrección»: la identificación (sin el nombre, que no se modifica por esta vía)
+// más el traspaso a otra unidad reportante (intervenciones que cambian de unidad según la fase).
+var CAMPOS_CORRECCION = CAMPOS_IDENTIDAD.filter(function (k) { return k !== 'Nombre de la intervención'; }).concat(['Unidad reportante']);
 var CAMPOS_REPORTE = ['Monto reportado S/', 'Beneficiarios', 'Modalidad de ejecución', 'Fase',
   'Financiamiento (SI/NO)', 'Estado situacional'];
 var DEPARTAMENTOS = ['AMAZONAS', 'ÁNCASH', 'APURÍMAC', 'AREQUIPA', 'AYACUCHO', 'CAJAMARCA', 'CALLAO', 'CUSCO',
@@ -445,7 +448,15 @@ function accDatos(u) {
     universo: universo.filter(function (r) { return vis[r['Unidad reportante']]; }),
     reportes: abierto ? leer(H.REPORTES).filter(function (r) { return r['Corte'] === abierto['Corte'] && vis[r['Unidad reportante']]; }) : [],
     ultimos: leer(H.ULTIMO).filter(function (r) { return vis[r['Unidad reportante']]; }),
-    solicitudes: leer(H.SOLICITUDES).filter(function (s) { return vis[s['Unidad reportante']]; }),
+    // El punto focal también ve los cambios de unidad que le van a llegar (solo lectura; los resuelve OMEI)
+    solicitudes: leer(H.SOLICITUDES).filter(function (s) {
+      return vis[s['Unidad reportante']] || (u.rol === ROLES.PF && s['Tipo'] === 'Corrección' && vis[jsonSeguro(s['Datos'], {})['Unidad reportante']]);
+    }).map(function (s) {
+      if (vis[s['Unidad reportante']]) return s;
+      var o = {}; for (var k in s) o[k] = s[k];
+      var f = universo.filter(function (r) { return r['COD INTERNO'] === s['COD INTERNO']; })[0];
+      o['Nombre'] = f ? f['Nombre de la intervención'] : ''; return o;
+    }),
     // Para avisos de duplicados en todo el universo vigente (nombre y CUI), sin datos sensibles
     indice: universo.filter(function (r) { return esSi(r['Vigente']); }).map(function (r) {
       return [r['COD INTERNO'], r['Unidad reportante'], r['Nombre de la intervención'], r['Tipo de Código'] === 'CUI' ? r['Código'] : ''];
@@ -545,9 +556,11 @@ function accSolicitar(u, d) {
   if (d.tipo === 'Corrección') {
     var cat = leerCatalogos();
     var cambios = {};
-    Object.keys(d.cambios || {}).forEach(function (k) { if (CAMPOS_IDENTIDAD.indexOf(k) >= 0 && txt(d.cambios[k]) !== txt(fila[k])) cambios[k] = d.cambios[k]; });
+    if (d.cambios && 'Nombre de la intervención' in d.cambios && nombreNormal(d.cambios['Nombre de la intervención']) !== nombreNormal(fila['Nombre de la intervención']))
+      return { ok: false, mensaje: 'El nombre de la intervención no se modifica por solicitud de corrección' };
+    Object.keys(d.cambios || {}).forEach(function (k) { if (CAMPOS_CORRECCION.indexOf(k) >= 0 && txt(d.cambios[k]) !== txt(fila[k])) cambios[k] = d.cambios[k]; });
     if (!Object.keys(cambios).length) return { ok: false, mensaje: 'No hay cambios' };
-    var prop = normalizarIdentidad(aplicarCambios(fila, cambios), cat); prop['Unidad reportante'] = fila['Unidad reportante'];
+    var prop = normalizarIdentidad(aplicarCambios(fila, cambios), cat);
     var err = validarIdentidad(prop, cat); if (err.length) return { ok: false, mensaje: err.join('; ') };
     Object.keys(cambios).forEach(function (k) { datos[k] = prop[k]; });
     ['Cartera Priorizada', 'Relevancia sectorial', 'Incluida en', 'Monto del crédito S/', 'Código'].forEach(function (k) { if (prop[k] !== fila[k]) datos[k] = prop[k]; });
@@ -695,12 +708,14 @@ function accResolverSolicitud(u, d) {
         escribir(H.REPORTES, rs);
       }
     } else {
-      var cambios = d.cambios || datos;
-      var prop = normalizarIdentidad(aplicarCambios(fila, cambios), cat); prop['Unidad reportante'] = fila['Unidad reportante'];
+      var cambios = {}; var fuente = d.cambios || datos;
+      Object.keys(fuente).forEach(function (k) { if (CAMPOS_CORRECCION.indexOf(k) >= 0) cambios[k] = fuente[k]; });   // el nombre no cambia por esta vía
+      var prop = normalizarIdentidad(aplicarCambios(fila, cambios), cat);
       var e2 = validarIdentidad(prop, cat); if (e2.length) return { ok: false, mensaje: e2.join('; ') };
       var c2 = diferencias(datos, prop, Object.keys(datos));
       if (c2.length && txt(d.sustento).length < 5) return { ok: false, mensaje: 'Indica el sustento de la corrección' };
       CAMPOS_IDENTIDAD.forEach(function (k) { fila[k] = prop[k]; });
+      if (prop['Unidad reportante'] !== fila['Unidad reportante']) traspasarUnidad(fila, prop['Unidad reportante'], cat, corte);
       s['Sustento OMEI'] = txt(d.sustento);
     }
     fila['Última modificación'] = ahora(); fila['Modificado por'] = u.usuario;
@@ -710,6 +725,20 @@ function accResolverSolicitud(u, d) {
   escribir(H.SOLICITUDES, sols);
   anotar(u.usuario, 'Solicitud aprobada', s['ID'] + ' · ' + s['Tipo'] + ' · ' + s['COD INTERNO']);
   return { ok: true, cod: s['COD INTERNO'], mensaje: s['Tipo'] === 'Alta' ? 'Alta aprobada: ' + s['COD INTERNO'] : 'Solicitud aprobada' };
+}
+// Traspaso de una intervención a otra unidad reportante: conserva el COD INTERNO y su historial;
+// el reporte del corte en curso y el último reporte publicado pasan a la nueva unidad.
+function traspasarUnidad(fila, nueva, cat, corte) {
+  fila['Unidad reportante'] = nueva;
+  fila['Viceministerio'] = (cat.unidades[nueva] || {}).vice || fila['Viceministerio'];
+  if (corte) {
+    var rs = leer(H.REPORTES); var cambio = false;
+    rs.forEach(function (r) { if (r['Corte'] === corte['Corte'] && r['COD INTERNO'] === fila['COD INTERNO']) { r['Unidad reportante'] = nueva; cambio = true; } });
+    if (cambio) escribir(H.REPORTES, rs);
+  }
+  var ul = leer(H.ULTIMO); var c2 = false;
+  ul.forEach(function (r) { if (r['COD INTERNO'] === fila['COD INTERNO']) { r['Unidad reportante'] = nueva; c2 = true; } });
+  if (c2) escribir(H.ULTIMO, ul);
 }
 function diferencias(a, b, campos) {
   var out = [];
