@@ -407,6 +407,17 @@
   }
   .btn-lapiz:hover { background: var(--azul); }
 
+  /* btn ayuda memoria (solo cartera priorizada) */
+  .btn-am {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 4px 7px; border-radius: 8px; font-size: 10px; font-weight: 700;
+    background: var(--blanco); color: var(--azul-dk);
+    border: 1px solid var(--azul-dk); cursor: pointer; white-space: nowrap;
+    transition: background .15s, color .15s;
+  }
+  .btn-am:hover { background: var(--azul-dk); color: var(--blanco); }
+  .btn-am:disabled { opacity: .5; cursor: wait; }
+
   /* toggle priorización (columna, interactivo) */
   .toggle-prio {
     display: inline-block; width: 34px; height: 19px; border-radius: 10px;
@@ -1136,6 +1147,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@9.6.1/dist/index.iife.js"></script>
 <script>
 // ── CONFIGURACIÓN ──────────────────────────────────────────────────────────────
 const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbybphOTs9ZZJnFDG9qDwYYdQ-Pumtvi6dX8DpSzSQHPdJd9J6B7C-o_U8CvhcYq6YAW/exec';
@@ -1146,6 +1158,17 @@ const TSV_ESTADO_INTERV= 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1
 const TSV_ESTADO_HITOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=560017280&single=true&output=tsv';
 const TSV_ACCESOS      = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=1230572390&single=true&output=tsv';
 const TSV_PREV_INTERV  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=205553859&single=true&output=tsv';
+// Base publicada de la Carpeta Departamental (pestaña Actual), la misma que leen el módulo
+// Intervenciones MTC y el visor. De aquí salen CUI, modalidad, monto y beneficiarios (cruce por COD INTERNO).
+// Pendiente: al reestructurar el módulo con el universo único, apuntar a la nueva base.
+const CSV_CARPETA_ACTUAL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQCh1cjWIRCOycRRdMQJHbY-yRa7CZPJHGE6egqMrw8-fRkDv-z20oeqNrUltTeVIwHjXZJN45on0L-/pub?gid=1212162516&single=true&output=csv';
+// Datos complementarios para intervenciones de la Hoja de Ruta que NO están en la Carpeta (Actual),
+// p. ej. no vigentes en el universo. Regla: si el COD INTERNO no está en Actual, se usa el Maestro
+// y, si existe aquí, este dato (registrado a mano con su fuente). Pendiente: al reformular el universo,
+// todo debe salir de la base nueva, con la búsqueda financiera sobre todo el universo (vigentes y no vigentes).
+const DATOS_COMPLEMENTARIOS = {
+  'PVD-2026035': { cui: '2266582', modalidad: 'OBRA PÚBLICA', monto: 154103780.74, benef: 102076, fuente: 'SSI – Sistema de Seguimiento de Inversiones (MEF), consultado el 27-nov-2026' }
+};
 const TSV_PREV_HITOS   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1hRBtKw9_5B6lTJBkSV8APp-PNIpV0EsrpmfZtJvv9ewU-41cEdwO1nY7uv52it6UauwoQ5EcZ/pub?gid=1758672642&single=true&output=tsv';
 
 
@@ -1153,6 +1176,7 @@ const TSV_PREV_HITOS   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSHTO1
 let maestro      = []; // filas crudas del TSV maestro
 let intervenciones = []; // objetos agrupados { codigo, nombre, organo, eje, linea, hitos[] }
 let estadoInterv = {}; // { codigo → { ... } } — Estado Actual (validado)
+let carpetaActual = {}; // { COD INTERNO → { cuiPanel, cuiTexto, modalidad, monto, benef, ... } } — Carpeta Departamental (Actual)
 let estadoHitos  = {}; // { codhito → { ... } } — Estado Actual (validado)
 let prevInterv   = {}; // { codigo → { ... } } — Prev (pendiente de validación)
 let prevHitos    = {}; // { codhito → { ... } } — Prev (pendiente de validación)
@@ -1271,14 +1295,16 @@ function parseTSV(txt) {
 async function cargarDatos() {
   try {
     const [tsvMaestroInterv, tsvMaestroHitos, tsvInterv, tsvHitos, tsvAccesos,
-           tsvPrevInterv, tsvPrevHitos] = await Promise.all([
+           tsvPrevInterv, tsvPrevHitos, csvActual] = await Promise.all([
       fetchTSV(TSV_MAESTRO_INTERV),
       fetchTSV(TSV_MAESTRO_HITOS),
       fetchTSV(TSV_ESTADO_INTERV),
       fetchTSV(TSV_ESTADO_HITOS),
       fetchTSV(TSV_ACCESOS),
       fetchTSV(TSV_PREV_INTERV),
-      fetchTSV(TSV_PREV_HITOS)
+      fetchTSV(TSV_PREV_HITOS),
+      // Si la base de la Carpeta no carga, el panel funciona igual (CUI del Maestro, AM sin datos financieros)
+      fetchTSV(CSV_CARPETA_ACTUAL).catch(e => { console.warn('No se pudo cargar la Carpeta Departamental (Actual):', e.message); return ''; })
     ]);
 
     // Hoja Accesos: Órgano | Contraseña | Usuario | Tipo de Usuario
@@ -1319,7 +1345,8 @@ async function cargarDatos() {
         equipo:          f['EQUIPO'] || '',
         director:        f['DIRECTOR(A)'] || '',
         resumenGrupo:    f['Grupo'] || '',         // agrupación del resumen por Grupo
-        cui:             f['CUI'] || '',
+        cuiMaestro:      (f['CUI'] || '').replace(/\s+/g, ' ').trim(),
+        cui:             (f['CUI'] || '').replace(/\s+/g, ' ').trim(), // se reemplaza con el de la Carpeta (Actual) si el código existe allí
         // "Incluida en" (antes "Priorizadas"): compromisos o discursos donde se menciona la
         // intervención, separados por ";". Se acepta el nombre anterior de la columna y se
         // ignora el valor antiguo "No priorizada" (vacío = "No aplica").
@@ -1350,6 +1377,16 @@ async function cargarDatos() {
     });
 
     intervenciones = Object.values(mapa);
+
+    // CUI del panel: el de la Carpeta Departamental (Actual) por COD INTERNO; si el código no
+    // está allí (códigos aún no alineados al universo), se mantiene el CUI del Maestro.
+    carpetaActual = leerCarpetaActual(csvActual);
+    intervenciones.forEach(i => {
+      const r = carpetaActual[i.codigo];
+      const dc = DATOS_COMPLEMENTARIOS[i.codigo];
+      if (r) i.cui = r.cuiPanel;
+      else if (!i.cui && dc && dc.cui) i.cui = dc.cui;
+    });
 
     // Construir mapa Viceministerio → Set de órganos subordinados
     viceSet = new Set();
@@ -2313,6 +2350,9 @@ function renderTabla() {
         ${tieneRegistro
           ? `<span style="font-size:11px;color:var(--texto);font-weight:700">${esc(est.fechaReg)}</span>`
           : `<span style="font-size:11px;color:var(--gris-texto);font-style:italic">Sin registro</span>`}
+        ${esCarteraPriorizada(interv) ? `<button class="btn-am" onclick="descargarAM('${esc(interv.codigo)}', this)" title="Descargar ayuda memoria (Word)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>AM
+        </button>` : ''}
         ${mostrarLapiz ? `<button class="btn-lapiz" onclick="abrirModal('${esc(interv.codigo)}')" title="${esValidacion() ? 'Revisar y validar' : 'Registrar actualización'}">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -2482,6 +2522,198 @@ function chipEstadoCumpl(estado) {
 
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── CARPETA DEPARTAMENTAL (ACTUAL): CUI, modalidad, monto y beneficiarios ─────────────
+// Lee CSV respetando celdas entre comillas (con comas y saltos de línea).
+function leerCSV(txt) {
+  const sep = txt.split('\n', 1)[0].includes('\t') ? '\t' : ',';
+  const filas = []; let fila = [], campo = '', i = 0, inicio = true, comillas = false;
+  while (i < txt.length) {
+    const ch = txt[i];
+    if (comillas) {
+      if (ch === '"') { if (txt[i + 1] === '"') { campo += '"'; i += 2; continue; } comillas = false; i++; continue; }
+      campo += ch; i++; continue;
+    }
+    if (inicio && ch === '"') { comillas = true; inicio = false; i++; continue; }
+    if (ch === sep) { fila.push(campo); campo = ''; inicio = true; i++; continue; }
+    if (ch === '\r') { i++; continue; }
+    if (ch === '\n') { fila.push(campo); filas.push(fila); fila = []; campo = ''; inicio = true; i++; continue; }
+    campo += ch; inicio = false; i++;
+  }
+  if (campo !== '' || fila.length) { fila.push(campo); filas.push(fila); }
+  return filas;
+}
+const normCol = t => String(t || '').trim().replace(/\s+/g, ' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+// Devuelve { COD INTERNO → datos }. Columnas ubicadas por nombre (la hoja tiene filas de título arriba).
+function leerCarpetaActual(txt) {
+  const out = {};
+  if (!txt) return out;
+  const filas = leerCSV(txt);
+  const iHead = filas.findIndex(f => f.some(c => normCol(c) === 'cod interno'));
+  if (iHead < 0) { console.warn('Carpeta (Actual): no se encontró la columna COD INTERNO'); return out; }
+  const head = filas[iHead].map(normCol);
+  const col = n => head.indexOf(normCol(n));
+  const ix = { cod: col('COD INTERNO'), tipo: col('Tipo de Código'), codigo: col('Código'), proySer: col('Proyecto / Servicio'),
+    monto: col('Monto de la intervención S/'), compartido: col('CUI compartido'), benef: col('Beneficiarios'),
+    modalidad: col('Modalidad de ejecución'), corte: col('Corte') };
+  const get = (f, k) => ix[k] >= 0 ? String(f[ix[k]] || '').replace(/\s+/g, ' ').trim() : '';
+  for (let r = iHead + 1; r < filas.length; r++) {
+    const f = filas[r], cod = get(f, 'cod');
+    if (!cod) continue;
+    const tipo = get(f, 'tipo').toUpperCase(), codigo = get(f, 'codigo');
+    const cuis = codigo.match(/\d{5,}/g) || [];
+    const esNA = !codigo || codigo === '-' || /^no aplica$/i.test(codigo);
+    // CUI para el panel (filtro y Excel): solo CUI válidos; los textos (Pendiente, Por definir) se muestran tal cual
+    let cuiPanel = '', cuiTexto = 'No aplica';
+    if (tipo === 'CUI') {
+      cuiPanel = cuis.length ? cuis.join(', ') : (esNA ? '' : codigo);
+      cuiTexto = cuiPanel || 'No aplica';
+    } else if (tipo === 'IDEA') {
+      cuiTexto = cuis.length ? 'Código de idea ' + cuis.join(', ') : 'Idea (sin código)';
+    } else if (!esNA) {
+      cuiTexto = codigo; // p. ej. PENDIENTE
+    }
+    out[cod] = { cuiPanel, cuiTexto, proySer: get(f, 'proySer'), monto: get(f, 'monto'),
+      compartido: get(f, 'compartido'), benef: get(f, 'benef'), modalidad: get(f, 'modalidad'), corte: get(f, 'corte') };
+  }
+  return out;
+}
+
+// Cartera Priorizada = periodicidad SEMANAL en el Maestro (misma regla del filtro de cartera)
+function esCarteraPriorizada(i) {
+  return (i.periodicidad || '').trim().toUpperCase() === 'SEMANAL';
+}
+
+// ── AYUDA MEMORIA POR INTERVENCIÓN (Word) ───────────────────────────────────────────────
+// Fuentes: Maestro de la Hoja de Ruta (nombre, relevancia, área, a cargo, incluida en),
+// Estado Actual de la Hoja de Ruta (estado situacional publicado, fecha de registro e hitos)
+// y Carpeta Departamental › Actual (CUI, modalidad, monto y beneficiarios).
+function amFechaDDMMAAAA(t) {
+  const m = String(t || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return m[1].padStart(2, '0') + '/' + m[2].padStart(2, '0') + '/' + m[3];
+  const iso = String(t || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return iso ? iso[3] + '/' + iso[2] + '/' + iso[1] : (String(t || '').trim() || 'Sin registro');
+}
+function amNumero(t) { // "145386193" / "145,386,193.00" → número; NaN si no es un número limpio
+  const s = String(t || '').trim();
+  if (/^\d+(\.\d+)?$/.test(s)) return parseFloat(s);
+  if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) return parseFloat(s.replace(/,/g, ''));
+  return NaN;
+}
+const amMiles = n => Math.round(n).toLocaleString('en-US');
+
+function amDatos(interv) {
+  const r = carpetaActual[interv.codigo];
+  const est = estadoInterv[interv.codigo] || {};
+  const sinDatosInterv = /normativa|pol[ií]tica|acci[oó]n/i.test(interv.tipo || '');
+  let cui, modalidad, monto, benef;
+  if (r) {
+    cui = r.cuiTexto;
+    modalidad = r.modalidad && r.modalidad !== '-' ? r.modalidad : 'No disponible';
+    const m = amNumero(r.monto);
+    if (!isNaN(m)) {
+      monto = 'S/ ' + amMiles(m);
+      const n = (r.compartido.match(/(\d+)/) || [])[1];
+      if (/^s[ií]/i.test(r.compartido)) monto += n ? ` (CUI compartido con ${n} intervenciones)` : ' (CUI compartido)';
+    } else monto = 'No disponible';
+    const b = amNumero(r.benef);
+    benef = !isNaN(b) ? amMiles(b) : (r.benef && r.benef !== '-' ? r.benef : 'No disponible');
+  } else if (sinDatosInterv) {
+    cui = modalidad = monto = benef = 'No aplica';
+  } else {
+    // Código no está en la Carpeta (Actual): datos del Maestro y, si existen, los datos complementarios
+    const dc = DATOS_COMPLEMENTARIOS[interv.codigo] || {};
+    cui = interv.cuiMaestro || dc.cui || 'No disponible';
+    modalidad = dc.modalidad || 'No disponible';
+    monto = typeof dc.monto === 'number' ? 'S/ ' + amMiles(dc.monto) : 'No disponible';
+    benef = typeof dc.benef === 'number' ? amMiles(dc.benef) : 'No disponible';
+  }
+  const hitos = (interv.hitos || []).map(h => {
+    const eh = estadoHitos[h.codhito] || {};
+    const p = parseCumplimiento(eh.fechaCumplimiento);
+    const fecha = p ? p.label : (eh.fechaCumplimiento || 'sin fecha');
+    return `${h.nombre} (${fecha}) ${estadoHito(eh)}`;
+  });
+  return {
+    codigo: interv.codigo, fecha: amFechaDDMMAAAA(est.fechaReg), nombre: interv.nombre, cui, modalidad,
+    relevancia: interv.relevancia || '—', monto, benef, area: interv.area || '—', aCargo: interv.organo || '—',
+    estado: (est.estado || 'Sin registro').replace(/\\n/g, '\n'), hitos, incluida: (interv.priorizadas || []).join('; ')
+  };
+}
+
+function amDocumentoHR(d) {
+  const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle,
+    Header, TabStopType, VerticalAlign, LevelFormat } = docx;
+  const AZUL = '0055A5', ROJO = 'C8102E', GRIS = '5A6472', GRIS_CL = 'A6A6A6', FONT = 'Arial';
+  const W = 8504, C1 = 2410, C2 = W - C1; // A4 con márgenes de 3 cm (igual al modelo)
+  const run = (t, o = {}) => new TextRun({ text: String(t), font: FONT, size: o.size || 20, bold: o.bold, italics: o.it, color: o.color });
+  const linea = { style: BorderStyle.SINGLE, size: 4, color: '000000' };
+  const bordes = { top: linea, bottom: linea, left: linea, right: linea };
+  const parrafos = (txt, o = {}) => String(txt).split(/\n\s*\n|\n/).filter(t => t.trim() !== '').map((t, i, arr) =>
+    new Paragraph({ alignment: o.align || AlignmentType.JUSTIFIED, spacing: { after: i < arr.length - 1 ? 120 : 0 }, children: [run(t.trim(), o)] }));
+  const fila = (etq, contenido, o = {}) => new TableRow({ cantSplit: !o.largo, children: [
+    new TableCell({ width: { size: C1, type: WidthType.DXA }, borders: bordes, verticalAlign: VerticalAlign.CENTER,
+      margins: { top: 60, bottom: 60, left: 100, right: 100 },
+      children: [new Paragraph({ children: [run(etq, o.gris ? { it: true, color: GRIS_CL } : { bold: true })] })] }),
+    new TableCell({ width: { size: C2, type: WidthType.DXA }, borders: bordes, verticalAlign: VerticalAlign.CENTER,
+      margins: { top: 60, bottom: 60, left: 100, right: 100 }, children: contenido })
+  ] });
+  const txt = (t, o = {}) => parrafos(t, o);
+  const hitos = d.hitos.length
+    ? d.hitos.map(h => new Paragraph({ numbering: { reference: 'hitos', level: 0 }, alignment: AlignmentType.LEFT, children: [run(h)] }))
+    : [new Paragraph({ children: [run('Sin hitos registrados')] })];
+  const filas = [
+    fila('Nombre del proyecto', txt(d.nombre, { align: AlignmentType.LEFT })),
+    fila('CUI:', txt(d.cui, { it: /por definir|pendiente|no disponible|no aplica/i.test(d.cui), align: AlignmentType.LEFT })),
+    fila('Modalidad de ejecución:', txt(d.modalidad, { align: AlignmentType.LEFT })),
+    fila('Relevancia Sectorial:', txt(d.relevancia)),
+    fila('Monto de inversión:', txt(d.monto, { align: AlignmentType.LEFT })),
+    fila('Beneficiarios:', txt(d.benef, { align: AlignmentType.LEFT })),
+    fila('Área de Influencia:', txt(d.area, { align: AlignmentType.LEFT })),
+    fila('A cargo:', txt(d.aCargo, { align: AlignmentType.LEFT })),
+    fila('Estado Situacional:', txt(d.estado), { largo: true }),
+    fila('Hitos claves:', hitos, { largo: true })
+  ];
+  if (d.incluida) filas.push(fila('Incluidas en:', txt(d.incluida, { it: true, color: GRIS_CL, align: AlignmentType.LEFT }), { gris: true }));
+  return new Document({
+    creator: 'OMEI – OGAME – MTC', title: 'Ayuda Memoria – ' + d.codigo,
+    styles: { default: { document: { run: { font: FONT, size: 20 } } } },
+    numbering: { config: [{ reference: 'hitos', levels: [{ level: 0, format: LevelFormat.DECIMAL, text: '%1.', alignment: AlignmentType.LEFT,
+      style: { paragraph: { indent: { left: 400, hanging: 300 } } } }] }] },
+    sections: [{
+      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1417, bottom: 1417, left: 1701, right: 1701, header: 708, footer: 708 } } },
+      headers: { default: new Header({ children: [new Paragraph({ tabStops: [{ type: TabStopType.RIGHT, position: W }],
+        border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: ROJO, space: 4 } },
+        children: [run('MINISTERIO DE TRANSPORTES Y COMUNICACIONES', { size: 15, bold: true, color: AZUL }),
+          run('\tOficina General de Articulación, Monitoreo y Evaluación de Impacto', { size: 14, color: GRIS })] })] }) },
+      children: [
+        new Paragraph({ spacing: { before: 200, after: 0 }, children: [run('AYUDA MEMORIA', { size: 40, bold: true, color: AZUL })] }),
+        new Paragraph({ spacing: { after: 360 }, border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: ROJO, space: 6 } },
+          children: [run('Fecha: ' + d.fecha, { size: 20, color: GRIS })] }),
+        new Table({ width: { size: W, type: WidthType.DXA }, columnWidths: [C1, C2], rows: filas })
+      ]
+    }]
+  });
+}
+
+async function descargarAM(codigo, btn) {
+  const interv = intervenciones.find(i => i.codigo === codigo);
+  if (!interv) return;
+  if (typeof docx === 'undefined') { alert('La librería de Word aún no carga; intenta en unos segundos.'); return; }
+  if (btn) btn.disabled = true;
+  try {
+    const d = amDatos(interv);
+    const blob = await docx.Packer.toBlob(amDocumentoHR(d));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'AM_' + codigo.replace(/[^\w.-]+/g, '_') + '.docx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  } catch (e) {
+    console.error(e); alert('No se pudo generar la ayuda memoria: ' + e.message);
+  } finally { if (btn) btn.disabled = false; }
 }
 
 // ── MODAL ──────────────────────────────────────────────────────────────────────
