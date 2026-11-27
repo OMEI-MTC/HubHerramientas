@@ -2556,7 +2556,7 @@ function leerCarpetaActual(txt) {
   const head = filas[iHead].map(normCol);
   const col = n => head.indexOf(normCol(n));
   const ix = { cod: col('COD INTERNO'), tipo: col('Tipo de Código'), codigo: col('Código'), proySer: col('Proyecto / Servicio'),
-    monto: col('Monto de la intervención S/'), compartido: col('CUI compartido'), benef: col('Beneficiarios'),
+    monto: col('Monto de la intervención S/'), fuente: col('Fuente del monto'), compartido: col('CUI compartido'), benef: col('Beneficiarios'),
     modalidad: col('Modalidad de ejecución'), corte: col('Corte') };
   const get = (f, k) => ix[k] >= 0 ? String(f[ix[k]] || '').replace(/\s+/g, ' ').trim() : '';
   for (let r = iHead + 1; r < filas.length; r++) {
@@ -2575,7 +2575,7 @@ function leerCarpetaActual(txt) {
     } else if (!esNA) {
       cuiTexto = codigo; // p. ej. PENDIENTE
     }
-    out[cod] = { cuiPanel, cuiTexto, proySer: get(f, 'proySer'), monto: get(f, 'monto'),
+    out[cod] = { cuiPanel, cuiTexto, proySer: get(f, 'proySer'), monto: get(f, 'monto'), fuente: get(f, 'fuente'),
       compartido: get(f, 'compartido'), benef: get(f, 'benef'), modalidad: get(f, 'modalidad'), corte: get(f, 'corte') };
   }
   return out;
@@ -2608,27 +2608,30 @@ function amDatos(interv) {
   const r = carpetaActual[interv.codigo];
   const est = estadoInterv[interv.codigo] || {};
   const sinDatosInterv = /normativa|pol[ií]tica|acci[oó]n/i.test(interv.tipo || '');
-  let cui, modalidad, monto, benef;
+  let cui, modalidad, monto, benef, notaMonto = '';
   if (r) {
     cui = r.cuiTexto;
-    modalidad = r.modalidad && r.modalidad !== '-' ? r.modalidad : 'No disponible';
+    modalidad = r.modalidad && r.modalidad !== '-' ? r.modalidad : '-';
     const m = amNumero(r.monto);
     if (!isNaN(m)) {
       monto = 'S/ ' + amMiles(m);
       const n = (r.compartido.match(/(\d+)/) || [])[1];
       if (/^s[ií]/i.test(r.compartido)) monto += n ? ` (CUI compartido con ${n} intervenciones)` : ' (CUI compartido)';
-    } else monto = 'No disponible';
+      // Criterio único: sin CUI válido el monto es el reportado por la unidad en la Carpeta Departamental
+      if (/reportado/i.test(r.fuente) || !r.cuiPanel || !/\d{5,}/.test(r.cuiPanel))
+        notaMonto = 'Al no contar con CUI, el monto de inversión corresponde a lo reportado por la unidad en las carpetas departamentales.';
+    } else monto = '-';
     const b = amNumero(r.benef);
-    benef = !isNaN(b) ? amMiles(b) : (r.benef && r.benef !== '-' ? r.benef : 'No disponible');
+    benef = !isNaN(b) ? amMiles(b) : (r.benef && r.benef !== '-' ? r.benef : '-');
   } else if (sinDatosInterv) {
     cui = modalidad = monto = benef = 'No aplica';
   } else {
     // Código no está en la Carpeta (Actual): datos del Maestro y, si existen, los datos complementarios
     const dc = DATOS_COMPLEMENTARIOS[interv.codigo] || {};
     cui = interv.cuiMaestro || dc.cui || 'No disponible';
-    modalidad = dc.modalidad || 'No disponible';
-    monto = typeof dc.monto === 'number' ? 'S/ ' + amMiles(dc.monto) : 'No disponible';
-    benef = typeof dc.benef === 'number' ? amMiles(dc.benef) : 'No disponible';
+    modalidad = dc.modalidad || '-';
+    monto = typeof dc.monto === 'number' ? 'S/ ' + amMiles(dc.monto) : '-';
+    benef = typeof dc.benef === 'number' ? amMiles(dc.benef) : '-';
   }
   const hitos = (interv.hitos || []).map(h => {
     const eh = estadoHitos[h.codhito] || {};
@@ -2638,7 +2641,7 @@ function amDatos(interv) {
   });
   return {
     codigo: interv.codigo, fecha: amFechaDDMMAAAA(est.fechaReg), nombre: interv.nombre, cui, modalidad,
-    relevancia: interv.relevancia || '—', monto, benef, area: interv.area || '—', aCargo: interv.organo || '—',
+    relevancia: interv.relevancia || '—', monto, notaMonto, benef, area: interv.area || '—', aCargo: interv.organo || '—',
     estado: (est.estado || 'Sin registro').replace(/\\n/g, '\n'), hitos, incluida: (interv.priorizadas || []).join('; ')
   };
 }
@@ -2669,7 +2672,8 @@ function amDocumentoHR(d) {
     fila('CUI:', txt(d.cui, { it: /por definir|pendiente|no disponible|no aplica/i.test(d.cui), align: AlignmentType.LEFT })),
     fila('Modalidad de ejecución:', txt(d.modalidad, { align: AlignmentType.LEFT })),
     fila('Relevancia Sectorial:', txt(d.relevancia)),
-    fila('Monto de inversión:', txt(d.monto, { align: AlignmentType.LEFT })),
+    fila('Monto de inversión:', [...txt(d.monto, { align: AlignmentType.LEFT }),
+      ...(d.notaMonto ? [new Paragraph({ spacing: { before: 40 }, children: [run(d.notaMonto, { size: 16, it: true, color: GRIS })] })] : [])]),
     fila('Beneficiarios:', txt(d.benef, { align: AlignmentType.LEFT })),
     fila('Área de Influencia:', txt(d.area, { align: AlignmentType.LEFT })),
     fila('A cargo:', txt(d.aCargo, { align: AlignmentType.LEFT })),
