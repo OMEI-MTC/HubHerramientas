@@ -2695,7 +2695,7 @@ function amDocumentoHR(d) {
       children: [
         new Paragraph({ spacing: { before: 200, after: 0 }, children: [run('AYUDA MEMORIA', { size: 40, bold: true, color: AZUL })] }),
         new Paragraph({ spacing: { after: 360 }, border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: ROJO, space: 6 } },
-          children: [run('Fecha: ' + d.fecha, { size: 20, color: GRIS })] }),
+          children: [run('Fecha de corte: ' + d.fecha, { size: 20, color: GRIS })] }),
         new Table({ width: { size: W, type: WidthType.DXA }, columnWidths: [C1, C2], rows: filas })
       ]
     }]
